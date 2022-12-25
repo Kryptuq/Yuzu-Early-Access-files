@@ -294,6 +294,14 @@ F32 IREmitter::GetAttribute(IR::Attribute attribute, const U32& vertex) {
     return Inst<F32>(Opcode::GetAttribute, attribute, vertex);
 }
 
+U32 IREmitter::GetAttributeU32(IR::Attribute attribute) {
+    return GetAttributeU32(attribute, Imm32(0));
+}
+
+U32 IREmitter::GetAttributeU32(IR::Attribute attribute, const U32& vertex) {
+    return Inst<U32>(Opcode::GetAttributeU32, attribute, vertex);
+}
+
 void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value, const U32& vertex) {
     Inst(Opcode::SetAttribute, attribute, value, vertex);
 }

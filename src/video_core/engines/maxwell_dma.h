@@ -231,6 +231,8 @@ private:
 
     void ReleaseSemaphore();
 
+    void ConsumeSinkImpl() override;
+
     Core::System& system;
 
     MemoryManager& memory_manager;

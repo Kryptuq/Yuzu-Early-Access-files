@@ -74,6 +74,8 @@ public:
 
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute);
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute, const U32& vertex);
+    [[nodiscard]] U32 GetAttributeU32(IR::Attribute attribute);
+    [[nodiscard]] U32 GetAttributeU32(IR::Attribute attribute, const U32& vertex);
     void SetAttribute(IR::Attribute attribute, const F32& value, const U32& vertex);
 
     [[nodiscard]] F32 GetAttributeIndexed(const U32& phys_address);

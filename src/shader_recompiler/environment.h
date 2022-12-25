@@ -34,6 +34,11 @@ public:
 
     [[nodiscard]] virtual std::array<u32, 3> WorkgroupSize() const = 0;
 
+    [[nodiscard]] virtual bool HasHLEMacroState() const = 0;
+
+    [[nodiscard]] virtual std::optional<ReplaceConstant> GetReplaceConstBuffer(u32 bank,
+                                                                               u32 offset) = 0;
+
     virtual void Dump(u64 hash) = 0;
 
     [[nodiscard]] const ProgramHeader& SPH() const noexcept {

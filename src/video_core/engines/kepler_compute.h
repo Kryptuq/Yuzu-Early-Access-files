@@ -204,6 +204,8 @@ public:
 private:
     void ProcessLaunch();
 
+    void ConsumeSinkImpl() override;
+
     /// Retrieves information about a specific TIC entry from the TIC buffer.
     Texture::TICEntry GetTICEntry(u32 tic_index) const;
 

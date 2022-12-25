@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <unordered_map>
+
 #include "common/common_types.h"
 
 namespace Tegra {
@@ -23,6 +26,8 @@ public:
 
 private:
     Engines::Maxwell3D& maxwell3d;
+    std::unordered_map<u64, std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>>
+        builders;
 };
 
 } // namespace Tegra

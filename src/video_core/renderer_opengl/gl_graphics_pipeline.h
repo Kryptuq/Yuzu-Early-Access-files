@@ -40,6 +40,7 @@ struct GraphicsPipelineKey {
         BitField<6, 2, Maxwell::Tessellation::DomainType> tessellation_primitive;
         BitField<8, 2, Maxwell::Tessellation::Spacing> tessellation_spacing;
         BitField<10, 1, u32> tessellation_clockwise;
+        BitField<11, 3, Tegra::Engines::Maxwell3D::EngineHint> app_stage;
     };
     std::array<u32, 3> padding;
     VideoCommon::TransformFeedbackState xfb_state;

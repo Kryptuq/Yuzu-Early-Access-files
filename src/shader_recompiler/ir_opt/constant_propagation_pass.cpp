@@ -7,6 +7,7 @@
 #include <type_traits>
 
 #include "common/bit_cast.h"
+#include "shader_recompiler/environment.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/value.h"
@@ -515,6 +516,8 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
             case IR::Attribute::PrimitiveId:
             case IR::Attribute::InstanceId:
             case IR::Attribute::VertexId:
+            case IR::Attribute::BaseVertex:
+            case IR::Attribute::BaseInstance:
                 break;
             default:
                 return;
@@ -644,7 +647,37 @@ void FoldFSwizzleAdd(IR::Block& block, IR::Inst& inst) {
     }
 }
 
-void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
+void FoldConstBuffer(Environment& env, IR::Block& block, IR::Inst& inst) {
+    const IR::Value bank{inst.Arg(0)};
+    const IR::Value offset{inst.Arg(1)};
+    if (!bank.IsImmediate() || !offset.IsImmediate()) {
+        return;
+    }
+    const auto bank_value = bank.U32();
+    const auto offset_value = offset.U32();
+    auto replacement = env.GetReplaceConstBuffer(bank_value, offset_value);
+    if (!replacement) {
+        return;
+    }
+    const auto new_attribute = [replacement]() {
+        switch (*replacement) {
+        case ReplaceConstant::BaseInstance:
+            return IR::Attribute::BaseInstance;
+        case ReplaceConstant::BaseVertex:
+            return IR::Attribute::BaseVertex;
+        default:
+            throw NotImplementedException("Not implemented replacement variable {}", *replacement);
+        }
+    }();
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+    if (inst.GetOpcode() == IR::Opcode::GetCbufU32) {
+        inst.ReplaceUsesWith(ir.GetAttributeU32(new_attribute));
+    } else {
+        inst.ReplaceUsesWith(ir.GetAttribute(new_attribute));
+    }
+}
+
+void ConstantPropagation(Environment& env, IR::Block& block, IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::GetRegister:
         return FoldGetRegister(inst);
@@ -789,18 +822,24 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
                                     IR::Opcode::CompositeInsertF16x4);
     case IR::Opcode::FSwizzleAdd:
         return FoldFSwizzleAdd(block, inst);
+    case IR::Opcode::GetCbufF32:
+    case IR::Opcode::GetCbufU32:
+        if (env.HasHLEMacroState()) {
+            return FoldConstBuffer(env, block, inst);
+        }
+        break;
     default:
         break;
     }
 }
 } // Anonymous namespace
 
-void ConstantPropagationPass(IR::Program& program) {
+void ConstantPropagationPass(Environment& env, IR::Program& program) {
     const auto end{program.post_order_blocks.rend()};
     for (auto it = program.post_order_blocks.rbegin(); it != end; ++it) {
         IR::Block* const block{*it};
         for (IR::Inst& inst : block->Instructions()) {
-            ConstantPropagation(*block, inst);
+            ConstantPropagation(env, *block, inst);
         }
     }
 }

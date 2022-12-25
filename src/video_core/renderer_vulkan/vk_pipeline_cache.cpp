@@ -54,7 +54,7 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
-constexpr u32 CACHE_VERSION = 8;
+constexpr u32 CACHE_VERSION = 9;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -351,6 +351,15 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         LOG_WARNING(Render_Vulkan, "maxVertexInputBindings is too low: {} < {}",
                     device.GetMaxVertexInputBindings(), Maxwell::NumVertexArrays);
     }
+
+    dynamic_features = DynamicFeatures{
+        .has_extended_dynamic_state = device.IsExtExtendedDynamicStateSupported(),
+        .has_extended_dynamic_state_2 = device.IsExtExtendedDynamicState2Supported(),
+        .has_extended_dynamic_state_2_extra = device.IsExtExtendedDynamicState2ExtrasSupported(),
+        .has_extended_dynamic_state_3_blend = device.IsExtExtendedDynamicState3BlendingSupported(),
+        .has_extended_dynamic_state_3_enables = device.IsExtExtendedDynamicState3EnablesSupported(),
+        .has_dynamic_vertex_input = device.IsExtVertexInputDynamicStateSupported(),
+    };
 }
 
 PipelineCache::~PipelineCache() = default;
@@ -362,8 +371,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    graphics_key.state.Refresh(*maxwell3d, device.IsExtExtendedDynamicStateSupported(),
-                               device.IsExtVertexInputDynamicStateSupported());
+    graphics_key.state.Refresh(*maxwell3d, dynamic_features);
 
     if (current_pipeline) {
         GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};
@@ -439,14 +447,21 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         });
         ++state.total;
     }};
-    const bool extended_dynamic_state = device.IsExtExtendedDynamicStateSupported();
-    const bool dynamic_vertex_input = device.IsExtVertexInputDynamicStateSupported();
     const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
         GraphicsPipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
-        if ((key.state.extended_dynamic_state != 0) != extended_dynamic_state ||
-            (key.state.dynamic_vertex_input != 0) != dynamic_vertex_input) {
+        if ((key.state.extended_dynamic_state != 0) !=
+                dynamic_features.has_extended_dynamic_state ||
+            (key.state.extended_dynamic_state_2 != 0) !=
+                dynamic_features.has_extended_dynamic_state_2 ||
+            (key.state.extended_dynamic_state_2_extra != 0) !=
+                dynamic_features.has_extended_dynamic_state_2_extra ||
+            (key.state.extended_dynamic_state_3_blend != 0) !=
+                dynamic_features.has_extended_dynamic_state_3_blend ||
+            (key.state.extended_dynamic_state_3_enables != 0) !=
+                dynamic_features.has_extended_dynamic_state_3_enables ||
+            (key.state.dynamic_vertex_input != 0) != dynamic_features.has_dynamic_vertex_input) {
             return;
         }
         workers.QueueWork([this, key, envs = std::move(envs), &state, &callback]() mutable {

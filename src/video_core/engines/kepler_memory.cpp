@@ -18,6 +18,17 @@ KeplerMemory::~KeplerMemory() = default;
 
 void KeplerMemory::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     upload_state.BindRasterizer(rasterizer_);
+
+    execution_mask.reset();
+    execution_mask[KEPLERMEMORY_REG_INDEX(exec)] = true;
+    execution_mask[KEPLERMEMORY_REG_INDEX(data)] = true;
+}
+
+void KeplerMemory::ConsumeSinkImpl() {
+    for (auto [method, value] : method_sink) {
+        regs.reg_array[method] = value;
+    }
+    method_sink.clear();
 }
 
 void KeplerMemory::CallMethod(u32 method, u32 method_argument, bool is_last_call) {

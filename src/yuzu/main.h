@@ -336,7 +336,7 @@ private slots:
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
     void OnLanguageChanged(const QString& locale);
     void OnMouseActivity();
-    void OnShutdownBegin();
+    bool OnShutdownBegin();
     void OnShutdownBeginDialog();
     void OnEmulationStopped();
     void OnEmulationStopTimeExpired();

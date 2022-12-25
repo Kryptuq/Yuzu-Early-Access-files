@@ -14,13 +14,25 @@
 namespace Tegra::Engines {
 
 KeplerCompute::KeplerCompute(Core::System& system_, MemoryManager& memory_manager_)
-    : system{system_}, memory_manager{memory_manager_}, upload_state{memory_manager, regs.upload} {}
+    : system{system_}, memory_manager{memory_manager_}, upload_state{memory_manager, regs.upload} {
+    execution_mask.reset();
+    execution_mask[KEPLER_COMPUTE_REG_INDEX(exec_upload)] = true;
+    execution_mask[KEPLER_COMPUTE_REG_INDEX(data_upload)] = true;
+    execution_mask[KEPLER_COMPUTE_REG_INDEX(launch)] = true;
+}
 
 KeplerCompute::~KeplerCompute() = default;
 
 void KeplerCompute::BindRasterizer(VideoCore::RasterizerInterface* rasterizer_) {
     rasterizer = rasterizer_;
     upload_state.BindRasterizer(rasterizer);
+}
+
+void KeplerCompute::ConsumeSinkImpl() {
+    for (auto [method, value] : method_sink) {
+        regs.reg_array[method] = value;
+    }
+    method_sink.clear();
 }
 
 void KeplerCompute::CallMethod(u32 method, u32 method_argument, bool is_last_call) {

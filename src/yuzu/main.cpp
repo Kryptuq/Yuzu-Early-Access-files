@@ -1784,9 +1784,9 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     OnStartGame();
 }
 
-void GMainWindow::OnShutdownBegin() {
+bool GMainWindow::OnShutdownBegin() {
     if (!emulation_running) {
-        return;
+        return false;
     }
 
     if (ui->action_Fullscreen->isChecked()) {
@@ -1797,6 +1797,10 @@ void GMainWindow::OnShutdownBegin() {
 
     // Disable unlimited frame rate
     Settings::values.use_speed_limit.SetValue(true);
+
+    if (system->IsShuttingDown()) {
+        return false;
+    }
 
     system->SetShuttingDown(true);
     discord_rpc->Pause();
@@ -1816,6 +1820,8 @@ void GMainWindow::OnShutdownBegin() {
     ui->action_Pause->setEnabled(false);
     ui->action_Restart->setEnabled(false);
     ui->action_Stop->setEnabled(false);
+
+    return true;
 }
 
 void GMainWindow::OnShutdownBeginDialog() {
@@ -3002,8 +3008,9 @@ void GMainWindow::OnStopGame() {
         return;
     }
 
-    OnShutdownBegin();
-    OnShutdownBeginDialog();
+    if (OnShutdownBegin()) {
+        OnShutdownBeginDialog();
+    }
 }
 
 void GMainWindow::OnLoadComplete() {

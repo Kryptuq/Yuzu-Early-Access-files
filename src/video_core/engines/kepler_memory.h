@@ -73,6 +73,8 @@ public:
     } regs{};
 
 private:
+    void ConsumeSinkImpl() override;
+
     Core::System& system;
     Upload::State upload_state;
 };

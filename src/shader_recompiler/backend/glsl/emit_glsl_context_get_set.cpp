@@ -234,6 +234,12 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::FrontFace:
         ctx.AddF32("{}=itof(gl_FrontFacing?-1:0);", inst);
         break;
+    case IR::Attribute::BaseInstance:
+        ctx.AddF32("{}=itof(gl_BaseInstance);", inst);
+        break;
+    case IR::Attribute::BaseVertex:
+        ctx.AddF32("{}=itof(gl_BaseVertex);", inst);
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attr);
     }
@@ -249,6 +255,12 @@ void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, s
         break;
     case IR::Attribute::VertexId:
         ctx.AddU32("{}=uint(gl_VertexID);", inst);
+        break;
+    case IR::Attribute::BaseInstance:
+        ctx.AddU32("{}=uint(gl_BaseInstance);", inst);
+        break;
+    case IR::Attribute::BaseVertex:
+        ctx.AddU32("{}=uint(gl_BaseVertex);", inst);
         break;
     default:
         throw NotImplementedException("Get U32 attribute {}", attr);

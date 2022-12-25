@@ -219,7 +219,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     EmitContext ctx{program, bindings, profile, runtime_info};
     Precolor(program);
     EmitCode(ctx, program);
-    const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
+    const std::string version{fmt::format("#version 460{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
     if (program.shared_memory_size > 0) {
         const auto requested_size{program.shared_memory_size};

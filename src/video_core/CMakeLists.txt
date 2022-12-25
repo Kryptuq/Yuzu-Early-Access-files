@@ -13,6 +13,7 @@ add_library(video_core STATIC
     buffer_cache/buffer_base.h
     buffer_cache/buffer_cache.cpp
     buffer_cache/buffer_cache.h
+    cache_types.h
     cdma_pusher.cpp
     cdma_pusher.h
     compatible_formats.cpp

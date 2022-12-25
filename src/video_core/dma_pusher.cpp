@@ -61,7 +61,7 @@ bool DmaPusher::Step() {
     } else {
         const CommandListHeader command_list_header{
             command_list.command_lists[dma_pushbuffer_subindex++]};
-        const GPUVAddr dma_get = command_list_header.addr;
+        dma_state.dma_get = command_list_header.addr;
 
         if (dma_pushbuffer_subindex >= command_list.command_lists.size()) {
             // We've gone through the current list, remove it from the queue
@@ -75,12 +75,22 @@ bool DmaPusher::Step() {
 
         // Push buffer non-empty, read a word
         command_headers.resize_destructive(command_list_header.size);
-        if (Settings::IsGPULevelHigh()) {
-            memory_manager.ReadBlock(dma_get, command_headers.data(),
-                                     command_list_header.size * sizeof(u32));
+        constexpr u32 MacroRegistersStart = 0xE00;
+        if (dma_state.method < MacroRegistersStart) {
+            if (Settings::IsGPULevelHigh()) {
+                memory_manager.ReadBlock(dma_state.dma_get, command_headers.data(),
+                                         command_list_header.size * sizeof(u32));
+            } else {
+                memory_manager.ReadBlockUnsafe(dma_state.dma_get, command_headers.data(),
+                                               command_list_header.size * sizeof(u32));
+            }
         } else {
-            memory_manager.ReadBlockUnsafe(dma_get, command_headers.data(),
-                                           command_list_header.size * sizeof(u32));
+            const size_t copy_size = command_list_header.size * sizeof(u32);
+            if (subchannels[dma_state.subchannel]) {
+                subchannels[dma_state.subchannel]->current_dirty =
+                    memory_manager.IsMemoryDirty(dma_state.dma_get, copy_size);
+            }
+            memory_manager.ReadBlockUnsafe(dma_state.dma_get, command_headers.data(), copy_size);
         }
         ProcessCommands(command_headers);
     }
@@ -94,6 +104,7 @@ void DmaPusher::ProcessCommands(std::span<const CommandHeader> commands) {
 
         if (dma_state.method_count) {
             // Data word of methods command
+            dma_state.dma_word_offset = static_cast<u32>(index * sizeof(u32));
             if (dma_state.non_incrementing) {
                 const u32 max_write = static_cast<u32>(
                     std::min<std::size_t>(index + dma_state.method_count, commands.size()) - index);
@@ -132,6 +143,8 @@ void DmaPusher::ProcessCommands(std::span<const CommandHeader> commands) {
             case SubmissionMode::Inline:
                 dma_state.method = command_header.method;
                 dma_state.subchannel = command_header.subchannel;
+                dma_state.dma_word_offset = static_cast<u64>(
+                    -static_cast<s64>(dma_state.dma_get)); // negate to set address as 0
                 CallMethod(command_header.arg_count);
                 dma_state.non_incrementing = true;
                 dma_increment_once = false;
@@ -164,8 +177,14 @@ void DmaPusher::CallMethod(u32 argument) const {
             dma_state.method_count,
         });
     } else {
-        subchannels[dma_state.subchannel]->CallMethod(dma_state.method, argument,
-                                                      dma_state.is_last_call);
+        auto subchannel = subchannels[dma_state.subchannel];
+        if (!subchannel->execution_mask[dma_state.method]) [[likely]] {
+            subchannel->method_sink.emplace_back(dma_state.method, argument);
+            return;
+        }
+        subchannel->ConsumeSink();
+        subchannel->current_dma_segment = dma_state.dma_get + dma_state.dma_word_offset;
+        subchannel->CallMethod(dma_state.method, argument, dma_state.is_last_call);
     }
 }
 
@@ -174,8 +193,11 @@ void DmaPusher::CallMultiMethod(const u32* base_start, u32 num_methods) const {
         puller.CallMultiMethod(dma_state.method, dma_state.subchannel, base_start, num_methods,
                                dma_state.method_count);
     } else {
-        subchannels[dma_state.subchannel]->CallMultiMethod(dma_state.method, base_start,
-                                                           num_methods, dma_state.method_count);
+        auto subchannel = subchannels[dma_state.subchannel];
+        subchannel->ConsumeSink();
+        subchannel->current_dma_segment = dma_state.dma_get + dma_state.dma_word_offset;
+        subchannel->CallMultiMethod(dma_state.method, base_start, num_methods,
+                                    dma_state.method_count);
     }
 }
 

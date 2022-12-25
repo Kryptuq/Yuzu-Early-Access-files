@@ -7,6 +7,7 @@ add_executable(tests
     common/fibers.cpp
     common/host_memory.cpp
     common/param_package.cpp
+    common/range_map.cpp
     common/ring_buffer.cpp
     common/scratch_buffer.cpp
     common/unique_function.cpp

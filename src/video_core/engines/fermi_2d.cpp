@@ -25,6 +25,9 @@ Fermi2D::Fermi2D(MemoryManager& memory_manager_) {
     // Nvidia's OpenGL driver seems to assume these values
     regs.src.depth = 1;
     regs.dst.depth = 1;
+
+    execution_mask.reset();
+    execution_mask[FERMI2D_REG_INDEX(pixels_from_memory.src_y0) + 1] = true;
 }
 
 Fermi2D::~Fermi2D() = default;
@@ -47,6 +50,13 @@ void Fermi2D::CallMultiMethod(u32 method, const u32* base_start, u32 amount, u32
     for (u32 i = 0; i < amount; ++i) {
         CallMethod(method, base_start[i], methods_pending - i <= 1);
     }
+}
+
+void Fermi2D::ConsumeSinkImpl() {
+    for (auto [method, value] : method_sink) {
+        regs.reg_array[method] = value;
+    }
+    method_sink.clear();
 }
 
 void Fermi2D::Blit() {

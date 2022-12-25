@@ -272,6 +272,7 @@ public:
             };
 
             union {
+                u32 raw;
                 BitField<0, 1, Mode> mode;
                 BitField<4, 8, u32> pad;
             };
@@ -1217,10 +1218,12 @@ public:
 
         struct Window {
             union {
+                u32 raw_1;
                 BitField<0, 16, u32> x_min;
                 BitField<16, 16, u32> x_max;
             };
             union {
+                u32 raw_2;
                 BitField<0, 16, u32> y_min;
                 BitField<16, 16, u32> y_max;
             };
@@ -3020,6 +3023,23 @@ public:
     /// Store temporary hw register values, used by some calls to restore state after a operation
     Regs shadow_state;
 
+    // None Engine
+    enum class EngineHint : u32 {
+        None = 0x0,
+        OnHLEMacro = 0x1,
+    };
+
+    EngineHint engine_state{EngineHint::None};
+
+    enum class HLEReplaceName : u32 {
+        BaseVertex = 0x0,
+        BaseInstance = 0x1,
+    };
+
+    void setHLEReplacementName(u32 bank, u32 offset, HLEReplaceName name);
+
+    std::unordered_map<u64, HLEReplaceName> replace_table;
+
     static_assert(sizeof(Regs) == Regs::NUM_REGS * sizeof(u32), "Maxwell3D Regs has wrong size");
     static_assert(std::is_trivially_copyable_v<Regs>, "Maxwell3D Regs must be trivially copyable");
 
@@ -3067,6 +3087,33 @@ public:
     std::unique_ptr<DrawManager> draw_manager;
     friend class DrawManager;
 
+    std::vector<u8> inline_index_draw_indexes;
+
+    GPUVAddr getMacroAddress(size_t index) const {
+        return macro_addresses[index];
+    }
+
+    void RefreshParameters() {
+        if (!current_macro_dirty) {
+            return;
+        }
+        RefreshParametersImpl();
+    }
+
+    bool AnyParametersDirty() {
+        return current_macro_dirty;
+    }
+
+    u32 GetMaxCurrentVertices();
+
+    size_t EstimateIndexBufferSize();
+
+    /// Handles a write to the CLEAR_BUFFERS register.
+    void ProcessClearBuffers(u32 layer_count);
+
+    /// Handles a write to the CB_BIND register.
+    void ProcessCBBind(size_t stage_index);
+
 private:
     void InitializeRegisterDefaults();
 
@@ -3075,6 +3122,8 @@ private:
     u32 ProcessShadowRam(u32 method, u32 argument);
 
     void ProcessDirtyRegisters(u32 method, u32 argument);
+
+    void ConsumeSinkImpl() override;
 
     void ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argument, bool is_last_call);
 
@@ -3120,11 +3169,12 @@ private:
     void ProcessCBData(u32 value);
     void ProcessCBMultiData(const u32* start_base, u32 amount);
 
-    /// Handles a write to the CB_BIND register.
-    void ProcessCBBind(size_t stage_index);
-
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();
+
+    void RefreshParametersImpl();
+
+    bool IsMethodExecutable(u32 method);
 
     Core::System& system;
     MemoryManager& memory_manager;
@@ -3145,6 +3195,15 @@ private:
     Upload::State upload_state;
 
     bool execute_on{true};
+
+    std::array<bool, Regs::NUM_REGS> draw_command{};
+    std::vector<u32> deferred_draw_method;
+    enum class DrawMode : u32 { General = 0, Instance, InlineIndex };
+    DrawMode draw_mode{DrawMode::General};
+    bool draw_indexed{};
+    std::vector<std::pair<GPUVAddr, size_t>> macro_segments;
+    std::vector<GPUVAddr> macro_addresses;
+    bool current_macro_dirty{};
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

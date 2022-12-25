@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
 
@@ -20,6 +20,9 @@ struct StagingBufferRef {
     VkBuffer buffer;
     VkDeviceSize offset;
     std::span<u8> mapped_span;
+    MemoryUsage usage;
+    u32 log2_level;
+    u64 index;
 };
 
 class StagingBufferPool {
@@ -30,7 +33,8 @@ public:
                                Scheduler& scheduler);
     ~StagingBufferPool();
 
-    StagingBufferRef Request(size_t size, MemoryUsage usage);
+    StagingBufferRef Request(size_t size, MemoryUsage usage, bool deferred = false);
+    void FreeDeferred(StagingBufferRef& ref);
 
     void TickFrame();
 
@@ -44,13 +48,20 @@ private:
         vk::Buffer buffer;
         MemoryCommit commit;
         std::span<u8> mapped_span;
+        MemoryUsage usage;
+        u32 log2_level;
+        u64 index;
         u64 tick = 0;
+        bool deferred{};
 
         StagingBufferRef Ref() const noexcept {
             return {
                 .buffer = *buffer,
                 .offset = 0,
                 .mapped_span = mapped_span,
+                .usage = usage,
+                .log2_level = log2_level,
+                .index = index,
             };
         }
     };
@@ -68,11 +79,12 @@ private:
 
     bool AreRegionsActive(size_t region_begin, size_t region_end) const;
 
-    StagingBufferRef GetStagingBuffer(size_t size, MemoryUsage usage);
+    StagingBufferRef GetStagingBuffer(size_t size, MemoryUsage usage, bool deferred = false);
 
-    std::optional<StagingBufferRef> TryGetReservedBuffer(size_t size, MemoryUsage usage);
+    std::optional<StagingBufferRef> TryGetReservedBuffer(size_t size, MemoryUsage usage,
+                                                         bool deferred);
 
-    StagingBufferRef CreateStagingBuffer(size_t size, MemoryUsage usage);
+    StagingBufferRef CreateStagingBuffer(size_t size, MemoryUsage usage, bool deferred);
 
     StagingBuffersCache& GetCache(MemoryUsage usage);
 
@@ -99,6 +111,7 @@ private:
 
     size_t current_delete_level = 0;
     u64 buffer_index = 0;
+    u64 unique_ids{};
 };
 
 } // namespace Vulkan

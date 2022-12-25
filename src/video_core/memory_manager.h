@@ -10,7 +10,9 @@
 
 #include "common/common_types.h"
 #include "common/multi_level_page_table.h"
+#include "common/range_map.h"
 #include "common/virtual_buffer.h"
+#include "video_core/cache_types.h"
 #include "video_core/pte_kind.h"
 
 namespace VideoCore {
@@ -59,9 +61,12 @@ public:
      * in the Host Memory counterpart. Note: This functions cause Host GPU Memory
      * Flushes and Invalidations, respectively to each operation.
      */
-    void ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const;
-    void WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size);
-    void CopyBlock(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr, std::size_t size);
+    void ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
+                   VideoCommon::CacheType which = VideoCommon::CacheType::All) const;
+    void WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size,
+                    VideoCommon::CacheType which = VideoCommon::CacheType::All);
+    void CopyBlock(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr, std::size_t size,
+                   VideoCommon::CacheType which = VideoCommon::CacheType::All);
 
     /**
      * ReadBlockUnsafe and WriteBlockUnsafe are special versions of ReadBlock and
@@ -104,11 +109,14 @@ public:
     GPUVAddr MapSparse(GPUVAddr gpu_addr, std::size_t size, bool is_big_pages = true);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
 
-    void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
+    void FlushRegion(GPUVAddr gpu_addr, size_t size,
+                     VideoCommon::CacheType which = VideoCommon::CacheType::All) const;
 
-    void InvalidateRegion(GPUVAddr gpu_addr, size_t size) const;
+    void InvalidateRegion(GPUVAddr gpu_addr, size_t size,
+                          VideoCommon::CacheType which = VideoCommon::CacheType::All) const;
 
-    bool IsMemoryDirty(GPUVAddr gpu_addr, size_t size) const;
+    bool IsMemoryDirty(GPUVAddr gpu_addr, size_t size,
+                       VideoCommon::CacheType which = VideoCommon::CacheType::All) const;
 
     size_t MaxContinousRange(GPUVAddr gpu_addr, size_t size) const;
 
@@ -118,16 +126,21 @@ public:
 
     PTEKind GetPageKind(GPUVAddr gpu_addr) const;
 
+    size_t GetMemoryLayoutSize(GPUVAddr gpu_addr,
+                               size_t max_size = std::numeric_limits<size_t>::max()) const;
+
 private:
     template <bool is_big_pages, typename FuncMapped, typename FuncReserved, typename FuncUnmapped>
     inline void MemoryOperation(GPUVAddr gpu_src_addr, std::size_t size, FuncMapped&& func_mapped,
                                 FuncReserved&& func_reserved, FuncUnmapped&& func_unmapped) const;
 
     template <bool is_safe>
-    void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const;
+    void ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size,
+                       VideoCommon::CacheType which) const;
 
     template <bool is_safe>
-    void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size);
+    void WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size,
+                        VideoCommon::CacheType which);
 
     template <bool is_big_page>
     [[nodiscard]] std::size_t PageEntryIndex(GPUVAddr gpu_addr) const {
@@ -183,16 +196,8 @@ private:
     template <bool is_big_page>
     inline void SetEntry(size_t position, EntryType entry);
 
-    std::vector<std::array<PTEKind, 32>> kinds;
-    std::vector<std::array<PTEKind, 32>> big_kinds;
-
-    template <bool is_big_page>
-    inline PTEKind GetKind(size_t position) const;
-
-    template <bool is_big_page>
-    inline void SetKind(size_t position, PTEKind kind);
-
     Common::MultiLevelPageTable<u32> page_table;
+    Common::RangeMap<GPUVAddr, PTEKind> kind_map;
     Common::VirtualBuffer<u32> big_page_table_cpu;
 
     std::vector<u64> big_page_continous;

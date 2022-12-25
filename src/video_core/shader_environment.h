@@ -60,6 +60,10 @@ public:
 
     void Serialize(std::ofstream& file) const;
 
+    bool HasHLEMacroState() const override {
+        return has_hle_engine_state;
+    }
+
 protected:
     std::optional<u64> TryFindSize();
 
@@ -73,6 +77,7 @@ protected:
     std::unordered_map<u32, Shader::TextureType> texture_types;
     std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
     std::unordered_map<u64, u32> cbuf_values;
+    std::unordered_map<u64, Shader::ReplaceConstant> cbuf_replacements;
 
     u32 local_memory_size{};
     u32 texture_bound{};
@@ -89,6 +94,7 @@ protected:
     u32 viewport_transform_state = 1;
 
     bool has_unbound_instructions = false;
+    bool has_hle_engine_state = false;
 };
 
 class GraphicsEnvironment final : public GenericEnvironment {
@@ -108,6 +114,8 @@ public:
     Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
 
     u32 ReadViewportTransformState() override;
+
+    std::optional<Shader::ReplaceConstant> GetReplaceConstBuffer(u32 bank, u32 offset) override;
 
 private:
     Tegra::Engines::Maxwell3D* maxwell3d{};
@@ -130,6 +138,11 @@ public:
     Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
 
     u32 ReadViewportTransformState() override;
+
+    std::optional<Shader::ReplaceConstant> GetReplaceConstBuffer(
+        [[maybe_unused]] u32 bank, [[maybe_unused]] u32 offset) override {
+        return std::nullopt;
+    }
 
 private:
     Tegra::Engines::KeplerCompute* kepler_compute{};
@@ -166,6 +179,13 @@ public:
 
     [[nodiscard]] std::array<u32, 3> WorkgroupSize() const override;
 
+    [[nodiscard]] std::optional<Shader::ReplaceConstant> GetReplaceConstBuffer(u32 bank,
+                                                                               u32 offset) override;
+
+    [[nodiscard]] bool HasHLEMacroState() const override {
+        return cbuf_replacements.size() != 0;
+    }
+
     void Dump(u64 hash) override;
 
 private:
@@ -173,6 +193,7 @@ private:
     std::unordered_map<u32, Shader::TextureType> texture_types;
     std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
     std::unordered_map<u64, u32> cbuf_values;
+    std::unordered_map<u64, Shader::ReplaceConstant> cbuf_replacements;
     std::array<u32, 3> workgroup_size{};
     u32 local_memory_size{};
     u32 shared_memory_size{};

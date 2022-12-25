@@ -65,6 +65,7 @@ public:
     ~RasterizerVulkan() override;
 
     void Draw(bool is_indexed, u32 instance_count) override;
+    void DrawIndirect() override;
     void Clear(u32 layer_count) override;
     void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;
@@ -72,9 +73,12 @@ public:
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
     void DisableGraphicsUniformBuffer(size_t stage, u32 index) override;
     void FlushAll() override;
-    void FlushRegion(VAddr addr, u64 size) override;
-    bool MustFlushRegion(VAddr addr, u64 size) override;
-    void InvalidateRegion(VAddr addr, u64 size) override;
+    void FlushRegion(VAddr addr, u64 size,
+                     VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    bool MustFlushRegion(VAddr addr, u64 size,
+                         VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    void InvalidateRegion(VAddr addr, u64 size,
+                          VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void OnCPUWrite(VAddr addr, u64 size) override;
     void InvalidateGPUCache() override;
     void UnmapMemory(VAddr addr, u64 size) override;
@@ -84,12 +88,14 @@ public:
     void SignalSyncPoint(u32 value) override;
     void SignalReference() override;
     void ReleaseFences() override;
-    void FlushAndInvalidateRegion(VAddr addr, u64 size) override;
+    void FlushAndInvalidateRegion(
+        VAddr addr, u64 size, VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void WaitForIdle() override;
     void FragmentBarrier() override;
     void TiledCacheBarrier() override;
     void FlushCommands() override;
     void TickFrame() override;
+    bool AccelerateConditionalRendering() override;
     bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
                                const Tegra::Engines::Fermi2D::Surface& dst,
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
@@ -114,6 +120,9 @@ private:
 
     static constexpr VkDeviceSize DEFAULT_BUFFER_SIZE = 4 * sizeof(float);
 
+    template <typename Func>
+    void PrepareDraw(bool is_indexed, Func&&);
+
     void FlushWork();
 
     void UpdateDynamicStates();
@@ -135,9 +144,16 @@ private:
     void UpdateDepthTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthWriteEnable(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthCompareOp(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdatePrimitiveRestartEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateRasterizerDiscardEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthBiasEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateLogicOpEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthClampEnable(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateFrontFace(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateLogicOp(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateBlending(Tegra::Engines::Maxwell3D::Regs& regs);
 
     void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
 

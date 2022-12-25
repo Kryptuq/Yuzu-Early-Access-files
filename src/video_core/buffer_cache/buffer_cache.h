@@ -200,7 +200,16 @@ public:
     /// Return true when a CPU region is modified from the CPU
     [[nodiscard]] bool IsRegionCpuModified(VAddr addr, size_t size);
 
-    std::mutex mutex;
+    void SetDrawIndirect(
+        const Tegra::Engines::DrawManager::IndirectParams* current_draw_indirect_) {
+        current_draw_indirect = current_draw_indirect_;
+    }
+
+    [[nodiscard]] std::pair<Buffer*, u32> GetDrawIndirectCount();
+
+    [[nodiscard]] std::pair<Buffer*, u32> GetDrawIndirectBuffer();
+
+    std::recursive_mutex mutex;
     Runtime& runtime;
 
 private:
@@ -272,6 +281,8 @@ private:
 
     void BindHostVertexBuffers();
 
+    void BindHostDrawIndirectBuffers();
+
     void BindHostGraphicsUniformBuffers(size_t stage);
 
     void BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 binding_index, bool needs_bind);
@@ -297,6 +308,8 @@ private:
     void UpdateVertexBuffers();
 
     void UpdateVertexBuffer(u32 index);
+
+    void UpdateDrawIndirect();
 
     void UpdateUniformBuffers(size_t stage);
 
@@ -372,6 +385,8 @@ private:
     SlotVector<Buffer> slot_buffers;
     DelayedDestructionRing<Buffer, 8> delayed_destruction_ring;
 
+    const Tegra::Engines::DrawManager::IndirectParams* current_draw_indirect{};
+
     u32 last_index_count = 0;
 
     Binding index_buffer;
@@ -380,6 +395,8 @@ private:
     std::array<std::array<Binding, NUM_STORAGE_BUFFERS>, NUM_STAGES> storage_buffers;
     std::array<std::array<TextureBufferBinding, NUM_TEXTURE_BUFFERS>, NUM_STAGES> texture_buffers;
     std::array<Binding, NUM_TRANSFORM_FEEDBACK_BUFFERS> transform_feedback_buffers;
+    Binding count_buffer_binding;
+    Binding indirect_buffer_binding;
 
     std::array<Binding, NUM_COMPUTE_UNIFORM_BUFFERS> compute_uniform_buffers;
     std::array<Binding, NUM_STORAGE_BUFFERS> compute_storage_buffers;
@@ -674,6 +691,9 @@ void BufferCache<P>::BindHostGeometryBuffers(bool is_indexed) {
     }
     BindHostVertexBuffers();
     BindHostTransformFeedbackBuffers();
+    if (current_draw_indirect) {
+        BindHostDrawIndirectBuffers();
+    }
 }
 
 template <class P>
@@ -823,6 +843,7 @@ bool BufferCache<P>::ShouldWaitAsyncFlushes() const noexcept {
 template <class P>
 void BufferCache<P>::CommitAsyncFlushesHigh() {
     AccumulateFlushes();
+
     if (committed_ranges.empty()) {
         return;
     }
@@ -869,7 +890,7 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
                                 buffer_id,
                             });
                             // Align up to avoid cache conflicts
-                            constexpr u64 align = 256ULL;
+                            constexpr u64 align = 8ULL;
                             constexpr u64 mask = ~(align - 1ULL);
                             total_size_bytes += (new_size + align - 1) & mask;
                             largest_copy = std::max(largest_copy, new_size);
@@ -1039,6 +1060,19 @@ void BufferCache<P>::BindHostVertexBuffers() {
         const u32 offset = buffer.Offset(binding.cpu_addr);
         runtime.BindVertexBuffer(index, buffer, offset, binding.size, stride);
     }
+}
+
+template <class P>
+void BufferCache<P>::BindHostDrawIndirectBuffers() {
+    const auto bind_buffer = [this](const Binding& binding) {
+        Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer, binding.buffer_id);
+        SynchronizeBuffer(buffer, binding.cpu_addr, binding.size);
+    };
+    if (current_draw_indirect->include_count) {
+        bind_buffer(count_buffer_binding);
+    }
+    bind_buffer(indirect_buffer_binding);
 }
 
 template <class P>
@@ -1272,6 +1306,9 @@ void BufferCache<P>::DoUpdateGraphicsBuffers(bool is_indexed) {
             UpdateStorageBuffers(stage);
             UpdateTextureBuffers(stage);
         }
+        if (current_draw_indirect) {
+            UpdateDrawIndirect();
+        }
     } while (has_deleted_buffers);
 }
 
@@ -1289,7 +1326,7 @@ void BufferCache<P>::UpdateIndexBuffer() {
     const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
     const auto& index_array = draw_state.index_buffer;
     auto& flags = maxwell3d->dirty.flags;
-    if (!flags[Dirty::IndexBuffer] && last_index_count == index_array.count) {
+    if (!flags[Dirty::IndexBuffer]) {
         return;
     }
     flags[Dirty::IndexBuffer] = false;
@@ -1359,6 +1396,27 @@ void BufferCache<P>::UpdateVertexBuffer(u32 index) {
         .size = size,
         .buffer_id = FindBuffer(*cpu_addr, size),
     };
+}
+
+template <class P>
+void BufferCache<P>::UpdateDrawIndirect() {
+    const auto update = [this](GPUVAddr gpu_addr, size_t size, Binding& binding) {
+        const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
+        if (!cpu_addr) {
+            binding = NULL_BINDING;
+            return;
+        }
+        binding = Binding{
+            .cpu_addr = *cpu_addr,
+            .size = static_cast<u32>(size),
+            .buffer_id = FindBuffer(*cpu_addr, static_cast<u32>(size)),
+        };
+    };
+    if (current_draw_indirect->include_count) {
+        update(current_draw_indirect->count_start_address, sizeof(u32), count_buffer_binding);
+    }
+    update(current_draw_indirect->indirect_start_address, current_draw_indirect->buffer_size,
+           indirect_buffer_binding);
 }
 
 template <class P>
@@ -1939,6 +1997,18 @@ bool BufferCache<P>::HasFastUniformBufferBound(size_t stage, u32 binding_index) 
         // Only OpenGL has fast uniform buffers
         return false;
     }
+}
+
+template <class P>
+std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirectCount() {
+    auto& buffer = slot_buffers[count_buffer_binding.buffer_id];
+    return std::make_pair(&buffer, buffer.Offset(count_buffer_binding.cpu_addr));
+}
+
+template <class P>
+std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirectBuffer() {
+    auto& buffer = slot_buffers[indirect_buffer_binding.buffer_id];
+    return std::make_pair(&buffer, buffer.Offset(indirect_buffer_binding.cpu_addr));
 }
 
 } // namespace VideoCommon

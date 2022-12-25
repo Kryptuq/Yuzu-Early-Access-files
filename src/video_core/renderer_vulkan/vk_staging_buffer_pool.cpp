@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <algorithm>
 #include <utility>
@@ -30,8 +30,7 @@ constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
 constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
 constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
 
-constexpr VkMemoryPropertyFlags HOST_FLAGS =
-    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+constexpr VkMemoryPropertyFlags HOST_FLAGS = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 constexpr VkMemoryPropertyFlags STREAM_FLAGS = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | HOST_FLAGS;
 
 bool IsStreamHeap(VkMemoryHeap heap) noexcept {
@@ -93,8 +92,7 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .pNext = nullptr,
         .flags = 0,
         .size = STREAM_BUFFER_SIZE,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
@@ -142,11 +140,23 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
 
 StagingBufferPool::~StagingBufferPool() = default;
 
-StagingBufferRef StagingBufferPool::Request(size_t size, MemoryUsage usage) {
-    if (usage == MemoryUsage::Upload && size <= MAX_STREAM_BUFFER_REQUEST_SIZE) {
+StagingBufferRef StagingBufferPool::Request(size_t size, MemoryUsage usage, bool deferred) {
+    if (!deferred && usage == MemoryUsage::Upload && size <= MAX_STREAM_BUFFER_REQUEST_SIZE) {
         return GetStreamBuffer(size);
     }
-    return GetStagingBuffer(size, usage);
+    return GetStagingBuffer(size, usage, deferred);
+}
+
+void StagingBufferPool::FreeDeferred(StagingBufferRef& ref) {
+    auto& entries = GetCache(ref.usage)[ref.log2_level].entries;
+    const auto is_this_one = [&ref](const StagingBuffer& entry) {
+        return entry.index == ref.index;
+    };
+    auto it = std::find_if(entries.begin(), entries.end(), is_this_one);
+    ASSERT(it != entries.end());
+    ASSERT(it->deferred);
+    it->tick = scheduler.CurrentTick();
+    it->deferred = false;
 }
 
 void StagingBufferPool::TickFrame() {
@@ -187,6 +197,9 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
         .buffer = *stream_buffer,
         .offset = static_cast<VkDeviceSize>(offset),
         .mapped_span = std::span<u8>(stream_pointer + offset, size),
+        .usage{},
+        .log2_level{},
+        .index{},
     };
 }
 
@@ -196,19 +209,21 @@ bool StagingBufferPool::AreRegionsActive(size_t region_begin, size_t region_end)
                        [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; });
 };
 
-StagingBufferRef StagingBufferPool::GetStagingBuffer(size_t size, MemoryUsage usage) {
-    if (const std::optional<StagingBufferRef> ref = TryGetReservedBuffer(size, usage)) {
+StagingBufferRef StagingBufferPool::GetStagingBuffer(size_t size, MemoryUsage usage,
+                                                     bool deferred) {
+    if (const std::optional<StagingBufferRef> ref = TryGetReservedBuffer(size, usage, deferred)) {
         return *ref;
     }
-    return CreateStagingBuffer(size, usage);
+    return CreateStagingBuffer(size, usage, deferred);
 }
 
 std::optional<StagingBufferRef> StagingBufferPool::TryGetReservedBuffer(size_t size,
-                                                                        MemoryUsage usage) {
+                                                                        MemoryUsage usage,
+                                                                        bool deferred) {
     StagingBuffers& cache_level = GetCache(usage)[Common::Log2Ceil64(size)];
 
     const auto is_free = [this](const StagingBuffer& entry) {
-        return scheduler.IsFree(entry.tick);
+        return !entry.deferred && scheduler.IsFree(entry.tick);
     };
     auto& entries = cache_level.entries;
     const auto hint_it = entries.begin() + cache_level.iterate_index;
@@ -220,20 +235,28 @@ std::optional<StagingBufferRef> StagingBufferPool::TryGetReservedBuffer(size_t s
         }
     }
     cache_level.iterate_index = std::distance(entries.begin(), it) + 1;
-    it->tick = scheduler.CurrentTick();
+    it->tick = deferred ? std::numeric_limits<u64>::max() : scheduler.CurrentTick();
+    ASSERT(!it->deferred);
+    it->deferred = deferred;
     return it->Ref();
 }
 
-StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage usage) {
+StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage usage,
+                                                        bool deferred) {
     const u32 log2 = Common::Log2Ceil64(size);
+    VkBufferUsageFlags usage_flags{};
+    if (usage == MemoryUsage::Upload) {
+        usage_flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+    if (usage == MemoryUsage::Download) {
+        usage_flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
     vk::Buffer buffer = device.GetLogical().CreateBuffer({
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .size = 1ULL << log2,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .usage = usage_flags,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
@@ -249,7 +272,11 @@ StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage
         .buffer = std::move(buffer),
         .commit = std::move(commit),
         .mapped_span = mapped_span,
-        .tick = scheduler.CurrentTick(),
+        .usage = usage,
+        .log2_level = log2,
+        .index = unique_ids++,
+        .tick = deferred ? std::numeric_limits<u64>::max() : scheduler.CurrentTick(),
+        .deferred = deferred,
     });
     return entry.Ref();
 }

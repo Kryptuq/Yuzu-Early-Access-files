@@ -309,6 +309,8 @@ private:
     /// Performs the copy from the source surface to the destination surface as configured in the
     /// registers.
     void Blit();
+
+    void ConsumeSinkImpl() override;
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

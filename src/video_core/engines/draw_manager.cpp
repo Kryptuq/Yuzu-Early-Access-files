@@ -91,6 +91,23 @@ void DrawManager::DrawIndex(PrimitiveTopology topology, u32 index_first, u32 ind
     ProcessDraw(true, num_instances);
 }
 
+void DrawManager::DrawArrayIndirect(PrimitiveTopology topology) {
+    draw_state.topology = topology;
+
+    ProcessDrawIndirect(true);
+}
+
+void DrawManager::DrawIndexedIndirect(PrimitiveTopology topology, u32 index_first,
+                                      u32 index_count) {
+    const auto& regs{maxwell3d->regs};
+    draw_state.topology = topology;
+    draw_state.index_buffer = regs.index_buffer;
+    draw_state.index_buffer.first = index_first;
+    draw_state.index_buffer.count = index_count;
+
+    ProcessDrawIndirect(true);
+}
+
 void DrawManager::SetInlineIndexBuffer(u32 index) {
     draw_state.inline_index_draw_indexes.push_back(static_cast<u8>(index & 0x000000ff));
     draw_state.inline_index_draw_indexes.push_back(static_cast<u8>((index & 0x0000ff00) >> 8));
@@ -196,6 +213,17 @@ void DrawManager::ProcessDraw(bool draw_indexed, u32 instance_count) {
 
     if (maxwell3d->ShouldExecute()) {
         maxwell3d->rasterizer->Draw(draw_indexed, instance_count);
+    }
+}
+
+void DrawManager::ProcessDrawIndirect(bool draw_indexed) {
+    LOG_TRACE(HW_GPU, "called, topology={}, count={}", draw_state.topology,
+              draw_indexed ? draw_state.index_buffer.count : draw_state.vertex_buffer.count);
+
+    UpdateTopology();
+
+    if (maxwell3d->ShouldExecute()) {
+        maxwell3d->rasterizer->DrawIndirect();
     }
 }
 } // namespace Tegra::Engines

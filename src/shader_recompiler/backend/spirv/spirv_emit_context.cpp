@@ -1379,18 +1379,28 @@ void EmitContext::DefineInputs(const IR::Program& program) {
     if (loads[IR::Attribute::InstanceId]) {
         if (profile.support_vertex_instance_id) {
             instance_id = DefineInput(*this, U32[1], true, spv::BuiltIn::InstanceId);
+            if (loads[IR::Attribute::BaseInstance]) {
+                base_instance = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
+            }
         } else {
             instance_index = DefineInput(*this, U32[1], true, spv::BuiltIn::InstanceIndex);
             base_instance = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseInstance);
         }
+    } else if (loads[IR::Attribute::BaseInstance]) {
+        base_instance = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseInstance);
     }
     if (loads[IR::Attribute::VertexId]) {
         if (profile.support_vertex_instance_id) {
             vertex_id = DefineInput(*this, U32[1], true, spv::BuiltIn::VertexId);
+            if (loads[IR::Attribute::BaseVertex]) {
+                base_vertex = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
+            }
         } else {
             vertex_index = DefineInput(*this, U32[1], true, spv::BuiltIn::VertexIndex);
             base_vertex = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
         }
+    } else if (loads[IR::Attribute::BaseVertex]) {
+        base_vertex = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
     }
     if (loads[IR::Attribute::FrontFace]) {
         front_face = DefineInput(*this, U1, true, spv::BuiltIn::FrontFacing);

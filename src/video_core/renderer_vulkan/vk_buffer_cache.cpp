@@ -56,7 +56,8 @@ vk::Buffer CreateBuffer(const Device& device, u64 size) {
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     if (device.IsExtTransformFeedbackSupported()) {
         flags |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
     }
@@ -516,6 +517,7 @@ void BufferCacheRuntime::ReserveNullBuffer() {
     if (device.IsExtTransformFeedbackSupported()) {
         create_info.usage |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
     }
+    create_info.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     null_buffer = device.GetLogical().CreateBuffer(create_info);
     if (device.HasDebuggingToolAttached()) {
         null_buffer.SetObjectNameEXT("Null buffer");

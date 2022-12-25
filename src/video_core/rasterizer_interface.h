@@ -8,6 +8,7 @@
 #include <span>
 #include "common/common_types.h"
 #include "common/polyfill_thread.h"
+#include "video_core/cache_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
 
@@ -41,6 +42,9 @@ public:
 
     /// Dispatches a draw invocation
     virtual void Draw(bool is_indexed, u32 instance_count) = 0;
+
+    /// Dispatches an indirect draw invocation
+    virtual void DrawIndirect() {}
 
     /// Clear the current framebuffer
     virtual void Clear(u32 layer_count) = 0;
@@ -80,13 +84,16 @@ public:
     virtual void FlushAll() = 0;
 
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
-    virtual void FlushRegion(VAddr addr, u64 size) = 0;
+    virtual void FlushRegion(VAddr addr, u64 size,
+                             VideoCommon::CacheType which = VideoCommon::CacheType::All) = 0;
 
     /// Check if the the specified memory area requires flushing to CPU Memory.
-    virtual bool MustFlushRegion(VAddr addr, u64 size) = 0;
+    virtual bool MustFlushRegion(VAddr addr, u64 size,
+                                 VideoCommon::CacheType which = VideoCommon::CacheType::All) = 0;
 
     /// Notify rasterizer that any caches of the specified region should be invalidated
-    virtual void InvalidateRegion(VAddr addr, u64 size) = 0;
+    virtual void InvalidateRegion(VAddr addr, u64 size,
+                                  VideoCommon::CacheType which = VideoCommon::CacheType::All) = 0;
 
     /// Notify rasterizer that any caches of the specified region are desync with guest
     virtual void OnCPUWrite(VAddr addr, u64 size) = 0;
@@ -102,7 +109,8 @@ public:
 
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     /// and invalidated
-    virtual void FlushAndInvalidateRegion(VAddr addr, u64 size) = 0;
+    virtual void FlushAndInvalidateRegion(
+        VAddr addr, u64 size, VideoCommon::CacheType which = VideoCommon::CacheType::All) = 0;
 
     /// Notify the host renderer to wait for previous primitive and compute operations.
     virtual void WaitForIdle() = 0;
@@ -118,6 +126,10 @@ public:
 
     /// Notify rasterizer that a frame is about to finish
     virtual void TickFrame() = 0;
+
+    virtual bool AccelerateConditionalRendering() {
+        return false;
+    }
 
     /// Attempt to use a faster method to perform a surface copy
     [[nodiscard]] virtual bool AccelerateSurfaceCopy(

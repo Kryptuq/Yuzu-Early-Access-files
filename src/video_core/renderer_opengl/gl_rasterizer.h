@@ -69,6 +69,7 @@ public:
     ~RasterizerOpenGL() override;
 
     void Draw(bool is_indexed, u32 instance_count) override;
+    void DrawIndirect() override;
     void Clear(u32 layer_count) override;
     void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;
@@ -76,9 +77,12 @@ public:
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
     void DisableGraphicsUniformBuffer(size_t stage, u32 index) override;
     void FlushAll() override;
-    void FlushRegion(VAddr addr, u64 size) override;
-    bool MustFlushRegion(VAddr addr, u64 size) override;
-    void InvalidateRegion(VAddr addr, u64 size) override;
+    void FlushRegion(VAddr addr, u64 size,
+                     VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    bool MustFlushRegion(VAddr addr, u64 size,
+                         VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    void InvalidateRegion(VAddr addr, u64 size,
+                          VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void OnCPUWrite(VAddr addr, u64 size) override;
     void InvalidateGPUCache() override;
     void UnmapMemory(VAddr addr, u64 size) override;
@@ -88,12 +92,14 @@ public:
     void SignalSyncPoint(u32 value) override;
     void SignalReference() override;
     void ReleaseFences() override;
-    void FlushAndInvalidateRegion(VAddr addr, u64 size) override;
+    void FlushAndInvalidateRegion(
+        VAddr addr, u64 size, VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void WaitForIdle() override;
     void FragmentBarrier() override;
     void TiledCacheBarrier() override;
     void FlushCommands() override;
     void TickFrame() override;
+    bool AccelerateConditionalRendering() override;
     bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
                                const Tegra::Engines::Fermi2D::Surface& dst,
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
@@ -120,6 +126,9 @@ private:
     static constexpr size_t MAX_TEXTURES = 192;
     static constexpr size_t MAX_IMAGES = 48;
     static constexpr size_t MAX_IMAGE_VIEWS = MAX_TEXTURES + MAX_IMAGES;
+
+    template <typename Func>
+    void PrepareDraw(bool is_indexed, Func&&);
 
     /// Syncs state to match guest's
     void SyncState();

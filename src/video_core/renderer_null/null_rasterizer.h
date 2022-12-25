@@ -38,9 +38,12 @@ public:
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
     void DisableGraphicsUniformBuffer(size_t stage, u32 index) override;
     void FlushAll() override;
-    void FlushRegion(VAddr addr, u64 size) override;
-    bool MustFlushRegion(VAddr addr, u64 size) override;
-    void InvalidateRegion(VAddr addr, u64 size) override;
+    void FlushRegion(VAddr addr, u64 size,
+                     VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    bool MustFlushRegion(VAddr addr, u64 size,
+                         VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    void InvalidateRegion(VAddr addr, u64 size,
+                          VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void OnCPUWrite(VAddr addr, u64 size) override;
     void InvalidateGPUCache() override;
     void UnmapMemory(VAddr addr, u64 size) override;
@@ -50,7 +53,8 @@ public:
     void SignalSyncPoint(u32 value) override;
     void SignalReference() override;
     void ReleaseFences() override;
-    void FlushAndInvalidateRegion(VAddr addr, u64 size) override;
+    void FlushAndInvalidateRegion(
+        VAddr addr, u64 size, VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void WaitForIdle() override;
     void FragmentBarrier() override;
     void TiledCacheBarrier() override;

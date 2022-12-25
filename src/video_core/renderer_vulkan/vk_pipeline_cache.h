@@ -160,6 +160,7 @@ private:
 
     Common::ThreadWorker workers;
     Common::ThreadWorker serialization_thread;
+    DynamicFeatures dynamic_features;
 };
 
 } // namespace Vulkan

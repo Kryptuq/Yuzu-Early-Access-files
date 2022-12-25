@@ -156,6 +156,8 @@ private:
         u32 subchannel;        ///< Current subchannel
         u32 method_count;      ///< Current method count
         u32 length_pending;    ///< Large NI command length pending
+        GPUVAddr dma_get;      ///< Currently read segment
+        u64 dma_word_offset;   ///< Current word ofset from address
         bool non_incrementing; ///< Current command's NI flag
         bool is_last_call;
     };

@@ -213,6 +213,10 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdDispatch vkCmdDispatch{};
     PFN_vkCmdDraw vkCmdDraw{};
     PFN_vkCmdDrawIndexed vkCmdDrawIndexed{};
+    PFN_vkCmdDrawIndirect vkCmdDrawIndirect{};
+    PFN_vkCmdDrawIndexedIndirect vkCmdDrawIndexedIndirect{};
+    PFN_vkCmdDrawIndirectCountKHR vkCmdDrawIndirectCountKHR{};
+    PFN_vkCmdDrawIndexedIndirectCountKHR vkCmdDrawIndexedIndirectCountKHR{};
     PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT{};
     PFN_vkCmdEndQuery vkCmdEndQuery{};
     PFN_vkCmdEndRenderPass vkCmdEndRenderPass{};
@@ -230,8 +234,15 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdSetDepthCompareOpEXT vkCmdSetDepthCompareOpEXT{};
     PFN_vkCmdSetDepthTestEnableEXT vkCmdSetDepthTestEnableEXT{};
     PFN_vkCmdSetDepthWriteEnableEXT vkCmdSetDepthWriteEnableEXT{};
+    PFN_vkCmdSetPrimitiveRestartEnableEXT vkCmdSetPrimitiveRestartEnableEXT{};
+    PFN_vkCmdSetRasterizerDiscardEnableEXT vkCmdSetRasterizerDiscardEnableEXT{};
+    PFN_vkCmdSetDepthBiasEnableEXT vkCmdSetDepthBiasEnableEXT{};
+    PFN_vkCmdSetLogicOpEnableEXT vkCmdSetLogicOpEnableEXT{};
+    PFN_vkCmdSetDepthClampEnableEXT vkCmdSetDepthClampEnableEXT{};
     PFN_vkCmdSetEvent vkCmdSetEvent{};
     PFN_vkCmdSetFrontFaceEXT vkCmdSetFrontFaceEXT{};
+    PFN_vkCmdSetPatchControlPointsEXT vkCmdSetPatchControlPointsEXT{};
+    PFN_vkCmdSetLogicOpEXT vkCmdSetLogicOpEXT{};
     PFN_vkCmdSetLineWidth vkCmdSetLineWidth{};
     PFN_vkCmdSetPrimitiveTopologyEXT vkCmdSetPrimitiveTopologyEXT{};
     PFN_vkCmdSetScissor vkCmdSetScissor{};
@@ -242,6 +253,9 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdSetStencilWriteMask vkCmdSetStencilWriteMask{};
     PFN_vkCmdSetVertexInputEXT vkCmdSetVertexInputEXT{};
     PFN_vkCmdSetViewport vkCmdSetViewport{};
+    PFN_vkCmdSetColorWriteMaskEXT vkCmdSetColorWriteMaskEXT{};
+    PFN_vkCmdSetColorBlendEnableEXT vkCmdSetColorBlendEnableEXT{};
+    PFN_vkCmdSetColorBlendEquationEXT vkCmdSetColorBlendEquationEXT{};
     PFN_vkCmdWaitEvents vkCmdWaitEvents{};
     PFN_vkCreateBuffer vkCreateBuffer{};
     PFN_vkCreateBufferView vkCreateBufferView{};
@@ -1019,6 +1033,29 @@ public:
                               first_instance);
     }
 
+    void DrawIndirect(VkBuffer src_buffer, VkDeviceSize src_offset, u32 draw_count,
+                      u32 stride) const noexcept {
+        dld->vkCmdDrawIndirect(handle, src_buffer, src_offset, draw_count, stride);
+    }
+
+    void DrawIndexedIndirect(VkBuffer src_buffer, VkDeviceSize src_offset, u32 draw_count,
+                             u32 stride) const noexcept {
+        dld->vkCmdDrawIndexedIndirect(handle, src_buffer, src_offset, draw_count, stride);
+    }
+
+    void DrawIndirectCount(VkBuffer src_buffer, VkDeviceSize src_offset, VkBuffer count_buffer,
+                           VkDeviceSize count_offset, u32 draw_count, u32 stride) const noexcept {
+        dld->vkCmdDrawIndirectCountKHR(handle, src_buffer, src_offset, count_buffer, count_offset,
+                                       draw_count, stride);
+    }
+
+    void DrawIndexedIndirectCount(VkBuffer src_buffer, VkDeviceSize src_offset,
+                                  VkBuffer count_buffer, VkDeviceSize count_offset, u32 draw_count,
+                                  u32 stride) const noexcept {
+        dld->vkCmdDrawIndexedIndirectCountKHR(handle, src_buffer, src_offset, count_buffer,
+                                              count_offset, draw_count, stride);
+    }
+
     void ClearAttachments(Span<VkClearAttachment> attachments,
                           Span<VkClearRect> rects) const noexcept {
         dld->vkCmdClearAttachments(handle, attachments.size(), attachments.data(), rects.size(),
@@ -1192,8 +1229,49 @@ public:
         dld->vkCmdSetDepthWriteEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
     }
 
+    void SetPrimitiveRestartEnableEXT(bool enable) const noexcept {
+        dld->vkCmdSetPrimitiveRestartEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetRasterizerDiscardEnableEXT(bool enable) const noexcept {
+        dld->vkCmdSetRasterizerDiscardEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetDepthBiasEnableEXT(bool enable) const noexcept {
+        dld->vkCmdSetDepthBiasEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetLogicOpEnableEXT(bool enable) const noexcept {
+        dld->vkCmdSetLogicOpEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetDepthClampEnableEXT(bool enable) const noexcept {
+        dld->vkCmdSetDepthClampEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
     void SetFrontFaceEXT(VkFrontFace front_face) const noexcept {
         dld->vkCmdSetFrontFaceEXT(handle, front_face);
+    }
+
+    void SetLogicOpEXT(VkLogicOp logic_op) const noexcept {
+        dld->vkCmdSetLogicOpEXT(handle, logic_op);
+    }
+
+    void SetPatchControlPointsEXT(uint32_t patch_control_points) const noexcept {
+        dld->vkCmdSetPatchControlPointsEXT(handle, patch_control_points);
+    }
+
+    void SetColorWriteMaskEXT(u32 first, Span<VkColorComponentFlags> masks) const noexcept {
+        dld->vkCmdSetColorWriteMaskEXT(handle, first, masks.size(), masks.data());
+    }
+
+    void SetColorBlendEnableEXT(u32 first, Span<VkBool32> enables) const noexcept {
+        dld->vkCmdSetColorBlendEnableEXT(handle, first, enables.size(), enables.data());
+    }
+
+    void SetColorBlendEquationEXT(u32 first,
+                                  Span<VkColorBlendEquationEXT> equations) const noexcept {
+        dld->vkCmdSetColorBlendEquationEXT(handle, first, equations.size(), equations.data());
     }
 
     void SetLineWidth(float line_width) const noexcept {

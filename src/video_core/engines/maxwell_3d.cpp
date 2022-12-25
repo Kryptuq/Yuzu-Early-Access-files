@@ -4,6 +4,8 @@
 #include <cstring>
 #include <optional>
 #include "common/assert.h"
+#include "common/scope_exit.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "video_core/dirty_flags.h"
@@ -28,6 +30,10 @@ Maxwell3D::Maxwell3D(Core::System& system_, MemoryManager& memory_manager_)
                                                                                 regs.upload} {
     dirty.flags.flip();
     InitializeRegisterDefaults();
+    execution_mask.reset();
+    for (size_t i = 0; i < execution_mask.size(); i++) {
+        execution_mask[i] = IsMethodExecutable(static_cast<u32>(i));
+    }
 }
 
 Maxwell3D::~Maxwell3D() = default;
@@ -121,6 +127,71 @@ void Maxwell3D::InitializeRegisterDefaults() {
     shadow_state = regs;
 }
 
+bool Maxwell3D::IsMethodExecutable(u32 method) {
+    if (method >= MacroRegistersStart) {
+        return true;
+    }
+    switch (method) {
+    case MAXWELL3D_REG_INDEX(draw.end):
+    case MAXWELL3D_REG_INDEX(draw.begin):
+    case MAXWELL3D_REG_INDEX(vertex_buffer.first):
+    case MAXWELL3D_REG_INDEX(vertex_buffer.count):
+    case MAXWELL3D_REG_INDEX(index_buffer.first):
+    case MAXWELL3D_REG_INDEX(index_buffer.count):
+    case MAXWELL3D_REG_INDEX(draw_inline_index):
+    case MAXWELL3D_REG_INDEX(index_buffer32_subsequent):
+    case MAXWELL3D_REG_INDEX(index_buffer16_subsequent):
+    case MAXWELL3D_REG_INDEX(index_buffer8_subsequent):
+    case MAXWELL3D_REG_INDEX(index_buffer32_first):
+    case MAXWELL3D_REG_INDEX(index_buffer16_first):
+    case MAXWELL3D_REG_INDEX(index_buffer8_first):
+    case MAXWELL3D_REG_INDEX(inline_index_2x16.even):
+    case MAXWELL3D_REG_INDEX(inline_index_4x8.index0):
+    case MAXWELL3D_REG_INDEX(vertex_array_instance_first):
+    case MAXWELL3D_REG_INDEX(vertex_array_instance_subsequent):
+    case MAXWELL3D_REG_INDEX(wait_for_idle):
+    case MAXWELL3D_REG_INDEX(shadow_ram_control):
+    case MAXWELL3D_REG_INDEX(load_mme.instruction_ptr):
+    case MAXWELL3D_REG_INDEX(load_mme.instruction):
+    case MAXWELL3D_REG_INDEX(load_mme.start_address):
+    case MAXWELL3D_REG_INDEX(falcon[4]):
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer):
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 1:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 2:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 3:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 4:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 5:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 6:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 7:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 8:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 9:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 10:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 11:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 12:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 13:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 14:
+    case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 15:
+    case MAXWELL3D_REG_INDEX(bind_groups[0].raw_config):
+    case MAXWELL3D_REG_INDEX(bind_groups[1].raw_config):
+    case MAXWELL3D_REG_INDEX(bind_groups[2].raw_config):
+    case MAXWELL3D_REG_INDEX(bind_groups[3].raw_config):
+    case MAXWELL3D_REG_INDEX(bind_groups[4].raw_config):
+    case MAXWELL3D_REG_INDEX(topology_override):
+    case MAXWELL3D_REG_INDEX(clear_surface):
+    case MAXWELL3D_REG_INDEX(report_semaphore.query):
+    case MAXWELL3D_REG_INDEX(render_enable.mode):
+    case MAXWELL3D_REG_INDEX(clear_report_value):
+    case MAXWELL3D_REG_INDEX(sync_info):
+    case MAXWELL3D_REG_INDEX(launch_dma):
+    case MAXWELL3D_REG_INDEX(inline_data):
+    case MAXWELL3D_REG_INDEX(fragment_barrier):
+    case MAXWELL3D_REG_INDEX(tiled_cache_barrier):
+        return true;
+    default:
+        return false;
+    }
+}
+
 void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool is_last_call) {
     if (executing_macro == 0) {
         // A macro call must begin by writing the macro method's register, not its argument.
@@ -130,12 +201,73 @@ void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool
     }
 
     macro_params.insert(macro_params.end(), base_start, base_start + amount);
+    for (size_t i = 0; i < amount; i++) {
+        macro_addresses.push_back(current_dma_segment + i * sizeof(u32));
+    }
+    macro_segments.emplace_back(current_dma_segment, amount);
+    current_macro_dirty |= current_dirty;
+    current_dirty = false;
 
     // Call the macro when there are no more parameters in the command buffer
     if (is_last_call) {
+        ConsumeSink();
         CallMacroMethod(executing_macro, macro_params);
         macro_params.clear();
+        macro_addresses.clear();
+        macro_segments.clear();
+        current_macro_dirty = false;
     }
+}
+
+void Maxwell3D::RefreshParametersImpl() {
+    if (!Settings::IsGPULevelHigh()) {
+        return;
+    }
+    size_t current_index = 0;
+    for (auto& segment : macro_segments) {
+        if (segment.first == 0) {
+            current_index += segment.second;
+            continue;
+        }
+        memory_manager.ReadBlock(segment.first, &macro_params[current_index],
+                                 sizeof(u32) * segment.second);
+        current_index += segment.second;
+    }
+}
+
+u32 Maxwell3D::GetMaxCurrentVertices() {
+    u32 num_vertices = 0;
+    for (size_t index = 0; index < Regs::NumVertexArrays; ++index) {
+        const auto& array = regs.vertex_streams[index];
+        if (array.enable == 0) {
+            continue;
+        }
+        const auto& attribute = regs.vertex_attrib_format[index];
+        if (attribute.constant) {
+            num_vertices = std::max(num_vertices, 1U);
+            continue;
+        }
+        const auto& limit = regs.vertex_stream_limits[index];
+        const GPUVAddr gpu_addr_begin = array.Address();
+        const GPUVAddr gpu_addr_end = limit.Address() + 1;
+        const u32 address_size = static_cast<u32>(gpu_addr_end - gpu_addr_begin);
+        num_vertices = std::max(
+            num_vertices, address_size / std::max(attribute.SizeInBytes(), array.stride.Value()));
+    }
+    return num_vertices;
+}
+
+size_t Maxwell3D::EstimateIndexBufferSize() {
+    GPUVAddr start_address = regs.index_buffer.StartAddress();
+    GPUVAddr end_address = regs.index_buffer.EndAddress();
+    constexpr std::array<size_t, 4> max_sizes = {
+        std::numeric_limits<u8>::max(), std::numeric_limits<u16>::max(),
+        std::numeric_limits<u32>::max(), std::numeric_limits<u32>::max()};
+    const size_t byte_size = regs.index_buffer.FormatSizeInBytes();
+    return std::min<size_t>(
+        memory_manager.GetMemoryLayoutSize(start_address, byte_size * max_sizes[byte_size]) /
+            byte_size,
+        static_cast<size_t>(end_address - start_address));
 }
 
 u32 Maxwell3D::ProcessShadowRam(u32 method, u32 argument) {
@@ -150,6 +282,29 @@ u32 Maxwell3D::ProcessShadowRam(u32 method, u32 argument) {
         return shadow_state.reg_array[method];
     }
     return argument;
+}
+
+void Maxwell3D::ConsumeSinkImpl() {
+    SCOPE_EXIT({ method_sink.clear(); });
+    const auto control = shadow_state.shadow_ram_control;
+    if (control == Regs::ShadowRamControl::Track ||
+        control == Regs::ShadowRamControl::TrackWithFilter) {
+
+        for (auto [method, value] : method_sink) {
+            shadow_state.reg_array[method] = value;
+            ProcessDirtyRegisters(method, value);
+        }
+        return;
+    }
+    if (control == Regs::ShadowRamControl::Replay) {
+        for (auto [method, value] : method_sink) {
+            ProcessDirtyRegisters(method, shadow_state.reg_array[method]);
+        }
+        return;
+    }
+    for (auto [method, value] : method_sink) {
+        ProcessDirtyRegisters(method, value);
+    }
 }
 
 void Maxwell3D::ProcessDirtyRegisters(u32 method, u32 argument) {
@@ -263,7 +418,6 @@ void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
 
     const u32 argument = ProcessShadowRam(method, method_argument);
     ProcessDirtyRegisters(method, argument);
-
     ProcessMethodCall(method, argument, method_argument, is_last_call);
 }
 
@@ -383,13 +537,17 @@ void Maxwell3D::ProcessQueryGet() {
 void Maxwell3D::ProcessQueryCondition() {
     const GPUVAddr condition_address{regs.render_enable.Address()};
     switch (regs.render_enable_override) {
-    case Regs::RenderEnable::Override::AlwaysRender:
+    case Regs::RenderEnable::Override::AlwaysRender: {
         execute_on = true;
         break;
     case Regs::RenderEnable::Override::NeverRender:
         execute_on = false;
         break;
-    case Regs::RenderEnable::Override::UseRenderEnable:
+    case Regs::RenderEnable::Override::UseRenderEnable: {
+        if (rasterizer->AccelerateConditionalRendering()) {
+            execute_on = true;
+            return;
+        }
         switch (regs.render_enable.mode) {
         case Regs::RenderEnable::Mode::True: {
             execute_on = true;
@@ -427,6 +585,8 @@ void Maxwell3D::ProcessQueryCondition() {
         }
         break;
     }
+    }
+    }
 }
 
 void Maxwell3D::ProcessCounterReset() {
@@ -463,7 +623,8 @@ std::optional<u64> Maxwell3D::GetQueryResult() {
 }
 
 void Maxwell3D::ProcessCBBind(size_t stage_index) {
-    // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
+    // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader
+    // stage.
     const auto& bind_data = regs.bind_groups[stage_index];
     auto& buffer = state.shader_stages[stage_index].const_buffers[bind_data.shader_slot];
     buffer.enabled = bind_data.valid.Value() != 0;
@@ -522,6 +683,11 @@ Texture::TSCEntry Maxwell3D::GetTSCEntry(u32 tsc_index) const {
 u32 Maxwell3D::GetRegisterValue(u32 method) const {
     ASSERT_MSG(method < Regs::NUM_REGS, "Invalid Maxwell3D register");
     return regs.reg_array[method];
+}
+
+void Maxwell3D::setHLEReplacementName(u32 bank, u32 offset, HLEReplaceName name) {
+    const u64 key = (static_cast<u64>(bank) << 32) | offset;
+    replace_table.emplace(key, name);
 }
 
 } // namespace Tegra::Engines

@@ -51,7 +51,7 @@ using VideoCommon::LoadPipelines;
 using VideoCommon::SerializePipeline;
 using Context = ShaderContext::Context;
 
-constexpr u32 CACHE_VERSION = 7;
+constexpr u32 CACHE_VERSION = 8;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -350,6 +350,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
         regs.tessellation.params.output_primitives.Value() ==
         Maxwell::Tessellation::OutputPrimitives::Triangles_CW);
     graphics_key.xfb_enabled.Assign(regs.transform_feedback_enabled != 0 ? 1 : 0);
+    graphics_key.app_stage.Assign(maxwell3d->engine_state);
     if (graphics_key.xfb_enabled) {
         SetXfbState(graphics_key.xfb_state, regs);
     }

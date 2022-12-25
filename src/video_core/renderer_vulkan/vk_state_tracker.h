@@ -45,8 +45,18 @@ enum : u8 {
     FrontFace,
     StencilOp,
     StencilTestEnable,
+    PrimitiveRestartEnable,
+    RasterizerDiscardEnable,
+    DepthBiasEnable,
+    StateEnable,
+    LogicOp,
+    LogicOpEnable,
+    DepthClampEnable,
 
     Blending,
+    BlendEnable,
+    BlendEquations,
+    ColorMask,
     ViewportSwizzles,
 
     Last,
@@ -111,6 +121,10 @@ public:
         return Exchange(Dirty::CullMode, false);
     }
 
+    bool TouchStateEnable() {
+        return Exchange(Dirty::StateEnable, false);
+    }
+
     bool TouchDepthBoundsTestEnable() {
         return Exchange(Dirty::DepthBoundsEnable, false);
     }
@@ -121,6 +135,26 @@ public:
 
     bool TouchDepthWriteEnable() {
         return Exchange(Dirty::DepthWriteEnable, false);
+    }
+
+    bool TouchPrimitiveRestartEnable() {
+        return Exchange(Dirty::PrimitiveRestartEnable, false);
+    }
+
+    bool TouchRasterizerDiscardEnable() {
+        return Exchange(Dirty::RasterizerDiscardEnable, false);
+    }
+
+    bool TouchDepthBiasEnable() {
+        return Exchange(Dirty::DepthBiasEnable, false);
+    }
+
+    bool TouchLogicOpEnable() {
+        return Exchange(Dirty::LogicOpEnable, false);
+    }
+
+    bool TouchDepthClampEnable() {
+        return Exchange(Dirty::DepthClampEnable, false);
     }
 
     bool TouchDepthCompareOp() {
@@ -135,8 +169,28 @@ public:
         return Exchange(Dirty::StencilOp, false);
     }
 
+    bool TouchBlending() {
+        return Exchange(Dirty::Blending, false);
+    }
+
+    bool TouchBlendEnable() {
+        return Exchange(Dirty::BlendEnable, false);
+    }
+
+    bool TouchBlendEquations() {
+        return Exchange(Dirty::BlendEquations, false);
+    }
+
+    bool TouchColorMask() {
+        return Exchange(Dirty::ColorMask, false);
+    }
+
     bool TouchStencilTestEnable() {
         return Exchange(Dirty::StencilTestEnable, false);
+    }
+
+    bool TouchLogicOp() {
+        return Exchange(Dirty::LogicOp, false);
     }
 
     bool ChangePrimitiveTopology(Maxwell::PrimitiveTopology new_topology) {

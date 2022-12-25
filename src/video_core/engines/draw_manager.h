@@ -32,6 +32,16 @@ public:
         std::vector<u8> inline_index_draw_indexes;
     };
 
+    struct IndirectParams {
+        bool is_indexed;
+        bool include_count;
+        GPUVAddr count_start_address;
+        GPUVAddr indirect_start_address;
+        size_t buffer_size;
+        size_t max_draw_counts;
+        size_t stride;
+    };
+
     explicit DrawManager(Maxwell3D* maxwell_3d);
 
     void ProcessMethodCall(u32 method, u32 argument);
@@ -46,8 +56,20 @@ public:
     void DrawIndex(PrimitiveTopology topology, u32 index_first, u32 index_count, u32 base_index,
                    u32 base_instance, u32 num_instances);
 
+    void DrawArrayIndirect(PrimitiveTopology topology);
+
+    void DrawIndexedIndirect(PrimitiveTopology topology, u32 index_first, u32 index_count);
+
     const State& GetDrawState() const {
         return draw_state;
+    }
+
+    IndirectParams& GetIndirectParams() {
+        return indirect_state;
+    }
+
+    const IndirectParams& GetIndirectParams() const {
+        return indirect_state;
     }
 
 private:
@@ -63,7 +85,10 @@ private:
 
     void ProcessDraw(bool draw_indexed, u32 instance_count);
 
+    void ProcessDrawIndirect(bool draw_indexed);
+
     Maxwell3D* maxwell3d{};
     State draw_state{};
+    IndirectParams indirect_state{};
 };
 } // namespace Tegra::Engines

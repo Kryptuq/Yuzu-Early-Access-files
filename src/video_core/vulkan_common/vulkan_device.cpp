@@ -350,8 +350,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .sampleRateShading = true,
             .dualSrcBlend = true,
             .logicOp = true,
-            .multiDrawIndirect = false,
-            .drawIndirectFirstInstance = false,
+            .multiDrawIndirect = true,
+            .drawIndirectFirstInstance = true,
             .depthClamp = true,
             .depthBiasClamp = true,
             .fillModeNonSolid = true,
@@ -569,6 +569,67 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamic_state_2;
+    if (ext_extended_dynamic_state_2) {
+        dynamic_state_2 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
+            .pNext = nullptr,
+            .extendedDynamicState2 = VK_TRUE,
+            .extendedDynamicState2LogicOp = ext_extended_dynamic_state_2_extra ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState2PatchControlPoints = VK_FALSE,
+        };
+        SetNext(next, dynamic_state_2);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state 2");
+    }
+
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamic_state_3;
+    if (ext_extended_dynamic_state_3) {
+        dynamic_state_3 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
+            .pNext = nullptr,
+            .extendedDynamicState3TessellationDomainOrigin = VK_FALSE,
+            .extendedDynamicState3DepthClampEnable =
+                ext_extended_dynamic_state_3_enables ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState3PolygonMode = VK_FALSE,
+            .extendedDynamicState3RasterizationSamples = VK_FALSE,
+            .extendedDynamicState3SampleMask = VK_FALSE,
+            .extendedDynamicState3AlphaToCoverageEnable = VK_FALSE,
+            .extendedDynamicState3AlphaToOneEnable = VK_FALSE,
+            .extendedDynamicState3LogicOpEnable =
+                ext_extended_dynamic_state_3_enables ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState3ColorBlendEnable =
+                ext_extended_dynamic_state_3_blend ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState3ColorBlendEquation =
+                ext_extended_dynamic_state_3_blend ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState3ColorWriteMask =
+                ext_extended_dynamic_state_3_blend ? VK_TRUE : VK_FALSE,
+            .extendedDynamicState3RasterizationStream = VK_FALSE,
+            .extendedDynamicState3ConservativeRasterizationMode = VK_FALSE,
+            .extendedDynamicState3ExtraPrimitiveOverestimationSize = VK_FALSE,
+            .extendedDynamicState3DepthClipEnable = VK_FALSE,
+            .extendedDynamicState3SampleLocationsEnable = VK_FALSE,
+            .extendedDynamicState3ColorBlendAdvanced = VK_FALSE,
+            .extendedDynamicState3ProvokingVertexMode = VK_FALSE,
+            .extendedDynamicState3LineRasterizationMode = VK_FALSE,
+            .extendedDynamicState3LineStippleEnable = VK_FALSE,
+            .extendedDynamicState3DepthClipNegativeOneToOne = VK_FALSE,
+            .extendedDynamicState3ViewportWScalingEnable = VK_FALSE,
+            .extendedDynamicState3ViewportSwizzle = VK_FALSE,
+            .extendedDynamicState3CoverageToColorEnable = VK_FALSE,
+            .extendedDynamicState3CoverageToColorLocation = VK_FALSE,
+            .extendedDynamicState3CoverageModulationMode = VK_FALSE,
+            .extendedDynamicState3CoverageModulationTableEnable = VK_FALSE,
+            .extendedDynamicState3CoverageModulationTable = VK_FALSE,
+            .extendedDynamicState3CoverageReductionMode = VK_FALSE,
+            .extendedDynamicState3RepresentativeFragmentTestEnable = VK_FALSE,
+            .extendedDynamicState3ShadingRateImageEnable = VK_FALSE,
+        };
+        SetNext(next, dynamic_state_3);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state 3");
+    }
+
     VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster;
     if (ext_line_rasterization) {
         line_raster = {
@@ -733,6 +794,16 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             LOG_WARNING(Render_Vulkan,
                         "RADV has broken VK_EXT_vertex_input_dynamic_state on RDNA2 hardware");
             ext_vertex_input_dynamic_state = false;
+        }
+    }
+    if (ext_extended_dynamic_state_2 && is_radv) {
+        const u32 version = (properties.driverVersion << 3) >> 3;
+        if (version < VK_MAKE_API_VERSION(0, 22, 3, 1)) {
+            LOG_WARNING(
+                Render_Vulkan,
+                "RADV versions older than 22.3.1 have broken VK_EXT_extended_dynamic_state2");
+            ext_extended_dynamic_state_2 = false;
+            ext_extended_dynamic_state_2_extra = false;
         }
     }
     sets_per_pool = 64;
@@ -1024,6 +1095,8 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(features.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics"),
         std::make_pair(features.imageCubeArray, "imageCubeArray"),
         std::make_pair(features.independentBlend, "independentBlend"),
+        std::make_pair(features.multiDrawIndirect, "multiDrawIndirect"),
+        std::make_pair(features.drawIndirectFirstInstance, "drawIndirectFirstInstance"),
         std::make_pair(features.depthClamp, "depthClamp"),
         std::make_pair(features.samplerAnisotropy, "samplerAnisotropy"),
         std::make_pair(features.largePoints, "largePoints"),
@@ -1089,6 +1162,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
     bool has_ext_extended_dynamic_state{};
+    bool has_ext_extended_dynamic_state_2{};
+    bool has_ext_extended_dynamic_state_3{};
     bool has_ext_shader_atomic_int64{};
     bool has_ext_provoking_vertex{};
     bool has_ext_vertex_input_dynamic_state{};
@@ -1117,6 +1192,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME, true);
         test(khr_push_descriptor, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, true);
         test(has_khr_shader_float16_int8, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, false);
+        test(khr_draw_indirect_count, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, true);
         test(ext_depth_range_unrestricted, VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, true);
         test(ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
         test(has_ext_primitive_topology_list_restart,
@@ -1132,6 +1208,10 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
+        test(has_ext_extended_dynamic_state_2, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+             false);
+        test(has_ext_extended_dynamic_state_3, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+             false);
         test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, true);
         test(has_ext_provoking_vertex, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, false);
         test(has_ext_vertex_input_dynamic_state, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
@@ -1279,6 +1359,44 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         if (extended_dynamic_state.extendedDynamicState) {
             extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
             ext_extended_dynamic_state = true;
+        }
+    }
+    if (has_ext_extended_dynamic_state_2) {
+        VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state_2;
+        extended_dynamic_state_2.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+        extended_dynamic_state_2.pNext = nullptr;
+        features.pNext = &extended_dynamic_state_2;
+        physical.GetFeatures2(features);
+
+        if (extended_dynamic_state_2.extendedDynamicState2) {
+            extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+            ext_extended_dynamic_state_2 = true;
+            ext_extended_dynamic_state_2_extra =
+                extended_dynamic_state_2.extendedDynamicState2LogicOp;
+        }
+    }
+    if (has_ext_extended_dynamic_state_3) {
+        VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state_3;
+        extended_dynamic_state_3.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+        extended_dynamic_state_3.pNext = nullptr;
+        features.pNext = &extended_dynamic_state_3;
+        physical.GetFeatures2(features);
+
+        ext_extended_dynamic_state_3_blend =
+            extended_dynamic_state_3.extendedDynamicState3ColorBlendEnable &&
+            extended_dynamic_state_3.extendedDynamicState3ColorBlendEquation &&
+            extended_dynamic_state_3.extendedDynamicState3ColorWriteMask;
+
+        ext_extended_dynamic_state_3_enables =
+            extended_dynamic_state_3.extendedDynamicState3DepthClampEnable &&
+            extended_dynamic_state_3.extendedDynamicState3LogicOpEnable;
+
+        ext_extended_dynamic_state_3 =
+            ext_extended_dynamic_state_3_blend || ext_extended_dynamic_state_3_enables;
+        if (ext_extended_dynamic_state_3) {
+            extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
         }
     }
     if (has_ext_line_rasterization) {

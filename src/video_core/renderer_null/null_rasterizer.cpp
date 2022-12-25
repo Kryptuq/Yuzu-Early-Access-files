@@ -39,11 +39,11 @@ void RasterizerNull::BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr
                                                u32 size) {}
 void RasterizerNull::DisableGraphicsUniformBuffer(size_t stage, u32 index) {}
 void RasterizerNull::FlushAll() {}
-void RasterizerNull::FlushRegion(VAddr addr, u64 size) {}
-bool RasterizerNull::MustFlushRegion(VAddr addr, u64 size) {
+void RasterizerNull::FlushRegion(VAddr addr, u64 size, VideoCommon::CacheType) {}
+bool RasterizerNull::MustFlushRegion(VAddr addr, u64 size, VideoCommon::CacheType) {
     return false;
 }
-void RasterizerNull::InvalidateRegion(VAddr addr, u64 size) {}
+void RasterizerNull::InvalidateRegion(VAddr addr, u64 size, VideoCommon::CacheType) {}
 void RasterizerNull::OnCPUWrite(VAddr addr, u64 size) {}
 void RasterizerNull::InvalidateGPUCache() {}
 void RasterizerNull::UnmapMemory(VAddr addr, u64 size) {}
@@ -61,7 +61,7 @@ void RasterizerNull::SignalSyncPoint(u32 value) {
 }
 void RasterizerNull::SignalReference() {}
 void RasterizerNull::ReleaseFences() {}
-void RasterizerNull::FlushAndInvalidateRegion(VAddr addr, u64 size) {}
+void RasterizerNull::FlushAndInvalidateRegion(VAddr addr, u64 size, VideoCommon::CacheType) {}
 void RasterizerNull::WaitForIdle() {}
 void RasterizerNull::FragmentBarrier() {}
 void RasterizerNull::TiledCacheBarrier() {}

@@ -202,7 +202,7 @@ public:
     /// Create channel state.
     void CreateChannel(Tegra::Control::ChannelState& channel) final override;
 
-    std::mutex mutex;
+    std::recursive_mutex mutex;
 
 private:
     /// Iterate over all page indices in a range
