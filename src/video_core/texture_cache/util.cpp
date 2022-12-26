@@ -505,7 +505,7 @@ void SwizzlePitchLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
 
 void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr,
                              const ImageInfo& info, const BufferImageCopy& copy,
-                             std::span<const u8> input, std::vector<u8>& tmp_buffer) {
+                             std::span<const u8> input, Common::ScratchBuffer<u8>& tmp_buffer) {
     const Extent3D size = info.size;
     const LevelInfo level_info = MakeLevelInfo(info);
     const Extent2D tile_size = DefaultBlockSize(info.format);
@@ -534,7 +534,7 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
                        tile_size.height, info.tile_width_spacing);
     const size_t subresource_size = sizes[level];
 
-    tmp_buffer.resize(subresource_size);
+    tmp_buffer.resize_destructive(subresource_size);
     const std::span<u8> dst(tmp_buffer);
 
     for (s32 layer = 0; layer < info.resources.layers; ++layer) {
@@ -978,7 +978,7 @@ std::vector<SwizzleParameters> FullUploadSwizzles(const ImageInfo& info) {
 
 void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const ImageInfo& info,
                   std::span<const BufferImageCopy> copies, std::span<const u8> memory,
-                  std::vector<u8>& tmp_buffer) {
+                  Common::ScratchBuffer<u8>& tmp_buffer) {
     const bool is_pitch_linear = info.type == ImageType::Linear;
     for (const BufferImageCopy& copy : copies) {
         if (is_pitch_linear) {

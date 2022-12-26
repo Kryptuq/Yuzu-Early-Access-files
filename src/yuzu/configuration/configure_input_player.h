@@ -119,6 +119,9 @@ private:
     /// Handle key press events.
     void keyPressEvent(QKeyEvent* event) override;
 
+    /// Handle combobox list refresh
+    bool eventFilter(QObject* object, QEvent* event) override;
+
     /// Update UI to reflect current configuration.
     void UpdateUI();
 

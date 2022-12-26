@@ -758,12 +758,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
     connect(ui->comboDevices, qOverload<int>(&QComboBox::activated), this,
             &ConfigureInputPlayer::UpdateMappingWithDefaults);
+    ui->comboDevices->installEventFilter(this);
 
     ui->comboDevices->setCurrentIndex(-1);
-
-    ui->buttonRefreshDevices->setIcon(QIcon::fromTheme(QStringLiteral("view-refresh")));
-    connect(ui->buttonRefreshDevices, &QPushButton::clicked,
-            [this] { emit RefreshInputDevices(); });
 
     timeout_timer->setSingleShot(true);
     connect(timeout_timer.get(), &QTimer::timeout, [this] { SetPollingResult({}, true); });
@@ -1497,6 +1494,13 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }
+}
+
+bool ConfigureInputPlayer::eventFilter(QObject* object, QEvent* event) {
+    if (object == ui->comboDevices && event->type() == QEvent::MouseButtonPress) {
+        RefreshInputDevices();
+    }
+    return object->eventFilter(object, event);
 }
 
 void ConfigureInputPlayer::CreateProfile() {

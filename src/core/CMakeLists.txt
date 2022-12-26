@@ -226,6 +226,7 @@ add_library(core STATIC
     hle/kernel/k_page_buffer.h
     hle/kernel/k_page_heap.cpp
     hle/kernel/k_page_heap.h
+    hle/kernel/k_page_group.cpp
     hle/kernel/k_page_group.h
     hle/kernel/k_page_table.cpp
     hle/kernel/k_page_table.h

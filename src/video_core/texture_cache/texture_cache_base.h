@@ -17,6 +17,7 @@
 #include "common/literals.h"
 #include "common/lru_cache.h"
 #include "common/polyfill_ranges.h"
+#include "common/scratch_buffer.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
@@ -417,8 +418,8 @@ private:
 
     std::unordered_map<GPUVAddr, ImageAllocId> image_allocs_table;
 
-    std::vector<u8> swizzle_data_buffer;
-    std::vector<u8> unswizzle_data_buffer;
+    Common::ScratchBuffer<u8> swizzle_data_buffer;
+    Common::ScratchBuffer<u8> unswizzle_data_buffer;
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;

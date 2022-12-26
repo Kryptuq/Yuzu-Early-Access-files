@@ -224,6 +224,13 @@ void EmulatedController::LoadTASParams() {
     tas_stick_params[Settings::NativeAnalog::LStick].Set("axis_y", 1);
     tas_stick_params[Settings::NativeAnalog::RStick].Set("axis_x", 2);
     tas_stick_params[Settings::NativeAnalog::RStick].Set("axis_y", 3);
+
+    // set to optimal stick to avoid sanitizing the stick and tweaking the coordinates
+    // making sure they play back in the game as originally written down in the script file
+    tas_stick_params[Settings::NativeAnalog::LStick].Set("deadzone", 0.0f);
+    tas_stick_params[Settings::NativeAnalog::LStick].Set("range", 1.0f);
+    tas_stick_params[Settings::NativeAnalog::RStick].Set("deadzone", 0.0f);
+    tas_stick_params[Settings::NativeAnalog::RStick].Set("range", 1.0f);
 }
 
 void EmulatedController::LoadVirtualGamepadParams() {

@@ -122,25 +122,6 @@
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="buttonRefreshDevices">
-            <property name="minimumSize">
-             <size>
-              <width>21</width>
-              <height>21</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>21</width>
-              <height>21</height>
-             </size>
-            </property>
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>

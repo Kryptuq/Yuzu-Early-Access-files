@@ -42,8 +42,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // These values were chosen based on typical peak swizzle data sizes seen in some titles
     static constexpr size_t SWIZZLE_DATA_BUFFER_INITIAL_CAPACITY = 8_MiB;
     static constexpr size_t UNSWIZZLE_DATA_BUFFER_INITIAL_CAPACITY = 1_MiB;
-    swizzle_data_buffer.reserve(SWIZZLE_DATA_BUFFER_INITIAL_CAPACITY);
-    unswizzle_data_buffer.reserve(UNSWIZZLE_DATA_BUFFER_INITIAL_CAPACITY);
+    swizzle_data_buffer.resize_destructive(SWIZZLE_DATA_BUFFER_INITIAL_CAPACITY);
+    unswizzle_data_buffer.resize_destructive(UNSWIZZLE_DATA_BUFFER_INITIAL_CAPACITY);
 
     // Make sure the first index is reserved for the null resources
     // This way the null resource becomes a compile time constant
@@ -747,11 +747,11 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
         return;
     }
     const size_t guest_size_bytes = image.guest_size_bytes;
-    swizzle_data_buffer.resize(guest_size_bytes);
+    swizzle_data_buffer.resize_destructive(guest_size_bytes);
     gpu_memory->ReadBlockUnsafe(gpu_addr, swizzle_data_buffer.data(), guest_size_bytes);
 
     if (True(image.flags & ImageFlagBits::Converted)) {
-        unswizzle_data_buffer.resize(image.unswizzled_size_bytes);
+        unswizzle_data_buffer.resize_destructive(image.unswizzled_size_bytes);
         auto copies = UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data_buffer,
                                      unswizzle_data_buffer);
         ConvertImage(unswizzle_data_buffer, image.info, mapped_span, copies);
