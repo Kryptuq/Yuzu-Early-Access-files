@@ -245,7 +245,7 @@ QuadIndexedPass::QuadIndexedPass(const Device& device_, Scheduler& scheduler_,
                                  UpdateDescriptorQueue& update_descriptor_queue_)
     : ComputePass(device_, descriptor_pool_, INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS,
                   INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE, INPUT_OUTPUT_BANK_INFO,
-                  COMPUTE_PUSH_CONSTANT_RANGE<sizeof(u32) * 2>, VULKAN_QUAD_INDEXED_COMP_SPV),
+                  COMPUTE_PUSH_CONSTANT_RANGE<sizeof(u32) * 3>, VULKAN_QUAD_INDEXED_COMP_SPV),
       scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
       update_descriptor_queue{update_descriptor_queue_} {}
 

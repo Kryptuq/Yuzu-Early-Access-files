@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <span>
 #include <catch2/catch.hpp>
 #include "common/common_types.h"

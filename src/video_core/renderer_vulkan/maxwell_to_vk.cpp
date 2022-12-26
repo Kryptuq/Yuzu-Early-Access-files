@@ -327,6 +327,8 @@ VkPrimitiveTopology PrimitiveTopology([[maybe_unused]] const Device& device,
     case Maxwell::PrimitiveTopology::Patches:
         return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
     case Maxwell::PrimitiveTopology::Polygon:
+        LOG_WARNING(Render_Vulkan, "Draw mode is Polygon with a polygon mode of lines should be a "
+                                   "single body and not a bunch of triangles.");
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
     }
     UNIMPLEMENTED_MSG("Unimplemented topology={}", topology);
