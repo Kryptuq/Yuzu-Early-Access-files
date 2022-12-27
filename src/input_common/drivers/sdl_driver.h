@@ -63,7 +63,7 @@ public:
 
     bool IsStickInverted(const Common::ParamPackage& params) override;
 
-    Common::Input::VibrationError SetVibration(
+    Common::Input::DriverResult SetVibration(
         const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
     bool IsVibrationEnabled(const PadIdentifier& identifier) override;

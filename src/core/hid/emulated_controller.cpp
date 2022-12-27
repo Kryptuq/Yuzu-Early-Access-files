@@ -1176,7 +1176,7 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
         .type = type,
     };
     return output_devices[device_index]->SetVibration(status) ==
-           Common::Input::VibrationError::None;
+           Common::Input::DriverResult::Success;
 }
 
 bool EmulatedController::IsVibrationEnabled(std::size_t device_index) {
@@ -1198,7 +1198,8 @@ bool EmulatedController::IsVibrationEnabled(std::size_t device_index) {
     return output_devices[device_index]->IsVibrationEnabled();
 }
 
-bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {
+Common::Input::DriverResult EmulatedController::SetPollingMode(
+    Common::Input::PollingMode polling_mode) {
     LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
     auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
     auto& nfc_output_device = output_devices[3];
@@ -1206,8 +1207,11 @@ bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode)
     const auto virtual_nfc_result = nfc_output_device->SetPollingMode(polling_mode);
     const auto mapped_nfc_result = output_device->SetPollingMode(polling_mode);
 
-    return virtual_nfc_result == Common::Input::PollingError::None ||
-           mapped_nfc_result == Common::Input::PollingError::None;
+    if (virtual_nfc_result == Common::Input::DriverResult::Success) {
+        return virtual_nfc_result;
+    }
+
+    return mapped_nfc_result;
 }
 
 bool EmulatedController::SetCameraFormat(
@@ -1218,13 +1222,13 @@ bool EmulatedController::SetCameraFormat(
     auto& camera_output_device = output_devices[2];
 
     if (right_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
-            camera_format)) == Common::Input::CameraError::None) {
+            camera_format)) == Common::Input::DriverResult::Success) {
         return true;
     }
 
     // Fallback to Qt camera if native device doesn't have support
     return camera_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
-               camera_format)) == Common::Input::CameraError::None;
+               camera_format)) == Common::Input::DriverResult::Success;
 }
 
 Common::ParamPackage EmulatedController::GetRingParam() const {

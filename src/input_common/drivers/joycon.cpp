@@ -233,8 +233,8 @@ bool Joycons::IsVibrationEnabled(const PadIdentifier& identifier) {
     return handle->IsVibrationEnabled();
 }
 
-Common::Input::VibrationError Joycons::SetVibration(
-    const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
+Common::Input::DriverResult Joycons::SetVibration(const PadIdentifier& identifier,
+                                                  const Common::Input::VibrationStatus& vibration) {
     const Joycon::VibrationValue native_vibration{
         .low_amplitude = vibration.low_amplitude,
         .low_frequency = vibration.low_frequency,
@@ -243,32 +243,31 @@ Common::Input::VibrationError Joycons::SetVibration(
     };
     auto handle = GetHandle(identifier);
     if (handle == nullptr) {
-        return Common::Input::VibrationError::InvalidHandle;
+        return Common::Input::DriverResult::InvalidHandle;
     }
 
     handle->SetVibration(native_vibration);
-    return Common::Input::VibrationError::None;
+    return Common::Input::DriverResult::Success;
 }
 
-void Joycons::SetLeds(const PadIdentifier& identifier, const Common::Input::LedStatus& led_status) {
+Common::Input::DriverResult Joycons::SetLeds(const PadIdentifier& identifier,
+                                             const Common::Input::LedStatus& led_status) {
     auto handle = GetHandle(identifier);
     if (handle == nullptr) {
-        return;
+        return Common::Input::DriverResult::InvalidHandle;
     }
     int led_config = led_status.led_1 ? 1 : 0;
     led_config += led_status.led_2 ? 2 : 0;
     led_config += led_status.led_3 ? 4 : 0;
     led_config += led_status.led_4 ? 8 : 0;
 
-    const auto result = handle->SetLedConfig(static_cast<u8>(led_config));
-    if (result != Joycon::DriverResult::Success) {
-        LOG_ERROR(Input, "Failed to set led config");
-    }
+    return static_cast<Common::Input::DriverResult>(
+        handle->SetLedConfig(static_cast<u8>(led_config)));
 }
 
-Common::Input::CameraError Joycons::SetCameraFormat(const PadIdentifier& identifier_,
-                                                    Common::Input::CameraFormat camera_format) {
-    return Common::Input::CameraError::NotSupported;
+Common::Input::DriverResult Joycons::SetCameraFormat(const PadIdentifier& identifier_,
+                                                     Common::Input::CameraFormat camera_format) {
+    return Common::Input::DriverResult::NotSupported;
 };
 
 Common::Input::NfcState Joycons::SupportsNfc(const PadIdentifier& identifier_) const {
@@ -280,32 +279,30 @@ Common::Input::NfcState Joycons::WriteNfcData(const PadIdentifier& identifier_,
     return Common::Input::NfcState::NotSupported;
 };
 
-Common::Input::PollingError Joycons::SetPollingMode(const PadIdentifier& identifier,
+Common::Input::DriverResult Joycons::SetPollingMode(const PadIdentifier& identifier,
                                                     const Common::Input::PollingMode polling_mode) {
     auto handle = GetHandle(identifier);
     if (handle == nullptr) {
         LOG_ERROR(Input, "Invalid handle {}", identifier.port);
-        return Common::Input::PollingError::InvalidHandle;
+        return Common::Input::DriverResult::InvalidHandle;
     }
 
     switch (polling_mode) {
     case Common::Input::PollingMode::NFC:
-        handle->SetNfcMode();
+        return static_cast<Common::Input::DriverResult>(handle->SetNfcMode());
         break;
     case Common::Input::PollingMode::Active:
-        handle->SetActiveMode();
+        return static_cast<Common::Input::DriverResult>(handle->SetActiveMode());
         break;
     case Common::Input::PollingMode::Pasive:
-        handle->SetPasiveMode();
+        return static_cast<Common::Input::DriverResult>(handle->SetPasiveMode());
         break;
     case Common::Input::PollingMode::Ring:
-        handle->SetRingConMode();
+        return static_cast<Common::Input::DriverResult>(handle->SetRingConMode());
         break;
     default:
-        return Common::Input::PollingError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
-
-    return Common::Input::PollingError::None;
 }
 
 void Joycons::OnBatteryUpdate(std::size_t port, Joycon::ControllerType type,

@@ -64,20 +64,19 @@ enum class CameraFormat {
     None,
 };
 
-// Vibration reply from the controller
-enum class VibrationError {
-    None,
+// Different results that can happen from a device request
+enum class DriverResult {
+    Success,
+    WrongReply,
+    Timeout,
+    UnsupportedControllerType,
+    HandleInUse,
+    ErrorReadingData,
+    ErrorWritingData,
+    NoDeviceDetected,
+    InvalidHandle,
     NotSupported,
     Disabled,
-    InvalidHandle,
-    Unknown,
-};
-
-// Polling mode reply from the controller
-enum class PollingError {
-    None,
-    NotSupported,
-    InvalidHandle,
     Unknown,
 };
 
@@ -91,13 +90,6 @@ enum class NfcState {
     NotSupported,
     WrongDeviceState,
     WriteFailed,
-    Unknown,
-};
-
-// Ir camera reply from the controller
-enum class CameraError {
-    None,
-    NotSupported,
     Unknown,
 };
 
@@ -339,22 +331,24 @@ class OutputDevice {
 public:
     virtual ~OutputDevice() = default;
 
-    virtual void SetLED([[maybe_unused]] const LedStatus& led_status) {}
+    virtual DriverResult SetLED([[maybe_unused]] const LedStatus& led_status) {
+        return DriverResult::NotSupported;
+    }
 
-    virtual VibrationError SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
-        return VibrationError::NotSupported;
+    virtual DriverResult SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
+        return DriverResult::NotSupported;
     }
 
     virtual bool IsVibrationEnabled() {
         return false;
     }
 
-    virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
-        return PollingError::NotSupported;
+    virtual DriverResult SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
+        return DriverResult::NotSupported;
     }
 
-    virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
-        return CameraError::NotSupported;
+    virtual DriverResult SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
+        return DriverResult::NotSupported;
     }
 
     virtual NfcState SupportsNfc() const {

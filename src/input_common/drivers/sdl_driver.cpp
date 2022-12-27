@@ -545,7 +545,7 @@ std::vector<Common::ParamPackage> SDLDriver::GetInputDevices() const {
     return devices;
 }
 
-Common::Input::VibrationError SDLDriver::SetVibration(
+Common::Input::DriverResult SDLDriver::SetVibration(
     const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) {
     const auto joystick =
         GetSDLJoystickByGUID(identifier.guid.RawString(), static_cast<int>(identifier.port));
@@ -579,7 +579,7 @@ Common::Input::VibrationError SDLDriver::SetVibration(
         .vibration = new_vibration,
     });
 
-    return Common::Input::VibrationError::None;
+    return Common::Input::DriverResult::Success;
 }
 
 bool SDLDriver::IsVibrationEnabled(const PadIdentifier& identifier) {

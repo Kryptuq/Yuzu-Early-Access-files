@@ -105,14 +105,17 @@ public:
     void EndConfiguration();
 
     // Sets a led pattern for a controller
-    virtual void SetLeds([[maybe_unused]] const PadIdentifier& identifier,
-                         [[maybe_unused]] const Common::Input::LedStatus& led_status) {}
+    virtual Common::Input::DriverResult SetLeds(
+        [[maybe_unused]] const PadIdentifier& identifier,
+        [[maybe_unused]] const Common::Input::LedStatus& led_status) {
+        return Common::Input::DriverResult::NotSupported;
+    }
 
     // Sets rumble to a controller
-    virtual Common::Input::VibrationError SetVibration(
+    virtual Common::Input::DriverResult SetVibration(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] const Common::Input::VibrationStatus& vibration) {
-        return Common::Input::VibrationError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Returns true if device supports vibrations
@@ -121,17 +124,17 @@ public:
     }
 
     // Sets polling mode to a controller
-    virtual Common::Input::PollingError SetPollingMode(
+    virtual Common::Input::DriverResult SetPollingMode(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] const Common::Input::PollingMode polling_mode) {
-        return Common::Input::PollingError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Sets camera format to a controller
-    virtual Common::Input::CameraError SetCameraFormat(
+    virtual Common::Input::DriverResult SetCameraFormat(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] Common::Input::CameraFormat camera_format) {
-        return Common::Input::CameraError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Returns success if nfc is supported

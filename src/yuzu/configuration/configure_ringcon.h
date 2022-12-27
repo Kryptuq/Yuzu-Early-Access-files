@@ -42,6 +42,12 @@ private:
     /// Restore all buttons to their default values.
     void RestoreDefaults();
 
+    /// Sets current polling mode to ring input
+    void EnableRingController();
+
+    // Handles emulated controller events
+    void ControllerUpdate(Core::HID::ControllerTriggerType type);
+
     /// Called when the button was pressed.
     void HandleClick(QPushButton* button,
                      std::function<void(const Common::ParamPackage&)> new_input_setter,
@@ -79,6 +85,10 @@ private:
 
     InputCommon::InputSubsystem* input_subsystem;
     Core::HID::EmulatedController* emulated_controller;
+
+    bool is_ring_enabled{};
+    bool is_controller_set{};
+    int callback_key;
 
     std::unique_ptr<Ui::ConfigureRingController> ui;
 };

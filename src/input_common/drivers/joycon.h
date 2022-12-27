@@ -29,20 +29,20 @@ public:
     ~Joycons();
 
     bool IsVibrationEnabled(const PadIdentifier& identifier) override;
-    Common::Input::VibrationError SetVibration(
+    Common::Input::DriverResult SetVibration(
         const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
-    void SetLeds(const PadIdentifier& identifier,
-                 const Common::Input::LedStatus& led_status) override;
+    Common::Input::DriverResult SetLeds(const PadIdentifier& identifier,
+                                        const Common::Input::LedStatus& led_status) override;
 
-    Common::Input::CameraError SetCameraFormat(const PadIdentifier& identifier_,
-                                               Common::Input::CameraFormat camera_format) override;
+    Common::Input::DriverResult SetCameraFormat(const PadIdentifier& identifier_,
+                                                Common::Input::CameraFormat camera_format) override;
 
     Common::Input::NfcState SupportsNfc(const PadIdentifier& identifier_) const override;
     Common::Input::NfcState WriteNfcData(const PadIdentifier& identifier_,
                                          const std::vector<u8>& data) override;
 
-    Common::Input::PollingError SetPollingMode(
+    Common::Input::DriverResult SetPollingMode(
         const PadIdentifier& identifier, const Common::Input::PollingMode polling_mode) override;
 
     /// Used for automapping features

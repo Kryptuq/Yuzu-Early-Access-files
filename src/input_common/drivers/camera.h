@@ -22,8 +22,8 @@ public:
     std::size_t getImageWidth() const;
     std::size_t getImageHeight() const;
 
-    Common::Input::CameraError SetCameraFormat(const PadIdentifier& identifier_,
-                                               Common::Input::CameraFormat camera_format) override;
+    Common::Input::DriverResult SetCameraFormat(const PadIdentifier& identifier_,
+                                                Common::Input::CameraFormat camera_format) override;
 
 private:
     Common::Input::CameraStatus status{};

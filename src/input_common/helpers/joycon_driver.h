@@ -46,15 +46,15 @@ public:
     DriverResult SetNfcMode();
     DriverResult SetRingConMode();
 
-    void SetCallbacks(const Joycon::JoyconCallbacks& callbacks);
+    void SetCallbacks(const JoyconCallbacks& callbacks);
 
     // Returns device type from hidapi handle
-    static Joycon::DriverResult GetDeviceType(SDL_hid_device_info* device_info,
-                                              Joycon::ControllerType& controller_type);
+    static DriverResult GetDeviceType(SDL_hid_device_info* device_info,
+                                      ControllerType& controller_type);
 
     // Returns serial number from hidapi handle
-    static Joycon::DriverResult GetSerialNumber(SDL_hid_device_info* device_info,
-                                                Joycon::SerialNumber& serial_number);
+    static DriverResult GetSerialNumber(SDL_hid_device_info* device_info,
+                                        SerialNumber& serial_number);
 
 private:
     struct SupportedFeatures {
@@ -73,7 +73,7 @@ private:
     void OnNewData(std::span<u8> buffer);
 
     /// Updates device configuration to enable or disable features
-    void SetPollingMode();
+    DriverResult SetPollingMode();
 
     /// Returns true if input thread is valid and doesn't need to be stopped
     bool IsInputThreadValid() const;

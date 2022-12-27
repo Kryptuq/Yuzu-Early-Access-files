@@ -284,6 +284,7 @@ enum class DriverResult {
     NoDeviceDetected,
     InvalidHandle,
     NotSupported,
+    Disabled,
     Unknown,
 };
 

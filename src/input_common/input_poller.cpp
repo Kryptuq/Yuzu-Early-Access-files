@@ -806,11 +806,11 @@ public:
     explicit OutputFromIdentifier(PadIdentifier identifier_, InputEngine* input_engine_)
         : identifier(identifier_), input_engine(input_engine_) {}
 
-    void SetLED(const Common::Input::LedStatus& led_status) override {
-        input_engine->SetLeds(identifier, led_status);
+    Common::Input::DriverResult SetLED(const Common::Input::LedStatus& led_status) override {
+        return input_engine->SetLeds(identifier, led_status);
     }
 
-    Common::Input::VibrationError SetVibration(
+    Common::Input::DriverResult SetVibration(
         const Common::Input::VibrationStatus& vibration_status) override {
         return input_engine->SetVibration(identifier, vibration_status);
     }
@@ -819,11 +819,12 @@ public:
         return input_engine->IsVibrationEnabled(identifier);
     }
 
-    Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {
+    Common::Input::DriverResult SetPollingMode(Common::Input::PollingMode polling_mode) override {
         return input_engine->SetPollingMode(identifier, polling_mode);
     }
 
-    Common::Input::CameraError SetCameraFormat(Common::Input::CameraFormat camera_format) override {
+    Common::Input::DriverResult SetCameraFormat(
+        Common::Input::CameraFormat camera_format) override {
         return input_engine->SetCameraFormat(identifier, camera_format);
     }
 
