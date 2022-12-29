@@ -74,7 +74,7 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
     R_UNLESS(!m_is_mapped, ResultInvalidState);
 
     // Map the memory.
-    R_TRY(kernel.CurrentProcess()->PageTable().MapPages(
+    R_TRY(kernel.CurrentProcess()->PageTable().MapPageGroup(
         address, *m_page_group, KMemoryState::CodeOut, KMemoryPermission::UserReadWrite));
 
     // Mark ourselves as mapped.
@@ -91,8 +91,8 @@ Result KCodeMemory::Unmap(VAddr address, size_t size) {
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(kernel.CurrentProcess()->PageTable().UnmapPages(address, *m_page_group,
-                                                          KMemoryState::CodeOut));
+    R_TRY(kernel.CurrentProcess()->PageTable().UnmapPageGroup(address, *m_page_group,
+                                                              KMemoryState::CodeOut));
 
     // Mark ourselves as unmapped.
     m_is_mapped = false;
@@ -125,8 +125,8 @@ Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission
     }
 
     // Map the memory.
-    R_TRY(
-        m_owner->PageTable().MapPages(address, *m_page_group, KMemoryState::GeneratedCode, k_perm));
+    R_TRY(m_owner->PageTable().MapPageGroup(address, *m_page_group, KMemoryState::GeneratedCode,
+                                            k_perm));
 
     // Mark ourselves as mapped.
     m_is_owner_mapped = true;
@@ -142,7 +142,7 @@ Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(m_owner->PageTable().UnmapPages(address, *m_page_group, KMemoryState::GeneratedCode));
+    R_TRY(m_owner->PageTable().UnmapPageGroup(address, *m_page_group, KMemoryState::GeneratedCode));
 
     // Mark ourselves as unmapped.
     m_is_owner_mapped = false;

@@ -7,6 +7,7 @@
 #include "input_common/helpers/joycon_driver.h"
 #include "input_common/helpers/joycon_protocol/calibration.h"
 #include "input_common/helpers/joycon_protocol/generic_functions.h"
+#include "input_common/helpers/joycon_protocol/irs.h"
 #include "input_common/helpers/joycon_protocol/nfc.h"
 #include "input_common/helpers/joycon_protocol/poller.h"
 #include "input_common/helpers/joycon_protocol/ringcon.h"
@@ -78,6 +79,7 @@ DriverResult JoyconDriver::InitializeDevice() {
     // Initialize HW Protocols
     calibration_protocol = std::make_unique<CalibrationProtocol>(hidapi_handle);
     generic_protocol = std::make_unique<GenericProtocol>(hidapi_handle);
+    irs_protocol = std::make_unique<IrsProtocol>(hidapi_handle);
     nfc_protocol = std::make_unique<NfcProtocol>(hidapi_handle);
     ring_protocol = std::make_unique<RingConProtocol>(hidapi_handle);
     rumble_protocol = std::make_unique<RumbleProtocol>(hidapi_handle);
@@ -249,6 +251,20 @@ DriverResult JoyconDriver::SetPollingMode() {
                                        accelerometer_sensitivity, accelerometer_performance);
     } else {
         generic_protocol->EnableImu(false);
+    }
+
+    if (irs_protocol->IsEnabled()) {
+        irs_protocol->DisableIrs();
+    }
+
+    if (irs_enabled && supported_features.irs) {
+        auto result = irs_protocol->EnableIrs();
+        if (result == DriverResult::Success) {
+            disable_input_thread = false;
+            return result;
+        }
+        irs_protocol->DisableIrs();
+        LOG_ERROR(Input, "Error enabling IRS");
     }
 
     if (nfc_protocol->IsEnabled()) {

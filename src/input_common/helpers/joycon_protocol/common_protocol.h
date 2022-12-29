@@ -75,6 +75,13 @@ public:
     DriverResult SendSubCommand(SubCommand sc, std::span<const u8> buffer, std::vector<u8>& output);
 
     /**
+     * Sends a mcu command to the device
+     * @param sc sub command to be send
+     * @param buffer data to be send
+     */
+    DriverResult SendMcuCommand(SubCommand sc, std::span<const u8> buffer);
+
+    /**
      * Sends vibration data to the joycon
      * @param buffer data to be send
      */

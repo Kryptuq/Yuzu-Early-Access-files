@@ -273,6 +273,17 @@ enum class NFCTagType : u8 {
     Ntag215 = 0x01,
 };
 
+enum class IrsMode : u8 {
+    None = 0x02,
+    Moment = 0x03,
+    Dpd = 0x04,
+    Clustering = 0x06,
+    ImageTransfer = 0x07,
+    Silhouette = 0x08,
+    TeraImage = 0x09,
+    SilhouetteTeraImage = 0x0A,
+};
+
 enum class DriverResult {
     Success,
     WrongReply,
@@ -455,6 +466,36 @@ struct NFCRequestState {
     u8 crc;
 };
 static_assert(sizeof(NFCRequestState) == 0x26, "NFCRequestState is an invalid size");
+
+struct IrsConfigure {
+    MCUCommand command;
+    MCUSubCommand sub_command;
+    IrsMode irs_mode;
+    u8 number_of_fragments;
+    u16 mcu_major_version;
+    u16 mcu_minor_version;
+    INSERT_PADDING_BYTES(0x1D);
+    u8 crc;
+};
+static_assert(sizeof(IrsConfigure) == 0x26, "IrsConfigure is an invalid size");
+
+#pragma pack(push, 1)
+struct IrsRegister {
+    u16 address;
+    u8 value;
+};
+static_assert(sizeof(IrsRegister) == 0x3, "IrsRegister is an invalid size");
+
+struct IrsWriteRegisters {
+    MCUCommand command;
+    MCUSubCommand sub_command;
+    u8 number_of_registers;
+    std::array<IrsRegister, 9> registers;
+    INSERT_PADDING_BYTES(0x7);
+    u8 crc;
+};
+static_assert(sizeof(IrsWriteRegisters) == 0x26, "IrsWriteRegisters is an invalid size");
+#pragma pack(pop)
 
 struct FirmwareVersion {
     u8 major;

@@ -13,6 +13,7 @@
 namespace InputCommon::Joycon {
 class CalibrationProtocol;
 class GenericProtocol;
+class IrsProtocol;
 class NfcProtocol;
 class JoyconPoller;
 class RingConProtocol;
@@ -87,6 +88,7 @@ private:
     // Protocol Features
     std::unique_ptr<CalibrationProtocol> calibration_protocol;
     std::unique_ptr<GenericProtocol> generic_protocol;
+    std::unique_ptr<IrsProtocol> irs_protocol;
     std::unique_ptr<NfcProtocol> nfc_protocol;
     std::unique_ptr<JoyconPoller> joycon_poller;
     std::unique_ptr<RingConProtocol> ring_protocol;

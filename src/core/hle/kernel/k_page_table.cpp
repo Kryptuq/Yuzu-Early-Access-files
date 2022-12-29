@@ -435,6 +435,9 @@ Result KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, size_t si
         KPageGroup pg{m_kernel, m_block_info_manager};
         AddRegionToPages(src_address, num_pages, pg);
 
+        // We're going to perform an update, so create a helper.
+        KScopedPageTableUpdater updater(this);
+
         // Reprotect the source as kernel-read/not mapped.
         const auto new_perm = static_cast<KMemoryPermission>(KMemoryPermission::KernelRead |
                                                              KMemoryPermission::NotMapped);
@@ -447,7 +450,10 @@ Result KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, size_t si
         });
 
         // Map the alias pages.
-        R_TRY(MapPages(dst_address, pg, new_perm));
+        const KPageProperties dst_properties = {new_perm, false, false,
+                                                DisableMergeAttribute::DisableHead};
+        R_TRY(
+            this->MapPageGroupImpl(updater.GetPageList(), dst_address, pg, dst_properties, false));
 
         // We successfully mapped the alias pages, so we don't need to unprotect the src pages on
         // failure.
@@ -1881,7 +1887,8 @@ Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
     R_SUCCEED();
 }
 
-Result KPageTable::MapMemory(VAddr dst_address, VAddr src_address, size_t size) {
+Result KPageTable::MapMemory(KProcessAddress dst_address, KProcessAddress src_address,
+                             size_t size) {
     // Lock the table.
     KScopedLightLock lk(m_general_lock);
 
@@ -1902,53 +1909,73 @@ Result KPageTable::MapMemory(VAddr dst_address, VAddr src_address, size_t size) 
                                  KMemoryAttribute::None));
 
     // Create an update allocator for the source.
-    Result src_allocator_result{ResultSuccess};
+    Result src_allocator_result;
     KMemoryBlockManagerUpdateAllocator src_allocator(std::addressof(src_allocator_result),
                                                      m_memory_block_slab_manager,
                                                      num_src_allocator_blocks);
     R_TRY(src_allocator_result);
 
     // Create an update allocator for the destination.
-    Result dst_allocator_result{ResultSuccess};
+    Result dst_allocator_result;
     KMemoryBlockManagerUpdateAllocator dst_allocator(std::addressof(dst_allocator_result),
                                                      m_memory_block_slab_manager,
                                                      num_dst_allocator_blocks);
     R_TRY(dst_allocator_result);
 
     // Map the memory.
-    KPageGroup page_linked_list{m_kernel, m_block_info_manager};
-    const size_t num_pages{size / PageSize};
-    const KMemoryPermission new_src_perm = static_cast<KMemoryPermission>(
-        KMemoryPermission::KernelRead | KMemoryPermission::NotMapped);
-    const KMemoryAttribute new_src_attr = KMemoryAttribute::Locked;
-
-    AddRegionToPages(src_address, num_pages, page_linked_list);
     {
+        // Determine the number of pages being operated on.
+        const size_t num_pages = size / PageSize;
+
+        // Create page groups for the memory being unmapped.
+        KPageGroup pg{m_kernel, m_block_info_manager};
+
+        // Create the page group representing the source.
+        R_TRY(this->MakePageGroup(pg, src_address, num_pages));
+
+        // We're going to perform an update, so create a helper.
+        KScopedPageTableUpdater updater(this);
+
         // Reprotect the source as kernel-read/not mapped.
-        auto block_guard = detail::ScopeExit([&] {
-            Operate(src_address, num_pages, KMemoryPermission::UserReadWrite,
-                    OperationType::ChangePermissions);
-        });
-        R_TRY(Operate(src_address, num_pages, new_src_perm, OperationType::ChangePermissions));
-        R_TRY(MapPages(dst_address, page_linked_list, KMemoryPermission::UserReadWrite));
+        const KMemoryPermission new_src_perm = static_cast<KMemoryPermission>(
+            KMemoryPermission::KernelRead | KMemoryPermission::NotMapped);
+        const KMemoryAttribute new_src_attr = KMemoryAttribute::Locked;
+        const KPageProperties src_properties = {new_src_perm, false, false,
+                                                DisableMergeAttribute::DisableHeadBodyTail};
+        R_TRY(this->Operate(src_address, num_pages, src_properties.perm,
+                            OperationType::ChangePermissions));
 
-        block_guard.Cancel();
+        // Ensure that we unprotect the source pages on failure.
+        ON_RESULT_FAILURE {
+            const KPageProperties unprotect_properties = {
+                KMemoryPermission::UserReadWrite, false, false,
+                DisableMergeAttribute::EnableHeadBodyTail};
+            ASSERT(this->Operate(src_address, num_pages, unprotect_properties.perm,
+                                 OperationType::ChangePermissions) == ResultSuccess);
+        };
+
+        // Map the alias pages.
+        const KPageProperties dst_map_properties = {KMemoryPermission::UserReadWrite, false, false,
+                                                    DisableMergeAttribute::DisableHead};
+        R_TRY(this->MapPageGroupImpl(updater.GetPageList(), dst_address, pg, dst_map_properties,
+                                     false));
+
+        // Apply the memory block updates.
+        m_memory_block_manager.Update(std::addressof(src_allocator), src_address, num_pages,
+                                      src_state, new_src_perm, new_src_attr,
+                                      KMemoryBlockDisableMergeAttribute::Locked,
+                                      KMemoryBlockDisableMergeAttribute::None);
+        m_memory_block_manager.Update(
+            std::addressof(dst_allocator), dst_address, num_pages, KMemoryState::Stack,
+            KMemoryPermission::UserReadWrite, KMemoryAttribute::None,
+            KMemoryBlockDisableMergeAttribute::Normal, KMemoryBlockDisableMergeAttribute::None);
     }
-
-    // Apply the memory block updates.
-    m_memory_block_manager.Update(std::addressof(src_allocator), src_address, num_pages, src_state,
-                                  new_src_perm, new_src_attr,
-                                  KMemoryBlockDisableMergeAttribute::Locked,
-                                  KMemoryBlockDisableMergeAttribute::None);
-    m_memory_block_manager.Update(std::addressof(dst_allocator), dst_address, num_pages,
-                                  KMemoryState::Stack, KMemoryPermission::UserReadWrite,
-                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
-                                  KMemoryBlockDisableMergeAttribute::None);
 
     R_SUCCEED();
 }
 
-Result KPageTable::UnmapMemory(VAddr dst_address, VAddr src_address, size_t size) {
+Result KPageTable::UnmapMemory(KProcessAddress dst_address, KProcessAddress src_address,
+                               size_t size) {
     // Lock the table.
     KScopedLightLock lk(m_general_lock);
 
@@ -1970,108 +1997,208 @@ Result KPageTable::UnmapMemory(VAddr dst_address, VAddr src_address, size_t size
         KMemoryPermission::None, KMemoryAttribute::All, KMemoryAttribute::None));
 
     // Create an update allocator for the source.
-    Result src_allocator_result{ResultSuccess};
+    Result src_allocator_result;
     KMemoryBlockManagerUpdateAllocator src_allocator(std::addressof(src_allocator_result),
                                                      m_memory_block_slab_manager,
                                                      num_src_allocator_blocks);
     R_TRY(src_allocator_result);
 
     // Create an update allocator for the destination.
-    Result dst_allocator_result{ResultSuccess};
+    Result dst_allocator_result;
     KMemoryBlockManagerUpdateAllocator dst_allocator(std::addressof(dst_allocator_result),
                                                      m_memory_block_slab_manager,
                                                      num_dst_allocator_blocks);
     R_TRY(dst_allocator_result);
 
-    KPageGroup src_pages{m_kernel, m_block_info_manager};
-    KPageGroup dst_pages{m_kernel, m_block_info_manager};
-    const size_t num_pages{size / PageSize};
-
-    AddRegionToPages(src_address, num_pages, src_pages);
-    AddRegionToPages(dst_address, num_pages, dst_pages);
-
-    R_UNLESS(dst_pages.IsEquivalentTo(src_pages), ResultInvalidMemoryRegion);
-
+    // Unmap the memory.
     {
-        auto block_guard = detail::ScopeExit([&] { MapPages(dst_address, dst_pages, dst_perm); });
+        // Determine the number of pages being operated on.
+        const size_t num_pages = size / PageSize;
 
-        R_TRY(Operate(dst_address, num_pages, KMemoryPermission::None, OperationType::Unmap));
-        R_TRY(Operate(src_address, num_pages, KMemoryPermission::UserReadWrite,
-                      OperationType::ChangePermissions));
+        // Create page groups for the memory being unmapped.
+        KPageGroup pg{m_kernel, m_block_info_manager};
 
-        block_guard.Cancel();
+        // Create the page group representing the destination.
+        R_TRY(this->MakePageGroup(pg, dst_address, num_pages));
+
+        // Ensure the page group is the valid for the source.
+        R_UNLESS(this->IsValidPageGroup(pg, src_address, num_pages), ResultInvalidMemoryRegion);
+
+        // We're going to perform an update, so create a helper.
+        KScopedPageTableUpdater updater(this);
+
+        // Unmap the aliased copy of the pages.
+        const KPageProperties dst_unmap_properties = {KMemoryPermission::None, false, false,
+                                                      DisableMergeAttribute::None};
+        R_TRY(
+            this->Operate(dst_address, num_pages, dst_unmap_properties.perm, OperationType::Unmap));
+
+        // Ensure that we re-map the aliased pages on failure.
+        ON_RESULT_FAILURE {
+            this->RemapPageGroup(updater.GetPageList(), dst_address, size, pg);
+        };
+
+        // Try to set the permissions for the source pages back to what they should be.
+        const KPageProperties src_properties = {KMemoryPermission::UserReadWrite, false, false,
+                                                DisableMergeAttribute::EnableAndMergeHeadBodyTail};
+        R_TRY(this->Operate(src_address, num_pages, src_properties.perm,
+                            OperationType::ChangePermissions));
+
+        // Apply the memory block updates.
+        m_memory_block_manager.Update(
+            std::addressof(src_allocator), src_address, num_pages, src_state,
+            KMemoryPermission::UserReadWrite, KMemoryAttribute::None,
+            KMemoryBlockDisableMergeAttribute::None, KMemoryBlockDisableMergeAttribute::Locked);
+        m_memory_block_manager.Update(
+            std::addressof(dst_allocator), dst_address, num_pages, KMemoryState::None,
+            KMemoryPermission::None, KMemoryAttribute::None,
+            KMemoryBlockDisableMergeAttribute::None, KMemoryBlockDisableMergeAttribute::Normal);
     }
-
-    // Apply the memory block updates.
-    m_memory_block_manager.Update(std::addressof(src_allocator), src_address, num_pages, src_state,
-                                  KMemoryPermission::UserReadWrite, KMemoryAttribute::None,
-                                  KMemoryBlockDisableMergeAttribute::None,
-                                  KMemoryBlockDisableMergeAttribute::Locked);
-    m_memory_block_manager.Update(std::addressof(dst_allocator), dst_address, num_pages,
-                                  KMemoryState::None, KMemoryPermission::None,
-                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::None,
-                                  KMemoryBlockDisableMergeAttribute::Normal);
 
     R_SUCCEED();
 }
 
-Result KPageTable::MapPages(VAddr addr, const KPageGroup& page_linked_list,
-                            KMemoryPermission perm) {
+Result KPageTable::AllocateAndMapPagesImpl(PageLinkedList* page_list, KProcessAddress address,
+                                           size_t num_pages, KMemoryPermission perm) {
     ASSERT(this->IsLockedByCurrentThread());
 
-    VAddr cur_addr{addr};
+    // Create a page group to hold the pages we allocate.
+    KPageGroup pg{m_kernel, m_block_info_manager};
 
-    for (const auto& node : page_linked_list) {
-        if (const auto result{
-                Operate(cur_addr, node.GetNumPages(), perm, OperationType::Map, node.GetAddress())};
-            result.IsError()) {
-            const size_t num_pages{(addr - cur_addr) / PageSize};
+    // Allocate the pages.
+    R_TRY(
+        m_kernel.MemoryManager().AllocateAndOpen(std::addressof(pg), num_pages, m_allocate_option));
 
-            ASSERT(Operate(addr, num_pages, KMemoryPermission::None, OperationType::Unmap)
-                       .IsSuccess());
+    // Ensure that the page group is closed when we're done working with it.
+    SCOPE_EXIT({ pg.Close(); });
 
-            R_RETURN(result);
-        }
-
-        cur_addr += node.GetNumPages() * PageSize;
+    // Clear all pages.
+    for (const auto& it : pg) {
+        std::memset(m_system.DeviceMemory().GetPointer<void>(it.GetAddress()), m_heap_fill_value,
+                    it.GetSize());
     }
 
-    R_SUCCEED();
-}
-
-Result KPageTable::MapPages(VAddr address, KPageGroup& page_linked_list, KMemoryState state,
-                            KMemoryPermission perm) {
-    // Check that the map is in range.
-    const size_t num_pages{page_linked_list.GetNumPages()};
-    const size_t size{num_pages * PageSize};
-    R_UNLESS(this->CanContain(address, size, state), ResultInvalidCurrentMemory);
-
-    // Lock the table.
-    KScopedLightLock lk(m_general_lock);
-
-    // Check the memory state.
-    R_TRY(this->CheckMemoryState(address, size, KMemoryState::All, KMemoryState::Free,
-                                 KMemoryPermission::None, KMemoryPermission::None,
-                                 KMemoryAttribute::None, KMemoryAttribute::None));
-
-    // Create an update allocator.
-    Result allocator_result{ResultSuccess};
-    KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
-                                                 m_memory_block_slab_manager);
-
     // Map the pages.
-    R_TRY(MapPages(address, page_linked_list, perm));
+    R_RETURN(this->Operate(address, num_pages, pg, OperationType::MapGroup));
+}
 
-    // Update the blocks.
-    m_memory_block_manager.Update(std::addressof(allocator), address, num_pages, state, perm,
-                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
-                                  KMemoryBlockDisableMergeAttribute::None);
+Result KPageTable::MapPageGroupImpl(PageLinkedList* page_list, KProcessAddress address,
+                                    const KPageGroup& pg, const KPageProperties properties,
+                                    bool reuse_ll) {
+    ASSERT(this->IsLockedByCurrentThread());
 
+    // Note the current address, so that we can iterate.
+    const KProcessAddress start_address = address;
+    KProcessAddress cur_address = address;
+
+    // Ensure that we clean up on failure.
+    ON_RESULT_FAILURE {
+        ASSERT(!reuse_ll);
+        if (cur_address != start_address) {
+            const KPageProperties unmap_properties = {KMemoryPermission::None, false, false,
+                                                      DisableMergeAttribute::None};
+            ASSERT(this->Operate(start_address, (cur_address - start_address) / PageSize,
+                                 unmap_properties.perm, OperationType::Unmap) == ResultSuccess);
+        }
+    };
+
+    // Iterate, mapping all pages in the group.
+    for (const auto& block : pg) {
+        // Map and advance.
+        const KPageProperties cur_properties =
+            (cur_address == start_address)
+                ? properties
+                : KPageProperties{properties.perm, properties.io, properties.uncached,
+                                  DisableMergeAttribute::None};
+        this->Operate(cur_address, block.GetNumPages(), cur_properties.perm, OperationType::Map,
+                      block.GetAddress());
+        cur_address += block.GetSize();
+    }
+
+    // We succeeded!
     R_SUCCEED();
 }
 
-Result KPageTable::MapPages(VAddr* out_addr, size_t num_pages, size_t alignment, PAddr phys_addr,
-                            bool is_pa_valid, VAddr region_start, size_t region_num_pages,
+void KPageTable::RemapPageGroup(PageLinkedList* page_list, KProcessAddress address, size_t size,
+                                const KPageGroup& pg) {
+    ASSERT(this->IsLockedByCurrentThread());
+
+    // Note the current address, so that we can iterate.
+    const KProcessAddress start_address = address;
+    const KProcessAddress last_address = start_address + size - 1;
+    const KProcessAddress end_address = last_address + 1;
+
+    // Iterate over the memory.
+    auto pg_it = pg.begin();
+    ASSERT(pg_it != pg.end());
+
+    KPhysicalAddress pg_phys_addr = pg_it->GetAddress();
+    size_t pg_pages = pg_it->GetNumPages();
+
+    auto it = m_memory_block_manager.FindIterator(start_address);
+    while (true) {
+        // Check that the iterator is valid.
+        ASSERT(it != m_memory_block_manager.end());
+
+        // Get the memory info.
+        const KMemoryInfo info = it->GetMemoryInfo();
+
+        // Determine the range to map.
+        KProcessAddress map_address = std::max(info.GetAddress(), start_address);
+        const KProcessAddress map_end_address = std::min(info.GetEndAddress(), end_address);
+        ASSERT(map_end_address != map_address);
+
+        // Determine if we should disable head merge.
+        const bool disable_head_merge =
+            info.GetAddress() >= start_address &&
+            True(info.GetDisableMergeAttribute() & KMemoryBlockDisableMergeAttribute::Normal);
+        const KPageProperties map_properties = {
+            info.GetPermission(), false, false,
+            disable_head_merge ? DisableMergeAttribute::DisableHead : DisableMergeAttribute::None};
+
+        // While we have pages to map, map them.
+        size_t map_pages = (map_end_address - map_address) / PageSize;
+        while (map_pages > 0) {
+            // Check if we're at the end of the physical block.
+            if (pg_pages == 0) {
+                // Ensure there are more pages to map.
+                ASSERT(pg_it != pg.end());
+
+                // Advance our physical block.
+                ++pg_it;
+                pg_phys_addr = pg_it->GetAddress();
+                pg_pages = pg_it->GetNumPages();
+            }
+
+            // Map whatever we can.
+            const size_t cur_pages = std::min(pg_pages, map_pages);
+            ASSERT(this->Operate(map_address, map_pages, map_properties.perm, OperationType::Map,
+                                 pg_phys_addr) == ResultSuccess);
+
+            // Advance.
+            map_address += cur_pages * PageSize;
+            map_pages -= cur_pages;
+
+            pg_phys_addr += cur_pages * PageSize;
+            pg_pages -= cur_pages;
+        }
+
+        // Check if we're done.
+        if (last_address <= info.GetLastAddress()) {
+            break;
+        }
+
+        // Advance.
+        ++it;
+    }
+
+    // Check that we re-mapped precisely the page group.
+    ASSERT((++pg_it) == pg.end());
+}
+
+Result KPageTable::MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
+                            KPhysicalAddress phys_addr, bool is_pa_valid,
+                            KProcessAddress region_start, size_t region_num_pages,
                             KMemoryState state, KMemoryPermission perm) {
     ASSERT(Common::IsAligned(alignment, PageSize) && alignment >= PageSize);
 
@@ -2084,26 +2211,30 @@ Result KPageTable::MapPages(VAddr* out_addr, size_t num_pages, size_t alignment,
     KScopedLightLock lk(m_general_lock);
 
     // Find a random address to map at.
-    VAddr addr = this->FindFreeArea(region_start, region_num_pages, num_pages, alignment, 0,
-                                    this->GetNumGuardPages());
+    KProcessAddress addr = this->FindFreeArea(region_start, region_num_pages, num_pages, alignment,
+                                              0, this->GetNumGuardPages());
     R_UNLESS(addr != 0, ResultOutOfMemory);
     ASSERT(Common::IsAligned(addr, alignment));
     ASSERT(this->CanContain(addr, num_pages * PageSize, state));
     ASSERT(this->CheckMemoryState(addr, num_pages * PageSize, KMemoryState::All, KMemoryState::Free,
                                   KMemoryPermission::None, KMemoryPermission::None,
-                                  KMemoryAttribute::None, KMemoryAttribute::None)
-               .IsSuccess());
+                                  KMemoryAttribute::None, KMemoryAttribute::None) == ResultSuccess);
 
     // Create an update allocator.
-    Result allocator_result{ResultSuccess};
+    Result allocator_result;
     KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
                                                  m_memory_block_slab_manager);
+    R_TRY(allocator_result);
+
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
 
     // Perform mapping operation.
     if (is_pa_valid) {
-        R_TRY(this->Operate(addr, num_pages, perm, OperationType::Map, phys_addr));
+        const KPageProperties properties = {perm, false, false, DisableMergeAttribute::DisableHead};
+        R_TRY(this->Operate(addr, num_pages, properties.perm, OperationType::Map, phys_addr));
     } else {
-        UNIMPLEMENTED();
+        R_TRY(this->AllocateAndMapPagesImpl(updater.GetPageList(), addr, num_pages, perm));
     }
 
     // Update the blocks.
@@ -2116,28 +2247,45 @@ Result KPageTable::MapPages(VAddr* out_addr, size_t num_pages, size_t alignment,
     R_SUCCEED();
 }
 
-Result KPageTable::UnmapPages(VAddr addr, const KPageGroup& page_linked_list) {
-    ASSERT(this->IsLockedByCurrentThread());
+Result KPageTable::MapPages(KProcessAddress address, size_t num_pages, KMemoryState state,
+                            KMemoryPermission perm) {
+    // Check that the map is in range.
+    const size_t size = num_pages * PageSize;
+    R_UNLESS(this->CanContain(address, size, state), ResultInvalidCurrentMemory);
 
-    VAddr cur_addr{addr};
+    // Lock the table.
+    KScopedLightLock lk(m_general_lock);
 
-    for (const auto& node : page_linked_list) {
-        if (const auto result{Operate(cur_addr, node.GetNumPages(), KMemoryPermission::None,
-                                      OperationType::Unmap)};
-            result.IsError()) {
-            R_RETURN(result);
-        }
+    // Check the memory state.
+    size_t num_allocator_blocks;
+    R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks), address, size,
+                                 KMemoryState::All, KMemoryState::Free, KMemoryPermission::None,
+                                 KMemoryPermission::None, KMemoryAttribute::None,
+                                 KMemoryAttribute::None));
 
-        cur_addr += node.GetNumPages() * PageSize;
-    }
+    // Create an update allocator.
+    Result allocator_result;
+    KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
+                                                 m_memory_block_slab_manager, num_allocator_blocks);
+    R_TRY(allocator_result);
+
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
+
+    // Map the pages.
+    R_TRY(this->AllocateAndMapPagesImpl(updater.GetPageList(), address, num_pages, perm));
+
+    // Update the blocks.
+    m_memory_block_manager.Update(std::addressof(allocator), address, num_pages, state, perm,
+                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
+                                  KMemoryBlockDisableMergeAttribute::None);
 
     R_SUCCEED();
 }
 
-Result KPageTable::UnmapPages(VAddr address, KPageGroup& page_linked_list, KMemoryState state) {
+Result KPageTable::UnmapPages(KProcessAddress address, size_t num_pages, KMemoryState state) {
     // Check that the unmap is in range.
-    const size_t num_pages{page_linked_list.GetNumPages()};
-    const size_t size{num_pages * PageSize};
+    const size_t size = num_pages * PageSize;
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
 
     // Lock the table.
@@ -2151,13 +2299,18 @@ Result KPageTable::UnmapPages(VAddr address, KPageGroup& page_linked_list, KMemo
                                  KMemoryAttribute::None));
 
     // Create an update allocator.
-    Result allocator_result{ResultSuccess};
+    Result allocator_result;
     KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
                                                  m_memory_block_slab_manager, num_allocator_blocks);
     R_TRY(allocator_result);
 
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
+
     // Perform the unmap.
-    R_TRY(UnmapPages(address, page_linked_list));
+    const KPageProperties unmap_properties = {KMemoryPermission::None, false, false,
+                                              DisableMergeAttribute::None};
+    R_TRY(this->Operate(address, num_pages, unmap_properties.perm, OperationType::Unmap));
 
     // Update the blocks.
     m_memory_block_manager.Update(std::addressof(allocator), address, num_pages, KMemoryState::Free,
@@ -2168,29 +2321,130 @@ Result KPageTable::UnmapPages(VAddr address, KPageGroup& page_linked_list, KMemo
     R_SUCCEED();
 }
 
-Result KPageTable::UnmapPages(VAddr address, size_t num_pages, KMemoryState state) {
-    // Check that the unmap is in range.
-    const size_t size = num_pages * PageSize;
-    R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
+Result KPageTable::MapPageGroup(KProcessAddress* out_addr, const KPageGroup& pg,
+                                KProcessAddress region_start, size_t region_num_pages,
+                                KMemoryState state, KMemoryPermission perm) {
+    ASSERT(!this->IsLockedByCurrentThread());
+
+    // Ensure this is a valid map request.
+    const size_t num_pages = pg.GetNumPages();
+    R_UNLESS(this->CanContain(region_start, region_num_pages * PageSize, state),
+             ResultInvalidCurrentMemory);
+    R_UNLESS(num_pages < region_num_pages, ResultOutOfMemory);
 
     // Lock the table.
     KScopedLightLock lk(m_general_lock);
 
-    // Check the memory state.
-    size_t num_allocator_blocks{};
+    // Find a random address to map at.
+    KProcessAddress addr = this->FindFreeArea(region_start, region_num_pages, num_pages, PageSize,
+                                              0, this->GetNumGuardPages());
+    R_UNLESS(addr != 0, ResultOutOfMemory);
+    ASSERT(this->CanContain(addr, num_pages * PageSize, state));
+    ASSERT(this->CheckMemoryState(addr, num_pages * PageSize, KMemoryState::All, KMemoryState::Free,
+                                  KMemoryPermission::None, KMemoryPermission::None,
+                                  KMemoryAttribute::None, KMemoryAttribute::None) == ResultSuccess);
+
+    // Create an update allocator.
+    Result allocator_result;
+    KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
+                                                 m_memory_block_slab_manager);
+    R_TRY(allocator_result);
+
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
+
+    // Perform mapping operation.
+    const KPageProperties properties = {perm, state == KMemoryState::Io, false,
+                                        DisableMergeAttribute::DisableHead};
+    R_TRY(this->MapPageGroupImpl(updater.GetPageList(), addr, pg, properties, false));
+
+    // Update the blocks.
+    m_memory_block_manager.Update(std::addressof(allocator), addr, num_pages, state, perm,
+                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
+                                  KMemoryBlockDisableMergeAttribute::None);
+
+    // We successfully mapped the pages.
+    *out_addr = addr;
+    R_SUCCEED();
+}
+
+Result KPageTable::MapPageGroup(KProcessAddress addr, const KPageGroup& pg, KMemoryState state,
+                                KMemoryPermission perm) {
+    ASSERT(!this->IsLockedByCurrentThread());
+
+    // Ensure this is a valid map request.
+    const size_t num_pages = pg.GetNumPages();
+    const size_t size = num_pages * PageSize;
+    R_UNLESS(this->CanContain(addr, size, state), ResultInvalidCurrentMemory);
+
+    // Lock the table.
+    KScopedLightLock lk(m_general_lock);
+
+    // Check if state allows us to map.
+    size_t num_allocator_blocks;
+    R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks), addr, size,
+                                 KMemoryState::All, KMemoryState::Free, KMemoryPermission::None,
+                                 KMemoryPermission::None, KMemoryAttribute::None,
+                                 KMemoryAttribute::None));
+
+    // Create an update allocator.
+    Result allocator_result;
+    KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
+                                                 m_memory_block_slab_manager, num_allocator_blocks);
+    R_TRY(allocator_result);
+
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
+
+    // Perform mapping operation.
+    const KPageProperties properties = {perm, state == KMemoryState::Io, false,
+                                        DisableMergeAttribute::DisableHead};
+    R_TRY(this->MapPageGroupImpl(updater.GetPageList(), addr, pg, properties, false));
+
+    // Update the blocks.
+    m_memory_block_manager.Update(std::addressof(allocator), addr, num_pages, state, perm,
+                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
+                                  KMemoryBlockDisableMergeAttribute::None);
+
+    // We successfully mapped the pages.
+    R_SUCCEED();
+}
+
+Result KPageTable::UnmapPageGroup(KProcessAddress address, const KPageGroup& pg,
+                                  KMemoryState state) {
+    ASSERT(!this->IsLockedByCurrentThread());
+
+    // Ensure this is a valid unmap request.
+    const size_t num_pages = pg.GetNumPages();
+    const size_t size = num_pages * PageSize;
+    R_UNLESS(this->CanContain(address, size, state), ResultInvalidCurrentMemory);
+
+    // Lock the table.
+    KScopedLightLock lk(m_general_lock);
+
+    // Check if state allows us to unmap.
+    size_t num_allocator_blocks;
     R_TRY(this->CheckMemoryState(std::addressof(num_allocator_blocks), address, size,
                                  KMemoryState::All, state, KMemoryPermission::None,
                                  KMemoryPermission::None, KMemoryAttribute::All,
                                  KMemoryAttribute::None));
 
+    // Check that the page group is valid.
+    R_UNLESS(this->IsValidPageGroup(pg, address, num_pages), ResultInvalidCurrentMemory);
+
     // Create an update allocator.
-    Result allocator_result{ResultSuccess};
+    Result allocator_result;
     KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
                                                  m_memory_block_slab_manager, num_allocator_blocks);
     R_TRY(allocator_result);
 
-    // Perform the unmap.
-    R_TRY(Operate(address, num_pages, KMemoryPermission::None, OperationType::Unmap));
+    // We're going to perform an update, so create a helper.
+    KScopedPageTableUpdater updater(this);
+
+    // Perform unmapping operation.
+    const KPageProperties properties = {KMemoryPermission::None, false, false,
+                                        DisableMergeAttribute::None};
+    R_TRY(this->Operate(address, num_pages, properties.perm, OperationType::Unmap));
 
     // Update the blocks.
     m_memory_block_manager.Update(std::addressof(allocator), address, num_pages, KMemoryState::Free,
@@ -2548,54 +2802,6 @@ Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
         *out = m_heap_region_start;
         R_SUCCEED();
     }
-}
-
-ResultVal<VAddr> KPageTable::AllocateAndMapMemory(size_t needed_num_pages, size_t align,
-                                                  bool is_map_only, VAddr region_start,
-                                                  size_t region_num_pages, KMemoryState state,
-                                                  KMemoryPermission perm, PAddr map_addr) {
-    KScopedLightLock lk(m_general_lock);
-
-    R_UNLESS(CanContain(region_start, region_num_pages * PageSize, state),
-             ResultInvalidCurrentMemory);
-    R_UNLESS(region_num_pages > needed_num_pages, ResultOutOfMemory);
-    const VAddr addr{
-        AllocateVirtualMemory(region_start, region_num_pages, needed_num_pages, align)};
-    R_UNLESS(addr, ResultOutOfMemory);
-
-    // Create an update allocator.
-    Result allocator_result{ResultSuccess};
-    KMemoryBlockManagerUpdateAllocator allocator(std::addressof(allocator_result),
-                                                 m_memory_block_slab_manager);
-
-    if (is_map_only) {
-        R_TRY(Operate(addr, needed_num_pages, perm, OperationType::Map, map_addr));
-    } else {
-        // Create a page group tohold the pages we allocate.
-        KPageGroup pg{m_kernel, m_block_info_manager};
-
-        R_TRY(m_system.Kernel().MemoryManager().AllocateAndOpen(
-            &pg, needed_num_pages,
-            KMemoryManager::EncodeOption(m_memory_pool, m_allocation_option)));
-
-        // Ensure that the page group is closed when we're done working with it.
-        SCOPE_EXIT({ pg.Close(); });
-
-        // Clear all pages.
-        for (const auto& it : pg) {
-            std::memset(m_system.DeviceMemory().GetPointer<void>(it.GetAddress()),
-                        m_heap_fill_value, it.GetSize());
-        }
-
-        R_TRY(Operate(addr, needed_num_pages, pg, OperationType::MapGroup));
-    }
-
-    // Update the blocks.
-    m_memory_block_manager.Update(std::addressof(allocator), addr, needed_num_pages, state, perm,
-                                  KMemoryAttribute::None, KMemoryBlockDisableMergeAttribute::Normal,
-                                  KMemoryBlockDisableMergeAttribute::None);
-
-    return addr;
 }
 
 Result KPageTable::LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, size_t size,

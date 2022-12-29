@@ -120,6 +120,19 @@ DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const
     return DriverResult::Success;
 }
 
+DriverResult JoyconCommonProtocol::SendMcuCommand(SubCommand sc, std::span<const u8> buffer) {
+    std::vector<u8> local_buffer(MaxResponseSize);
+
+    local_buffer[0] = static_cast<u8>(OutputReport::MCU_DATA);
+    local_buffer[1] = GetCounter();
+    local_buffer[10] = static_cast<u8>(sc);
+    for (std::size_t i = 0; i < buffer.size(); ++i) {
+        local_buffer[11 + i] = buffer[i];
+    }
+
+    return SendData(local_buffer);
+}
+
 DriverResult JoyconCommonProtocol::SendVibrationReport(std::span<const u8> buffer) {
     std::vector<u8> local_buffer(MaxResponseSize);
 
