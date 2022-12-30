@@ -942,7 +942,6 @@ void Config::ReadValues() {
     ReadRendererValues();
     ReadAudioValues();
     ReadSystemValues();
-    ReadMultiplayerValues();
 }
 
 void Config::SavePlayerValue(std::size_t player_index) {
@@ -1100,7 +1099,6 @@ void Config::SaveValues() {
     SaveRendererValues();
     SaveAudioValues();
     SaveSystemValues();
-    SaveMultiplayerValues();
 }
 
 void Config::SaveAudioValues() {

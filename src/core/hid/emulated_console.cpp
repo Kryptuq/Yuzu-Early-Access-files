@@ -40,6 +40,11 @@ void EmulatedConsole::SetTouchParams() {
         touch_params[index++] = std::move(touchscreen_param);
     }
 
+    if (Settings::values.touch_from_button_maps.empty()) {
+        LOG_WARNING(Input, "touch_from_button_maps is unset by frontend config");
+        return;
+    }
+
     const auto button_index =
         static_cast<u64>(Settings::values.touch_from_button_map_index.GetValue());
     const auto& touch_buttons = Settings::values.touch_from_button_maps[button_index].buttons;
