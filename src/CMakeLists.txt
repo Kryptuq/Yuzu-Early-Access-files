@@ -161,7 +161,10 @@ add_subdirectory(video_core)
 add_subdirectory(network)
 add_subdirectory(input_common)
 add_subdirectory(shader_recompiler)
-add_subdirectory(dedicated_room)
+
+if (YUZU_ROOM)
+     add_subdirectory(dedicated_room)
+endif()
 
 if (YUZU_TESTS)
     add_subdirectory(tests)

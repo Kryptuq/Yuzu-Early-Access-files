@@ -24,36 +24,12 @@ class System;
 
 namespace Kernel {
 
-enum class DisableMergeAttribute : u8 {
-    None = (0U << 0),
-    DisableHead = (1U << 0),
-    DisableHeadAndBody = (1U << 1),
-    EnableHeadAndBody = (1U << 2),
-    DisableTail = (1U << 3),
-    EnableTail = (1U << 4),
-    EnableAndMergeHeadBodyTail = (1U << 5),
-    EnableHeadBodyTail = EnableHeadAndBody | EnableTail,
-    DisableHeadBodyTail = DisableHeadAndBody | DisableTail,
-};
-
-struct KPageProperties {
-    KMemoryPermission perm;
-    bool io;
-    bool uncached;
-    DisableMergeAttribute disable_merge_attributes;
-};
-static_assert(std::is_trivial_v<KPageProperties>);
-static_assert(sizeof(KPageProperties) == sizeof(u32));
-
 class KBlockInfoManager;
 class KMemoryBlockManager;
 class KResourceLimit;
 class KSystemResource;
 
 class KPageTable final {
-protected:
-    struct PageLinkedList;
-
 public:
     enum class ICacheInvalidationStrategy : u32 { InvalidateRange, InvalidateAll };
 
@@ -81,12 +57,27 @@ public:
     Result UnmapPhysicalMemory(VAddr addr, size_t size);
     Result MapMemory(VAddr dst_addr, VAddr src_addr, size_t size);
     Result UnmapMemory(VAddr dst_addr, VAddr src_addr, size_t size);
+    Result MapPages(VAddr addr, KPageGroup& page_linked_list, KMemoryState state,
+                    KMemoryPermission perm);
+    Result MapPages(VAddr* out_addr, size_t num_pages, size_t alignment, PAddr phys_addr,
+                    KMemoryState state, KMemoryPermission perm) {
+        R_RETURN(this->MapPages(out_addr, num_pages, alignment, phys_addr, true,
+                                this->GetRegionAddress(state),
+                                this->GetRegionSize(state) / PageSize, state, perm));
+    }
+    Result UnmapPages(VAddr addr, KPageGroup& page_linked_list, KMemoryState state);
+    Result UnmapPages(VAddr address, size_t num_pages, KMemoryState state);
     Result SetProcessMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermission svc_perm);
     KMemoryInfo QueryInfo(VAddr addr);
     Result SetMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermission perm);
     Result SetMemoryAttribute(VAddr addr, size_t size, u32 mask, u32 attr);
     Result SetMaxHeapSize(size_t size);
     Result SetHeapSize(VAddr* out, size_t size);
+    ResultVal<VAddr> AllocateAndMapMemory(size_t needed_num_pages, size_t align, bool is_map_only,
+                                          VAddr region_start, size_t region_num_pages,
+                                          KMemoryState state, KMemoryPermission perm,
+                                          PAddr map_addr = 0);
+
     Result LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, size_t size,
                                         KMemoryPermission perm, bool is_aligned, bool check_heap);
     Result LockForUnmapDeviceAddressSpace(VAddr address, size_t size, bool check_heap);
@@ -116,45 +107,7 @@ public:
         return *m_page_table_impl;
     }
 
-    KBlockInfoManager* GetBlockInfoManager() {
-        return m_block_info_manager;
-    }
-
     bool CanContain(VAddr addr, size_t size, KMemoryState state) const;
-
-    Result MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
-                    KPhysicalAddress phys_addr, KProcessAddress region_start,
-                    size_t region_num_pages, KMemoryState state, KMemoryPermission perm) {
-        R_RETURN(this->MapPages(out_addr, num_pages, alignment, phys_addr, true, region_start,
-                                region_num_pages, state, perm));
-    }
-
-    Result MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
-                    KPhysicalAddress phys_addr, KMemoryState state, KMemoryPermission perm) {
-        R_RETURN(this->MapPages(out_addr, num_pages, alignment, phys_addr, true,
-                                this->GetRegionAddress(state),
-                                this->GetRegionSize(state) / PageSize, state, perm));
-    }
-
-    Result MapPages(KProcessAddress* out_addr, size_t num_pages, KMemoryState state,
-                    KMemoryPermission perm) {
-        R_RETURN(this->MapPages(out_addr, num_pages, PageSize, 0, false,
-                                this->GetRegionAddress(state),
-                                this->GetRegionSize(state) / PageSize, state, perm));
-    }
-
-    Result MapPages(KProcessAddress address, size_t num_pages, KMemoryState state,
-                    KMemoryPermission perm);
-    Result UnmapPages(KProcessAddress address, size_t num_pages, KMemoryState state);
-
-    Result MapPageGroup(KProcessAddress* out_addr, const KPageGroup& pg,
-                        KProcessAddress region_start, size_t region_num_pages, KMemoryState state,
-                        KMemoryPermission perm);
-    Result MapPageGroup(KProcessAddress address, const KPageGroup& pg, KMemoryState state,
-                        KMemoryPermission perm);
-    Result UnmapPageGroup(KProcessAddress address, const KPageGroup& pg, KMemoryState state);
-    void RemapPageGroup(PageLinkedList* page_list, KProcessAddress address, size_t size,
-                        const KPageGroup& pg);
 
 protected:
     struct PageLinkedList {
@@ -209,9 +162,11 @@ private:
     static constexpr KMemoryAttribute DefaultMemoryIgnoreAttr =
         KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared;
 
-    Result MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
-                    KPhysicalAddress phys_addr, bool is_pa_valid, KProcessAddress region_start,
-                    size_t region_num_pages, KMemoryState state, KMemoryPermission perm);
+    Result MapPages(VAddr addr, const KPageGroup& page_linked_list, KMemoryPermission perm);
+    Result MapPages(VAddr* out_addr, size_t num_pages, size_t alignment, PAddr phys_addr,
+                    bool is_pa_valid, VAddr region_start, size_t region_num_pages,
+                    KMemoryState state, KMemoryPermission perm);
+    Result UnmapPages(VAddr addr, const KPageGroup& page_linked_list);
     bool IsRegionContiguous(VAddr addr, u64 size) const;
     void AddRegionToPages(VAddr start, size_t num_pages, KPageGroup& page_linked_list);
     KMemoryInfo QueryInfoImpl(VAddr addr);
@@ -306,10 +261,9 @@ private:
     void CleanupForIpcClientOnServerSetupFailure(PageLinkedList* page_list, VAddr address,
                                                  size_t size, KMemoryPermission prot_perm);
 
-    Result AllocateAndMapPagesImpl(PageLinkedList* page_list, KProcessAddress address,
-                                   size_t num_pages, KMemoryPermission perm);
-    Result MapPageGroupImpl(PageLinkedList* page_list, KProcessAddress address,
-                            const KPageGroup& pg, const KPageProperties properties, bool reuse_ll);
+    // HACK: These will be removed once we automatically manage page reference counts.
+    void HACK_OpenPages(PAddr phys_addr, size_t num_pages);
+    void HACK_ClosePages(VAddr virt_addr, size_t num_pages);
 
     mutable KLightLock m_general_lock;
     mutable KLightLock m_map_physical_memory_lock;
@@ -534,7 +488,6 @@ private:
     std::unique_ptr<Common::PageTable> m_page_table_impl;
 
     Core::System& m_system;
-    KernelCore& m_kernel;
 };
 
 } // namespace Kernel

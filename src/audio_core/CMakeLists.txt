@@ -187,11 +187,7 @@ add_library(audio_core STATIC
     renderer/voice/voice_info.cpp
     renderer/voice/voice_info.h
     renderer/voice/voice_state.h
-    sink/cubeb_sink.cpp
-    sink/cubeb_sink.h
     sink/null_sink.h
-    sink/sdl2_sink.cpp
-    sink/sdl2_sink.h
     sink/sink.h
     sink/sink_details.cpp
     sink/sink_details.h
@@ -222,11 +218,22 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(audio_core PRIVATE dynarmic::dynarmic)
 endif()
 
-if(ENABLE_CUBEB)
+if (ENABLE_CUBEB)
+    target_sources(audio_core PRIVATE
+        sink/cubeb_sink.cpp
+        sink/cubeb_sink.h
+    )
+
     target_link_libraries(audio_core PRIVATE cubeb::cubeb)
     target_compile_definitions(audio_core PRIVATE -DHAVE_CUBEB=1)
 endif()
-if(ENABLE_SDL2)
+
+if (ENABLE_SDL2)
+    target_sources(audio_core PRIVATE
+        sink/sdl2_sink.cpp
+        sink/sdl2_sink.h
+    )
+
     target_link_libraries(audio_core PRIVATE SDL2::SDL2)
     target_compile_definitions(audio_core PRIVATE HAVE_SDL2)
 endif()

@@ -39,7 +39,8 @@ using ColorDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using BatteryDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
-using CameraDevices = std::unique_ptr<Common::Input::InputDevice>;
+using CameraDevices =
+    std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using RingAnalogDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
 using NfcDevices =
@@ -52,7 +53,7 @@ using ControllerMotionParams = std::array<Common::ParamPackage, Settings::Native
 using TriggerParams = std::array<Common::ParamPackage, Settings::NativeTrigger::NumTriggers>;
 using ColorParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using BatteryParams = std::array<Common::ParamPackage, max_emulated_controllers>;
-using CameraParams = Common::ParamPackage;
+using CameraParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using RingAnalogParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using NfcParams = std::array<Common::ParamPackage, max_emulated_controllers>;
 using OutputParams = std::array<Common::ParamPackage, output_devices_size>;

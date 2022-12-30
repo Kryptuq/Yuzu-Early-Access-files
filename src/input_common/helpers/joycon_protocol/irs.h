@@ -23,6 +23,14 @@ public:
 
     DriverResult DisableIrs();
 
+    DriverResult SetIrsConfig(IrsMode mode, IrsResolution format);
+
+    DriverResult RequestImage(std::span<u8> buffer);
+
+    std::vector<u8> GetImage() const;
+
+    IrsResolution GetIrsFormat() const;
+
     bool IsEnabled() const;
 
 private:
@@ -31,16 +39,25 @@ private:
     DriverResult WriteRegistersStep1();
     DriverResult WriteRegistersStep2();
 
-    bool is_enabled{};
+    DriverResult RequestFrame(u8 frame);
+    DriverResult ResendFrame(u8 frame);
 
-    u8 resolution = 0x69;
-    u8 leds = 0x00;
-    u8 ex_light_filter = 0x03;
-    u8 image_flip = 0x00;
-    u8 digital_gain = 0x01;
-    u16 exposure = 0x2490;
-    u16 led_intensity = 0x0f10;
-    u32 denoise = 0x012344;
+    IrsMode irs_mode{IrsMode::ImageTransfer};
+    IrsResolution resolution{IrsResolution::Size40x30};
+    IrsResolutionCode resolution_code{IrsResolutionCode::Size40x30};
+    IrsFragments fragments{IrsFragments::Size40x30};
+    IrLeds leds{IrLeds::BrightAndDim};
+    IrExLedFilter led_filter{IrExLedFilter::Enabled};
+    IrImageFlip image_flip{IrImageFlip::Normal};
+    u8 digital_gain{0x01};
+    u16 exposure{0x2490};
+    u16 led_intensity{0x0f10};
+    u32 denoise{0x012344};
+
+    u8 packet_fragment{};
+    std::vector<u8> buf_image; // 8bpp greyscale image.
+
+    bool is_enabled{};
 };
 
 } // namespace InputCommon::Joycon

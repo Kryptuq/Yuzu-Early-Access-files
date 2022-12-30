@@ -17,6 +17,7 @@ struct Color;
 struct MotionData;
 enum class ControllerType;
 enum class DriverResult;
+enum class IrsResolution;
 class JoyconDriver;
 } // namespace InputCommon::Joycon
 
@@ -35,7 +36,7 @@ public:
     Common::Input::DriverResult SetLeds(const PadIdentifier& identifier,
                                         const Common::Input::LedStatus& led_status) override;
 
-    Common::Input::DriverResult SetCameraFormat(const PadIdentifier& identifier_,
+    Common::Input::DriverResult SetCameraFormat(const PadIdentifier& identifier,
                                                 Common::Input::CameraFormat camera_format) override;
 
     Common::Input::NfcState SupportsNfc(const PadIdentifier& identifier_) const override;
@@ -81,6 +82,8 @@ private:
                         const Joycon::MotionData& value);
     void OnRingConUpdate(f32 ring_data);
     void OnAmiiboUpdate(std::size_t port, const std::vector<u8>& amiibo_data);
+    void OnCameraUpdate(std::size_t port, const std::vector<u8>& camera_data,
+                        Joycon::IrsResolution format);
 
     /// Returns a JoyconHandle corresponding to a PadIdentifier
     std::shared_ptr<Joycon::JoyconDriver> GetHandle(PadIdentifier identifier) const;

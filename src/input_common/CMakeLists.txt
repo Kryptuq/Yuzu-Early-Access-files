@@ -4,14 +4,10 @@
 add_library(input_common STATIC
     drivers/camera.cpp
     drivers/camera.h
-    drivers/gc_adapter.cpp
-    drivers/gc_adapter.h
     drivers/keyboard.cpp
     drivers/keyboard.h
     drivers/mouse.cpp
     drivers/mouse.h
-    drivers/sdl_driver.cpp
-    drivers/sdl_driver.h
     drivers/tas_input.cpp
     drivers/tas_input.h
     drivers/touch_screen.cpp
@@ -83,8 +79,17 @@ if (ENABLE_SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)
 endif()
 
+if (ENABLE_LIBUSB)
+    target_sources(input_common PRIVATE
+        drivers/gc_adapter.cpp
+        drivers/gc_adapter.h
+    )
+    target_link_libraries(input_common PRIVATE libusb::usb)
+    target_compile_definitions(input_common PRIVATE HAVE_LIBUSB)
+endif()
+
 create_target_directory_groups(input_common)
-target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost libusb::usb)
+target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost)
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(input_common PRIVATE precompiled_headers.h)

@@ -74,8 +74,12 @@ void JoyconPoller::UpdateColor(const Color& color) {
     callbacks.on_color_data(color);
 }
 
-void JoyconPoller::updateAmiibo(const std::vector<u8>& amiibo_data) {
+void JoyconPoller::UpdateAmiibo(const std::vector<u8>& amiibo_data) {
     callbacks.on_amiibo_data(amiibo_data);
+}
+
+void JoyconPoller::UpdateCamera(const std::vector<u8>& camera_data, IrsResolution format) {
+    callbacks.on_camera_data(camera_data, format);
 }
 
 void JoyconPoller::UpdateRing(s16 value, const RingStatus& ring_status) {

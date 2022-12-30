@@ -45,7 +45,7 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "12" AND CMAKE_CXX_COMPILER
 endif()
 
 # libusb
-if (NOT TARGET libusb::usb)
+if (ENABLE_LIBUSB AND NOT TARGET libusb::usb)
     add_subdirectory(libusb EXCLUDE_FROM_ALL)
 endif()
 
@@ -152,6 +152,6 @@ if (YUZU_USE_BUNDLED_FFMPEG)
 endif()
 
 # Vulkan-Headers
-if (NOT TARGET Vulkan::Headers)
+if (YUZU_USE_EXTERNAL_VULKAN_HEADERS)
     add_subdirectory(Vulkan-Headers EXCLUDE_FROM_ALL)
 endif()

@@ -191,6 +191,10 @@ void Joycons::RegisterNewDevice(SDL_hid_device_info* device_info) {
             .on_amiibo_data = {[this, port](const std::vector<u8>& amiibo_data) {
                 OnAmiiboUpdate(port, amiibo_data);
             }},
+            .on_camera_data = {[this, port](const std::vector<u8>& camera_data,
+                                            Joycon::IrsResolution format) {
+                OnCameraUpdate(port, camera_data, format);
+            }},
         };
 
         handle->InitializeDevice();
@@ -265,9 +269,14 @@ Common::Input::DriverResult Joycons::SetLeds(const PadIdentifier& identifier,
         handle->SetLedConfig(static_cast<u8>(led_config)));
 }
 
-Common::Input::DriverResult Joycons::SetCameraFormat(const PadIdentifier& identifier_,
+Common::Input::DriverResult Joycons::SetCameraFormat(const PadIdentifier& identifier,
                                                      Common::Input::CameraFormat camera_format) {
-    return Common::Input::DriverResult::NotSupported;
+    auto handle = GetHandle(identifier);
+    if (handle == nullptr) {
+        return Common::Input::DriverResult::InvalidHandle;
+    }
+    return static_cast<Common::Input::DriverResult>(handle->SetIrsConfig(
+        Joycon::IrsMode::ImageTransfer, static_cast<Joycon::IrsResolution>(camera_format)));
 };
 
 Common::Input::NfcState Joycons::SupportsNfc(const PadIdentifier& identifier_) const {
@@ -288,18 +297,16 @@ Common::Input::DriverResult Joycons::SetPollingMode(const PadIdentifier& identif
     }
 
     switch (polling_mode) {
-    case Common::Input::PollingMode::NFC:
-        return static_cast<Common::Input::DriverResult>(handle->SetNfcMode());
-        break;
     case Common::Input::PollingMode::Active:
         return static_cast<Common::Input::DriverResult>(handle->SetActiveMode());
-        break;
     case Common::Input::PollingMode::Pasive:
         return static_cast<Common::Input::DriverResult>(handle->SetPasiveMode());
-        break;
+    case Common::Input::PollingMode::IR:
+        return static_cast<Common::Input::DriverResult>(handle->SetIrMode());
+    case Common::Input::PollingMode::NFC:
+        return static_cast<Common::Input::DriverResult>(handle->SetNfcMode());
     case Common::Input::PollingMode::Ring:
         return static_cast<Common::Input::DriverResult>(handle->SetRingConMode());
-        break;
     default:
         return Common::Input::DriverResult::NotSupported;
     }
@@ -388,6 +395,12 @@ void Joycons::OnAmiiboUpdate(std::size_t port, const std::vector<u8>& amiibo_dat
     const auto nfc_state = amiibo_data.empty() ? Common::Input::NfcState::AmiiboRemoved
                                                : Common::Input::NfcState::NewAmiibo;
     SetNfc(identifier, {nfc_state, amiibo_data});
+}
+
+void Joycons::OnCameraUpdate(std::size_t port, const std::vector<u8>& camera_data,
+                             Joycon::IrsResolution format) {
+    const auto identifier = GetIdentifier(port, Joycon::ControllerType::Right);
+    SetCamera(identifier, {static_cast<Common::Input::CameraFormat>(format), camera_data});
 }
 
 std::shared_ptr<Joycon::JoyconDriver> Joycons::GetHandle(PadIdentifier identifier) const {

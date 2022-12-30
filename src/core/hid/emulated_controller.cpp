@@ -140,7 +140,9 @@ void EmulatedController::LoadDevices() {
     battery_params[LeftIndex].Set("battery", true);
     battery_params[RightIndex].Set("battery", true);
 
-    camera_params = Common::ParamPackage{"engine:camera,camera:1"};
+    camera_params[0] = right_joycon;
+    camera_params[0].Set("camera", true);
+    camera_params[1] = Common::ParamPackage{"engine:camera,camera:1"};
     ring_params[1] = Common::ParamPackage{"engine:joycon,axis_x:100,axis_y:101"};
     nfc_params[0] = Common::ParamPackage{"engine:virtual_amiibo,nfc:1"};
     nfc_params[1] = right_joycon;
@@ -148,7 +150,7 @@ void EmulatedController::LoadDevices() {
 
     output_params[LeftIndex] = left_joycon;
     output_params[RightIndex] = right_joycon;
-    output_params[2] = camera_params;
+    output_params[2] = camera_params[1];
     output_params[3] = nfc_params[0];
     output_params[LeftIndex].Set("output", true);
     output_params[RightIndex].Set("output", true);
@@ -166,7 +168,7 @@ void EmulatedController::LoadDevices() {
     std::ranges::transform(battery_params, battery_devices.begin(),
                            Common::Input::CreateInputDevice);
     std::ranges::transform(color_params, color_devices.begin(), Common::Input::CreateInputDevice);
-    camera_devices = Common::Input::CreateInputDevice(camera_params);
+    std::ranges::transform(camera_params, camera_devices.begin(), Common::Input::CreateInputDevice);
     std::ranges::transform(ring_params, ring_analog_devices.begin(),
                            Common::Input::CreateInputDevice);
     std::ranges::transform(nfc_params, nfc_devices.begin(), Common::Input::CreateInputDevice);
@@ -357,12 +359,15 @@ void EmulatedController::ReloadInput() {
         motion_devices[index]->ForceUpdate();
     }
 
-    if (camera_devices) {
-        camera_devices->SetCallback({
+    for (std::size_t index = 0; index < camera_devices.size(); ++index) {
+        if (!camera_devices[index]) {
+            continue;
+        }
+        camera_devices[index]->SetCallback({
             .on_change =
                 [this](const Common::Input::CallbackStatus& callback) { SetCamera(callback); },
         });
-        camera_devices->ForceUpdate();
+        camera_devices[index]->ForceUpdate();
     }
 
     for (std::size_t index = 0; index < ring_analog_devices.size(); ++index) {
@@ -480,7 +485,9 @@ void EmulatedController::UnloadInput() {
     for (auto& stick : virtual_stick_devices) {
         stick.reset();
     }
-    camera_devices.reset();
+    for (auto& camera : camera_devices) {
+        camera.reset();
+    }
     for (auto& ring : ring_analog_devices) {
         ring.reset();
     }

@@ -202,10 +202,15 @@ void JoyconDriver::OnNewData(std::span<u8> buffer) {
         .min_value = ring_calibration.min_value,
     };
 
+    if (irs_protocol->IsEnabled()) {
+        irs_protocol->RequestImage(buffer);
+        joycon_poller->UpdateCamera(irs_protocol->GetImage(), irs_protocol->GetIrsFormat());
+    }
+
     if (nfc_protocol->IsEnabled()) {
         if (amiibo_detected) {
             if (!nfc_protocol->HasAmiibo()) {
-                joycon_poller->updateAmiibo({});
+                joycon_poller->UpdateAmiibo({});
                 amiibo_detected = false;
                 return;
             }
@@ -215,7 +220,7 @@ void JoyconDriver::OnNewData(std::span<u8> buffer) {
             std::vector<u8> data(0x21C);
             const auto result = nfc_protocol->ScanAmiibo(data);
             if (result == DriverResult::Success) {
-                joycon_poller->updateAmiibo(data);
+                joycon_poller->UpdateAmiibo(data);
                 amiibo_detected = true;
             }
         }
@@ -391,12 +396,24 @@ DriverResult JoyconDriver::SetLedConfig(u8 led_pattern) {
     return generic_protocol->SetLedPattern(led_pattern);
 }
 
+DriverResult JoyconDriver::SetIrsConfig(IrsMode mode_, IrsResolution format_) {
+    std::scoped_lock lock{mutex};
+    if (disable_input_thread) {
+        return DriverResult::HandleInUse;
+    }
+    disable_input_thread = true;
+    const auto result = irs_protocol->SetIrsConfig(mode_, format_);
+    disable_input_thread = false;
+    return result;
+}
+
 DriverResult JoyconDriver::SetPasiveMode() {
     std::scoped_lock lock{mutex};
     motion_enabled = false;
     hidbus_enabled = false;
     nfc_enabled = false;
     passive_enabled = true;
+    irs_enabled = false;
     return SetPollingMode();
 }
 
@@ -406,6 +423,22 @@ DriverResult JoyconDriver::SetActiveMode() {
     hidbus_enabled = false;
     nfc_enabled = false;
     passive_enabled = false;
+    irs_enabled = false;
+    return SetPollingMode();
+}
+
+DriverResult JoyconDriver::SetIrMode() {
+    std::scoped_lock lock{mutex};
+
+    if (!supported_features.irs) {
+        return DriverResult::NotSupported;
+    }
+
+    motion_enabled = false;
+    hidbus_enabled = false;
+    nfc_enabled = false;
+    passive_enabled = false;
+    irs_enabled = true;
     return SetPollingMode();
 }
 
@@ -420,6 +453,7 @@ DriverResult JoyconDriver::SetNfcMode() {
     hidbus_enabled = false;
     nfc_enabled = true;
     passive_enabled = false;
+    irs_enabled = false;
     return SetPollingMode();
 }
 
@@ -434,6 +468,7 @@ DriverResult JoyconDriver::SetRingConMode() {
     hidbus_enabled = true;
     nfc_enabled = false;
     passive_enabled = false;
+    irs_enabled = false;
 
     const auto result = SetPollingMode();
 

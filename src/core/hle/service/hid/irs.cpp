@@ -63,6 +63,8 @@ void IRS::ActivateIrsensor(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_IRS, "(STUBBED) called, applet_resource_user_id={}",
                 applet_resource_user_id);
 
+    npad_device->SetPollingMode(Common::Input::PollingMode::IR);
+
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -73,6 +75,8 @@ void IRS::DeactivateIrsensor(Kernel::HLERequestContext& ctx) {
 
     LOG_WARNING(Service_IRS, "(STUBBED) called, applet_resource_user_id={}",
                 applet_resource_user_id);
+
+    npad_device->SetPollingMode(Common::Input::PollingMode::Active);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -524,6 +528,8 @@ void IRS::ActivateIrsensorWithFunctionLevel(Kernel::HLERequestContext& ctx) {
 
     LOG_WARNING(Service_IRS, "(STUBBED) called, function_level={}, applet_resource_user_id={}",
                 parameters.function_level.function_level, parameters.applet_resource_user_id);
+
+    npad_device->SetPollingMode(Common::Input::PollingMode::IR);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

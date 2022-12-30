@@ -22,6 +22,8 @@ CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON
 # On Linux system SDL2 is likely to be lacking HIDAPI support which have drawbacks but is needed for SDL motion
 CMAKE_DEPENDENT_OPTION(YUZU_USE_EXTERNAL_SDL2 "Compile external SDL2" ON "ENABLE_SDL2;NOT MSVC" OFF)
 
+option(ENABLE_LIBUSB "Enable the use of LibUSB" ON)
+
 option(ENABLE_OPENGL "Enable OpenGL" ON)
 mark_as_advanced(FORCE ENABLE_OPENGL)
 option(ENABLE_QT "Enable the Qt frontend" ON)
@@ -35,6 +37,8 @@ option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
 option(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" "${WIN32}")
 
+option(YUZU_USE_EXTERNAL_VULKAN_HEADERS "Use Vulkan-Headers from externals" ON)
+
 option(YUZU_USE_QT_MULTIMEDIA "Use QtMultimedia for Camera" OFF)
 
 option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
@@ -46,6 +50,8 @@ option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 option(YUZU_TESTS "Compile tests" ON)
 
 option(YUZU_USE_PRECOMPILED_HEADERS "Use precompiled headers" ON)
+
+option(YUZU_ROOM "Compile LDN room server" ON)
 
 CMAKE_DEPENDENT_OPTION(YUZU_CRASH_DUMPS "Compile Windows crash dump (Minidump) support" OFF "WIN32" OFF)
 
@@ -204,33 +210,39 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 find_package(enet 1.3)
 find_package(fmt 9 REQUIRED)
 find_package(inih)
-find_package(libusb 1.0.24)
 find_package(lz4 REQUIRED)
 find_package(nlohmann_json 3.8 REQUIRED)
 find_package(Opus 1.3)
-find_package(Vulkan 1.3.238)
 find_package(ZLIB 1.2 REQUIRED)
 find_package(zstd 1.5 REQUIRED)
 
+if (NOT YUZU_USE_EXTERNAL_VULKAN_HEADERS)
+    find_package(Vulkan 1.3.238)
+endif()
+
+if (ENABLE_LIBUSB)
+    find_package(libusb 1.0.24)
+endif()
+
 if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
-    find_package(xbyak 6)
+    find_package(xbyak 6 QUIET)
 endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
-    find_package(dynarmic 6.4.0)
+    find_package(dynarmic 6.4.0 QUIET)
 endif()
 
 if (ENABLE_CUBEB)
-    find_package(cubeb)
+    find_package(cubeb QUIET)
 endif()
 
 if (USE_DISCORD_PRESENCE)
-    find_package(DiscordRPC)
+    find_package(DiscordRPC QUIET)
 endif()
 
 if (ENABLE_WEB_SERVICE)
-    find_package(cpp-jwt 1.4)
-    find_package(httplib 0.11)
+    find_package(cpp-jwt 1.4 QUIET)
+    find_package(httplib 0.11 QUIET)
 endif()
 
 if (YUZU_TESTS)

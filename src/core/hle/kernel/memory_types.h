@@ -14,7 +14,4 @@ constexpr std::size_t PageSize{1 << PageBits};
 
 using Page = std::array<u8, PageSize>;
 
-using KPhysicalAddress = PAddr;
-using KProcessAddress = VAddr;
-
 } // namespace Kernel
