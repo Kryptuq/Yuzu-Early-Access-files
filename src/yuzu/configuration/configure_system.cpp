@@ -14,6 +14,26 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_system.h"
 
+constexpr std::array<u32, 7> LOCALE_BLOCKLIST{
+    // pzzefezrpnkzeidfej
+    // thhsrnhutlohsternp
+    // BHH4CG          U
+    // Raa1AB          S
+    //  nn9
+    //  ts
+    0b0100011100001100000, // Japan
+    0b0000001101001100100, // Americas
+    0b0100110100001000010, // Europe
+    0b0100110100001000010, // Australia
+    0b0000000000000000000, // China
+    0b0100111100001000000, // Korea
+    0b0100111100001000000, // Taiwan
+};
+
+static bool IsValidLocale(u32 region_index, u32 language_index) {
+    return ((LOCALE_BLOCKLIST.at(region_index) >> language_index) & 1) == 0;
+}
+
 ConfigureSystem::ConfigureSystem(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui{std::make_unique<Ui::ConfigureSystem>()}, system{system_} {
     ui->setupUi(this);
@@ -33,6 +53,22 @@ ConfigureSystem::ConfigureSystem(Core::System& system_, QWidget* parent)
             ui->custom_rtc_edit->setDateTime(QDateTime::currentDateTime());
         }
     });
+
+    const auto locale_check = [this](int index) {
+        const bool valid_locale =
+            IsValidLocale(ui->combo_region->currentIndex(), ui->combo_language->currentIndex());
+        ui->label_warn_invalid_locale->setVisible(!valid_locale);
+        if (!valid_locale) {
+            ui->label_warn_invalid_locale->setText(
+                tr("Warning: \"%1\" is not a valid language for region \"%2\"")
+                    .arg(ui->combo_language->currentText())
+                    .arg(ui->combo_region->currentText()));
+        }
+    };
+
+    connect(ui->combo_language, qOverload<int>(&QComboBox::currentIndexChanged), this,
+            locale_check);
+    connect(ui->combo_region, qOverload<int>(&QComboBox::currentIndexChanged), this, locale_check);
 
     ui->label_console_id->setVisible(Settings::IsConfiguringGlobal());
     ui->button_regenerate_console_id->setVisible(Settings::IsConfiguringGlobal());

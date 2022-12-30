@@ -326,7 +326,7 @@
             </item>
             <item>
              <property name="text">
-              <string>English</string>
+              <string>American English</string>
              </property>
             </item>
             <item>
@@ -544,6 +544,16 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_warn_invalid_locale">
+       <property name="text">
+        <string></string>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_disable_info">

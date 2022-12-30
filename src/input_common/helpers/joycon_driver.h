@@ -67,6 +67,7 @@ private:
         bool motion{};
         bool nfc{};
         bool vibration{};
+        bool home_led{};
     };
 
     /// Main thread, actively request new data from the handle
@@ -129,6 +130,7 @@ private:
     RingCalibration ring_calibration{};
 
     // Fixed joycon info
+    bool is_third_party{};
     FirmwareVersion version{};
     Color color{};
     std::size_t port{};

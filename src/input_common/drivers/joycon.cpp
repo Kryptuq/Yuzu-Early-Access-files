@@ -77,11 +77,10 @@ void Joycons::Setup() {
 }
 
 void Joycons::ScanThread(std::stop_token stop_token) {
-    constexpr u16 nintendo_vendor_id = 0x057e;
     Common::SetCurrentThreadName("yuzu:input:JoyconScanThread");
     scan_thread_running = true;
     while (!stop_token.stop_requested()) {
-        SDL_hid_device_info* devs = SDL_hid_enumerate(nintendo_vendor_id, 0x0);
+        SDL_hid_device_info* devs = SDL_hid_enumerate(0x0, 0x0);
         SDL_hid_device_info* cur_dev = devs;
 
         while (cur_dev) {
