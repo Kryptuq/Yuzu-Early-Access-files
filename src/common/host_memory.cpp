@@ -393,12 +393,27 @@ public:
         }
 
         // Virtual memory initialization
-        virtual_base = static_cast<u8*>(
-            mmap(nullptr, virtual_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+#if defined(__FreeBSD__)
+        virtual_base =
+            static_cast<u8*>(mmap(nullptr, virtual_size, PROT_NONE,
+                                  MAP_PRIVATE | MAP_ANONYMOUS | MAP_ALIGNED_SUPER, -1, 0));
+        if (virtual_base == MAP_FAILED) {
+            virtual_base = static_cast<u8*>(
+                mmap(nullptr, virtual_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+            if (virtual_base == MAP_FAILED) {
+                LOG_CRITICAL(HW_Memory, "mmap failed: {}", strerror(errno));
+                throw std::bad_alloc{};
+            }
+        }
+#else
+        virtual_base = static_cast<u8*>(mmap(nullptr, virtual_size, PROT_NONE,
+                                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0));
         if (virtual_base == MAP_FAILED) {
             LOG_CRITICAL(HW_Memory, "mmap failed: {}", strerror(errno));
             throw std::bad_alloc{};
         }
+        madvise(virtual_base, virtual_size, MADV_HUGEPAGE);
+#endif
 
         good = true;
     }
