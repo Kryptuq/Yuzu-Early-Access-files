@@ -194,9 +194,9 @@ std::size_t VfsFile::WriteBytes(const std::vector<u8>& data, std::size_t offset)
 
 std::string VfsFile::GetFullPath() const {
     if (GetContainingDirectory() == nullptr)
-        return "/" + GetName();
+        return '/' + GetName();
 
-    return GetContainingDirectory()->GetFullPath() + "/" + GetName();
+    return GetContainingDirectory()->GetFullPath() + '/' + GetName();
 }
 
 VirtualFile VfsDirectory::GetFileRelative(std::string_view path) const {
@@ -435,7 +435,7 @@ std::string VfsDirectory::GetFullPath() const {
     if (IsRoot())
         return GetName();
 
-    return GetParentDirectory()->GetFullPath() + "/" + GetName();
+    return GetParentDirectory()->GetFullPath() + '/' + GetName();
 }
 
 bool ReadOnlyVfsDirectory::IsWritable() const {
