@@ -685,7 +685,8 @@ u32 Maxwell3D::GetRegisterValue(u32 method) const {
     return regs.reg_array[method];
 }
 
-void Maxwell3D::setHLEReplacementName(u32 bank, u32 offset, HLEReplaceName name) {
+void Maxwell3D::SetHLEReplacementAttributeType(u32 bank, u32 offset,
+                                               HLEReplacementAttributeType name) {
     const u64 key = (static_cast<u64>(bank) << 32) | offset;
     replace_table.emplace(key, name);
 }

@@ -756,20 +756,23 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CollectToolingInfo();
 
     if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {
-        const auto arch = GetNvidiaArchitecture(physical, supported_extensions);
-        switch (arch) {
-        case NvidiaArchitecture::AmpereOrNewer:
-            LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
-            is_float16_supported = false;
-            break;
-        case NvidiaArchitecture::Turing:
-            break;
-        case NvidiaArchitecture::VoltaOrOlder:
-            LOG_WARNING(Render_Vulkan, "Blacklisting Volta and older from VK_KHR_push_descriptor");
-            khr_push_descriptor = false;
-            break;
-        }
         const u32 nv_major_version = (properties.driverVersion >> 22) & 0x3ff;
+        if (nv_major_version < 527) {
+            const auto arch = GetNvidiaArchitecture(physical, supported_extensions);
+            switch (arch) {
+            case NvidiaArchitecture::AmpereOrNewer:
+                LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
+                is_float16_supported = false;
+                break;
+            case NvidiaArchitecture::Turing:
+                break;
+            case NvidiaArchitecture::VoltaOrOlder:
+                LOG_WARNING(Render_Vulkan,
+                            "Blacklisting Volta and older from VK_KHR_push_descriptor");
+                khr_push_descriptor = false;
+                break;
+            }
+        }
         if (nv_major_version >= 510) {
             LOG_WARNING(Render_Vulkan, "NVIDIA Drivers >= 510 do not support MSAA image blits");
             cant_blit_msaa = true;
@@ -834,8 +837,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
     const bool is_intel_anv = driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;
     if (ext_vertex_input_dynamic_state && is_intel_windows) {
-        LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
-        ext_vertex_input_dynamic_state = false;
+        const u32 version = (properties.driverVersion << 3) >> 3;
+        if (version < VK_MAKE_API_VERSION(27, 20, 100, 0)) {
+            LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
+            ext_vertex_input_dynamic_state = false;
+        }
     }
     if (is_float16_supported && is_intel_windows) {
         // Intel's compiler crashes when using fp16 on Astral Chain, disable it for the time being.

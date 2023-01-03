@@ -30,7 +30,8 @@ constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
 constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
 constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
 
-constexpr VkMemoryPropertyFlags HOST_FLAGS = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+constexpr VkMemoryPropertyFlags HOST_FLAGS =
+    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 constexpr VkMemoryPropertyFlags STREAM_FLAGS = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | HOST_FLAGS;
 
 bool IsStreamHeap(VkMemoryHeap heap) noexcept {
@@ -92,7 +93,9 @@ StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& mem
         .pNext = nullptr,
         .flags = 0,
         .size = STREAM_BUFFER_SIZE,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                 VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
@@ -244,19 +247,15 @@ std::optional<StagingBufferRef> StagingBufferPool::TryGetReservedBuffer(size_t s
 StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage usage,
                                                         bool deferred) {
     const u32 log2 = Common::Log2Ceil64(size);
-    VkBufferUsageFlags usage_flags{};
-    if (usage == MemoryUsage::Upload) {
-        usage_flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    }
-    if (usage == MemoryUsage::Download) {
-        usage_flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    }
     vk::Buffer buffer = device.GetLogical().CreateBuffer({
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .size = 1ULL << log2,
-        .usage = usage_flags,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                 VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,

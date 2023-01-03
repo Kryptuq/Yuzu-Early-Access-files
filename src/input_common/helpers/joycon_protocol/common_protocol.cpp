@@ -74,8 +74,8 @@ DriverResult JoyconCommonProtocol::SendData(std::span<const u8> buffer) {
 }
 
 DriverResult JoyconCommonProtocol::GetSubCommandResponse(SubCommand sc, std::vector<u8>& output) {
-    constexpr int timeout_mili = 100;
-    constexpr int MaxTries = 10;
+    constexpr int timeout_mili = 66;
+    constexpr int MaxTries = 15;
     int tries = 0;
     output.resize(MaxSubCommandResponseSize);
 

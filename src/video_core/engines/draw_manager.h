@@ -85,7 +85,7 @@ private:
 
     void ProcessDraw(bool draw_indexed, u32 instance_count);
 
-    void ProcessDrawIndirect(bool draw_indexed);
+    void ProcessDrawIndirect();
 
     Maxwell3D* maxwell3d{};
     State draw_state{};

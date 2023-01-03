@@ -264,6 +264,16 @@ DriverResult JoyconDriver::SetPollingMode() {
         irs_protocol->DisableIrs();
     }
 
+    if (nfc_protocol->IsEnabled()) {
+        amiibo_detected = false;
+        nfc_protocol->DisableNfc();
+    }
+
+    if (ring_protocol->IsEnabled()) {
+        ring_connected = false;
+        ring_protocol->DisableRingCon();
+    }
+
     if (irs_enabled && supported_features.irs) {
         auto result = irs_protocol->EnableIrs();
         if (result == DriverResult::Success) {
@@ -272,11 +282,6 @@ DriverResult JoyconDriver::SetPollingMode() {
         }
         irs_protocol->DisableIrs();
         LOG_ERROR(Input, "Error enabling IRS");
-    }
-
-    if (nfc_protocol->IsEnabled()) {
-        amiibo_detected = false;
-        nfc_protocol->DisableNfc();
     }
 
     if (nfc_enabled && supported_features.nfc) {
@@ -290,11 +295,6 @@ DriverResult JoyconDriver::SetPollingMode() {
         }
         nfc_protocol->DisableNfc();
         LOG_ERROR(Input, "Error enabling NFC");
-    }
-
-    if (ring_protocol->IsEnabled()) {
-        ring_connected = false;
-        ring_protocol->DisableRingCon();
     }
 
     if (hidbus_enabled && supported_features.hidbus) {
@@ -428,6 +428,12 @@ DriverResult JoyconDriver::SetPasiveMode() {
 }
 
 DriverResult JoyconDriver::SetActiveMode() {
+    if (is_ring_disabled_by_irs) {
+        is_ring_disabled_by_irs = false;
+        SetActiveMode();
+        return SetRingConMode();
+    }
+
     std::scoped_lock lock{mutex};
     motion_enabled = true;
     hidbus_enabled = false;
@@ -442,6 +448,10 @@ DriverResult JoyconDriver::SetIrMode() {
 
     if (!supported_features.irs) {
         return DriverResult::NotSupported;
+    }
+
+    if (ring_connected) {
+        is_ring_disabled_by_irs = true;
     }
 
     motion_enabled = false;

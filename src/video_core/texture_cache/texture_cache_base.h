@@ -92,6 +92,8 @@ class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelI
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
     /// True when the API can provide info about the memory of the device.
     static constexpr bool HAS_DEVICE_MEMORY_INFO = P::HAS_DEVICE_MEMORY_INFO;
+    /// True when the API can do asynchronous texture downloads.
+    static constexpr bool IMPLEMENTS_ASYNC_DOWNLOADS = P::IMPLEMENTS_ASYNC_DOWNLOADS;
 
     static constexpr size_t UNSET_CHANNEL{std::numeric_limits<size_t>::max()};
 
@@ -106,6 +108,7 @@ class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelI
     using ImageView = typename P::ImageView;
     using Sampler = typename P::Sampler;
     using Framebuffer = typename P::Framebuffer;
+    using AsyncBuffer = typename P::AsyncBuffer;
 
     struct BlitImages {
         ImageId dst_id;
@@ -316,6 +319,8 @@ private:
     template <typename Func>
     void ForEachSparseSegment(ImageBase& image, Func&& func);
 
+    void BubbleUpImages(VAddr cpu_addr, size_t size);
+
     /// Find or create an image view in the given image with the passed parameters
     [[nodiscard]] ImageViewId FindOrEmplaceImageView(ImageId image_id, const ImageViewInfo& info);
 
@@ -403,7 +408,8 @@ private:
 
     // TODO: This data structure is not optimal and it should be reworked
     std::vector<ImageId> uncommitted_downloads;
-    std::queue<std::vector<ImageId>> committed_downloads;
+    std::deque<std::vector<ImageId>> committed_downloads;
+    std::deque<std::optional<AsyncBuffer>> async_buffers;
 
     struct LRUItemParams {
         using ObjectType = ImageId;

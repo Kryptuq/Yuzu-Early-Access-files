@@ -35,6 +35,9 @@ enum : u8 {
     BlendConstants,
     DepthBounds,
     StencilProperties,
+    StencilReference,
+    StencilWriteMask,
+    StencilCompare,
     LineWidth,
 
     CullMode,
@@ -111,6 +114,24 @@ public:
 
     bool TouchStencilProperties() {
         return Exchange(Dirty::StencilProperties, false);
+    }
+
+    bool TouchStencilReference() {
+        return Exchange(Dirty::StencilReference, false);
+    }
+
+    bool TouchStencilWriteMask() {
+        return Exchange(Dirty::StencilWriteMask, false);
+    }
+
+    bool TouchStencilCompare() {
+        return Exchange(Dirty::StencilCompare, false);
+    }
+
+    bool TouchStencilSide(bool two_sided_stencil_new) {
+        bool result = two_sided_stencil != two_sided_stencil_new;
+        two_sided_stencil = two_sided_stencil_new;
+        return result;
     }
 
     bool TouchLineWidth() const {
@@ -218,6 +239,7 @@ private:
     Tegra::Engines::Maxwell3D::DirtyState::Flags default_flags;
     Tegra::Engines::Maxwell3D::DirtyState::Flags invalidation_flags;
     Maxwell::PrimitiveTopology current_topology = INVALID_TOPOLOGY;
+    bool two_sided_stencil = false;
 };
 
 } // namespace Vulkan

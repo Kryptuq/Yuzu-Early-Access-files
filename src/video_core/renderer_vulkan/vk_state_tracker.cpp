@@ -33,6 +33,9 @@ Flags MakeInvalidationFlags() {
         BlendConstants,
         DepthBounds,
         StencilProperties,
+        StencilReference,
+        StencilWriteMask,
+        StencilCompare,
         LineWidth,
         CullMode,
         DepthBoundsEnable,
@@ -99,14 +102,17 @@ void SetupDirtyDepthBounds(Tables& tables) {
 }
 
 void SetupDirtyStencilProperties(Tables& tables) {
-    auto& table = tables[0];
-    table[OFF(stencil_two_side_enable)] = StencilProperties;
-    table[OFF(stencil_front_ref)] = StencilProperties;
-    table[OFF(stencil_front_mask)] = StencilProperties;
-    table[OFF(stencil_front_func_mask)] = StencilProperties;
-    table[OFF(stencil_back_ref)] = StencilProperties;
-    table[OFF(stencil_back_mask)] = StencilProperties;
-    table[OFF(stencil_back_func_mask)] = StencilProperties;
+    const auto setup = [&](size_t position, u8 flag) {
+        tables[0][position] = flag;
+        tables[1][position] = StencilProperties;
+    };
+    tables[0][OFF(stencil_two_side_enable)] = StencilProperties;
+    setup(OFF(stencil_front_ref), StencilReference);
+    setup(OFF(stencil_front_mask), StencilWriteMask);
+    setup(OFF(stencil_front_func_mask), StencilCompare);
+    setup(OFF(stencil_back_ref), StencilReference);
+    setup(OFF(stencil_back_mask), StencilWriteMask);
+    setup(OFF(stencil_back_func_mask), StencilCompare);
 }
 
 void SetupDirtyLineWidth(Tables& tables) {

@@ -812,8 +812,12 @@ StagingBufferRef TextureCacheRuntime::UploadStagingBuffer(size_t size) {
     return staging_buffer_pool.Request(size, MemoryUsage::Upload);
 }
 
-StagingBufferRef TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
-    return staging_buffer_pool.Request(size, MemoryUsage::Download);
+StagingBufferRef TextureCacheRuntime::DownloadStagingBuffer(size_t size, bool deferred) {
+    return staging_buffer_pool.Request(size, MemoryUsage::Download, deferred);
+}
+
+void TextureCacheRuntime::FreeDeferredStagingBuffer(StagingBufferRef& ref) {
+    staging_buffer_pool.FreeDeferred(ref);
 }
 
 bool TextureCacheRuntime::ShouldReinterpret(Image& dst, Image& src) {

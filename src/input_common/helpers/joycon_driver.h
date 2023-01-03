@@ -108,6 +108,7 @@ private:
     bool starlink_connected{};
     bool ring_connected{};
     bool amiibo_detected{};
+    bool is_ring_disabled_by_irs{};
 
     // Harware configuration
     u8 leds{};

@@ -677,6 +677,30 @@ void FoldConstBuffer(Environment& env, IR::Block& block, IR::Inst& inst) {
     }
 }
 
+void FoldDriverConstBuffer(Environment& env, IR::Block& block, IR::Inst& inst, u32 which_bank,
+                           u32 offset_start = 0, u32 offset_end = std::numeric_limits<u16>::max()) {
+    const IR::Value bank{inst.Arg(0)};
+    const IR::Value offset{inst.Arg(1)};
+    if (!bank.IsImmediate() || !offset.IsImmediate()) {
+        return;
+    }
+    const auto bank_value = bank.U32();
+    if (bank_value != which_bank) {
+        return;
+    }
+    const auto offset_value = offset.U32();
+    if (offset_value < offset_start || offset_value >= offset_end) {
+        return;
+    }
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+    if (inst.GetOpcode() == IR::Opcode::GetCbufU32) {
+        inst.ReplaceUsesWith(IR::Value{env.ReadCbufValue(bank_value, offset_value)});
+    } else {
+        inst.ReplaceUsesWith(
+            IR::Value{Common::BitCast<f32>(env.ReadCbufValue(bank_value, offset_value))});
+    }
+}
+
 void ConstantPropagation(Environment& env, IR::Block& block, IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::GetRegister:
@@ -825,13 +849,17 @@ void ConstantPropagation(Environment& env, IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::GetCbufF32:
     case IR::Opcode::GetCbufU32:
         if (env.HasHLEMacroState()) {
-            return FoldConstBuffer(env, block, inst);
+            FoldConstBuffer(env, block, inst);
+        }
+        if (env.IsPropietaryDriver()) {
+            FoldDriverConstBuffer(env, block, inst, 1);
         }
         break;
     default:
         break;
     }
 }
+
 } // Anonymous namespace
 
 void ConstantPropagationPass(Environment& env, IR::Program& program) {

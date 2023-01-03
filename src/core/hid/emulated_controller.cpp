@@ -11,6 +11,11 @@
 namespace Core::HID {
 constexpr s32 HID_JOYSTICK_MAX = 0x7fff;
 constexpr s32 HID_TRIGGER_MAX = 0x7fff;
+// Use a common UUID for TAS and Virtual Gamepad
+constexpr Common::UUID TAS_UUID =
+    Common::UUID{{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
+constexpr Common::UUID VIRTUAL_UUID =
+    Common::UUID{{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xFF, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
 
 EmulatedController::EmulatedController(NpadIdType npad_id_type_) : npad_id_type(npad_id_type_) {}
 
@@ -392,10 +397,6 @@ void EmulatedController::ReloadInput() {
         nfc_devices[index]->ForceUpdate();
     }
 
-    // Use a common UUID for TAS
-    static constexpr Common::UUID TAS_UUID = Common::UUID{
-        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
-
     // Register TAS devices. No need to force update
     for (std::size_t index = 0; index < tas_button_devices.size(); ++index) {
         if (!tas_button_devices[index]) {
@@ -420,10 +421,6 @@ void EmulatedController::ReloadInput() {
                 },
         });
     }
-
-    // Use a common UUID for Virtual Gamepad
-    static constexpr Common::UUID VIRTUAL_UUID = Common::UUID{
-        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xFF, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
 
     // Register virtual devices. No need to force update
     for (std::size_t index = 0; index < virtual_button_devices.size(); ++index) {
@@ -842,7 +839,12 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
 
     // Only read stick values that have the same uuid or are over the threshold to avoid flapping
     if (controller.stick_values[index].uuid != uuid) {
-        if (!stick_value.down && !stick_value.up && !stick_value.left && !stick_value.right) {
+        const bool is_tas = uuid == TAS_UUID;
+        if (is_tas && stick_value.x.value == 0 && stick_value.y.value == 0) {
+            return;
+        }
+        if (!is_tas && !stick_value.down && !stick_value.up && !stick_value.left &&
+            !stick_value.right) {
             return;
         }
     }

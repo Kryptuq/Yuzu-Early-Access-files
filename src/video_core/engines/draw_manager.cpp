@@ -94,7 +94,7 @@ void DrawManager::DrawIndex(PrimitiveTopology topology, u32 index_first, u32 ind
 void DrawManager::DrawArrayIndirect(PrimitiveTopology topology) {
     draw_state.topology = topology;
 
-    ProcessDrawIndirect(true);
+    ProcessDrawIndirect();
 }
 
 void DrawManager::DrawIndexedIndirect(PrimitiveTopology topology, u32 index_first,
@@ -105,7 +105,7 @@ void DrawManager::DrawIndexedIndirect(PrimitiveTopology topology, u32 index_firs
     draw_state.index_buffer.first = index_first;
     draw_state.index_buffer.count = index_count;
 
-    ProcessDrawIndirect(true);
+    ProcessDrawIndirect();
 }
 
 void DrawManager::SetInlineIndexBuffer(u32 index) {
@@ -216,9 +216,12 @@ void DrawManager::ProcessDraw(bool draw_indexed, u32 instance_count) {
     }
 }
 
-void DrawManager::ProcessDrawIndirect(bool draw_indexed) {
-    LOG_TRACE(HW_GPU, "called, topology={}, count={}", draw_state.topology,
-              draw_indexed ? draw_state.index_buffer.count : draw_state.vertex_buffer.count);
+void DrawManager::ProcessDrawIndirect() {
+    LOG_TRACE(
+        HW_GPU,
+        "called, topology={}, is_indexed={}, includes_count={}, buffer_size={}, max_draw_count={}",
+        draw_state.topology, indirect_state.is_indexed, indirect_state.include_count,
+        indirect_state.buffer_size, indirect_state.max_draw_counts);
 
     UpdateTopology();
 

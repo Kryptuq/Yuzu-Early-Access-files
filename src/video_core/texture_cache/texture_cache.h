@@ -646,7 +646,28 @@ bool TextureCache<P>::ShouldWaitAsyncFlushes() const noexcept {
 template <class P>
 void TextureCache<P>::CommitAsyncFlushes() {
     // This is intentionally passing the value by copy
-    committed_downloads.push(uncommitted_downloads);
+    if constexpr (IMPLEMENTS_ASYNC_DOWNLOADS) {
+        const std::span<const ImageId> download_ids = uncommitted_downloads;
+        if (download_ids.empty()) {
+            committed_downloads.emplace_back(std::move(uncommitted_downloads));
+            uncommitted_downloads.clear();
+            async_buffers.emplace_back(std::optional<AsyncBuffer>{});
+            return;
+        }
+        size_t total_size_bytes = 0;
+        for (const ImageId image_id : download_ids) {
+            total_size_bytes += slot_images[image_id].unswizzled_size_bytes;
+        }
+        auto download_map = runtime.DownloadStagingBuffer(total_size_bytes, true);
+        for (const ImageId image_id : download_ids) {
+            Image& image = slot_images[image_id];
+            const auto copies = FullDownloadCopies(image.info);
+            image.DownloadMemory(download_map, copies);
+            download_map.offset += Common::AlignUp(image.unswizzled_size_bytes, 64);
+        }
+        async_buffers.emplace_back(download_map);
+    }
+    committed_downloads.emplace_back(std::move(uncommitted_downloads));
     uncommitted_downloads.clear();
 }
 
@@ -655,37 +676,58 @@ void TextureCache<P>::PopAsyncFlushes() {
     if (committed_downloads.empty()) {
         return;
     }
-    const std::span<const ImageId> download_ids = committed_downloads.front();
-    if (download_ids.empty()) {
-        committed_downloads.pop();
-        return;
+    if constexpr (IMPLEMENTS_ASYNC_DOWNLOADS) {
+        const std::span<const ImageId> download_ids = committed_downloads.front();
+        if (download_ids.empty()) {
+            committed_downloads.pop_front();
+            async_buffers.pop_front();
+            return;
+        }
+        auto download_map = *async_buffers.front();
+        std::span<u8> download_span = download_map.mapped_span;
+        for (size_t i = download_ids.size(); i > 0; i--) {
+            const ImageBase& image = slot_images[download_ids[i - 1]];
+            const auto copies = FullDownloadCopies(image.info);
+            download_map.offset -= Common::AlignUp(image.unswizzled_size_bytes, 64);
+            std::span<u8> download_span_alt = download_span.subspan(download_map.offset);
+            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span_alt,
+                         swizzle_data_buffer);
+        }
+        runtime.FreeDeferredStagingBuffer(download_map);
+        committed_downloads.pop_front();
+        async_buffers.pop_front();
+    } else {
+        const std::span<const ImageId> download_ids = committed_downloads.front();
+        if (download_ids.empty()) {
+            committed_downloads.pop_front();
+            return;
+        }
+        size_t total_size_bytes = 0;
+        for (const ImageId image_id : download_ids) {
+            total_size_bytes += slot_images[image_id].unswizzled_size_bytes;
+        }
+        auto download_map = runtime.DownloadStagingBuffer(total_size_bytes);
+        const size_t original_offset = download_map.offset;
+        for (const ImageId image_id : download_ids) {
+            Image& image = slot_images[image_id];
+            const auto copies = FullDownloadCopies(image.info);
+            image.DownloadMemory(download_map, copies);
+            download_map.offset += image.unswizzled_size_bytes;
+        }
+        // Wait for downloads to finish
+        runtime.Finish();
+        download_map.offset = original_offset;
+        std::span<u8> download_span = download_map.mapped_span;
+        for (const ImageId image_id : download_ids) {
+            const ImageBase& image = slot_images[image_id];
+            const auto copies = FullDownloadCopies(image.info);
+            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
+                         swizzle_data_buffer);
+            download_map.offset += image.unswizzled_size_bytes;
+            download_span = download_span.subspan(image.unswizzled_size_bytes);
+        }
+        committed_downloads.pop_front();
     }
-    size_t total_size_bytes = 0;
-    for (const ImageId image_id : download_ids) {
-        total_size_bytes += slot_images[image_id].unswizzled_size_bytes;
-    }
-    auto download_map = runtime.DownloadStagingBuffer(total_size_bytes);
-    const size_t original_offset = download_map.offset;
-    for (const ImageId image_id : download_ids) {
-        Image& image = slot_images[image_id];
-        const auto copies = FullDownloadCopies(image.info);
-        image.DownloadMemory(download_map, copies);
-        download_map.offset += image.unswizzled_size_bytes;
-    }
-    // Wait for downloads to finish
-    runtime.Finish();
-
-    download_map.offset = original_offset;
-    std::span<u8> download_span = download_map.mapped_span;
-    for (const ImageId image_id : download_ids) {
-        const ImageBase& image = slot_images[image_id];
-        const auto copies = FullDownloadCopies(image.info);
-        SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
-                     swizzle_data_buffer);
-        download_map.offset += image.unswizzled_size_bytes;
-        download_span = download_span.subspan(image.unswizzled_size_bytes);
-    }
-    committed_downloads.pop();
 }
 
 template <class P>
@@ -1476,6 +1518,27 @@ void TextureCache<P>::ForEachSparseSegment(ImageBase& image, Func&& func) {
 }
 
 template <class P>
+void TextureCache<P>::BubbleUpImages(VAddr cpu_addr, size_t size) {
+    ForEachCPUPage(cpu_addr, size, [this](u64 page) {
+        const auto it = page_table.find(page);
+        if (it == page_table.end()) {
+            return;
+        }
+        std::vector<ImageMapId>& map_vector = it->second;
+        for (size_t i = 1; i < map_vector.size(); i++) {
+            ImageMapView& bottom_map = slot_map_views[map_vector[i - 1]];
+            ImageMapView& top_map = slot_map_views[map_vector[i]];
+            if (slot_images[bottom_map.image_id].modification_tick <
+                slot_images[top_map.image_id].modification_tick) {
+                std::swap(map_vector[i - 1], map_vector[i]);
+            } else {
+                return;
+            }
+        }
+    });
+}
+
+template <class P>
 ImageViewId TextureCache<P>::FindOrEmplaceImageView(ImageId image_id, const ImageViewInfo& info) {
     Image& image = slot_images[image_id];
     if (const ImageViewId image_view_id = image.FindView(info); image_view_id) {
@@ -1788,6 +1851,7 @@ template <class P>
 void TextureCache<P>::MarkModification(ImageBase& image) noexcept {
     image.flags |= ImageFlagBits::GpuModified;
     image.modification_tick = ++modification_tick;
+    BubbleUpImages(image.cpu_addr, image.guest_size_bytes);
 }
 
 template <class P>

@@ -81,14 +81,15 @@ public:
         params.is_indexed = false;
         params.include_count = false;
         params.count_start_address = 0;
-        params.indirect_start_address = maxwell3d.getMacroAddress(1);
+        params.indirect_start_address = maxwell3d.GetMacroAddress(1);
         params.buffer_size = 4 * sizeof(u32);
         params.max_draw_counts = 1;
         params.stride = 0;
 
         if (extended) {
             maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-            maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseInstance);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x640, Maxwell::HLEReplacementAttributeType::BaseInstance);
         }
 
         maxwell3d.draw_manager->DrawArrayIndirect(topology);
@@ -125,7 +126,8 @@ private:
         if (extended) {
             maxwell3d.regs.global_base_instance_index = base_instance;
             maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-            maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseInstance);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x640, Maxwell::HLEReplacementAttributeType::BaseInstance);
         }
 
         maxwell3d.draw_manager->DrawArray(topology, vertex_first, vertex_count, base_instance,
@@ -160,13 +162,15 @@ public:
         maxwell3d.regs.global_base_instance_index = base_instance;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-        maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseVertex);
-        maxwell3d.setHLEReplacementName(0, 0x644, Maxwell::HLEReplaceName::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(0, 0x640,
+                                                 Maxwell::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
         auto& params = maxwell3d.draw_manager->GetIndirectParams();
         params.is_indexed = true;
         params.include_count = false;
         params.count_start_address = 0;
-        params.indirect_start_address = maxwell3d.getMacroAddress(1);
+        params.indirect_start_address = maxwell3d.GetMacroAddress(1);
         params.buffer_size = 5 * sizeof(u32);
         params.max_draw_counts = 1;
         params.stride = 0;
@@ -190,8 +194,10 @@ private:
         maxwell3d.regs.global_base_instance_index = base_instance;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-        maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseVertex);
-        maxwell3d.setHLEReplacementName(0, 0x644, Maxwell::HLEReplaceName::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(0, 0x640,
+                                                 Maxwell::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
 
         maxwell3d.draw_manager->DrawIndex(
             static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0]),
@@ -253,15 +259,17 @@ public:
         auto& params = maxwell3d.draw_manager->GetIndirectParams();
         params.is_indexed = true;
         params.include_count = true;
-        params.count_start_address = maxwell3d.getMacroAddress(4);
-        params.indirect_start_address = maxwell3d.getMacroAddress(5);
+        params.count_start_address = maxwell3d.GetMacroAddress(4);
+        params.indirect_start_address = maxwell3d.GetMacroAddress(5);
         params.buffer_size = stride * draw_count;
         params.max_draw_counts = draw_count;
         params.stride = stride;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-        maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseVertex);
-        maxwell3d.setHLEReplacementName(0, 0x644, Maxwell::HLEReplaceName::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(0, 0x640,
+                                                 Maxwell::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
         maxwell3d.draw_manager->DrawIndexedIndirect(topology, 0, estimate);
         maxwell3d.engine_state = Maxwell::EngineHint::None;
         maxwell3d.replace_table.clear();
@@ -298,8 +306,10 @@ private:
             const u32 base_instance = parameters[base + 4];
             maxwell3d.regs.vertex_id_base = base_vertex;
             maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-            maxwell3d.setHLEReplacementName(0, 0x640, Maxwell::HLEReplaceName::BaseVertex);
-            maxwell3d.setHLEReplacementName(0, 0x644, Maxwell::HLEReplaceName::BaseInstance);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x640, Maxwell::HLEReplacementAttributeType::BaseVertex);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
             maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
             maxwell3d.draw_manager->DrawIndex(topology, parameters[base + 2], parameters[base],
                                               base_vertex, base_instance, parameters[base + 1]);

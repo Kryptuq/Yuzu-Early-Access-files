@@ -74,8 +74,6 @@ void IRS::DeactivateIrsensor(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_IRS, "(STUBBED) called, applet_resource_user_id={}",
                 applet_resource_user_id);
 
-    npad_device->SetPollingMode(Common::Input::PollingMode::Active);
-
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -514,7 +512,7 @@ void IRS::StopImageProcessorAsync(Kernel::HLERequestContext& ctx) {
     auto result = IsIrCameraHandleValid(parameters.camera_handle);
     if (result.IsSuccess()) {
         // TODO: Stop image processor async
-        npad_device->SetPollingMode(Common::Input::PollingMode::IR);
+        npad_device->SetPollingMode(Common::Input::PollingMode::Active);
         result = ResultSuccess;
     }
 

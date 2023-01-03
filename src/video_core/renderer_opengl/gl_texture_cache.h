@@ -354,6 +354,7 @@ struct TextureCacheParams {
     static constexpr bool FRAMEBUFFER_BLITS = true;
     static constexpr bool HAS_EMULATED_COPIES = true;
     static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
+    static constexpr bool IMPLEMENTS_ASYNC_DOWNLOADS = false;
 
     using Runtime = OpenGL::TextureCacheRuntime;
     using Image = OpenGL::Image;
@@ -361,6 +362,7 @@ struct TextureCacheParams {
     using ImageView = OpenGL::ImageView;
     using Sampler = OpenGL::Sampler;
     using Framebuffer = OpenGL::Framebuffer;
+    using AsyncBuffer = u32;
 };
 
 using TextureCache = VideoCommon::TextureCache<TextureCacheParams>;

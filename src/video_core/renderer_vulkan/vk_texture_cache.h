@@ -51,7 +51,9 @@ public:
 
     StagingBufferRef UploadStagingBuffer(size_t size);
 
-    StagingBufferRef DownloadStagingBuffer(size_t size);
+    StagingBufferRef DownloadStagingBuffer(size_t size, bool deferred = false);
+
+    void FreeDeferredStagingBuffer(StagingBufferRef& ref);
 
     void TickFrame();
 
@@ -347,6 +349,7 @@ struct TextureCacheParams {
     static constexpr bool FRAMEBUFFER_BLITS = false;
     static constexpr bool HAS_EMULATED_COPIES = false;
     static constexpr bool HAS_DEVICE_MEMORY_INFO = true;
+    static constexpr bool IMPLEMENTS_ASYNC_DOWNLOADS = true;
 
     using Runtime = Vulkan::TextureCacheRuntime;
     using Image = Vulkan::Image;
@@ -354,6 +357,7 @@ struct TextureCacheParams {
     using ImageView = Vulkan::ImageView;
     using Sampler = Vulkan::Sampler;
     using Framebuffer = Vulkan::Framebuffer;
+    using AsyncBuffer = Vulkan::StagingBufferRef;
 };
 
 using TextureCache = VideoCommon::TextureCache<TextureCacheParams>;
