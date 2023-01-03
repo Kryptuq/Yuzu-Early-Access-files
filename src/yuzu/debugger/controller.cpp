@@ -93,7 +93,7 @@ void ControllerDialog::ControllerUpdate(Core::HID::ControllerTriggerType type) {
     case Core::HID::ControllerTriggerType::Button:
     case Core::HID::ControllerTriggerType::Stick: {
         const auto buttons_values = controller->GetButtonsValues();
-        const auto stick_values = controller->GetSticksValues();
+        const auto stick_values = controller->GetSticks();
         u64 buttons = 0;
         std::size_t index = 0;
         for (const auto& button : buttons_values) {
@@ -101,12 +101,12 @@ void ControllerDialog::ControllerUpdate(Core::HID::ControllerTriggerType type) {
             index++;
         }
         const InputCommon::TasInput::TasAnalog left_axis = {
-            .x = stick_values[Settings::NativeAnalog::LStick].x.value,
-            .y = stick_values[Settings::NativeAnalog::LStick].y.value,
+            .x = stick_values.left.x / 32767.f,
+            .y = stick_values.left.y / 32767.f,
         };
         const InputCommon::TasInput::TasAnalog right_axis = {
-            .x = stick_values[Settings::NativeAnalog::RStick].x.value,
-            .y = stick_values[Settings::NativeAnalog::RStick].y.value,
+            .x = stick_values.right.x / 32767.f,
+            .y = stick_values.right.y / 32767.f,
         };
         input_subsystem->GetTas()->RecordInput(buttons, left_axis, right_axis);
         break;

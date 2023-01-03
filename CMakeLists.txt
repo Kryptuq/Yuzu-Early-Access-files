@@ -3,13 +3,8 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-# Dynarmic has cmake_minimum_required(3.12) and we may want to override
-# some of its variables, which is only possible in 3.13+
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/find-modules")
 include(DownloadExternals)
 include(CMakeDependentOption)
 
@@ -207,42 +202,43 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # System imported libraries
 # =======================================================================
 
-find_package(enet 1.3)
+# Enforce the search mode of non-required packages for better and shorter failure messages
+find_package(enet 1.3 MODULE)
 find_package(fmt 9 REQUIRED)
-find_package(inih)
+find_package(inih MODULE)
 find_package(lz4 REQUIRED)
 find_package(nlohmann_json 3.8 REQUIRED)
-find_package(Opus 1.3)
+find_package(Opus 1.3 MODULE)
 find_package(ZLIB 1.2 REQUIRED)
 find_package(zstd 1.5 REQUIRED)
 
 if (NOT YUZU_USE_EXTERNAL_VULKAN_HEADERS)
-    find_package(Vulkan 1.3.238)
+    find_package(Vulkan 1.3.238 REQUIRED)
 endif()
 
 if (ENABLE_LIBUSB)
-    find_package(libusb 1.0.24)
+    find_package(libusb 1.0.24 MODULE)
 endif()
 
 if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
-    find_package(xbyak 6 QUIET)
+    find_package(xbyak 6 CONFIG)
 endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
-    find_package(dynarmic 6.4.0 QUIET)
+    find_package(dynarmic 6.4.0 CONFIG)
 endif()
 
 if (ENABLE_CUBEB)
-    find_package(cubeb QUIET)
+    find_package(cubeb CONFIG)
 endif()
 
 if (USE_DISCORD_PRESENCE)
-    find_package(DiscordRPC QUIET)
+    find_package(DiscordRPC MODULE)
 endif()
 
 if (ENABLE_WEB_SERVICE)
-    find_package(cpp-jwt 1.4 QUIET)
-    find_package(httplib 0.11 QUIET)
+    find_package(cpp-jwt 1.4 CONFIG)
+    find_package(httplib 0.11 MODULE)
 endif()
 
 if (YUZU_TESTS)

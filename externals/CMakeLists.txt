@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2016 Citra Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/find-modules")
-include(DownloadExternals)
+# Dynarmic has cmake_minimum_required(3.12) and we may want to override
+# some of its variables, which is only possible in 3.13+
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 # xbyak
 if ((ARCHITECTURE_x86 OR ARCHITECTURE_x86_64) AND NOT TARGET xbyak::xbyak)
@@ -12,8 +12,7 @@ endif()
 
 # Dynarmic
 if ((ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64) AND NOT TARGET dynarmic::dynarmic)
-    set(DYNARMIC_NO_BUNDLED_FMT ON)
-    set(DYNARMIC_IGNORE_ASSERTS ON CACHE BOOL "" FORCE)
+    set(DYNARMIC_IGNORE_ASSERTS ON)
     add_subdirectory(dynarmic EXCLUDE_FROM_ALL)
     add_library(dynarmic::dynarmic ALIAS dynarmic)
 endif()
@@ -60,10 +59,10 @@ if (YUZU_USE_EXTERNAL_SDL2)
             Locale Power Render)
         foreach(_SUB ${SDL_UNUSED_SUBSYSTEMS})
           string(TOUPPER ${_SUB} _OPT)
-          option(SDL_${_OPT} "" OFF)
+          set(SDL_${_OPT} OFF)
         endforeach()
 
-        option(HIDAPI "" ON)
+        set(HIDAPI ON)
     endif()
     set(SDL_STATIC ON)
     set(SDL_SHARED OFF)
@@ -83,7 +82,7 @@ endif()
 
 # Cubeb
 if (ENABLE_CUBEB AND NOT TARGET cubeb::cubeb)
-    set(BUILD_TESTS OFF CACHE BOOL "")
+    set(BUILD_TESTS OFF)
     add_subdirectory(cubeb EXCLUDE_FROM_ALL)
     add_library(cubeb::cubeb ALIAS cubeb)
 endif()
@@ -98,6 +97,7 @@ endif()
 # Sirit
 add_subdirectory(sirit EXCLUDE_FROM_ALL)
 
+# httplib
 if (ENABLE_WEB_SERVICE AND NOT TARGET httplib::httplib)
     if (NOT WIN32)
         find_package(OpenSSL 1.1)
@@ -108,7 +108,7 @@ if (ENABLE_WEB_SERVICE AND NOT TARGET httplib::httplib)
 
     if (WIN32 OR NOT OPENSSL_FOUND)
         # LibreSSL
-        set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
+        set(LIBRESSL_SKIP_INSTALL ON)
         set(OPENSSLDIR "/etc/ssl/")
         add_subdirectory(libressl EXCLUDE_FROM_ALL)
         target_include_directories(ssl INTERFACE ./libressl/include)
@@ -118,7 +118,6 @@ if (ENABLE_WEB_SERVICE AND NOT TARGET httplib::httplib)
             DEFINITION OPENSSL_LIBS)
     endif()
 
-    # httplib
     add_library(httplib INTERFACE)
     target_include_directories(httplib INTERFACE ./cpp-httplib)
     target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)

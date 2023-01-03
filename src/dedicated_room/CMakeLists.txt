@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2017 Citra Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
-
 add_executable(yuzu-room
     precompiled_headers.h
     yuzu_room.cpp

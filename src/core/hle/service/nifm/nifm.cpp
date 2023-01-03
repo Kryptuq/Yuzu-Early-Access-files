@@ -22,15 +22,19 @@ namespace {
 
 namespace Service::NIFM {
 
+// This is nn::nifm::RequestState
 enum class RequestState : u32 {
     NotSubmitted = 1,
-    Error = 1, ///< The duplicate 1 is intentional; it means both not submitted and error on HW.
-    Pending = 2,
-    Connected = 3,
+    Invalid = 1, ///< The duplicate 1 is intentional; it means both not submitted and error on HW.
+    OnHold = 2,
+    Accepted = 3,
+    Blocking = 4,
 };
 
-enum class InternetConnectionType : u8 {
-    WiFi = 1,
+// This is nn::nifm::NetworkInterfaceType
+enum class NetworkInterfaceType : u32 {
+    Invalid = 0,
+    WiFi_Ieee80211 = 1,
     Ethernet = 2,
 };
 
@@ -42,14 +46,23 @@ enum class InternetConnectionStatus : u8 {
     Connected,
 };
 
+// This is nn::nifm::NetworkProfileType
+enum class NetworkProfileType : u32 {
+    User,
+    SsidList,
+    Temporary,
+};
+
+// This is nn::nifm::IpAddressSetting
 struct IpAddressSetting {
     bool is_automatic{};
-    Network::IPv4Address current_address{};
+    Network::IPv4Address ip_address{};
     Network::IPv4Address subnet_mask{};
-    Network::IPv4Address gateway{};
+    Network::IPv4Address default_gateway{};
 };
 static_assert(sizeof(IpAddressSetting) == 0xD, "IpAddressSetting has incorrect size.");
 
+// This is nn::nifm::DnsSetting
 struct DnsSetting {
     bool is_automatic{};
     Network::IPv4Address primary_dns{};
@@ -57,18 +70,26 @@ struct DnsSetting {
 };
 static_assert(sizeof(DnsSetting) == 0x9, "DnsSetting has incorrect size.");
 
+// This is nn::nifm::AuthenticationSetting
+struct AuthenticationSetting {
+    bool is_enabled{};
+    std::array<char, 0x20> user{};
+    std::array<char, 0x20> password{};
+};
+static_assert(sizeof(AuthenticationSetting) == 0x41, "AuthenticationSetting has incorrect size.");
+
+// This is nn::nifm::ProxySetting
 struct ProxySetting {
-    bool enabled{};
+    bool is_enabled{};
     INSERT_PADDING_BYTES(1);
     u16 port{};
     std::array<char, 0x64> proxy_server{};
-    bool automatic_auth_enabled{};
-    std::array<char, 0x20> user{};
-    std::array<char, 0x20> password{};
+    AuthenticationSetting authentication{};
     INSERT_PADDING_BYTES(1);
 };
 static_assert(sizeof(ProxySetting) == 0xAA, "ProxySetting has incorrect size.");
 
+// This is nn::nifm::IpSettingData
 struct IpSettingData {
     IpAddressSetting ip_address_setting{};
     DnsSetting dns_setting{};
@@ -101,6 +122,7 @@ static_assert(sizeof(NifmWirelessSettingData) == 0x70,
               "NifmWirelessSettingData has incorrect size.");
 
 #pragma pack(push, 1)
+// This is nn::nifm::detail::sf::NetworkProfileData
 struct SfNetworkProfileData {
     IpSettingData ip_setting_data{};
     u128 uuid{};
@@ -114,13 +136,14 @@ struct SfNetworkProfileData {
 };
 static_assert(sizeof(SfNetworkProfileData) == 0x17C, "SfNetworkProfileData has incorrect size.");
 
+// This is nn::nifm::NetworkProfileData
 struct NifmNetworkProfileData {
     u128 uuid{};
     std::array<char, 0x40> network_name{};
-    u32 unknown_1{};
-    u32 unknown_2{};
-    u8 unknown_3{};
-    u8 unknown_4{};
+    NetworkProfileType network_profile_type{};
+    NetworkInterfaceType network_interface_type{};
+    bool is_auto_connect{};
+    bool is_large_capacity{};
     INSERT_PADDING_BYTES(2);
     NifmWirelessSettingData wireless_setting_data{};
     IpSettingData ip_setting_data{};
@@ -184,6 +207,7 @@ public:
 
         event1 = CreateKEvent(service_context, "IRequest:Event1");
         event2 = CreateKEvent(service_context, "IRequest:Event2");
+        state = RequestState::NotSubmitted;
     }
 
     ~IRequest() override {
@@ -196,7 +220,7 @@ private:
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         if (state == RequestState::NotSubmitted) {
-            UpdateState(RequestState::Pending);
+            UpdateState(RequestState::OnHold);
         }
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -219,14 +243,14 @@ private:
             switch (state) {
             case RequestState::NotSubmitted:
                 return has_connection ? ResultSuccess : ResultNetworkCommunicationDisabled;
-            case RequestState::Pending:
+            case RequestState::OnHold:
                 if (has_connection) {
-                    UpdateState(RequestState::Connected);
+                    UpdateState(RequestState::Accepted);
                 } else {
-                    UpdateState(RequestState::Error);
+                    UpdateState(RequestState::Invalid);
                 }
                 return ResultPendingConnection;
-            case RequestState::Connected:
+            case RequestState::Accepted:
             default:
                 return ResultSuccess;
             }
@@ -338,9 +362,9 @@ void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
             .ip_setting_data{
                 .ip_address_setting{
                     .is_automatic{true},
-                    .current_address{Network::TranslateIPv4(net_iface->ip_address)},
+                    .ip_address{Network::TranslateIPv4(net_iface->ip_address)},
                     .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
-                    .gateway{Network::TranslateIPv4(net_iface->gateway)},
+                    .default_gateway{Network::TranslateIPv4(net_iface->gateway)},
                 },
                 .dns_setting{
                     .is_automatic{true},
@@ -348,12 +372,14 @@ void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
                     .secondary_dns{1, 0, 0, 1},
                 },
                 .proxy_setting{
-                    .enabled{false},
+                    .is_enabled{false},
                     .port{},
                     .proxy_server{},
-                    .automatic_auth_enabled{},
-                    .user{},
-                    .password{},
+                    .authentication{
+                        .is_enabled{},
+                        .user{},
+                        .password{},
+                    },
                 },
                 .mtu{1500},
             },
@@ -370,7 +396,7 @@ void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
     // When we're connected to a room, spoof the hosts IP address
     if (auto room_member = network.GetRoomMember().lock()) {
         if (room_member->IsConnected()) {
-            network_profile_data.ip_setting_data.ip_address_setting.current_address =
+            network_profile_data.ip_setting_data.ip_address_setting.ip_address =
                 room_member->GetFakeIpAddress();
         }
     }
@@ -444,9 +470,9 @@ void IGeneralService::GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
         return IpConfigInfo{
             .ip_address_setting{
                 .is_automatic{true},
-                .current_address{Network::TranslateIPv4(net_iface->ip_address)},
+                .ip_address{Network::TranslateIPv4(net_iface->ip_address)},
                 .subnet_mask{Network::TranslateIPv4(net_iface->subnet_mask)},
-                .gateway{Network::TranslateIPv4(net_iface->gateway)},
+                .default_gateway{Network::TranslateIPv4(net_iface->gateway)},
             },
             .dns_setting{
                 .is_automatic{true},
@@ -459,7 +485,7 @@ void IGeneralService::GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
     // When we're connected to a room, spoof the hosts IP address
     if (auto room_member = network.GetRoomMember().lock()) {
         if (room_member->IsConnected()) {
-            ip_config_info.ip_address_setting.current_address = room_member->GetFakeIpAddress();
+            ip_config_info.ip_address_setting.ip_address = room_member->GetFakeIpAddress();
         }
     }
 
@@ -480,7 +506,7 @@ void IGeneralService::GetInternetConnectionStatus(Kernel::HLERequestContext& ctx
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     struct Output {
-        InternetConnectionType type{InternetConnectionType::WiFi};
+        u8 type{static_cast<u8>(NetworkInterfaceType::WiFi_Ieee80211)};
         u8 wifi_strength{3};
         InternetConnectionStatus state{InternetConnectionStatus::Connected};
     };
