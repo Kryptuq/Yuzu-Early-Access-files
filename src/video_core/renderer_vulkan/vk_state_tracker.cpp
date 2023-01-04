@@ -244,6 +244,8 @@ void StateTracker::ChangeChannel(Tegra::Control::ChannelState& channel_state) {
 
 void StateTracker::InvalidateState() {
     flags->set();
+    current_topology = INVALID_TOPOLOGY;
+    stencil_reset = true;
 }
 
 StateTracker::StateTracker()

@@ -43,7 +43,7 @@ std::vector<u8> HidbusStubbed::GetReply() const {
     return {};
 }
 
-bool HidbusStubbed::SetCommand(const std::vector<u8>& data) {
+bool HidbusStubbed::SetCommand(std::span<const u8> data) {
     LOG_ERROR(Service_HID, "Command not implemented");
     return false;
 }

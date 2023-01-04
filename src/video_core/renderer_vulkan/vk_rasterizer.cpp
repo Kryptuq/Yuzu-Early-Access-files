@@ -895,45 +895,83 @@ void RasterizerVulkan::UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs)
         update_compare_masks = true;
     }
     if (update_references) {
-        scheduler.Record([front_ref = regs.stencil_front_ref, back_ref = regs.stencil_back_ref,
-                          two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
-            const bool set_back = two_sided && front_ref != back_ref;
-            // Front face
-            cmdbuf.SetStencilReference(
-                set_back ? VK_STENCIL_FACE_FRONT_BIT : VK_STENCIL_FACE_FRONT_AND_BACK, front_ref);
-            if (set_back) {
-                cmdbuf.SetStencilReference(VK_STENCIL_FACE_BACK_BIT, back_ref);
+        [&]() {
+            if (regs.stencil_two_side_enable) {
+                if (!state_tracker.CheckStencilReferenceFront(regs.stencil_front_ref) &&
+                    !state_tracker.CheckStencilReferenceBack(regs.stencil_back_ref)) {
+                    return;
+                }
+            } else {
+                if (!state_tracker.CheckStencilReferenceFront(regs.stencil_front_ref)) {
+                    return;
+                }
             }
-        });
+            scheduler.Record([front_ref = regs.stencil_front_ref, back_ref = regs.stencil_back_ref,
+                              two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
+                const bool set_back = two_sided && front_ref != back_ref;
+                // Front face
+                cmdbuf.SetStencilReference(set_back ? VK_STENCIL_FACE_FRONT_BIT
+                                                    : VK_STENCIL_FACE_FRONT_AND_BACK,
+                                           front_ref);
+                if (set_back) {
+                    cmdbuf.SetStencilReference(VK_STENCIL_FACE_BACK_BIT, back_ref);
+                }
+            });
+        }();
     }
     if (update_write_mask) {
-        scheduler.Record([front_write_mask = regs.stencil_front_mask,
-                          back_write_mask = regs.stencil_back_mask,
-                          two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
-            const bool set_back = two_sided && front_write_mask != back_write_mask;
-            // Front face
-            cmdbuf.SetStencilWriteMask(set_back ? VK_STENCIL_FACE_FRONT_BIT
-                                                : VK_STENCIL_FACE_FRONT_AND_BACK,
-                                       front_write_mask);
-            if (set_back) {
-                cmdbuf.SetStencilWriteMask(VK_STENCIL_FACE_BACK_BIT, back_write_mask);
+        [&]() {
+            if (regs.stencil_two_side_enable) {
+                if (!state_tracker.CheckStencilWriteMaskFront(regs.stencil_front_mask) &&
+                    !state_tracker.CheckStencilWriteMaskBack(regs.stencil_back_mask)) {
+                    return;
+                }
+            } else {
+                if (!state_tracker.CheckStencilWriteMaskFront(regs.stencil_front_mask)) {
+                    return;
+                }
             }
-        });
+            scheduler.Record([front_write_mask = regs.stencil_front_mask,
+                              back_write_mask = regs.stencil_back_mask,
+                              two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
+                const bool set_back = two_sided && front_write_mask != back_write_mask;
+                // Front face
+                cmdbuf.SetStencilWriteMask(set_back ? VK_STENCIL_FACE_FRONT_BIT
+                                                    : VK_STENCIL_FACE_FRONT_AND_BACK,
+                                           front_write_mask);
+                if (set_back) {
+                    cmdbuf.SetStencilWriteMask(VK_STENCIL_FACE_BACK_BIT, back_write_mask);
+                }
+            });
+        }();
     }
     if (update_compare_masks) {
-        scheduler.Record([front_test_mask = regs.stencil_front_func_mask,
-                          back_test_mask = regs.stencil_back_func_mask,
-                          two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
-            const bool set_back = two_sided && front_test_mask != back_test_mask;
-            // Front face
-            cmdbuf.SetStencilCompareMask(set_back ? VK_STENCIL_FACE_FRONT_BIT
-                                                  : VK_STENCIL_FACE_FRONT_AND_BACK,
-                                         front_test_mask);
-            if (set_back) {
-                cmdbuf.SetStencilCompareMask(VK_STENCIL_FACE_BACK_BIT, back_test_mask);
+        [&]() {
+            if (regs.stencil_two_side_enable) {
+                if (!state_tracker.CheckStencilCompareMaskFront(regs.stencil_front_func_mask) &&
+                    !state_tracker.CheckStencilCompareMaskBack(regs.stencil_back_func_mask)) {
+                    return;
+                }
+            } else {
+                if (!state_tracker.CheckStencilCompareMaskFront(regs.stencil_front_func_mask)) {
+                    return;
+                }
             }
-        });
+            scheduler.Record([front_test_mask = regs.stencil_front_func_mask,
+                              back_test_mask = regs.stencil_back_func_mask,
+                              two_sided = regs.stencil_two_side_enable](vk::CommandBuffer cmdbuf) {
+                const bool set_back = two_sided && front_test_mask != back_test_mask;
+                // Front face
+                cmdbuf.SetStencilCompareMask(set_back ? VK_STENCIL_FACE_FRONT_BIT
+                                                      : VK_STENCIL_FACE_FRONT_AND_BACK,
+                                             front_test_mask);
+                if (set_back) {
+                    cmdbuf.SetStencilCompareMask(VK_STENCIL_FACE_BACK_BIT, back_test_mask);
+                }
+            });
+        }();
     }
+    state_tracker.ClearStencilReset();
 }
 
 void RasterizerVulkan::UpdateLineWidth(Tegra::Engines::Maxwell3D::Regs& regs) {

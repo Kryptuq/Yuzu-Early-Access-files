@@ -1518,27 +1518,6 @@ void TextureCache<P>::ForEachSparseSegment(ImageBase& image, Func&& func) {
 }
 
 template <class P>
-void TextureCache<P>::BubbleUpImages(VAddr cpu_addr, size_t size) {
-    ForEachCPUPage(cpu_addr, size, [this](u64 page) {
-        const auto it = page_table.find(page);
-        if (it == page_table.end()) {
-            return;
-        }
-        std::vector<ImageMapId>& map_vector = it->second;
-        for (size_t i = 1; i < map_vector.size(); i++) {
-            ImageMapView& bottom_map = slot_map_views[map_vector[i - 1]];
-            ImageMapView& top_map = slot_map_views[map_vector[i]];
-            if (slot_images[bottom_map.image_id].modification_tick <
-                slot_images[top_map.image_id].modification_tick) {
-                std::swap(map_vector[i - 1], map_vector[i]);
-            } else {
-                return;
-            }
-        }
-    });
-}
-
-template <class P>
 ImageViewId TextureCache<P>::FindOrEmplaceImageView(ImageId image_id, const ImageViewInfo& info) {
     Image& image = slot_images[image_id];
     if (const ImageViewId image_view_id = image.FindView(info); image_view_id) {
@@ -1851,7 +1830,6 @@ template <class P>
 void TextureCache<P>::MarkModification(ImageBase& image) noexcept {
     image.flags |= ImageFlagBits::GpuModified;
     image.modification_tick = ++modification_tick;
-    BubbleUpImages(image.cpu_addr, image.guest_size_bytes);
 }
 
 template <class P>

@@ -25,12 +25,12 @@ public:
                          NvCore::Container& core);
     ~nvhost_ctrl() override;
 
-    NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+    NvResult Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
                     std::vector<u8>& output) override;
-    NvResult Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                    const std::vector<u8>& inline_input, std::vector<u8>& output) override;
-    NvResult Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                    std::vector<u8>& output, std::vector<u8>& inline_output) override;
+    NvResult Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
+                    std::span<const u8> inline_input, std::vector<u8>& output) override;
+    NvResult Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input, std::vector<u8>& output,
+                    std::vector<u8>& inline_output) override;
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
@@ -186,13 +186,13 @@ private:
     static_assert(sizeof(IocCtrlEventUnregisterBatchParams) == 8,
                   "IocCtrlEventKill is incorrect size");
 
-    NvResult NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output,
+    NvResult NvOsGetConfigU32(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocCtrlEventWait(std::span<const u8> input, std::vector<u8>& output,
                               bool is_allocation);
-    NvResult IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocCtrlEventUnregister(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocCtrlEventUnregisterBatch(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocCtrlClearEventWait(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult IocCtrlEventRegister(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocCtrlEventUnregister(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocCtrlEventUnregisterBatch(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocCtrlClearEventWait(std::span<const u8> input, std::vector<u8>& output);
 
     NvResult FreeEvent(u32 slot);
 

@@ -757,21 +757,22 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR) {
         const u32 nv_major_version = (properties.driverVersion >> 22) & 0x3ff;
-        if (nv_major_version < 527) {
-            const auto arch = GetNvidiaArchitecture(physical, supported_extensions);
-            switch (arch) {
-            case NvidiaArchitecture::AmpereOrNewer:
-                LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
-                is_float16_supported = false;
-                break;
-            case NvidiaArchitecture::Turing:
-                break;
-            case NvidiaArchitecture::VoltaOrOlder:
+
+        const auto arch = GetNvidiaArchitecture(physical, supported_extensions);
+        switch (arch) {
+        case NvidiaArchitecture::AmpereOrNewer:
+            LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
+            is_float16_supported = false;
+            break;
+        case NvidiaArchitecture::Turing:
+            break;
+        case NvidiaArchitecture::VoltaOrOlder:
+            if (nv_major_version < 527) {
                 LOG_WARNING(Render_Vulkan,
                             "Blacklisting Volta and older from VK_KHR_push_descriptor");
                 khr_push_descriptor = false;
-                break;
             }
+            break;
         }
         if (nv_major_version >= 510) {
             LOG_WARNING(Render_Vulkan, "NVIDIA Drivers >= 510 do not support MSAA image blits");

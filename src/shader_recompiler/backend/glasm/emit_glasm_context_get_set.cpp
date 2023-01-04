@@ -137,6 +137,12 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
     case IR::Attribute::VertexId:
         ctx.Add("MOV.F {}.x,{}.id;", inst, ctx.attrib_name);
         break;
+    case IR::Attribute::BaseInstance:
+        ctx.Add("MOV.F {}.x,{}.baseInstance;", inst, ctx.attrib_name);
+        break;
+    case IR::Attribute::BaseVertex:
+        ctx.Add("MOV.F {}.x,{}.baseVertex;", inst, ctx.attrib_name);
+        break;
     case IR::Attribute::FrontFace:
         ctx.Add("CMP.F {}.x,{}.facing.x,0,-1;", inst, ctx.attrib_name);
         break;
@@ -155,6 +161,12 @@ void EmitGetAttributeU32(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, S
         break;
     case IR::Attribute::VertexId:
         ctx.Add("MOV.S {}.x,{}.id;", inst, ctx.attrib_name);
+        break;
+    case IR::Attribute::BaseInstance:
+        ctx.Add("MOV.S {}.x,{}.baseInstance;", inst, ctx.attrib_name);
+        break;
+    case IR::Attribute::BaseVertex:
+        ctx.Add("MOV.S {}.x,{}.baseVertex;", inst, ctx.attrib_name);
         break;
     default:
         throw NotImplementedException("Get U32 attribute {}", attr);

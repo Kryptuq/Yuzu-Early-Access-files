@@ -50,25 +50,11 @@ protected:
     Engines::Maxwell3D& maxwell3d;
 };
 
-class HLE_771BB18C62444DA0 final : public HLEMacroImpl {
-public:
-    explicit HLE_771BB18C62444DA0(Engines::Maxwell3D& maxwell3d_) : HLEMacroImpl(maxwell3d_) {}
-
-    void Execute(const std::vector<u32>& parameters, [[maybe_unused]] u32 method) override {
-        maxwell3d.RefreshParameters();
-        const u32 instance_count = parameters[2] & maxwell3d.GetRegisterValue(0xD1B);
-        maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        maxwell3d.draw_manager->DrawIndex(
-            static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0] &
-                                                                            0x3ffffff),
-            parameters[4], parameters[1], parameters[3], parameters[5], instance_count);
-    }
-};
-
+template <bool extended>
 class HLE_DrawArraysIndirect final : public HLEMacroImpl {
 public:
-    explicit HLE_DrawArraysIndirect(Engines::Maxwell3D& maxwell3d_, bool extended_ = false)
-        : HLEMacroImpl(maxwell3d_), extended(extended_) {}
+    explicit HLE_DrawArraysIndirect(Engines::Maxwell3D& maxwell3d_)
+        : HLEMacroImpl(maxwell3d_) {}
 
     void Execute(const std::vector<u32>& parameters, [[maybe_unused]] u32 method) override {
         auto topology = static_cast<Maxwell::Regs::PrimitiveTopology>(parameters[0]);
@@ -86,7 +72,7 @@ public:
         params.max_draw_counts = 1;
         params.stride = 0;
 
-        if (extended) {
+        if constexpr (extended) {
             maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
             maxwell3d.SetHLEReplacementAttributeType(
                 0, 0x640, Maxwell::HLEReplacementAttributeType::BaseInstance);
@@ -94,7 +80,7 @@ public:
 
         maxwell3d.draw_manager->DrawArrayIndirect(topology);
 
-        if (extended) {
+        if constexpr (extended) {
             maxwell3d.engine_state = Maxwell::EngineHint::None;
             maxwell3d.replace_table.clear();
         }
@@ -123,7 +109,7 @@ private:
         }
 
         const u32 base_instance = parameters[4];
-        if (extended) {
+        if constexpr (extended) {
             maxwell3d.regs.global_base_instance_index = base_instance;
             maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
             maxwell3d.SetHLEReplacementAttributeType(
@@ -133,16 +119,15 @@ private:
         maxwell3d.draw_manager->DrawArray(topology, vertex_first, vertex_count, base_instance,
                                           instance_count);
 
-        if (extended) {
+        if constexpr (extended) {
             maxwell3d.regs.global_base_instance_index = 0;
             maxwell3d.engine_state = Maxwell::EngineHint::None;
             maxwell3d.replace_table.clear();
         }
     }
-
-    bool extended;
 };
 
+template <bool extended>
 class HLE_DrawIndexedIndirect final : public HLEMacroImpl {
 public:
     explicit HLE_DrawIndexedIndirect(Engines::Maxwell3D& maxwell3d_) : HLEMacroImpl(maxwell3d_) {}
@@ -161,11 +146,13 @@ public:
         maxwell3d.regs.global_base_vertex_index = element_base;
         maxwell3d.regs.global_base_instance_index = base_instance;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640,
-                                                 Maxwell::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(
-            0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
+        if constexpr (extended) {
+            maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x640, Maxwell::HLEReplacementAttributeType::BaseVertex);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
+        }
         auto& params = maxwell3d.draw_manager->GetIndirectParams();
         params.is_indexed = true;
         params.include_count = false;
@@ -176,11 +163,13 @@ public:
         params.stride = 0;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         maxwell3d.draw_manager->DrawIndexedIndirect(topology, 0, estimate);
-        maxwell3d.engine_state = Maxwell::EngineHint::None;
-        maxwell3d.replace_table.clear();
         maxwell3d.regs.vertex_id_base = 0x0;
         maxwell3d.regs.global_base_vertex_index = 0x0;
         maxwell3d.regs.global_base_instance_index = 0x0;
+        if constexpr (extended) {
+            maxwell3d.engine_state = Maxwell::EngineHint::None;
+            maxwell3d.replace_table.clear();
+        }
     }
 
 private:
@@ -193,11 +182,13 @@ private:
         maxwell3d.regs.global_base_vertex_index = element_base;
         maxwell3d.regs.global_base_instance_index = base_instance;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640,
-                                                 Maxwell::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(
-            0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
+        if constexpr (extended) {
+            maxwell3d.engine_state = Maxwell::EngineHint::OnHLEMacro;
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x640, Maxwell::HLEReplacementAttributeType::BaseVertex);
+            maxwell3d.SetHLEReplacementAttributeType(
+                0, 0x644, Maxwell::HLEReplacementAttributeType::BaseInstance);
+        }
 
         maxwell3d.draw_manager->DrawIndex(
             static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0]),
@@ -206,8 +197,10 @@ private:
         maxwell3d.regs.vertex_id_base = 0x0;
         maxwell3d.regs.global_base_vertex_index = 0x0;
         maxwell3d.regs.global_base_instance_index = 0x0;
-        maxwell3d.engine_state = Maxwell::EngineHint::None;
-        maxwell3d.replace_table.clear();
+        if constexpr (extended) {
+            maxwell3d.engine_state = Maxwell::EngineHint::None;
+            maxwell3d.replace_table.clear();
+        }
     }
 };
 
@@ -397,25 +390,25 @@ public:
 } // Anonymous namespace
 
 HLEMacro::HLEMacro(Engines::Maxwell3D& maxwell3d_) : maxwell3d{maxwell3d_} {
-    builders.emplace(0x771BB18C62444DA0ULL,
-                     std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(
-                         [](Engines::Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_771BB18C62444DA0>(maxwell3d__);
-                         }));
     builders.emplace(0x0D61FC9FAAC9FCADULL,
                      std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(
                          [](Engines::Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_DrawArraysIndirect>(maxwell3d__);
+                             return std::make_unique<HLE_DrawArraysIndirect<false>>(maxwell3d__);
                          }));
     builders.emplace(0x8A4D173EB99A8603ULL,
                      std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(
                          [](Engines::Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_DrawArraysIndirect>(maxwell3d__, true);
+                             return std::make_unique<HLE_DrawArraysIndirect<true>>(maxwell3d__);
+                         }));
+    builders.emplace(0x771BB18C62444DA0ULL,
+                     std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(
+                         [](Engines::Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
+                             return std::make_unique<HLE_DrawIndexedIndirect<false>>(maxwell3d__);
                          }));
     builders.emplace(0x0217920100488FF7ULL,
                      std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(
                          [](Engines::Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_DrawIndexedIndirect>(maxwell3d__);
+                             return std::make_unique<HLE_DrawIndexedIndirect<true>>(maxwell3d__);
                          }));
     builders.emplace(0x3F5E74B9C9A50164ULL,
                      std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>(

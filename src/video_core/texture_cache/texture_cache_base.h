@@ -319,8 +319,6 @@ private:
     template <typename Func>
     void ForEachSparseSegment(ImageBase& image, Func&& func);
 
-    void BubbleUpImages(VAddr cpu_addr, size_t size);
-
     /// Find or create an image view in the given image with the passed parameters
     [[nodiscard]] ImageViewId FindOrEmplaceImageView(ImageId image_id, const ImageViewInfo& info);
 

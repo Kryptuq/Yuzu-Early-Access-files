@@ -25,7 +25,7 @@ nvmap::nvmap(Core::System& system_, NvCore::Container& container_)
 
 nvmap::~nvmap() = default;
 
-NvResult nvmap::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+NvResult nvmap::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
                        std::vector<u8>& output) {
     switch (command.group) {
     case 0x1:
@@ -54,13 +54,13 @@ NvResult nvmap::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
     return NvResult::NotImplemented;
 }
 
-NvResult nvmap::Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                       const std::vector<u8>& inline_input, std::vector<u8>& output) {
+NvResult nvmap::Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
+                       std::span<const u8> inline_input, std::vector<u8>& output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
 }
 
-NvResult nvmap::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+NvResult nvmap::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input,
                        std::vector<u8>& output, std::vector<u8>& inline_output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
@@ -69,7 +69,7 @@ NvResult nvmap::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
 void nvmap::OnOpen(DeviceFD fd) {}
 void nvmap::OnClose(DeviceFD fd) {}
 
-NvResult nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocCreate(std::span<const u8> input, std::vector<u8>& output) {
     IocCreateParams params;
     std::memcpy(&params, input.data(), sizeof(params));
     LOG_DEBUG(Service_NVDRV, "called, size=0x{:08X}", params.size);
@@ -89,7 +89,7 @@ NvResult nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output)
     return NvResult::Success;
 }
 
-NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocAlloc(std::span<const u8> input, std::vector<u8>& output) {
     IocAllocParams params;
     std::memcpy(&params, input.data(), sizeof(params));
     LOG_DEBUG(Service_NVDRV, "called, addr={:X}", params.address);
@@ -137,7 +137,7 @@ NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) 
     return result;
 }
 
-NvResult nvmap::IocGetId(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocGetId(std::span<const u8> input, std::vector<u8>& output) {
     IocGetIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
@@ -161,7 +161,7 @@ NvResult nvmap::IocGetId(const std::vector<u8>& input, std::vector<u8>& output) 
     return NvResult::Success;
 }
 
-NvResult nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocFromId(std::span<const u8> input, std::vector<u8>& output) {
     IocFromIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
@@ -192,7 +192,7 @@ NvResult nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output)
     return NvResult::Success;
 }
 
-NvResult nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocParam(std::span<const u8> input, std::vector<u8>& output) {
     enum class ParamTypes { Size = 1, Alignment = 2, Base = 3, Heap = 4, Kind = 5, Compr = 6 };
 
     IocParamParams params;
@@ -241,7 +241,7 @@ NvResult nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) 
     return NvResult::Success;
 }
 
-NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
+NvResult nvmap::IocFree(std::span<const u8> input, std::vector<u8>& output) {
     IocFreeParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
