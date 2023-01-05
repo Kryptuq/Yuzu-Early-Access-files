@@ -357,21 +357,21 @@ void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size, VideoCommon::CacheType 
     if (addr == 0 || size == 0) {
         return;
     }
-    if (bool(which & VideoCommon::CacheType::TextureCache)) {
+    if (True(which & VideoCommon::CacheType::TextureCache)) {
         std::scoped_lock lock{texture_cache.mutex};
         texture_cache.DownloadMemory(addr, size);
     }
-    if ((bool(which & VideoCommon::CacheType::BufferCache))) {
+    if ((True(which & VideoCommon::CacheType::BufferCache))) {
         std::scoped_lock lock{buffer_cache.mutex};
         buffer_cache.DownloadMemory(addr, size);
     }
-    if ((bool(which & VideoCommon::CacheType::QueryCache))) {
+    if ((True(which & VideoCommon::CacheType::QueryCache))) {
         query_cache.FlushRegion(addr, size);
     }
 }
 
 bool RasterizerOpenGL::MustFlushRegion(VAddr addr, u64 size, VideoCommon::CacheType which) {
-    if ((bool(which & VideoCommon::CacheType::BufferCache))) {
+    if ((True(which & VideoCommon::CacheType::BufferCache))) {
         std::scoped_lock lock{buffer_cache.mutex};
         if (buffer_cache.IsRegionGpuModified(addr, size)) {
             return true;
@@ -380,7 +380,7 @@ bool RasterizerOpenGL::MustFlushRegion(VAddr addr, u64 size, VideoCommon::CacheT
     if (!Settings::IsGPULevelHigh()) {
         return false;
     }
-    if (bool(which & VideoCommon::CacheType::TextureCache)) {
+    if (True(which & VideoCommon::CacheType::TextureCache)) {
         std::scoped_lock lock{texture_cache.mutex};
         return texture_cache.IsRegionGpuModified(addr, size);
     }
@@ -392,18 +392,18 @@ void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size, VideoCommon::Cache
     if (addr == 0 || size == 0) {
         return;
     }
-    if (bool(which & VideoCommon::CacheType::TextureCache)) {
+    if (True(which & VideoCommon::CacheType::TextureCache)) {
         std::scoped_lock lock{texture_cache.mutex};
         texture_cache.WriteMemory(addr, size);
     }
-    if (bool(which & VideoCommon::CacheType::BufferCache)) {
+    if (True(which & VideoCommon::CacheType::BufferCache)) {
         std::scoped_lock lock{buffer_cache.mutex};
         buffer_cache.WriteMemory(addr, size);
     }
-    if (bool(which & VideoCommon::CacheType::ShaderCache)) {
+    if (True(which & VideoCommon::CacheType::ShaderCache)) {
         shader_cache.InvalidateRegion(addr, size);
     }
-    if (bool(which & VideoCommon::CacheType::QueryCache)) {
+    if (True(which & VideoCommon::CacheType::QueryCache)) {
         query_cache.InvalidateRegion(addr, size);
     }
 }

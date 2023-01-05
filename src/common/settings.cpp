@@ -185,6 +185,7 @@ void RestoreGlobalState(bool is_powered_on) {
     // Renderer
     values.fsr_sharpening_slider.SetGlobal(true);
     values.renderer_backend.SetGlobal(true);
+    values.renderer_force_max_clock.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);
     values.max_anisotropy.SetGlobal(true);
@@ -200,6 +201,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
     values.use_pessimistic_flushes.SetGlobal(true);
+    values.use_vulkan_driver_pipeline_cache.SetGlobal(true);
     values.bg_red.SetGlobal(true);
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);

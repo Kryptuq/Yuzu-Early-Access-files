@@ -270,6 +270,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines{};
     PFN_vkCreateImage vkCreateImage{};
     PFN_vkCreateImageView vkCreateImageView{};
+    PFN_vkCreatePipelineCache vkCreatePipelineCache{};
     PFN_vkCreatePipelineLayout vkCreatePipelineLayout{};
     PFN_vkCreateQueryPool vkCreateQueryPool{};
     PFN_vkCreateRenderPass vkCreateRenderPass{};
@@ -289,6 +290,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkDestroyImage vkDestroyImage{};
     PFN_vkDestroyImageView vkDestroyImageView{};
     PFN_vkDestroyPipeline vkDestroyPipeline{};
+    PFN_vkDestroyPipelineCache vkDestroyPipelineCache{};
     PFN_vkDestroyPipelineLayout vkDestroyPipelineLayout{};
     PFN_vkDestroyQueryPool vkDestroyQueryPool{};
     PFN_vkDestroyRenderPass vkDestroyRenderPass{};
@@ -306,6 +308,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkGetEventStatus vkGetEventStatus{};
     PFN_vkGetFenceStatus vkGetFenceStatus{};
     PFN_vkGetImageMemoryRequirements vkGetImageMemoryRequirements{};
+    PFN_vkGetPipelineCacheData vkGetPipelineCacheData{};
     PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR{};
 #ifdef _WIN32
     PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR{};
@@ -351,6 +354,7 @@ void Destroy(VkDevice, VkFramebuffer, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkImage, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkImageView, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkPipeline, const DeviceDispatch&) noexcept;
+void Destroy(VkDevice, VkPipelineCache, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkPipelineLayout, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkQueryPool, const DeviceDispatch&) noexcept;
 void Destroy(VkDevice, VkRenderPass, const DeviceDispatch&) noexcept;
@@ -773,6 +777,18 @@ public:
     void SetObjectNameEXT(const char* name) const;
 };
 
+class PipelineCache : public Handle<VkPipelineCache, VkDevice, DeviceDispatch> {
+    using Handle<VkPipelineCache, VkDevice, DeviceDispatch>::Handle;
+
+public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+
+    VkResult Read(size_t* size, void* data) const noexcept {
+        return dld->vkGetPipelineCacheData(owner, handle, size, data);
+    }
+};
+
 class Semaphore : public Handle<VkSemaphore, VkDevice, DeviceDispatch> {
     using Handle<VkSemaphore, VkDevice, DeviceDispatch>::Handle;
 
@@ -844,11 +860,15 @@ public:
 
     DescriptorSetLayout CreateDescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo& ci) const;
 
+    PipelineCache CreatePipelineCache(const VkPipelineCacheCreateInfo& ci) const;
+
     PipelineLayout CreatePipelineLayout(const VkPipelineLayoutCreateInfo& ci) const;
 
-    Pipeline CreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& ci) const;
+    Pipeline CreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& ci,
+                                    VkPipelineCache cache = nullptr) const;
 
-    Pipeline CreateComputePipeline(const VkComputePipelineCreateInfo& ci) const;
+    Pipeline CreateComputePipeline(const VkComputePipelineCreateInfo& ci,
+                                   VkPipelineCache cache = nullptr) const;
 
     Sampler CreateSampler(const VkSamplerCreateInfo& ci) const;
 

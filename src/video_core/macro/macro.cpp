@@ -23,7 +23,7 @@
 #include "video_core/macro/macro_jit_x64.h"
 #endif
 
-MICROPROFILE_DEFINE(MacroHLE, "GPU", "Execute macro hle", MP_RGB(128, 192, 192));
+MICROPROFILE_DEFINE(MacroHLE, "GPU", "Execute macro HLE", MP_RGB(128, 192, 192));
 
 namespace Tegra {
 
@@ -107,14 +107,15 @@ void MacroEngine::Execute(u32 method, const std::vector<u32>& parameters) {
             }
         }
 
-        if (auto hle_program = hle_macros->GetHLEProgram(cache_info.hash)) {
+        auto hle_program = hle_macros->GetHLEProgram(cache_info.hash);
+        if (!hle_program || Settings::values.disable_macro_hle) {
+            maxwell3d.RefreshParameters();
+            cache_info.lle_program->Execute(parameters, method);
+        } else {
             cache_info.has_hle_program = true;
             cache_info.hle_program = std::move(hle_program);
             MICROPROFILE_SCOPE(MacroHLE);
             cache_info.hle_program->Execute(parameters, method);
-        } else {
-            maxwell3d.RefreshParameters();
-            cache_info.lle_program->Execute(parameters, method);
         }
     }
 }

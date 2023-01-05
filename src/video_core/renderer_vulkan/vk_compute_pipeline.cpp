@@ -24,13 +24,15 @@ using Shader::ImageBufferDescriptor;
 using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
 
-ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
+ComputePipeline::ComputePipeline(const Device& device_, vk::PipelineCache& pipeline_cache_,
+                                 DescriptorPool& descriptor_pool,
                                  UpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker,
                                  PipelineStatistics* pipeline_statistics,
                                  VideoCore::ShaderNotify* shader_notify, const Shader::Info& info_,
                                  vk::ShaderModule spv_module_)
-    : device{device_}, update_descriptor_queue{update_descriptor_queue_}, info{info_},
+    : device{device_}, pipeline_cache(pipeline_cache_),
+      update_descriptor_queue{update_descriptor_queue_}, info{info_},
       spv_module(std::move(spv_module_)) {
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
@@ -56,23 +58,27 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
         if (device.IsKhrPipelineExecutablePropertiesEnabled()) {
             flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
         }
-        pipeline = device.GetLogical().CreateComputePipeline({
-            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = flags,
-            .stage{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                .pNext = device.IsExtSubgroupSizeControlSupported() ? &subgroup_size_ci : nullptr,
-                .flags = 0,
-                .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .module = *spv_module,
-                .pName = "main",
-                .pSpecializationInfo = nullptr,
+        pipeline = device.GetLogical().CreateComputePipeline(
+            {
+                .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = flags,
+                .stage{
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    .pNext =
+                        device.IsExtSubgroupSizeControlSupported() ? &subgroup_size_ci : nullptr,
+                    .flags = 0,
+                    .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                    .module = *spv_module,
+                    .pName = "main",
+                    .pSpecializationInfo = nullptr,
+                },
+                .layout = *pipeline_layout,
+                .basePipelineHandle = 0,
+                .basePipelineIndex = 0,
             },
-            .layout = *pipeline_layout,
-            .basePipelineHandle = 0,
-            .basePipelineIndex = 0,
-        });
+            *pipeline_cache);
+
         if (pipeline_statistics) {
             pipeline_statistics->Collect(*pipeline);
         }

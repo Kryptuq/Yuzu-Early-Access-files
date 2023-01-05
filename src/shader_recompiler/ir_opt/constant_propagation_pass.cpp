@@ -518,6 +518,7 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
             case IR::Attribute::VertexId:
             case IR::Attribute::BaseVertex:
             case IR::Attribute::BaseInstance:
+            case IR::Attribute::DrawID:
                 break;
             default:
                 return;
@@ -665,6 +666,8 @@ void FoldConstBuffer(Environment& env, IR::Block& block, IR::Inst& inst) {
             return IR::Attribute::BaseInstance;
         case ReplaceConstant::BaseVertex:
             return IR::Attribute::BaseVertex;
+        case ReplaceConstant::DrawID:
+            return IR::Attribute::DrawID;
         default:
             throw NotImplementedException("Not implemented replacement variable {}", *replacement);
         }

@@ -1,0 +1,29 @@
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#version 460 core
+
+layout (local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
+
+layout (binding = 0) buffer ThreadData {
+    uint data[];
+};
+
+uint xorshift32(uint x) {
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
+}
+
+uint getGlobalIndex() {
+    return gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_WorkGroupSize.y * gl_NumWorkGroups.y;
+}
+
+void main() {
+    uint myIndex = xorshift32(getGlobalIndex());
+    uint otherIndex = xorshift32(myIndex);
+
+    uint otherValue = atomicAdd(data[otherIndex % data.length()], 0) + 1;
+    atomicAdd(data[myIndex % data.length()], otherValue);
+}

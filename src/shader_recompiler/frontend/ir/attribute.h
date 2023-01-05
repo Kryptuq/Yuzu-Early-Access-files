@@ -223,6 +223,7 @@ enum class Attribute : u64 {
     // Implementation attributes
     BaseInstance = 256,
     BaseVertex = 257,
+    DrawID = 258,
 };
 
 constexpr size_t NUM_GENERICS = 32;

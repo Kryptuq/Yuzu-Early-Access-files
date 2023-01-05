@@ -2228,8 +2228,10 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
     }
 
     switch (target) {
-    case GameListRemoveTarget::GlShaderCache:
     case GameListRemoveTarget::VkShaderCache:
+        RemoveVulkanDriverPipelineCache(program_id);
+        [[fallthrough]];
+    case GameListRemoveTarget::GlShaderCache:
         RemoveTransferableShaderCache(program_id, target);
         break;
     case GameListRemoveTarget::AllShaderCache:
@@ -2267,6 +2269,22 @@ void GMainWindow::RemoveTransferableShaderCache(u64 program_id, GameListRemoveTa
     } else {
         QMessageBox::warning(this, tr("Error Removing Transferable Shader Cache"),
                              tr("Failed to remove the transferable shader cache."));
+    }
+}
+
+void GMainWindow::RemoveVulkanDriverPipelineCache(u64 program_id) {
+    static constexpr std::string_view target_file_name = "vulkan_pipelines.bin";
+
+    const auto shader_cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir);
+    const auto shader_cache_folder_path = shader_cache_dir / fmt::format("{:016x}", program_id);
+    const auto target_file = shader_cache_folder_path / target_file_name;
+
+    if (!Common::FS::Exists(target_file)) {
+        return;
+    }
+    if (!Common::FS::RemoveFile(target_file)) {
+        QMessageBox::warning(this, tr("Error Removing Vulkan Driver Pipeline Cache"),
+                             tr("Failed to remove the driver pipeline cache."));
     }
 }
 

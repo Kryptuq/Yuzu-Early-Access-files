@@ -73,6 +73,8 @@ void ConfigureDebug::SetConfiguration() {
     ui->dump_macros->setChecked(Settings::values.dump_macros.GetValue());
     ui->disable_macro_jit->setEnabled(runtime_lock);
     ui->disable_macro_jit->setChecked(Settings::values.disable_macro_jit.GetValue());
+    ui->disable_macro_hle->setEnabled(runtime_lock);
+    ui->disable_macro_hle->setChecked(Settings::values.disable_macro_hle.GetValue());
     ui->disable_loop_safety_checks->setEnabled(runtime_lock);
     ui->disable_loop_safety_checks->setChecked(
         Settings::values.disable_shader_loop_safety_checks.GetValue());
@@ -117,6 +119,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.disable_shader_loop_safety_checks =
         ui->disable_loop_safety_checks->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
+    Settings::values.disable_macro_hle = ui->disable_macro_hle->isChecked();
     Settings::values.extended_logging = ui->extended_logging->isChecked();
     Settings::values.perform_vulkan_check = ui->perform_vulkan_check->isChecked();
     UISettings::values.disable_web_applet = ui->disable_web_applet->isChecked();

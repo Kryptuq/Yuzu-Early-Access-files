@@ -450,6 +450,8 @@ std::string NameOf(Attribute attribute) {
         return "BaseInstance";
     case Attribute::BaseVertex:
         return "BaseVertex";
+    case Attribute::DrawID:
+        return "DrawID";
     }
     return fmt::format("<reserved attribute {}>", static_cast<int>(attribute));
 }

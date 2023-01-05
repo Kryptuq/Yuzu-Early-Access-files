@@ -176,7 +176,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item row="1" column="2">
        <widget class="QCheckBox" name="dump_macros">
         <property name="enabled">
          <bool>true</bool>
@@ -199,6 +199,19 @@
         </property>
         <property name="text">
          <string>Disable Macro JIT</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="disable_macro_hle">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>When checked, it disables the macro HLE functions. Enabling this makes games run slower</string>
+        </property>
+        <property name="text">
+         <string>Disable Macro HLE</string>
         </property>
        </widget>
       </item>

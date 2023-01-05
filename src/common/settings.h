@@ -415,6 +415,7 @@ struct Values {
     // Renderer
     SwitchableSetting<RendererBackend, true> renderer_backend{
         RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Null, "backend"};
+    SwitchableSetting<bool> renderer_force_max_clock{true, "force_max_clock"};
     Setting<bool> renderer_debug{false, "debug"};
     Setting<bool> renderer_shader_feedback{false, "shader_feedback"};
     Setting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
@@ -451,6 +452,8 @@ struct Values {
     SwitchableSetting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     SwitchableSetting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
     SwitchableSetting<bool> use_pessimistic_flushes{false, "use_pessimistic_flushes"};
+    SwitchableSetting<bool> use_vulkan_driver_pipeline_cache{true,
+                                                             "use_vulkan_driver_pipeline_cache"};
 
     SwitchableSetting<u8> bg_red{0, "bg_red"};
     SwitchableSetting<u8> bg_green{0, "bg_green"};
@@ -532,6 +535,7 @@ struct Values {
     Setting<bool> reporting_services{false, "reporting_services"};
     Setting<bool> quest_flag{false, "quest_flag"};
     Setting<bool> disable_macro_jit{false, "disable_macro_jit"};
+    Setting<bool> disable_macro_hle{false, "disable_macro_hle"};
     Setting<bool> extended_logging{false, "extended_logging"};
     Setting<bool> use_debug_asserts{false, "use_debug_asserts"};
     Setting<bool> use_auto_stub{false, "use_auto_stub"};

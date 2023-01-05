@@ -60,7 +60,7 @@ private:
     using ConstIteratorType = typename MapType::const_iterator;
 
     size_t ContinousSizeInternal(KeyT address) const {
-        const auto it = GetFirstElemnentBeforeOrOn(address);
+        const auto it = GetFirstElementBeforeOrOn(address);
         if (it == container.end() || it->second == null_value) {
             return 0;
         }
@@ -72,14 +72,14 @@ private:
     }
 
     ValueT GetValueInternal(KeyT address) const {
-        const auto it = GetFirstElemnentBeforeOrOn(address);
+        const auto it = GetFirstElementBeforeOrOn(address);
         if (it == container.end()) {
             return null_value;
         }
         return it->second;
     }
 
-    ConstIteratorType GetFirstElemnentBeforeOrOn(KeyT address) const {
+    ConstIteratorType GetFirstElementBeforeOrOn(KeyT address) const {
         auto it = container.lower_bound(address);
         if (it == container.begin()) {
             return it;

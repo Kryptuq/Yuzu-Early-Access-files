@@ -357,6 +357,8 @@ std::optional<Shader::ReplaceConstant> GraphicsEnvironment::GetReplaceConstBuffe
             return Shader::ReplaceConstant::BaseVertex;
         case Tegra::Engines::Maxwell3D::HLEReplacementAttributeType::BaseInstance:
             return Shader::ReplaceConstant::BaseInstance;
+        case Tegra::Engines::Maxwell3D::HLEReplacementAttributeType::DrawID:
+            return Shader::ReplaceConstant::DrawID;
         default:
             UNREACHABLE();
         }

@@ -148,7 +148,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d, DynamicFe
         });
     }
     if (!extended_dynamic_state_2_extra) {
-        dynamic_state.Refresh2(regs, topology, extended_dynamic_state_2);
+        dynamic_state.Refresh2(regs, topology_, extended_dynamic_state_2);
     }
     if (!extended_dynamic_state_3_blend) {
         if (maxwell3d.dirty.flags[Dirty::Blending]) {

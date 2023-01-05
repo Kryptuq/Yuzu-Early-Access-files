@@ -28,7 +28,8 @@ class Scheduler;
 
 class ComputePipeline {
 public:
-    explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
+    explicit ComputePipeline(const Device& device, vk::PipelineCache& pipeline_cache,
+                             DescriptorPool& descriptor_pool,
                              UpdateDescriptorQueue& update_descriptor_queue,
                              Common::ThreadWorker* thread_worker,
                              PipelineStatistics* pipeline_statistics,
@@ -46,6 +47,7 @@ public:
 
 private:
     const Device& device;
+    vk::PipelineCache& pipeline_cache;
     UpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 

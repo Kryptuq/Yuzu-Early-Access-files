@@ -296,6 +296,7 @@ void Config::ReadValues() {
 
     // Renderer
     ReadSetting("Renderer", Settings::values.renderer_backend);
+    ReadSetting("Renderer", Settings::values.renderer_force_max_clock);
     ReadSetting("Renderer", Settings::values.renderer_debug);
     ReadSetting("Renderer", Settings::values.renderer_shader_feedback);
     ReadSetting("Renderer", Settings::values.enable_nsight_aftermath);
@@ -321,6 +322,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.accelerate_astc);
     ReadSetting("Renderer", Settings::values.use_fast_gpu_time);
     ReadSetting("Renderer", Settings::values.use_pessimistic_flushes);
+    ReadSetting("Renderer", Settings::values.use_vulkan_driver_pipeline_cache);
 
     ReadSetting("Renderer", Settings::values.bg_red);
     ReadSetting("Renderer", Settings::values.bg_green);
@@ -348,6 +350,7 @@ void Config::ReadValues() {
     ReadSetting("Debugging", Settings::values.use_debug_asserts);
     ReadSetting("Debugging", Settings::values.use_auto_stub);
     ReadSetting("Debugging", Settings::values.disable_macro_jit);
+    ReadSetting("Debugging", Settings::values.disable_macro_hle);
     ReadSetting("Debugging", Settings::values.use_gdbstub);
     ReadSetting("Debugging", Settings::values.gdbstub_port);
 

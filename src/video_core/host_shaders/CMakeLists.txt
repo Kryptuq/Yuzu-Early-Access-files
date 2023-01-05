@@ -47,6 +47,7 @@ set(SHADER_FILES
     vulkan_present_scaleforce_fp16.frag
     vulkan_present_scaleforce_fp32.frag
     vulkan_quad_indexed.comp
+    vulkan_turbo_mode.comp
     vulkan_uint8.comp
 )
 

@@ -220,9 +220,6 @@ void Maxwell3D::ProcessMacro(u32 method, const u32* base_start, u32 amount, bool
 }
 
 void Maxwell3D::RefreshParametersImpl() {
-    if (!Settings::IsGPULevelHigh()) {
-        return;
-    }
     size_t current_index = 0;
     for (auto& segment : macro_segments) {
         if (segment.first == 0) {
@@ -448,9 +445,11 @@ void Maxwell3D::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
     case MAXWELL3D_REG_INDEX(const_buffer.buffer) + 15:
         ProcessCBMultiData(base_start, amount);
         break;
-    case MAXWELL3D_REG_INDEX(inline_data):
+    case MAXWELL3D_REG_INDEX(inline_data): {
+        ASSERT(methods_pending == amount);
         upload_state.ProcessData(base_start, amount);
         return;
+    }
     default:
         for (u32 i = 0; i < amount; i++) {
             CallMethod(method, base_start[i], methods_pending - i <= 1);
@@ -537,7 +536,7 @@ void Maxwell3D::ProcessQueryGet() {
 void Maxwell3D::ProcessQueryCondition() {
     const GPUVAddr condition_address{regs.render_enable.Address()};
     switch (regs.render_enable_override) {
-    case Regs::RenderEnable::Override::AlwaysRender: {
+    case Regs::RenderEnable::Override::AlwaysRender:
         execute_on = true;
         break;
     case Regs::RenderEnable::Override::NeverRender:
@@ -584,7 +583,6 @@ void Maxwell3D::ProcessQueryCondition() {
         }
         }
         break;
-    }
     }
     }
 }

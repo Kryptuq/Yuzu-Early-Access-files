@@ -218,6 +218,7 @@ public:
     Id base_instance{};
     Id vertex_id{};
     Id vertex_index{};
+    Id draw_index{};
     Id base_vertex{};
     Id front_face{};
     Id point_coord{};

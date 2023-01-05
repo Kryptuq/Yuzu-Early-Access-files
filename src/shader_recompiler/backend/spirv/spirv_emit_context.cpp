@@ -1402,6 +1402,9 @@ void EmitContext::DefineInputs(const IR::Program& program) {
     } else if (loads[IR::Attribute::BaseVertex]) {
         base_vertex = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
     }
+    if (loads[IR::Attribute::DrawID]) {
+        draw_index = DefineInput(*this, U32[1], true, spv::BuiltIn::DrawIndex);
+    }
     if (loads[IR::Attribute::FrontFace]) {
         front_face = DefineInput(*this, U1, true, spv::BuiltIn::FrontFacing);
     }

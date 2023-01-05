@@ -135,6 +135,12 @@ private:
                                                            PipelineStatistics* statistics,
                                                            bool build_in_parallel);
 
+    void SerializeVulkanPipelineCache(const std::filesystem::path& filename,
+                                      const vk::PipelineCache& pipeline_cache, u32 cache_version);
+
+    vk::PipelineCache LoadVulkanPipelineCache(const std::filesystem::path& filename,
+                                              u32 expected_cache_version);
+
     const Device& device;
     Scheduler& scheduler;
     DescriptorPool& descriptor_pool;
@@ -144,6 +150,7 @@ private:
     TextureCache& texture_cache;
     VideoCore::ShaderNotify& shader_notify;
     bool use_asynchronous_shaders{};
+    bool use_vulkan_pipeline_cache{};
 
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
@@ -157,6 +164,9 @@ private:
     Shader::HostTranslateInfo host_info;
 
     std::filesystem::path pipeline_cache_filename;
+
+    std::filesystem::path vulkan_pipeline_cache_filename;
+    vk::PipelineCache vulkan_pipeline_cache;
 
     Common::ThreadWorker workers;
     Common::ThreadWorker serialization_thread;

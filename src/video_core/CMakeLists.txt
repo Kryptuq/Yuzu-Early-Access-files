@@ -190,6 +190,8 @@ add_library(video_core STATIC
     renderer_vulkan/vk_texture_cache.cpp
     renderer_vulkan/vk_texture_cache.h
     renderer_vulkan/vk_texture_cache_base.cpp
+    renderer_vulkan/vk_turbo_mode.cpp
+    renderer_vulkan/vk_turbo_mode.h
     renderer_vulkan/vk_update_descriptor.cpp
     renderer_vulkan/vk_update_descriptor.h
     shader_cache.cpp

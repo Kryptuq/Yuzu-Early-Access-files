@@ -1218,12 +1218,12 @@ public:
 
         struct Window {
             union {
-                u32 raw_1;
+                u32 raw_x;
                 BitField<0, 16, u32> x_min;
                 BitField<16, 16, u32> x_max;
             };
             union {
-                u32 raw_2;
+                u32 raw_y;
                 BitField<0, 16, u32> y_min;
                 BitField<16, 16, u32> y_max;
             };
@@ -3034,6 +3034,7 @@ public:
     enum class HLEReplacementAttributeType : u32 {
         BaseVertex = 0x0,
         BaseInstance = 0x1,
+        DrawID = 0x2,
     };
 
     void SetHLEReplacementAttributeType(u32 bank, u32 offset, HLEReplacementAttributeType name);
@@ -3112,6 +3113,10 @@ public:
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(size_t stage_index);
 
+    /// Handles a write to the CB_DATA[i] register.
+    void ProcessCBData(u32 value);
+    void ProcessCBMultiData(const u32* start_base, u32 amount);
+
 private:
     void InitializeRegisterDefaults();
 
@@ -3162,10 +3167,6 @@ private:
 
     /// Handles writes to syncing register.
     void ProcessSyncPoint();
-
-    /// Handles a write to the CB_DATA[i] register.
-    void ProcessCBData(u32 value);
-    void ProcessCBMultiData(const u32* start_base, u32 amount);
 
     /// Returns a query's value or an empty object if the value will be deferred through a cache.
     std::optional<u64> GetQueryResult();

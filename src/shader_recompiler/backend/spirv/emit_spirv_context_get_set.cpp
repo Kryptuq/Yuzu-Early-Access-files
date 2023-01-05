@@ -343,6 +343,8 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.base_instance));
     case IR::Attribute::BaseVertex:
         return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.base_vertex));
+    case IR::Attribute::DrawID:
+        return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.draw_index));
     case IR::Attribute::FrontFace:
         return ctx.OpSelect(ctx.F32[1], ctx.OpLoad(ctx.U1, ctx.front_face),
                             ctx.OpBitcast(ctx.F32[1], ctx.Const(std::numeric_limits<u32>::max())),
@@ -388,6 +390,8 @@ Id EmitGetAttributeU32(EmitContext& ctx, IR::Attribute attr, Id) {
         return ctx.OpLoad(ctx.U32[1], ctx.base_instance);
     case IR::Attribute::BaseVertex:
         return ctx.OpLoad(ctx.U32[1], ctx.base_vertex);
+    case IR::Attribute::DrawID:
+        return ctx.OpLoad(ctx.U32[1], ctx.draw_index);
     default:
         throw NotImplementedException("Read U32 attribute {}", attr);
     }
