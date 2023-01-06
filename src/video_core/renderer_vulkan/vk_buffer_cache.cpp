@@ -336,6 +336,9 @@ void BufferCacheRuntime::Finish() {
 
 void BufferCacheRuntime::CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
                                     std::span<const VideoCommon::BufferCopy> copies, bool barrier) {
+    if (dst_buffer == VK_NULL_HANDLE || src_buffer == VK_NULL_HANDLE) {
+        return;
+    }
     static constexpr VkMemoryBarrier READ_BARRIER{
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -394,6 +397,9 @@ void BufferCacheRuntime::PostCopyBarrier() {
 }
 
 void BufferCacheRuntime::ClearBuffer(VkBuffer dest_buffer, u32 offset, size_t size, u32 value) {
+    if (dest_buffer == VK_NULL_HANDLE) {
+        return;
+    }
     static constexpr VkMemoryBarrier READ_BARRIER{
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -473,6 +479,11 @@ void BufferCacheRuntime::BindVertexBuffer(u32 index, VkBuffer buffer, u32 offset
             cmdbuf.BindVertexBuffers2EXT(index, 1, &buffer, &vk_offset, &vk_size, &vk_stride);
         });
     } else {
+        if (!device.HasNullDescriptor() && buffer == VK_NULL_HANDLE) {
+            ReserveNullBuffer();
+            buffer = *null_buffer;
+            offset = 0;
+        }
         scheduler.Record([index, buffer, offset](vk::CommandBuffer cmdbuf) {
             cmdbuf.BindVertexBuffer(index, buffer, offset);
         });

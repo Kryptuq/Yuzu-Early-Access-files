@@ -13,12 +13,12 @@ public:
     explicit nvhost_nvdec(Core::System& system_, NvCore::Container& core);
     ~nvhost_nvdec() override;
 
-    NvResult Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
+    NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                     std::vector<u8>& output) override;
-    NvResult Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
-                    std::span<const u8> inline_input, std::vector<u8>& output) override;
-    NvResult Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input, std::vector<u8>& output,
-                    std::vector<u8>& inline_output) override;
+    NvResult Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    const std::vector<u8>& inline_input, std::vector<u8>& output) override;
+    NvResult Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    std::vector<u8>& output, std::vector<u8>& inline_output) override;
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hid/emulated_controller.h"
+#include "core/hid/emulated_devices.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
@@ -12,18 +12,16 @@ namespace Service::HID {
 RingController::RingController(Core::HID::HIDCore& hid_core_,
                                KernelHelpers::ServiceContext& service_context_)
     : HidbusBase(service_context_) {
-    input = hid_core_.GetEmulatedController(Core::HID::NpadIdType::Player1);
+    input = hid_core_.GetEmulatedDevices();
 }
 
 RingController::~RingController() = default;
 
 void RingController::OnInit() {
-    input->SetPollingMode(Common::Input::PollingMode::Ring);
     return;
 }
 
 void RingController::OnRelease() {
-    input->SetPollingMode(Common::Input::PollingMode::Active);
     return;
 };
 
@@ -114,7 +112,7 @@ std::vector<u8> RingController::GetReply() const {
     }
 }
 
-bool RingController::SetCommand(std::span<const u8> data) {
+bool RingController::SetCommand(const std::vector<u8>& data) {
     if (data.size() < 4) {
         LOG_ERROR(Service_HID, "Command size not supported {}", data.size());
         command = RingConCommands::Error;

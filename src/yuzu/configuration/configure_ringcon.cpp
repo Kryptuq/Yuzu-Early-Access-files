@@ -4,11 +4,9 @@
 #include <memory>
 #include <QKeyEvent>
 #include <QMenu>
-#include <QMessageBox>
 #include <QTimer>
-#include <fmt/format.h>
 
-#include "core/hid/emulated_controller.h"
+#include "core/hid/emulated_devices.h"
 #include "core/hid/hid_core.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
@@ -128,16 +126,9 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
         ui->buttonRingAnalogPush,
     };
 
-    emulated_controller = hid_core_.GetEmulatedController(Core::HID::NpadIdType::Player1);
-    emulated_controller->SaveCurrentConfig();
-    emulated_controller->EnableConfiguration();
-
-    Core::HID::ControllerUpdateCallback engine_callback{
-        .on_change = [this](Core::HID::ControllerTriggerType type) { ControllerUpdate(type); },
-        .is_npad_service = false,
-    };
-    callback_key = emulated_controller->SetCallback(engine_callback);
-    is_controller_set = true;
+    emulated_device = hid_core_.GetEmulatedDevices();
+    emulated_device->SaveCurrentConfig();
+    emulated_device->EnableConfiguration();
 
     LoadConfiguration();
 
@@ -152,9 +143,9 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
             HandleClick(
                 analog_map_buttons[sub_button_id],
                 [=, this](const Common::ParamPackage& params) {
-                    Common::ParamPackage param = emulated_controller->GetRingParam();
+                    Common::ParamPackage param = emulated_device->GetRingParam();
                     SetAnalogParam(params, param, analog_sub_buttons[sub_button_id]);
-                    emulated_controller->SetRingParam(param);
+                    emulated_device->SetRingParam(param);
                 },
                 InputCommon::Polling::InputType::Stick);
         });
@@ -164,16 +155,16 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
         connect(analog_button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    Common::ParamPackage param = emulated_controller->GetRingParam();
+                    Common::ParamPackage param = emulated_device->GetRingParam();
                     context_menu.addAction(tr("Clear"), [&] {
-                        emulated_controller->SetRingParam(param);
+                        emulated_device->SetRingParam({});
                         analog_map_buttons[sub_button_id]->setText(tr("[not set]"));
                     });
                     context_menu.addAction(tr("Invert axis"), [&] {
                         const bool invert_value = param.Get("invert_x", "+") == "-";
                         const std::string invert_str = invert_value ? "+" : "-";
                         param.Set("invert_x", invert_str);
-                        emulated_controller->SetRingParam(param);
+                        emulated_device->SetRingParam(param);
                         for (int sub_button_id2 = 0; sub_button_id2 < ANALOG_SUB_BUTTONS_NUM;
                              ++sub_button_id2) {
                             analog_map_buttons[sub_button_id2]->setText(
@@ -186,18 +177,15 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
     }
 
     connect(ui->sliderRingAnalogDeadzone, &QSlider::valueChanged, [=, this] {
-        Common::ParamPackage param = emulated_controller->GetRingParam();
+        Common::ParamPackage param = emulated_device->GetRingParam();
         const auto slider_value = ui->sliderRingAnalogDeadzone->value();
         ui->labelRingAnalogDeadzone->setText(tr("Deadzone: %1%").arg(slider_value));
         param.Set("deadzone", slider_value / 100.0f);
-        emulated_controller->SetRingParam(param);
+        emulated_device->SetRingParam(param);
     });
 
     connect(ui->restore_defaults_button, &QPushButton::clicked, this,
             &ConfigureRingController::RestoreDefaults);
-
-    connect(ui->enable_ring_controller_button, &QPushButton::clicked, this,
-            &ConfigureRingController::EnableRingController);
 
     timeout_timer->setSingleShot(true);
     connect(timeout_timer.get(), &QTimer::timeout, [this] { SetPollingResult({}, true); });
@@ -214,13 +202,7 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
 }
 
 ConfigureRingController::~ConfigureRingController() {
-    emulated_controller->SetPollingMode(Common::Input::PollingMode::Active);
-    emulated_controller->DisableConfiguration();
-
-    if (is_controller_set) {
-        emulated_controller->DeleteCallback(callback_key);
-        is_controller_set = false;
-    }
+    emulated_device->DisableConfiguration();
 };
 
 void ConfigureRingController::changeEvent(QEvent* event) {
@@ -237,7 +219,7 @@ void ConfigureRingController::RetranslateUI() {
 
 void ConfigureRingController::UpdateUI() {
     RetranslateUI();
-    const Common::ParamPackage param = emulated_controller->GetRingParam();
+    const Common::ParamPackage param = emulated_device->GetRingParam();
 
     for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
         auto* const analog_button = analog_map_buttons[sub_button_id];
@@ -258,9 +240,9 @@ void ConfigureRingController::UpdateUI() {
 }
 
 void ConfigureRingController::ApplyConfiguration() {
-    emulated_controller->DisableConfiguration();
-    emulated_controller->SaveCurrentConfig();
-    emulated_controller->EnableConfiguration();
+    emulated_device->DisableConfiguration();
+    emulated_device->SaveCurrentConfig();
+    emulated_device->EnableConfiguration();
 }
 
 void ConfigureRingController::LoadConfiguration() {
@@ -270,59 +252,8 @@ void ConfigureRingController::LoadConfiguration() {
 void ConfigureRingController::RestoreDefaults() {
     const std::string default_ring_string = InputCommon::GenerateAnalogParamFromKeys(
         0, 0, Config::default_ringcon_analogs[0], Config::default_ringcon_analogs[1], 0, 0.05f);
-    emulated_controller->SetRingParam(Common::ParamPackage(default_ring_string));
+    emulated_device->SetRingParam(Common::ParamPackage(default_ring_string));
     UpdateUI();
-}
-
-void ConfigureRingController::EnableRingController() {
-    const auto dialog_title = tr("Error enabling ring input");
-
-    is_ring_enabled = false;
-    ui->ring_controller_sensor_value->setText(tr("Not connected"));
-
-    if (!Settings::values.enable_joycon_driver) {
-        QMessageBox::warning(this, dialog_title, tr("Direct Joycon driver is not enabled"));
-        return;
-    }
-
-    ui->enable_ring_controller_button->setEnabled(false);
-    ui->enable_ring_controller_button->setText(tr("Configuring"));
-    // SetPollingMode is blocking. Allow to update the button status before calling the command
-    repaint();
-
-    const auto result = emulated_controller->SetPollingMode(Common::Input::PollingMode::Ring);
-    switch (result) {
-    case Common::Input::DriverResult::Success:
-        is_ring_enabled = true;
-        break;
-    case Common::Input::DriverResult::NotSupported:
-        QMessageBox::warning(this, dialog_title,
-                             tr("The current mapped device doesn't support the ring controller"));
-        break;
-    case Common::Input::DriverResult::NoDeviceDetected:
-        QMessageBox::warning(this, dialog_title,
-                             tr("The current mapped device doesn't have a ring attached"));
-        break;
-    default:
-        QMessageBox::warning(this, dialog_title,
-                             tr("Unexpected driver result %1").arg(static_cast<int>(result)));
-        break;
-    }
-    ui->enable_ring_controller_button->setEnabled(true);
-    ui->enable_ring_controller_button->setText(tr("Enable"));
-}
-
-void ConfigureRingController::ControllerUpdate(Core::HID::ControllerTriggerType type) {
-    if (!is_ring_enabled) {
-        return;
-    }
-    if (type != Core::HID::ControllerTriggerType::RingController) {
-        return;
-    }
-
-    const auto value = emulated_controller->GetRingSensorValues();
-    const auto tex_value = QString::fromStdString(fmt::format("{:.3f}", value.raw_value));
-    ui->ring_controller_sensor_value->setText(tex_value);
 }
 
 void ConfigureRingController::HandleClick(

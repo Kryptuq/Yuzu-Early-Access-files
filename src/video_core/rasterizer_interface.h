@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <span>
+#include <utility>
 #include "common/common_types.h"
 #include "common/polyfill_thread.h"
 #include "video_core/cache_types.h"
@@ -94,6 +95,12 @@ public:
     /// Notify rasterizer that any caches of the specified region should be invalidated
     virtual void InvalidateRegion(VAddr addr, u64 size,
                                   VideoCommon::CacheType which = VideoCommon::CacheType::All) = 0;
+
+    virtual void InnerInvalidation(std::span<const std::pair<VAddr, std::size_t>> sequences) {
+        for (const auto& [cpu_addr, size] : sequences) {
+            InvalidateRegion(cpu_addr, size);
+        }
+    }
 
     /// Notify rasterizer that any caches of the specified region are desync with guest
     virtual void OnCPUWrite(VAddr addr, u64 size) = 0;

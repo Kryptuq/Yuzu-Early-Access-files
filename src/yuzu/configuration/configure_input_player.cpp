@@ -66,18 +66,6 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("R");
     case Common::Input::ButtonNames::TriggerL:
         return QObject::tr("L");
-    case Common::Input::ButtonNames::TriggerZR:
-        return QObject::tr("ZR");
-    case Common::Input::ButtonNames::TriggerZL:
-        return QObject::tr("ZL");
-    case Common::Input::ButtonNames::TriggerSR:
-        return QObject::tr("SR");
-    case Common::Input::ButtonNames::TriggerSL:
-        return QObject::tr("SL");
-    case Common::Input::ButtonNames::ButtonStickL:
-        return QObject::tr("Stick L");
-    case Common::Input::ButtonNames::ButtonStickR:
-        return QObject::tr("Stick R");
     case Common::Input::ButtonNames::ButtonA:
         return QObject::tr("A");
     case Common::Input::ButtonNames::ButtonB:
@@ -88,14 +76,6 @@ QString GetButtonName(Common::Input::ButtonNames button_name) {
         return QObject::tr("Y");
     case Common::Input::ButtonNames::ButtonStart:
         return QObject::tr("Start");
-    case Common::Input::ButtonNames::ButtonPlus:
-        return QObject::tr("Plus");
-    case Common::Input::ButtonNames::ButtonMinus:
-        return QObject::tr("Minus");
-    case Common::Input::ButtonNames::ButtonHome:
-        return QObject::tr("Home");
-    case Common::Input::ButtonNames::ButtonCapture:
-        return QObject::tr("Capture");
     case Common::Input::ButtonNames::L1:
         return QObject::tr("L1");
     case Common::Input::ButtonNames::L2:

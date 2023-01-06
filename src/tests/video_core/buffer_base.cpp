@@ -538,7 +538,7 @@ TEST_CASE("BufferBase: Cached write downloads") {
     int num = 0;
     buffer.ForEachDownloadRangeAndClear(c, WORD, [&](u64 offset, u64 size) { ++num; });
     buffer.ForEachUploadRange(c, WORD, [&](u64 offset, u64 size) { ++num; });
-    REQUIRE(num == 0);
+    REQUIRE(num == 1);
     REQUIRE(!buffer.IsRegionCpuModified(c + PAGE, PAGE));
     REQUIRE(!buffer.IsRegionGpuModified(c + PAGE, PAGE));
     buffer.FlushCachedWrites();

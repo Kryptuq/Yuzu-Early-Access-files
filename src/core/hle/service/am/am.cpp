@@ -1124,7 +1124,7 @@ void IStorageAccessor::Write(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const u64 offset{rp.Pop<u64>()};
-    const auto data{ctx.ReadBuffer()};
+    const std::vector<u8> data{ctx.ReadBuffer()};
     const std::size_t size{std::min<u64>(data.size(), backing.GetSize() - offset)};
 
     LOG_DEBUG(Service_AM, "called, offset={}, size={}", offset, size);

@@ -1472,7 +1472,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         is_patch_list_restart_supported =
             primitive_topology_list_restart.primitiveTopologyPatchListRestart;
     }
-    if (requires_surface && has_khr_image_format_list && has_khr_swapchain_mutable_format) {
+    if (has_khr_image_format_list && has_khr_swapchain_mutable_format) {
         extensions.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
         extensions.push_back(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
         khr_swapchain_mutable_format = true;
@@ -1487,6 +1487,9 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
 
         max_push_descriptors = push_descriptor.maxPushDescriptors;
     }
+
+    has_null_descriptor = true;
+
     return extensions;
 }
 

@@ -25,7 +25,7 @@ public:
     explicit GCAdapter(std::string input_engine_);
     ~GCAdapter() override;
 
-    Common::Input::DriverResult SetVibration(
+    Common::Input::VibrationError SetVibration(
         const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
     bool IsVibrationEnabled(const PadIdentifier& identifier) override;

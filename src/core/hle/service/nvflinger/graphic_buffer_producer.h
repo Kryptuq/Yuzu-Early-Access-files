@@ -14,11 +14,11 @@
 
 namespace Service::android {
 
-class InputParcel;
+class Parcel;
 
 #pragma pack(push, 1)
 struct QueueBufferInput final {
-    explicit QueueBufferInput(InputParcel& parcel);
+    explicit QueueBufferInput(Parcel& parcel);
 
     void Deflate(s64* timestamp_, bool* is_auto_timestamp_, Common::Rectangle<s32>* crop_,
                  NativeWindowScalingMode* scaling_mode_, NativeWindowTransform* transform_,

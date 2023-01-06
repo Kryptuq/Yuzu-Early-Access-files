@@ -186,6 +186,7 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func) {
 
     SCOPE_EXIT({ gpu.TickWork(); });
     FlushWork();
+    gpu_memory->FlushCaching();
 
     query_cache.UpdateCounters();
 
@@ -393,6 +394,7 @@ void RasterizerVulkan::Clear(u32 layer_count) {
 
 void RasterizerVulkan::DispatchCompute() {
     FlushWork();
+    gpu_memory->FlushCaching();
 
     ComputePipeline* const pipeline{pipeline_cache.CurrentComputePipeline()};
     if (!pipeline) {
@@ -478,6 +480,27 @@ void RasterizerVulkan::InvalidateRegion(VAddr addr, u64 size, VideoCommon::Cache
     }
     if ((True(which & VideoCommon::CacheType::ShaderCache))) {
         pipeline_cache.InvalidateRegion(addr, size);
+    }
+}
+
+void RasterizerVulkan::InnerInvalidation(std::span<const std::pair<VAddr, std::size_t>> sequences) {
+    {
+        std::scoped_lock lock{texture_cache.mutex};
+        for (const auto& [addr, size] : sequences) {
+            texture_cache.WriteMemory(addr, size);
+        }
+    }
+    {
+        std::scoped_lock lock{buffer_cache.mutex};
+        for (const auto& [addr, size] : sequences) {
+            buffer_cache.WriteMemory(addr, size);
+        }
+    }
+    {
+        for (const auto& [addr, size] : sequences) {
+            query_cache.InvalidateRegion(addr, size);
+            pipeline_cache.InvalidateRegion(addr, size);
+        }
     }
 }
 

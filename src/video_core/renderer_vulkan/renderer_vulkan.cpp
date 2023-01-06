@@ -78,8 +78,6 @@ std::string BuildCommaSeparatedExtensions(std::vector<std::string> available_ext
     return separated_extensions;
 }
 
-} // Anonymous namespace
-
 Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dld,
                     VkSurfaceKHR surface) {
     const std::vector<VkPhysicalDevice> devices = instance.EnumeratePhysicalDevices();
@@ -91,6 +89,7 @@ Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dl
     const vk::PhysicalDevice physical_device(devices[device_index], dld);
     return Device(*instance, physical_device, surface, dld);
 }
+} // Anonymous namespace
 
 RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
                                Core::Frontend::EmuWindow& emu_window,
@@ -99,7 +98,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
     : RendererBase(emu_window, std::move(context_)), telemetry_session(telemetry_session_),
       cpu_memory(cpu_memory_), gpu(gpu_), library(OpenLibrary()),
       instance(CreateInstance(library, dld, VK_API_VERSION_1_1, render_window.GetWindowInfo().type,
-                              true, Settings::values.renderer_debug.GetValue())),
+                              Settings::values.renderer_debug.GetValue())),
       debug_callback(Settings::values.renderer_debug ? CreateDebugCallback(instance) : nullptr),
       surface(CreateSurface(instance, render_window)),
       device(CreateDevice(instance, dld, *surface)), memory_allocator(device, false),
@@ -110,9 +109,6 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
                   screen_info),
       rasterizer(render_window, gpu, cpu_memory, screen_info, device, memory_allocator,
                  state_tracker, scheduler) {
-    if (Settings::values.renderer_force_max_clock.GetValue()) {
-        turbo_mode.emplace(instance, dld);
-    }
     Report();
 } catch (const vk::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "Vulkan initialization failed with error: {}", exception.what());

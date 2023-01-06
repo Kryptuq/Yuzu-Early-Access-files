@@ -190,7 +190,7 @@ private:
             return;
         }
 
-        const auto data = ctx.ReadBuffer();
+        const std::vector<u8> data = ctx.ReadBuffer();
 
         ASSERT_MSG(
             static_cast<s64>(data.size()) <= length,
@@ -401,8 +401,11 @@ public:
     }
 
     void RenameFile(Kernel::HLERequestContext& ctx) {
-        const std::string src_name = Common::StringFromBuffer(ctx.ReadBuffer(0));
-        const std::string dst_name = Common::StringFromBuffer(ctx.ReadBuffer(1));
+        std::vector<u8> buffer = ctx.ReadBuffer(0);
+        const std::string src_name = Common::StringFromBuffer(buffer);
+
+        buffer = ctx.ReadBuffer(1);
+        const std::string dst_name = Common::StringFromBuffer(buffer);
 
         LOG_DEBUG(Service_FS, "called. file '{}' to file '{}'", src_name, dst_name);
 

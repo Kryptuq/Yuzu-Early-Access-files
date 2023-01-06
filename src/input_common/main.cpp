@@ -23,7 +23,6 @@
 #include "input_common/drivers/gc_adapter.h"
 #endif
 #ifdef HAVE_SDL2
-#include "input_common/drivers/joycon.h"
 #include "input_common/drivers/sdl_driver.h"
 #endif
 
@@ -59,7 +58,6 @@ struct InputSubsystem::Impl {
         RegisterEngine("virtual_gamepad", virtual_gamepad);
 #ifdef HAVE_SDL2
         RegisterEngine("sdl", sdl);
-        RegisterEngine("joycon", joycon);
 #endif
 
         Common::Input::RegisterInputFactory("touch_from_button",
@@ -89,7 +87,6 @@ struct InputSubsystem::Impl {
         UnregisterEngine(virtual_gamepad);
 #ifdef HAVE_SDL2
         UnregisterEngine(sdl);
-        UnregisterEngine(joycon);
 #endif
 
         Common::Input::UnregisterInputFactory("touch_from_button");
@@ -112,8 +109,6 @@ struct InputSubsystem::Impl {
         auto udp_devices = udp_client->GetInputDevices();
         devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
 #ifdef HAVE_SDL2
-        auto joycon_devices = joycon->GetInputDevices();
-        devices.insert(devices.end(), joycon_devices.begin(), joycon_devices.end());
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
 #endif
@@ -144,9 +139,6 @@ struct InputSubsystem::Impl {
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
             return sdl;
-        }
-        if (engine == joycon->GetEngineName()) {
-            return joycon;
         }
 #endif
         return nullptr;
@@ -231,9 +223,6 @@ struct InputSubsystem::Impl {
         if (engine == sdl->GetEngineName()) {
             return true;
         }
-        if (engine == joycon->GetEngineName()) {
-            return true;
-        }
 #endif
         return false;
     }
@@ -247,7 +236,6 @@ struct InputSubsystem::Impl {
         udp_client->BeginConfiguration();
 #ifdef HAVE_SDL2
         sdl->BeginConfiguration();
-        joycon->BeginConfiguration();
 #endif
     }
 
@@ -260,7 +248,6 @@ struct InputSubsystem::Impl {
         udp_client->EndConfiguration();
 #ifdef HAVE_SDL2
         sdl->EndConfiguration();
-        joycon->EndConfiguration();
 #endif
     }
 
@@ -291,7 +278,6 @@ struct InputSubsystem::Impl {
 
 #ifdef HAVE_SDL2
     std::shared_ptr<SDLDriver> sdl;
-    std::shared_ptr<Joycons> joycon;
 #endif
 };
 

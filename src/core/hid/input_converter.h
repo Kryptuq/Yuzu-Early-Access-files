@@ -88,17 +88,9 @@ Common::Input::CameraStatus TransformToCamera(const Common::Input::CallbackStatu
  * Converts raw input data into a valid nfc status.
  *
  * @param callback Supported callbacks: Nfc.
- * @return A valid data tag vector.
+ * @return A valid CameraObject object.
  */
 Common::Input::NfcStatus TransformToNfc(const Common::Input::CallbackStatus& callback);
-
-/**
- * Converts raw input data into a valid color status.
- *
- * @param callback Supported callbacks: Color.
- * @return A valid Color object.
- */
-Common::Input::BodyColorStatus TransformToColor(const Common::Input::CallbackStatus& callback);
 
 /**
  * Converts raw analog data into a valid analog value

@@ -305,6 +305,7 @@ public:
 private:
     VideoCore::RasterizerInterface* rasterizer = nullptr;
     std::unique_ptr<Blitter::SoftwareBlitEngine> sw_blitter;
+    MemoryManager& memory_manager;
 
     /// Performs the copy from the source surface to the destination surface as configured in the
     /// registers.

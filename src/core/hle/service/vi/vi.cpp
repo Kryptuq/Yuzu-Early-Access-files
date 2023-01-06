@@ -603,7 +603,7 @@ private:
             return;
         }
 
-        const auto parcel = android::OutputParcel{NativeWindow{*buffer_queue_id}};
+        const auto parcel = android::Parcel{NativeWindow{*buffer_queue_id}};
         const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
         IPC::ResponseBuilder rb{ctx, 4};
@@ -649,7 +649,7 @@ private:
             return;
         }
 
-        const auto parcel = android::OutputParcel{NativeWindow{*buffer_queue_id}};
+        const auto parcel = android::Parcel{NativeWindow{*buffer_queue_id}};
         const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
         IPC::ResponseBuilder rb{ctx, 6};

@@ -32,7 +32,7 @@
 namespace Vulkan {
 namespace {
 [[nodiscard]] std::vector<const char*> RequiredExtensions(
-    Core::Frontend::WindowSystemType window_type, bool enable_debug_utils) {
+    Core::Frontend::WindowSystemType window_type, bool enable_validation) {
     std::vector<const char*> extensions;
     extensions.reserve(6);
     switch (window_type) {
@@ -65,7 +65,7 @@ namespace {
     if (window_type != Core::Frontend::WindowSystemType::Headless) {
         extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
     }
-    if (enable_debug_utils) {
+    if (enable_validation) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -95,9 +95,9 @@ namespace {
     return true;
 }
 
-[[nodiscard]] std::vector<const char*> Layers(bool enable_layers) {
+[[nodiscard]] std::vector<const char*> Layers(bool enable_validation) {
     std::vector<const char*> layers;
-    if (enable_layers) {
+    if (enable_validation) {
         layers.push_back("VK_LAYER_KHRONOS_validation");
     }
     return layers;
@@ -125,7 +125,7 @@ void RemoveUnavailableLayers(const vk::InstanceDispatch& dld, std::vector<const 
 
 vk::Instance CreateInstance(const Common::DynamicLibrary& library, vk::InstanceDispatch& dld,
                             u32 required_version, Core::Frontend::WindowSystemType window_type,
-                            bool enable_debug_utils, bool enable_layers) {
+                            bool enable_validation) {
     if (!library.IsOpen()) {
         LOG_ERROR(Render_Vulkan, "Vulkan library not available");
         throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);
@@ -138,11 +138,11 @@ vk::Instance CreateInstance(const Common::DynamicLibrary& library, vk::InstanceD
         LOG_ERROR(Render_Vulkan, "Failed to load Vulkan function pointers");
         throw vk::Exception(VK_ERROR_INITIALIZATION_FAILED);
     }
-    const std::vector<const char*> extensions = RequiredExtensions(window_type, enable_debug_utils);
+    const std::vector<const char*> extensions = RequiredExtensions(window_type, enable_validation);
     if (!AreExtensionsSupported(dld, extensions)) {
         throw vk::Exception(VK_ERROR_EXTENSION_NOT_PRESENT);
     }
-    std::vector<const char*> layers = Layers(enable_layers);
+    std::vector<const char*> layers = Layers(enable_validation);
     RemoveUnavailableLayers(dld, layers);
 
     const u32 available_version = vk::AvailableVersion(dld);

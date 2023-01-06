@@ -4,7 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <span>
 #include <vector>
 
 #include "common/common_types.h"
@@ -45,7 +44,7 @@ private:
 
         s32 nfds;
         s32 timeout;
-        std::span<const u8> read_buffer;
+        std::vector<u8> read_buffer;
         std::vector<u8> write_buffer;
         s32 ret{};
         Errno bsd_errno{};
@@ -66,7 +65,7 @@ private:
         void Response(Kernel::HLERequestContext& ctx);
 
         s32 fd;
-        std::span<const u8> addr;
+        std::vector<u8> addr;
         Errno bsd_errno{};
     };
 
@@ -99,7 +98,7 @@ private:
 
         s32 fd;
         u32 flags;
-        std::span<const u8> message;
+        std::vector<u8> message;
         s32 ret{};
         Errno bsd_errno{};
     };
@@ -110,8 +109,8 @@ private:
 
         s32 fd;
         u32 flags;
-        std::span<const u8> message;
-        std::span<const u8> addr;
+        std::vector<u8> message;
+        std::vector<u8> addr;
         s32 ret{};
         Errno bsd_errno{};
     };
@@ -144,11 +143,11 @@ private:
     void ExecuteWork(Kernel::HLERequestContext& ctx, Work work);
 
     std::pair<s32, Errno> SocketImpl(Domain domain, Type type, Protocol protocol);
-    std::pair<s32, Errno> PollImpl(std::vector<u8>& write_buffer, std::span<const u8> read_buffer,
+    std::pair<s32, Errno> PollImpl(std::vector<u8>& write_buffer, std::vector<u8> read_buffer,
                                    s32 nfds, s32 timeout);
     std::pair<s32, Errno> AcceptImpl(s32 fd, std::vector<u8>& write_buffer);
-    Errno BindImpl(s32 fd, std::span<const u8> addr);
-    Errno ConnectImpl(s32 fd, std::span<const u8> addr);
+    Errno BindImpl(s32 fd, const std::vector<u8>& addr);
+    Errno ConnectImpl(s32 fd, const std::vector<u8>& addr);
     Errno GetPeerNameImpl(s32 fd, std::vector<u8>& write_buffer);
     Errno GetSockNameImpl(s32 fd, std::vector<u8>& write_buffer);
     Errno ListenImpl(s32 fd, s32 backlog);
@@ -158,9 +157,9 @@ private:
     std::pair<s32, Errno> RecvImpl(s32 fd, u32 flags, std::vector<u8>& message);
     std::pair<s32, Errno> RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& message,
                                        std::vector<u8>& addr);
-    std::pair<s32, Errno> SendImpl(s32 fd, u32 flags, std::span<const u8> message);
-    std::pair<s32, Errno> SendToImpl(s32 fd, u32 flags, std::span<const u8> message,
-                                     std::span<const u8> addr);
+    std::pair<s32, Errno> SendImpl(s32 fd, u32 flags, const std::vector<u8>& message);
+    std::pair<s32, Errno> SendToImpl(s32 fd, u32 flags, const std::vector<u8>& message,
+                                     const std::vector<u8>& addr);
     Errno CloseImpl(s32 fd);
 
     s32 FindFreeFileDescriptorHandle() noexcept;

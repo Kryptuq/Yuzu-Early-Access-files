@@ -51,29 +51,8 @@ endif()
 
 if (ENABLE_SDL2)
     target_sources(input_common PRIVATE
-        drivers/joycon.cpp
-        drivers/joycon.h
         drivers/sdl_driver.cpp
         drivers/sdl_driver.h
-        helpers/joycon_driver.cpp
-        helpers/joycon_driver.h
-        helpers/joycon_protocol/calibration.cpp
-        helpers/joycon_protocol/calibration.h
-        helpers/joycon_protocol/common_protocol.cpp
-        helpers/joycon_protocol/common_protocol.h
-        helpers/joycon_protocol/generic_functions.cpp
-        helpers/joycon_protocol/generic_functions.h
-        helpers/joycon_protocol/joycon_types.h
-        helpers/joycon_protocol/irs.cpp
-        helpers/joycon_protocol/irs.h
-        helpers/joycon_protocol/nfc.cpp
-        helpers/joycon_protocol/nfc.h
-        helpers/joycon_protocol/poller.cpp
-        helpers/joycon_protocol/poller.h
-        helpers/joycon_protocol/ringcon.cpp
-        helpers/joycon_protocol/ringcon.h
-        helpers/joycon_protocol/rumble.cpp
-        helpers/joycon_protocol/rumble.h
     )
     target_link_libraries(input_common PRIVATE SDL2::SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)

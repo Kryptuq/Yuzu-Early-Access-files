@@ -76,7 +76,7 @@ void State::ProcessData(std::span<const u8> read_buffer) {
                                        regs.dest.height, regs.dest.depth, x_offset, regs.dest.y,
                                        x_elements, regs.line_count, regs.dest.BlockHeight(),
                                        regs.dest.BlockDepth(), regs.line_length_in);
-        memory_manager.WriteBlock(address, tmp_buffer.data(), dst_size);
+        memory_manager.WriteBlockCached(address, tmp_buffer.data(), dst_size);
     }
 }
 

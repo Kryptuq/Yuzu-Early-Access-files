@@ -112,7 +112,7 @@ private:
     void RequestUpdate(Kernel::HLERequestContext& ctx) {
         LOG_TRACE(Service_Audio, "called");
 
-        const auto input{ctx.ReadBuffer(0)};
+        std::vector<u8> input{ctx.ReadBuffer(0)};
 
         // These buffers are written manually to avoid an issue with WriteBuffer throwing errors for
         // checking size 0. Performance size is 0 for most games.

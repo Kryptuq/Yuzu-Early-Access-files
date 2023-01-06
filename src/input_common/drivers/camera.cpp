@@ -72,11 +72,11 @@ std::size_t Camera::getImageHeight() const {
     }
 }
 
-Common::Input::DriverResult Camera::SetCameraFormat(
+Common::Input::CameraError Camera::SetCameraFormat(
     [[maybe_unused]] const PadIdentifier& identifier_,
     const Common::Input::CameraFormat camera_format) {
     status.format = camera_format;
-    return Common::Input::DriverResult::Success;
+    return Common::Input::CameraError::None;
 }
 
 } // namespace InputCommon

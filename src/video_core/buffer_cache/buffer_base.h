@@ -430,7 +430,7 @@ private:
         if (query_begin >= SizeBytes() || size < 0) {
             return;
         }
-        u64* const untracked_words = Array<Type::Untracked>();
+        [[maybe_unused]] u64* const untracked_words = Array<Type::Untracked>();
         u64* const state_words = Array<type>();
         const u64 query_end = query_begin + std::min(static_cast<u64>(size), SizeBytes());
         u64* const words_begin = state_words + query_begin / BYTES_PER_WORD;
@@ -483,7 +483,7 @@ private:
                 NotifyRasterizer<true>(word_index, current_bits, ~u64{0});
             }
             // Exclude CPU modified pages when visiting GPU pages
-            const u64 word = current_word & ~(type == Type::GPU ? untracked_words[word_index] : 0);
+            const u64 word = current_word;
             u64 page = page_begin;
             page_begin = 0;
 
@@ -531,7 +531,7 @@ private:
     [[nodiscard]] bool IsRegionModified(u64 offset, u64 size) const noexcept {
         static_assert(type != Type::Untracked);
 
-        const u64* const untracked_words = Array<Type::Untracked>();
+        [[maybe_unused]] const u64* const untracked_words = Array<Type::Untracked>();
         const u64* const state_words = Array<type>();
         const u64 num_query_words = size / BYTES_PER_WORD + 1;
         const u64 word_begin = offset / BYTES_PER_WORD;
@@ -539,8 +539,7 @@ private:
         const u64 page_limit = Common::DivCeil(offset + size, BYTES_PER_PAGE);
         u64 page_index = (offset / BYTES_PER_PAGE) % PAGES_PER_WORD;
         for (u64 word_index = word_begin; word_index < word_end; ++word_index, page_index = 0) {
-            const u64 off_word = type == Type::GPU ? untracked_words[word_index] : 0;
-            const u64 word = state_words[word_index] & ~off_word;
+            const u64 word = state_words[word_index];
             if (word == 0) {
                 continue;
             }
@@ -564,7 +563,7 @@ private:
     [[nodiscard]] std::pair<u64, u64> ModifiedRegion(u64 offset, u64 size) const noexcept {
         static_assert(type != Type::Untracked);
 
-        const u64* const untracked_words = Array<Type::Untracked>();
+        [[maybe_unused]] const u64* const untracked_words = Array<Type::Untracked>();
         const u64* const state_words = Array<type>();
         const u64 num_query_words = size / BYTES_PER_WORD + 1;
         const u64 word_begin = offset / BYTES_PER_WORD;
@@ -574,8 +573,7 @@ private:
         u64 begin = std::numeric_limits<u64>::max();
         u64 end = 0;
         for (u64 word_index = word_begin; word_index < word_end; ++word_index) {
-            const u64 off_word = type == Type::GPU ? untracked_words[word_index] : 0;
-            const u64 word = state_words[word_index] & ~off_word;
+            const u64 word = state_words[word_index];
             if (word == 0) {
                 continue;
             }

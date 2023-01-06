@@ -79,6 +79,7 @@ public:
                          VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
     void InvalidateRegion(VAddr addr, u64 size,
                           VideoCommon::CacheType which = VideoCommon::CacheType::All) override;
+    void InnerInvalidation(std::span<const std::pair<VAddr, std::size_t>> sequences) override;
     void OnCPUWrite(VAddr addr, u64 size) override;
     void InvalidateGPUCache() override;
     void UnmapMemory(VAddr addr, u64 size) override;

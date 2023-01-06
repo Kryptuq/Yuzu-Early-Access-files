@@ -185,7 +185,6 @@ void RestoreGlobalState(bool is_powered_on) {
     // Renderer
     values.fsr_sharpening_slider.SetGlobal(true);
     values.renderer_backend.SetGlobal(true);
-    values.renderer_force_max_clock.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);
     values.max_anisotropy.SetGlobal(true);

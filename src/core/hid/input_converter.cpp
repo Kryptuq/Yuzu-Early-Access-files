@@ -304,18 +304,6 @@ Common::Input::NfcStatus TransformToNfc(const Common::Input::CallbackStatus& cal
     return nfc;
 }
 
-Common::Input::BodyColorStatus TransformToColor(const Common::Input::CallbackStatus& callback) {
-    switch (callback.type) {
-    case Common::Input::InputType::Color:
-        return callback.color_status;
-        break;
-    default:
-        LOG_ERROR(Input, "Conversion from type {} to color not implemented", callback.type);
-        return {};
-        break;
-    }
-}
-
 void SanitizeAnalog(Common::Input::AnalogStatus& analog, bool clamp_value) {
     const auto& properties = analog.properties;
     float& raw_value = analog.raw_value;

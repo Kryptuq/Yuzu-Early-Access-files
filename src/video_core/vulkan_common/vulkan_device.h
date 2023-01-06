@@ -397,6 +397,10 @@ public:
         return must_emulate_bgr565;
     }
 
+    bool HasNullDescriptor() const {
+        return has_null_descriptor;
+    }
+
     u32 GetMaxVertexInputAttributes() const {
         return max_vertex_input_attributes;
     }
@@ -511,6 +515,7 @@ private:
     bool supports_d24_depth{};                   ///< Supports D24 depth buffers.
     bool cant_blit_msaa{};                       ///< Does not support MSAA<->MSAA blitting.
     bool must_emulate_bgr565{};                  ///< Emulates BGR565 by swizzling RGB565 format.
+    bool has_null_descriptor{};                  ///< Has support for null descriptors.
     u32 max_vertex_input_attributes{};           ///< Max vertex input attributes in pipeline
     u32 max_vertex_input_bindings{};             ///< Max vertex input buffers in pipeline
 

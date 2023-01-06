@@ -122,7 +122,7 @@ private:
 
     void ImportTicket(Kernel::HLERequestContext& ctx) {
         const auto ticket = ctx.ReadBuffer();
-        [[maybe_unused]] const auto cert = ctx.ReadBuffer(1);
+        const auto cert = ctx.ReadBuffer(1);
 
         if (ticket.size() < sizeof(Core::Crypto::Ticket)) {
             LOG_ERROR(Service_ETicket, "The input buffer is not large enough!");

@@ -40,12 +40,12 @@ public:
                         NvCore::Container& core);
     ~nvhost_gpu() override;
 
-    NvResult Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
+    NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                     std::vector<u8>& output) override;
-    NvResult Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
-                    std::span<const u8> inline_input, std::vector<u8>& output) override;
-    NvResult Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input, std::vector<u8>& output,
-                    std::vector<u8>& inline_output) override;
+    NvResult Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    const std::vector<u8>& inline_input, std::vector<u8>& output) override;
+    NvResult Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    std::vector<u8>& output, std::vector<u8>& inline_output) override;
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
@@ -186,23 +186,23 @@ private:
     u32_le channel_priority{};
     u32_le channel_timeslice{};
 
-    NvResult SetNVMAPfd(std::span<const u8> input, std::vector<u8>& output);
-    NvResult SetClientData(std::span<const u8> input, std::vector<u8>& output);
-    NvResult GetClientData(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ZCullBind(std::span<const u8> input, std::vector<u8>& output);
-    NvResult SetErrorNotifier(std::span<const u8> input, std::vector<u8>& output);
-    NvResult SetChannelPriority(std::span<const u8> input, std::vector<u8>& output);
-    NvResult AllocGPFIFOEx2(std::span<const u8> input, std::vector<u8>& output);
-    NvResult AllocateObjectContext(std::span<const u8> input, std::vector<u8>& output);
+    NvResult SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult SetClientData(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult GetClientData(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ZCullBind(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output);
     NvResult SubmitGPFIFOImpl(IoctlSubmitGpfifo& params, std::vector<u8>& output,
                               Tegra::CommandList&& entries);
-    NvResult SubmitGPFIFOBase(std::span<const u8> input, std::vector<u8>& output,
+    NvResult SubmitGPFIFOBase(const std::vector<u8>& input, std::vector<u8>& output,
                               bool kickoff = false);
-    NvResult SubmitGPFIFOBase(std::span<const u8> input, std::span<const u8> input_inline,
+    NvResult SubmitGPFIFOBase(const std::vector<u8>& input, const std::vector<u8>& input_inline,
                               std::vector<u8>& output);
-    NvResult GetWaitbase(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ChannelSetTimeout(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ChannelSetTimeslice(std::span<const u8> input, std::vector<u8>& output);
+    NvResult GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ChannelSetTimeslice(const std::vector<u8>& input, std::vector<u8>& output);
 
     EventInterface& events_interface;
     NvCore::Container& core;

@@ -46,7 +46,7 @@ nvhost_gpu::~nvhost_gpu() {
     syncpoint_manager.FreeSyncpoint(channel_syncpoint);
 }
 
-NvResult nvhost_gpu::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
+NvResult nvhost_gpu::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                             std::vector<u8>& output) {
     switch (command.group) {
     case 0x0:
@@ -98,8 +98,8 @@ NvResult nvhost_gpu::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> inpu
     return NvResult::NotImplemented;
 };
 
-NvResult nvhost_gpu::Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
-                            std::span<const u8> inline_input, std::vector<u8>& output) {
+NvResult nvhost_gpu::Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                            const std::vector<u8>& inline_input, std::vector<u8>& output) {
     switch (command.group) {
     case 'H':
         switch (command.cmd) {
@@ -112,7 +112,7 @@ NvResult nvhost_gpu::Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> inpu
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_gpu::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input,
+NvResult nvhost_gpu::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                             std::vector<u8>& output, std::vector<u8>& inline_output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
@@ -121,7 +121,7 @@ NvResult nvhost_gpu::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> inpu
 void nvhost_gpu::OnOpen(DeviceFD fd) {}
 void nvhost_gpu::OnClose(DeviceFD fd) {}
 
-NvResult nvhost_gpu::SetNVMAPfd(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetNvmapFD params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, fd={}", params.nvmap_fd);
@@ -130,7 +130,7 @@ NvResult nvhost_gpu::SetNVMAPfd(std::span<const u8> input, std::vector<u8>& outp
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::SetClientData(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::SetClientData(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlClientData params{};
@@ -139,7 +139,7 @@ NvResult nvhost_gpu::SetClientData(std::span<const u8> input, std::vector<u8>& o
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::GetClientData(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::GetClientData(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlClientData params{};
@@ -149,7 +149,7 @@ NvResult nvhost_gpu::GetClientData(std::span<const u8> input, std::vector<u8>& o
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::ZCullBind(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output) {
     std::memcpy(&zcull_params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, gpu_va={:X}, mode={:X}", zcull_params.gpu_va,
               zcull_params.mode);
@@ -158,7 +158,7 @@ NvResult nvhost_gpu::ZCullBind(std::span<const u8> input, std::vector<u8>& outpu
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::SetErrorNotifier(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetErrorNotifier params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset={:X}, size={:X}, mem={:X}", params.offset,
@@ -168,14 +168,14 @@ NvResult nvhost_gpu::SetErrorNotifier(std::span<const u8> input, std::vector<u8>
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::SetChannelPriority(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output) {
     std::memcpy(&channel_priority, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "(STUBBED) called, priority={:X}", channel_priority);
 
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::AllocGPFIFOEx2(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlAllocGpfifoEx2 params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV,
@@ -197,7 +197,7 @@ NvResult nvhost_gpu::AllocGPFIFOEx2(std::span<const u8> input, std::vector<u8>& 
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::AllocateObjectContext(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlAllocObjCtx params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, class_num={:X}, flags={:X}", params.class_num,
@@ -293,7 +293,7 @@ NvResult nvhost_gpu::SubmitGPFIFOImpl(IoctlSubmitGpfifo& params, std::vector<u8>
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::SubmitGPFIFOBase(std::span<const u8> input, std::vector<u8>& output,
+NvResult nvhost_gpu::SubmitGPFIFOBase(const std::vector<u8>& input, std::vector<u8>& output,
                                       bool kickoff) {
     if (input.size() < sizeof(IoctlSubmitGpfifo)) {
         UNIMPLEMENTED();
@@ -314,7 +314,8 @@ NvResult nvhost_gpu::SubmitGPFIFOBase(std::span<const u8> input, std::vector<u8>
     return SubmitGPFIFOImpl(params, output, std::move(entries));
 }
 
-NvResult nvhost_gpu::SubmitGPFIFOBase(std::span<const u8> input, std::span<const u8> input_inline,
+NvResult nvhost_gpu::SubmitGPFIFOBase(const std::vector<u8>& input,
+                                      const std::vector<u8>& input_inline,
                                       std::vector<u8>& output) {
     if (input.size() < sizeof(IoctlSubmitGpfifo)) {
         UNIMPLEMENTED();
@@ -327,7 +328,7 @@ NvResult nvhost_gpu::SubmitGPFIFOBase(std::span<const u8> input, std::span<const
     return SubmitGPFIFOImpl(params, output, std::move(entries));
 }
 
-NvResult nvhost_gpu::GetWaitbase(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetWaitbase params{};
     std::memcpy(&params, input.data(), sizeof(IoctlGetWaitbase));
     LOG_INFO(Service_NVDRV, "called, unknown=0x{:X}", params.unknown);
@@ -337,7 +338,7 @@ NvResult nvhost_gpu::GetWaitbase(std::span<const u8> input, std::vector<u8>& out
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::ChannelSetTimeout(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlChannelSetTimeout params{};
     std::memcpy(&params, input.data(), sizeof(IoctlChannelSetTimeout));
     LOG_INFO(Service_NVDRV, "called, timeout=0x{:X}", params.timeout);
@@ -345,7 +346,7 @@ NvResult nvhost_gpu::ChannelSetTimeout(std::span<const u8> input, std::vector<u8
     return NvResult::Success;
 }
 
-NvResult nvhost_gpu::ChannelSetTimeslice(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_gpu::ChannelSetTimeslice(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetTimeslice params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSetTimeslice));
     LOG_INFO(Service_NVDRV, "called, timeslice=0x{:X}", params.timeslice);

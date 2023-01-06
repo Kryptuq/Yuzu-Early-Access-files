@@ -50,38 +50,6 @@ protected:
     Maxwell3D& maxwell3d;
 };
 
-class HLE_DrawArrays final : public HLEMacroImpl {
-public:
-    explicit HLE_DrawArrays(Maxwell3D& maxwell3d_) : HLEMacroImpl(maxwell3d_) {}
-
-    void Execute(const std::vector<u32>& parameters, [[maybe_unused]] u32 method) override {
-        maxwell3d.RefreshParameters();
-
-        auto topology = static_cast<Maxwell3D::Regs::PrimitiveTopology>(parameters[0]);
-        maxwell3d.draw_manager->DrawArray(topology, parameters[1], parameters[2],
-                                          maxwell3d.regs.global_base_instance_index, 1);
-    }
-};
-
-class HLE_DrawIndexed final : public HLEMacroImpl {
-public:
-    explicit HLE_DrawIndexed(Maxwell3D& maxwell3d_) : HLEMacroImpl(maxwell3d_) {}
-
-    void Execute(const std::vector<u32>& parameters, [[maybe_unused]] u32 method) override {
-        maxwell3d.RefreshParameters();
-        maxwell3d.regs.index_buffer.start_addr_high = parameters[1];
-        maxwell3d.regs.index_buffer.start_addr_low = parameters[2];
-        maxwell3d.regs.index_buffer.format =
-            static_cast<Engines::Maxwell3D::Regs::IndexFormat>(parameters[3]);
-        maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-
-        auto topology = static_cast<Maxwell3D::Regs::PrimitiveTopology>(parameters[0]);
-        maxwell3d.draw_manager->DrawIndex(topology, 0, parameters[4],
-                                          maxwell3d.regs.global_base_vertex_index,
-                                          maxwell3d.regs.global_base_instance_index, 1);
-    }
-};
-
 /*
  * @note: these macros have two versions, a normal and extended version, with the extended version
  * also assigning the base vertex/instance.
@@ -497,11 +465,6 @@ public:
 } // Anonymous namespace
 
 HLEMacro::HLEMacro(Maxwell3D& maxwell3d_) : maxwell3d{maxwell3d_} {
-    builders.emplace(0xDD6A7FA92A7D2674ULL,
-                     std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
-                         [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_DrawArrays>(maxwell3d__);
-                         }));
     builders.emplace(0x0D61FC9FAAC9FCADULL,
                      std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
                          [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
@@ -511,11 +474,6 @@ HLEMacro::HLEMacro(Maxwell3D& maxwell3d_) : maxwell3d{maxwell3d_} {
                      std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
                          [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
                              return std::make_unique<HLE_DrawArraysIndirect<true>>(maxwell3d__);
-                         }));
-    builders.emplace(0x2DB33AADB741839CULL,
-                     std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
-                         [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
-                             return std::make_unique<HLE_DrawIndexed>(maxwell3d__);
                          }));
     builders.emplace(0x771BB18C62444DA0ULL,
                      std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(

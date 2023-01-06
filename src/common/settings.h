@@ -415,7 +415,6 @@ struct Values {
     // Renderer
     SwitchableSetting<RendererBackend, true> renderer_backend{
         RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Null, "backend"};
-    SwitchableSetting<bool> renderer_force_max_clock{true, "force_max_clock"};
     Setting<bool> renderer_debug{false, "debug"};
     Setting<bool> renderer_shader_feedback{false, "shader_feedback"};
     Setting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
@@ -480,7 +479,6 @@ struct Values {
 
     Setting<bool> enable_raw_input{false, "enable_raw_input"};
     Setting<bool> controller_navigation{true, "controller_navigation"};
-    Setting<bool> enable_joycon_driver{true, "enable_joycon_driver"};
 
     SwitchableSetting<bool> vibration_enabled{true, "vibration_enabled"};
     SwitchableSetting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};

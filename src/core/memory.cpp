@@ -436,7 +436,7 @@ struct Memory::Impl {
         }
 
         if (Settings::IsFastmemEnabled()) {
-            const bool is_read_enable = Settings::IsGPULevelHigh() || !cached;
+            const bool is_read_enable = !Settings::IsGPULevelExtreme() || !cached;
             system.DeviceMemory().buffer.Protect(vaddr, size, is_read_enable, !cached);
         }
 

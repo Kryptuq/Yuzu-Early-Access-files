@@ -4,7 +4,6 @@
 #pragma once
 
 #include <mutex>
-#include <span>
 #include <vector>
 #include <queue>
 
@@ -49,11 +48,11 @@ public:
     std::pair<s32, Errno> ReceivePacket(int flags, std::vector<u8>& message, SockAddrIn* addr,
                                         std::size_t max_length);
 
-    std::pair<s32, Errno> Send(std::span<const u8> message, int flags) override;
+    std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags) override;
 
     void SendPacket(ProxyPacket& packet);
 
-    std::pair<s32, Errno> SendTo(u32 flags, std::span<const u8> message,
+    std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message,
                                  const SockAddrIn* addr) override;
 
     Errno SetLinger(bool enable, u32 linger) override;

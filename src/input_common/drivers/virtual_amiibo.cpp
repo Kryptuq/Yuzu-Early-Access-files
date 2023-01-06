@@ -22,23 +22,22 @@ VirtualAmiibo::VirtualAmiibo(std::string input_engine_) : InputEngine(std::move(
 
 VirtualAmiibo::~VirtualAmiibo() = default;
 
-Common::Input::DriverResult VirtualAmiibo::SetPollingMode(
+Common::Input::PollingError VirtualAmiibo::SetPollingMode(
     [[maybe_unused]] const PadIdentifier& identifier_,
     const Common::Input::PollingMode polling_mode_) {
     polling_mode = polling_mode_;
 
-    switch (polling_mode) {
-    case Common::Input::PollingMode::NFC:
+    if (polling_mode == Common::Input::PollingMode::NFC) {
         if (state == State::Initialized) {
             state = State::WaitingForAmiibo;
         }
-        return Common::Input::DriverResult::Success;
-    default:
+    } else {
         if (state == State::AmiiboIsOpen) {
             CloseAmiibo();
         }
-        return Common::Input::DriverResult::NotSupported;
     }
+
+    return Common::Input::PollingError::None;
 }
 
 Common::Input::NfcState VirtualAmiibo::SupportsNfc(
