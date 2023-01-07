@@ -10,6 +10,8 @@
 
 namespace Vulkan {
 
+using VideoCommon::Extent3D;
+using VideoCommon::Offset2D;
 using VideoCommon::Region2D;
 
 class Device;
@@ -35,6 +37,10 @@ public:
                    const Region2D& dst_region, const Region2D& src_region,
                    Tegra::Engines::Fermi2D::Filter filter,
                    Tegra::Engines::Fermi2D::Operation operation);
+
+    void BlitColor(const Framebuffer* dst_framebuffer, VkImageView src_image_view,
+                   VkSampler src_sampler, const Region2D& dst_region, const Region2D& src_region,
+                   const Extent3D& src_size);
 
     void BlitDepthStencil(const Framebuffer* dst_framebuffer, VkImageView src_depth_view,
                           VkImageView src_stencil_view, const Region2D& dst_region,

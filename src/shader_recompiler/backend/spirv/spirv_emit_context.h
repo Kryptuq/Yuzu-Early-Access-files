@@ -280,6 +280,7 @@ public:
     Id write_global_func_u32x2{};
     Id write_global_func_u32x4{};
 
+    bool need_input_position_indirect{};
     Id input_position{};
     std::array<Id, 32> input_generics{};
 

@@ -442,7 +442,13 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
     glBindTextureUnit(0, screen_info.display_texture);
 
-    const auto anti_aliasing = Settings::values.anti_aliasing.GetValue();
+    auto anti_aliasing = Settings::values.anti_aliasing.GetValue();
+    if (anti_aliasing > Settings::AntiAliasing::LastAA) {
+        LOG_ERROR(Render_OpenGL, "Invalid antialiasing option selected {}", anti_aliasing);
+        anti_aliasing = Settings::AntiAliasing::None;
+        Settings::values.anti_aliasing.SetValue(anti_aliasing);
+    }
+
     if (anti_aliasing != Settings::AntiAliasing::None) {
         glEnablei(GL_SCISSOR_TEST, 0);
         auto viewport_width = screen_info.texture.width;

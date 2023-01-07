@@ -4,13 +4,13 @@
 #include <algorithm>
 
 #include "common/settings.h"
+#include "video_core/host_shaders/blit_color_float_frag_spv.h"
 #include "video_core/host_shaders/convert_abgr8_to_d24s8_frag_spv.h"
 #include "video_core/host_shaders/convert_d24s8_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/convert_depth_to_float_frag_spv.h"
 #include "video_core/host_shaders/convert_float_to_depth_frag_spv.h"
 #include "video_core/host_shaders/convert_s8d24_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/full_screen_triangle_vert_spv.h"
-#include "video_core/host_shaders/vulkan_blit_color_float_frag_spv.h"
 #include "video_core/host_shaders/vulkan_blit_depth_stencil_frag_spv.h"
 #include "video_core/renderer_vulkan/blit_image.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
@@ -303,7 +303,7 @@ void UpdateTwoTexturesDescriptorSet(const Device& device, VkDescriptorSet descri
 }
 
 void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Region2D& dst_region,
-                   const Region2D& src_region) {
+                   const Region2D& src_region, const Extent3D& src_size = {1, 1, 1}) {
     const VkOffset2D offset{
         .x = std::min(dst_region.start.x, dst_region.end.x),
         .y = std::min(dst_region.start.y, dst_region.end.y),
@@ -325,12 +325,15 @@ void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Regi
         .offset = offset,
         .extent = extent,
     };
-    const float scale_x = static_cast<float>(src_region.end.x - src_region.start.x);
-    const float scale_y = static_cast<float>(src_region.end.y - src_region.start.y);
+    const float scale_x = static_cast<float>(src_region.end.x - src_region.start.x) /
+                          static_cast<float>(src_size.width);
+    const float scale_y = static_cast<float>(src_region.end.y - src_region.start.y) /
+                          static_cast<float>(src_size.height);
     const PushConstants push_constants{
         .tex_scale = {scale_x, scale_y},
-        .tex_offset = {static_cast<float>(src_region.start.x),
-                       static_cast<float>(src_region.start.y)},
+        .tex_offset = {static_cast<float>(src_region.start.x) / static_cast<float>(src_size.width),
+                       static_cast<float>(src_region.start.y) /
+                           static_cast<float>(src_size.height)},
     };
     cmdbuf.SetViewport(0, viewport);
     cmdbuf.SetScissor(0, scissor);
@@ -365,7 +368,7 @@ BlitImageHelper::BlitImageHelper(const Device& device_, Scheduler& scheduler_,
       two_textures_pipeline_layout(device.GetLogical().CreatePipelineLayout(
           PipelineLayoutCreateInfo(two_textures_set_layout.address()))),
       full_screen_vert(BuildShader(device, FULL_SCREEN_TRIANGLE_VERT_SPV)),
-      blit_color_to_color_frag(BuildShader(device, VULKAN_BLIT_COLOR_FLOAT_FRAG_SPV)),
+      blit_color_to_color_frag(BuildShader(device, BLIT_COLOR_FLOAT_FRAG_SPV)),
       blit_depth_stencil_frag(BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV)),
       convert_depth_to_float_frag(BuildShader(device, CONVERT_DEPTH_TO_FLOAT_FRAG_SPV)),
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
@@ -399,6 +402,30 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView 
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
                                   nullptr);
         BindBlitState(cmdbuf, layout, dst_region, src_region);
+        cmdbuf.Draw(3, 1, 0, 0);
+    });
+    scheduler.InvalidateState();
+}
+
+void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView src_image_view,
+                                VkSampler src_sampler, const Region2D& dst_region,
+                                const Region2D& src_region, const Extent3D& src_size) {
+    const BlitImagePipelineKey key{
+        .renderpass = dst_framebuffer->RenderPass(),
+        .operation = Tegra::Engines::Fermi2D::Operation::SrcCopy,
+    };
+    const VkPipelineLayout layout = *one_texture_pipeline_layout;
+    const VkPipeline pipeline = FindOrEmplaceColorPipeline(key);
+    scheduler.RequestRenderpass(dst_framebuffer);
+    scheduler.Record([this, dst_region, src_region, src_size, pipeline, layout, src_sampler,
+                      src_image_view](vk::CommandBuffer cmdbuf) {
+        // TODO: Barriers
+        const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
+        UpdateOneTextureDescriptorSet(device, descriptor_set, src_sampler, src_image_view);
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
+                                  nullptr);
+        BindBlitState(cmdbuf, layout, dst_region, src_region, src_size);
         cmdbuf.Draw(3, 1, 0, 0);
     });
     scheduler.InvalidateState();

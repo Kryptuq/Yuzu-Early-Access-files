@@ -149,6 +149,13 @@ typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) noexcept {
 }
 
 template <class P>
+typename P::ImageView& TextureCache<P>::GetImageView(u32 index) noexcept {
+    const auto image_view_id = VisitImageView(channel_state->graphics_image_table,
+                                              channel_state->graphics_image_view_ids, index);
+    return slot_image_views[image_view_id];
+}
+
+template <class P>
 void TextureCache<P>::MarkModification(ImageId id) noexcept {
     MarkModification(slot_images[id]);
 }

@@ -64,7 +64,8 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
       shader_cache(*this, emu_window_, device, texture_cache, buffer_cache, program_manager,
                    state_tracker, gpu.ShaderNotify()),
       query_cache(*this), accelerate_dma(buffer_cache),
-      fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache) {}
+      fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache),
+      blit_image(program_manager_) {}
 
 RasterizerOpenGL::~RasterizerOpenGL() = default;
 
@@ -316,6 +317,47 @@ void RasterizerOpenGL::DrawIndirect() {
         }
     });
     buffer_cache.SetDrawIndirect(nullptr);
+}
+
+void RasterizerOpenGL::DrawTexture() {
+    MICROPROFILE_SCOPE(OpenGL_Drawing);
+
+    SCOPE_EXIT({ gpu.TickWork(); });
+    query_cache.UpdateCounters();
+
+    texture_cache.SynchronizeGraphicsDescriptors();
+    texture_cache.UpdateRenderTargets(false);
+
+    SyncState();
+
+    const auto& draw_texture_state = maxwell3d->draw_manager->GetDrawTextureState();
+    const auto& sampler = texture_cache.GetGraphicsSampler(draw_texture_state.src_sampler);
+    const auto& texture = texture_cache.GetImageView(draw_texture_state.src_texture);
+
+    if (device.HasDrawTexture()) {
+        state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
+
+        glDrawTextureNV(texture.DefaultHandle(), sampler->Handle(), draw_texture_state.dst_x0,
+                        draw_texture_state.dst_y0, draw_texture_state.dst_x1,
+                        draw_texture_state.dst_y1, 0,
+                        draw_texture_state.src_x0 / static_cast<float>(texture.size.width),
+                        draw_texture_state.src_y0 / static_cast<float>(texture.size.height),
+                        draw_texture_state.src_x1 / static_cast<float>(texture.size.width),
+                        draw_texture_state.src_y1 / static_cast<float>(texture.size.height));
+    } else {
+        Region2D dst_region = {Offset2D{.x = static_cast<s32>(draw_texture_state.dst_x0),
+                                        .y = static_cast<s32>(draw_texture_state.dst_y0)},
+                               Offset2D{.x = static_cast<s32>(draw_texture_state.dst_x1),
+                                        .y = static_cast<s32>(draw_texture_state.dst_y1)}};
+        Region2D src_region = {Offset2D{.x = static_cast<s32>(draw_texture_state.src_x0),
+                                        .y = static_cast<s32>(draw_texture_state.src_y0)},
+                               Offset2D{.x = static_cast<s32>(draw_texture_state.src_x1),
+                                        .y = static_cast<s32>(draw_texture_state.src_y1)}};
+        blit_image.BlitColor(texture_cache.GetFramebuffer()->Handle(), texture.DefaultHandle(),
+                             sampler->Handle(), dst_region, src_region, texture.size);
+    }
+
+    ++num_queued_commands;
 }
 
 void RasterizerOpenGL::DispatchCompute() {

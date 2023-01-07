@@ -229,7 +229,11 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     config.enable_cycle_counting = true;
 
     // Code cache size
+#ifdef ARCHITECTURE_arm64
+    config.code_cache_size = 128_MiB;
+#else
     config.code_cache_size = 512_MiB;
+#endif
 
     // Allow memory fault handling to work
     if (system.DebuggerEnabled()) {

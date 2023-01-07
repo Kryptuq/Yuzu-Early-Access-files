@@ -70,6 +70,16 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="renderer_force_max_clock">
+          <property name="toolTip">
+           <string>Runs work in the background while waiting for graphics commands to keep the GPU from lowering its clock speed.</string>
+          </property>
+          <property name="text">
+           <string>Force maximum clocks (Vulkan only)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="use_vsync">
           <property name="toolTip">
            <string>VSync prevents the screen from tearing, but some graphics cards have lower performance with VSync enabled. Keep it enabled if you don't notice a performance difference.</string>

@@ -47,6 +47,9 @@ public:
     /// Dispatches an indirect draw invocation
     virtual void DrawIndirect() {}
 
+    /// Dispatches an draw texture invocation
+    virtual void DrawTexture() = 0;
+
     /// Clear the current framebuffer
     virtual void Clear(u32 layer_count) = 0;
 

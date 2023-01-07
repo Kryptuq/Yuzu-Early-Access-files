@@ -100,6 +100,8 @@ add_library(video_core STATIC
     renderer_null/null_rasterizer.h
     renderer_null/renderer_null.cpp
     renderer_null/renderer_null.h
+    renderer_opengl/blit_image.cpp
+    renderer_opengl/blit_image.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
     renderer_opengl/gl_compute_pipeline.cpp
@@ -191,6 +193,8 @@ add_library(video_core STATIC
     renderer_vulkan/vk_texture_cache.cpp
     renderer_vulkan/vk_texture_cache.h
     renderer_vulkan/vk_texture_cache_base.cpp
+    renderer_vulkan/vk_turbo_mode.cpp
+    renderer_vulkan/vk_turbo_mode.h
     renderer_vulkan/vk_update_descriptor.cpp
     renderer_vulkan/vk_update_descriptor.h
     shader_cache.cpp

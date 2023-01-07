@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include "common/common_types.h"
 #include "core/hle/result.h"
 
@@ -150,7 +151,7 @@ public:
     }
 
     // Assigns a command from data
-    virtual bool SetCommand(const std::vector<u8>& data) {
+    virtual bool SetCommand(std::span<const u8> data) {
         return {};
     }
 

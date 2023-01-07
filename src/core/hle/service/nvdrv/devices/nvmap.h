@@ -26,12 +26,12 @@ public:
     nvmap(const nvmap&) = delete;
     nvmap& operator=(const nvmap&) = delete;
 
-    NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+    NvResult Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
                     std::vector<u8>& output) override;
-    NvResult Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                    const std::vector<u8>& inline_input, std::vector<u8>& output) override;
-    NvResult Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                    std::vector<u8>& output, std::vector<u8>& inline_output) override;
+    NvResult Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
+                    std::span<const u8> inline_input, std::vector<u8>& output) override;
+    NvResult Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input, std::vector<u8>& output,
+                    std::vector<u8>& inline_output) override;
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
@@ -106,12 +106,12 @@ private:
     };
     static_assert(sizeof(IocGetIdParams) == 8, "IocGetIdParams has wrong size");
 
-    NvResult IocCreate(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocAlloc(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocGetId(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocFromId(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocParam(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult IocFree(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult IocCreate(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocAlloc(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocGetId(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocFromId(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocParam(std::span<const u8> input, std::vector<u8>& output);
+    NvResult IocFree(std::span<const u8> input, std::vector<u8>& output);
 
     NvCore::Container& container;
     NvCore::NvMap& file;

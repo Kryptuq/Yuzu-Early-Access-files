@@ -228,7 +228,8 @@ private:
             return;
         }
 
-        control = ctx.ReadBuffer();
+        // TODO: Can this be a span?
+        control = ctx.ReadBufferCopy();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);

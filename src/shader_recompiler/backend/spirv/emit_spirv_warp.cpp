@@ -58,11 +58,10 @@ Id SelectValue(EmitContext& ctx, Id in_range, Id value, Id src_thread_id) {
         ctx.OpGroupNonUniformShuffle(ctx.U32[1], SubgroupScope(ctx), value, src_thread_id), value);
 }
 
-Id GetUpperClamp(EmitContext& ctx, Id invocation_id, Id clamp) {
-    const Id thirty_two{ctx.Const(32u)};
-    const Id is_upper_partition{ctx.OpSGreaterThanEqual(ctx.U1, invocation_id, thirty_two)};
-    const Id upper_clamp{ctx.OpIAdd(ctx.U32[1], thirty_two, clamp)};
-    return ctx.OpSelect(ctx.U32[1], is_upper_partition, upper_clamp, clamp);
+Id AddPartitionBase(EmitContext& ctx, Id thread_id) {
+    const Id partition_idx{ctx.OpShiftRightLogical(ctx.U32[1], GetThreadId(ctx), ctx.Const(5u))};
+    const Id partition_base{ctx.OpShiftLeftLogical(ctx.U32[1], partition_idx, ctx.Const(5u))};
+    return ctx.OpIAdd(ctx.U32[1], thread_id, partition_base);
 }
 } // Anonymous namespace
 
@@ -145,21 +144,17 @@ Id EmitSubgroupGeMask(EmitContext& ctx) {
 Id EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
                     Id segmentation_mask) {
     const Id not_seg_mask{ctx.OpNot(ctx.U32[1], segmentation_mask)};
-    const Id thread_id{GetThreadId(ctx)};
-    if (ctx.profile.warp_size_potentially_larger_than_guest) {
-        const Id thirty_two{ctx.Const(32u)};
-        const Id is_upper_partition{ctx.OpSGreaterThanEqual(ctx.U1, thread_id, thirty_two)};
-        const Id upper_index{ctx.OpIAdd(ctx.U32[1], thirty_two, index)};
-        const Id upper_clamp{ctx.OpIAdd(ctx.U32[1], thirty_two, clamp)};
-        index = ctx.OpSelect(ctx.U32[1], is_upper_partition, upper_index, index);
-        clamp = ctx.OpSelect(ctx.U32[1], is_upper_partition, upper_clamp, clamp);
-    }
+    const Id thread_id{EmitLaneId(ctx)};
     const Id min_thread_id{ComputeMinThreadId(ctx, thread_id, segmentation_mask)};
     const Id max_thread_id{ComputeMaxThreadId(ctx, min_thread_id, clamp, not_seg_mask)};
 
     const Id lhs{ctx.OpBitwiseAnd(ctx.U32[1], index, not_seg_mask)};
-    const Id src_thread_id{ctx.OpBitwiseOr(ctx.U32[1], lhs, min_thread_id)};
+    Id src_thread_id{ctx.OpBitwiseOr(ctx.U32[1], lhs, min_thread_id)};
     const Id in_range{ctx.OpSLessThanEqual(ctx.U1, src_thread_id, max_thread_id)};
+
+    if (ctx.profile.warp_size_potentially_larger_than_guest) {
+        src_thread_id = AddPartitionBase(ctx, src_thread_id);
+    }
 
     SetInBoundsFlag(inst, in_range);
     return SelectValue(ctx, in_range, value, src_thread_id);
@@ -167,13 +162,14 @@ Id EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id cla
 
 Id EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
                  Id segmentation_mask) {
-    const Id thread_id{GetThreadId(ctx)};
-    if (ctx.profile.warp_size_potentially_larger_than_guest) {
-        clamp = GetUpperClamp(ctx, thread_id, clamp);
-    }
+    const Id thread_id{EmitLaneId(ctx)};
     const Id max_thread_id{GetMaxThreadId(ctx, thread_id, clamp, segmentation_mask)};
-    const Id src_thread_id{ctx.OpISub(ctx.U32[1], thread_id, index)};
+    Id src_thread_id{ctx.OpISub(ctx.U32[1], thread_id, index)};
     const Id in_range{ctx.OpSGreaterThanEqual(ctx.U1, src_thread_id, max_thread_id)};
+
+    if (ctx.profile.warp_size_potentially_larger_than_guest) {
+        src_thread_id = AddPartitionBase(ctx, src_thread_id);
+    }
 
     SetInBoundsFlag(inst, in_range);
     return SelectValue(ctx, in_range, value, src_thread_id);
@@ -181,13 +177,14 @@ Id EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
 
 Id EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
                    Id segmentation_mask) {
-    const Id thread_id{GetThreadId(ctx)};
-    if (ctx.profile.warp_size_potentially_larger_than_guest) {
-        clamp = GetUpperClamp(ctx, thread_id, clamp);
-    }
+    const Id thread_id{EmitLaneId(ctx)};
     const Id max_thread_id{GetMaxThreadId(ctx, thread_id, clamp, segmentation_mask)};
-    const Id src_thread_id{ctx.OpIAdd(ctx.U32[1], thread_id, index)};
+    Id src_thread_id{ctx.OpIAdd(ctx.U32[1], thread_id, index)};
     const Id in_range{ctx.OpSLessThanEqual(ctx.U1, src_thread_id, max_thread_id)};
+
+    if (ctx.profile.warp_size_potentially_larger_than_guest) {
+        src_thread_id = AddPartitionBase(ctx, src_thread_id);
+    }
 
     SetInBoundsFlag(inst, in_range);
     return SelectValue(ctx, in_range, value, src_thread_id);
@@ -195,13 +192,14 @@ Id EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clam
 
 Id EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
                         Id segmentation_mask) {
-    const Id thread_id{GetThreadId(ctx)};
-    if (ctx.profile.warp_size_potentially_larger_than_guest) {
-        clamp = GetUpperClamp(ctx, thread_id, clamp);
-    }
+    const Id thread_id{EmitLaneId(ctx)};
     const Id max_thread_id{GetMaxThreadId(ctx, thread_id, clamp, segmentation_mask)};
-    const Id src_thread_id{ctx.OpBitwiseXor(ctx.U32[1], thread_id, index)};
+    Id src_thread_id{ctx.OpBitwiseXor(ctx.U32[1], thread_id, index)};
     const Id in_range{ctx.OpSLessThanEqual(ctx.U1, src_thread_id, max_thread_id)};
+
+    if (ctx.profile.warp_size_potentially_larger_than_guest) {
+        src_thread_id = AddPartitionBase(ctx, src_thread_id);
+    }
 
     SetInBoundsFlag(inst, in_range);
     return SelectValue(ctx, in_range, value, src_thread_id);

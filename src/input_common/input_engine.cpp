@@ -79,6 +79,17 @@ void InputEngine::SetBattery(const PadIdentifier& identifier, Common::Input::Bat
     TriggerOnBatteryChange(identifier, value);
 }
 
+void InputEngine::SetColor(const PadIdentifier& identifier, Common::Input::BodyColorStatus value) {
+    {
+        std::scoped_lock lock{mutex};
+        ControllerData& controller = controller_list.at(identifier);
+        if (!configuring) {
+            controller.color = value;
+        }
+    }
+    TriggerOnColorChange(identifier, value);
+}
+
 void InputEngine::SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value) {
     {
         std::scoped_lock lock{mutex};
@@ -174,6 +185,18 @@ Common::Input::BatteryLevel InputEngine::GetBattery(const PadIdentifier& identif
     }
     const ControllerData& controller = controller_iter->second;
     return controller.battery;
+}
+
+Common::Input::BodyColorStatus InputEngine::GetColor(const PadIdentifier& identifier) const {
+    std::scoped_lock lock{mutex};
+    const auto controller_iter = controller_list.find(identifier);
+    if (controller_iter == controller_list.cend()) {
+        LOG_ERROR(Input, "Invalid identifier guid={}, pad={}, port={}", identifier.guid.RawString(),
+                  identifier.pad, identifier.port);
+        return {};
+    }
+    const ControllerData& controller = controller_iter->second;
+    return controller.color;
 }
 
 BasicMotion InputEngine::GetMotion(const PadIdentifier& identifier, int motion) const {
@@ -320,6 +343,20 @@ void InputEngine::TriggerOnBatteryChange(const PadIdentifier& identifier,
     for (const auto& poller_pair : callback_list) {
         const InputIdentifier& poller = poller_pair.second;
         if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Battery, 0)) {
+            continue;
+        }
+        if (poller.callback.on_change) {
+            poller.callback.on_change();
+        }
+    }
+}
+
+void InputEngine::TriggerOnColorChange(const PadIdentifier& identifier,
+                                       [[maybe_unused]] Common::Input::BodyColorStatus value) {
+    std::scoped_lock lock{mutex_callback};
+    for (const auto& poller_pair : callback_list) {
+        const InputIdentifier& poller = poller_pair.second;
+        if (!IsInputIdentifierEqual(poller, identifier, EngineInputType::Color, 0)) {
             continue;
         }
         if (poller.callback.on_change) {

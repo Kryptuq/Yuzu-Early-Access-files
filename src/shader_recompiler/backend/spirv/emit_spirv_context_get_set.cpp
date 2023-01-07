@@ -321,8 +321,12 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
-        return ctx.OpLoad(ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.input_position,
-                                                  ctx.Const(element)));
+        return ctx.OpLoad(
+            ctx.F32[1],
+            ctx.need_input_position_indirect
+                ? AttrPointer(ctx, ctx.input_f32, vertex, ctx.input_position, ctx.u32_zero_value,
+                              ctx.Const(element))
+                : AttrPointer(ctx, ctx.input_f32, vertex, ctx.input_position, ctx.Const(element)));
     case IR::Attribute::InstanceId:
         if (ctx.profile.support_vertex_instance_id) {
             return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.instance_id));

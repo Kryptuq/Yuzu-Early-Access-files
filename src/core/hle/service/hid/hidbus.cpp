@@ -297,13 +297,13 @@ void HidBus::EnableExternalDevice(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    LOG_INFO(Service_HID,
-             "called, enable={}, abstracted_pad_id={}, bus_type={}, internal_index={}, "
-             "player_number={}, is_valid={}, inval={}, applet_resource_user_id{}",
-             parameters.enable, parameters.bus_handle.abstracted_pad_id,
-             parameters.bus_handle.bus_type, parameters.bus_handle.internal_index,
-             parameters.bus_handle.player_number, parameters.bus_handle.is_valid, parameters.inval,
-             parameters.applet_resource_user_id);
+    LOG_DEBUG(Service_HID,
+              "called, enable={}, abstracted_pad_id={}, bus_type={}, internal_index={}, "
+              "player_number={}, is_valid={}, inval={}, applet_resource_user_id{}",
+              parameters.enable, parameters.bus_handle.abstracted_pad_id,
+              parameters.bus_handle.bus_type, parameters.bus_handle.internal_index,
+              parameters.bus_handle.player_number, parameters.bus_handle.is_valid, parameters.inval,
+              parameters.applet_resource_user_id);
 
     const auto device_index = GetDeviceIndexFromHandle(parameters.bus_handle);
 
@@ -326,11 +326,11 @@ void HidBus::GetExternalDeviceId(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
-    LOG_INFO(Service_HID,
-             "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
-             "is_valid={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
-             bus_handle_.player_number, bus_handle_.is_valid);
+    LOG_DEBUG(Service_HID,
+              "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
+              "is_valid={}",
+              bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+              bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
 

@@ -26,11 +26,9 @@ using MouseButtonDevices = std::array<std::unique_ptr<Common::Input::InputDevice
 using MouseAnalogDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
                                       Settings::NativeMouseWheel::NumMouseWheels>;
 using MouseStickDevice = std::unique_ptr<Common::Input::InputDevice>;
-using RingAnalogDevice = std::unique_ptr<Common::Input::InputDevice>;
 
 using MouseButtonParams =
     std::array<Common::ParamPackage, Settings::NativeMouseButton::NumMouseButtons>;
-using RingAnalogParams = Common::ParamPackage;
 
 using KeyboardValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeKeyboard::NumKeyboardKeys>;
@@ -41,15 +39,10 @@ using MouseButtonValues =
 using MouseAnalogValues =
     std::array<Common::Input::AnalogStatus, Settings::NativeMouseWheel::NumMouseWheels>;
 using MouseStickValue = Common::Input::TouchStatus;
-using RingAnalogValue = Common::Input::AnalogStatus;
 
 struct MousePosition {
     f32 x;
     f32 y;
-};
-
-struct RingSensorForce {
-    f32 force;
 };
 
 struct DeviceStatus {
@@ -59,7 +52,6 @@ struct DeviceStatus {
     MouseButtonValues mouse_button_values{};
     MouseAnalogValues mouse_analog_values{};
     MouseStickValue mouse_stick_value{};
-    RingAnalogValue ring_analog_value{};
 
     // Data for HID serices
     KeyboardKey keyboard_state{};
@@ -67,7 +59,6 @@ struct DeviceStatus {
     MouseButton mouse_button_state{};
     MousePosition mouse_position_state{};
     AnalogStickState mouse_wheel_state{};
-    RingSensorForce ring_analog_state{};
 };
 
 enum class DeviceTriggerType {
@@ -138,9 +129,6 @@ public:
     /// Returns the latest status of button input from the mouse with parameters
     MouseButtonValues GetMouseButtonsValues() const;
 
-    /// Returns the latest status of analog input from the ring sensor with parameters
-    RingAnalogValue GetRingSensorValues() const;
-
     /// Returns the latest status of button input from the keyboard
     KeyboardKey GetKeyboard() const;
 
@@ -155,9 +143,6 @@ public:
 
     /// Returns the latest mouse wheel change
     AnalogStickState GetMouseWheel() const;
-
-    /// Returns the latest ringcon force sensor value
-    RingSensorForce GetRingSensorForce() const;
 
     /**
      * Adds a callback to the list of events
@@ -224,14 +209,11 @@ private:
 
     bool is_configuring{false};
 
-    RingAnalogParams ring_params;
-
     KeyboardDevices keyboard_devices;
     KeyboardModifierDevices keyboard_modifier_devices;
     MouseButtonDevices mouse_button_devices;
     MouseAnalogDevices mouse_analog_devices;
     MouseStickDevice mouse_stick_device;
-    RingAnalogDevice ring_analog_device;
 
     mutable std::mutex mutex;
     mutable std::mutex callback_mutex;

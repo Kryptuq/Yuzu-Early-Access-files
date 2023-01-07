@@ -30,7 +30,7 @@ std::string ToUpper(std::string str) {
     return str;
 }
 
-std::string StringFromBuffer(const std::vector<u8>& data) {
+std::string StringFromBuffer(std::span<const u8> data) {
     return std::string(data.begin(), std::find(data.begin(), data.end(), '\0'));
 }
 

@@ -73,6 +73,8 @@ public:
 
     bool CanReportMemoryUsage() const;
 
+    u32 GetStorageBufferAlignment() const;
+
     [[nodiscard]] StagingBufferRef UploadStagingBuffer(size_t size);
 
     [[nodiscard]] StagingBufferRef DownloadStagingBuffer(size_t size);

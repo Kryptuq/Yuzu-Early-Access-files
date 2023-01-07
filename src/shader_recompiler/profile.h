@@ -55,6 +55,8 @@ struct Profile {
 
     /// OpFClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};
+    /// The Position builtin needs to be wrapped in a struct when used as an input
+    bool has_broken_spirv_position_input{};
     /// Offset image operands with an unsigned type do not work
     bool has_broken_unsigned_image_offsets{};
     /// Signed instructions with unsigned data types are misinterpreted

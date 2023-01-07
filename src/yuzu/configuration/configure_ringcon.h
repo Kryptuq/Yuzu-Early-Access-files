@@ -13,7 +13,7 @@ class InputSubsystem;
 
 namespace Core::HID {
 class HIDCore;
-class EmulatedDevices;
+class EmulatedController;
 } // namespace Core::HID
 
 namespace Ui {
@@ -41,6 +41,12 @@ private:
 
     /// Restore all buttons to their default values.
     void RestoreDefaults();
+
+    /// Sets current polling mode to ring input
+    void EnableRingController();
+
+    // Handles emulated controller events
+    void ControllerUpdate(Core::HID::ControllerTriggerType type);
 
     /// Called when the button was pressed.
     void HandleClick(QPushButton* button,
@@ -78,7 +84,11 @@ private:
     std::optional<std::function<void(const Common::ParamPackage&)>> input_setter;
 
     InputCommon::InputSubsystem* input_subsystem;
-    Core::HID::EmulatedDevices* emulated_device;
+    Core::HID::EmulatedController* emulated_controller;
+
+    bool is_ring_enabled{};
+    bool is_controller_set{};
+    int callback_key;
 
     std::unique_ptr<Ui::ConfigureRingController> ui;
 };

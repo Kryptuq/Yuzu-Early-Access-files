@@ -544,7 +544,7 @@ void EmitContext::DefineCommonTypes(const Info& info) {
         U16 = Name(TypeInt(16, false), "u16");
         S16 = Name(TypeInt(16, true), "s16");
     }
-    if (info.uses_int64) {
+    if (info.uses_int64 && profile.support_int64) {
         AddCapability(spv::Capability::Int64);
         U64 = Name(TypeInt(64, false), "u64");
     }
@@ -721,9 +721,21 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         size_t label_index{0};
         if (info.loads.AnyComponent(IR::Attribute::PositionX)) {
             AddLabel(labels[label_index]);
-            const Id pointer{is_array
-                                 ? OpAccessChain(input_f32, input_position, vertex, masked_index)
-                                 : OpAccessChain(input_f32, input_position, masked_index)};
+            const Id pointer{[&]() {
+                if (need_input_position_indirect) {
+                    if (is_array)
+                        return OpAccessChain(input_f32, input_position, vertex, u32_zero_value,
+                                             masked_index);
+                    else
+                        return OpAccessChain(input_f32, input_position, u32_zero_value,
+                                             masked_index);
+                } else {
+                    if (is_array)
+                        return OpAccessChain(input_f32, input_position, vertex, masked_index);
+                    else
+                        return OpAccessChain(input_f32, input_position, masked_index);
+                }
+            }()};
             const Id result{OpLoad(F32[1], pointer)};
             OpReturnValue(result);
             ++label_index;
@@ -1367,12 +1379,25 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         Decorate(layer, spv::Decoration::Flat);
     }
     if (loads.AnyComponent(IR::Attribute::PositionX)) {
-        const bool is_fragment{stage != Stage::Fragment};
-        const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};
-        input_position = DefineInput(*this, F32[4], true, built_in);
-        if (profile.support_geometry_shader_passthrough) {
-            if (info.passthrough.AnyComponent(IR::Attribute::PositionX)) {
-                Decorate(input_position, spv::Decoration::PassthroughNV);
+        const bool is_fragment{stage == Stage::Fragment};
+        if (!is_fragment && profile.has_broken_spirv_position_input) {
+            need_input_position_indirect = true;
+
+            const Id input_position_struct = TypeStruct(F32[4]);
+            input_position = DefineInput(*this, input_position_struct, true);
+
+            MemberDecorate(input_position_struct, 0, spv::Decoration::BuiltIn,
+                           static_cast<unsigned>(spv::BuiltIn::Position));
+            Decorate(input_position_struct, spv::Decoration::Block);
+        } else {
+            const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::FragCoord
+                                                    : spv::BuiltIn::Position};
+            input_position = DefineInput(*this, F32[4], true, built_in);
+
+            if (profile.support_geometry_shader_passthrough) {
+                if (info.passthrough.AnyComponent(IR::Attribute::PositionX)) {
+                    Decorate(input_position, spv::Decoration::PassthroughNV);
+                }
             }
         }
     }

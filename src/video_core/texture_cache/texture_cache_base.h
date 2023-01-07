@@ -129,6 +129,9 @@ public:
     /// Return a reference to the given image view id
     [[nodiscard]] ImageView& GetImageView(ImageViewId id) noexcept;
 
+    /// Get the imageview from the graphics descriptor table in the specified index
+    [[nodiscard]] ImageView& GetImageView(u32 index) noexcept;
+
     /// Mark an image as modified from the GPU
     void MarkModification(ImageId id) noexcept;
 

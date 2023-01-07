@@ -66,6 +66,7 @@ public:
 
     void Draw(bool is_indexed, u32 instance_count) override;
     void DrawIndirect() override;
+    void DrawTexture() override;
     void Clear(u32 layer_count) override;
     void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;

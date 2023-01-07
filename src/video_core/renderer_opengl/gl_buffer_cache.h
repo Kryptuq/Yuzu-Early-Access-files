@@ -160,6 +160,10 @@ public:
         return device.CanReportMemoryUsage();
     }
 
+    u32 GetStorageBufferAlignment() const {
+        return static_cast<u32>(device.GetShaderStorageBufferAlignment());
+    }
+
 private:
     static constexpr std::array PABO_LUT{
         GL_VERTEX_PROGRAM_PARAMETER_BUFFER_NV,          GL_TESS_CONTROL_PROGRAM_PARAMETER_BUFFER_NV,

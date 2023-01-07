@@ -1599,6 +1599,20 @@ public:
         };
         static_assert(sizeof(TIRModulationCoeff) == 0x4);
 
+        struct DrawTexture {
+            s32 dst_x0;
+            s32 dst_y0;
+            s32 dst_width;
+            s32 dst_height;
+            s64 dx_du;
+            s64 dy_dv;
+            u32 src_sampler;
+            u32 src_texture;
+            s32 src_x0;
+            s32 src_y0;
+        };
+        static_assert(sizeof(DrawTexture) == 0x30);
+
         struct ReduceColorThreshold {
             union {
                 BitField<0, 8, u32> all_hit_once;
@@ -2751,7 +2765,7 @@ public:
                 u32 reserved_sw_method2;                                               ///< 0x102C
                 std::array<TIRModulationCoeff, 5> tir_modulation_coeff;                ///< 0x1030
                 std::array<u32, 15> spare_nop;                                         ///< 0x1044
-                INSERT_PADDING_BYTES_NOINIT(0x30);
+                DrawTexture draw_texture;                                              ///< 0x1080
                 std::array<u32, 7> reserved_sw_method3_to_7;                           ///< 0x10B0
                 ReduceColorThreshold reduce_color_thresholds_unorm8;                   ///< 0x10CC
                 std::array<u32, 4> reserved_sw_method10_to_13;                         ///< 0x10D0

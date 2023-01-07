@@ -40,6 +40,7 @@ enum class EngineInputType {
     Battery,
     Button,
     Camera,
+    Color,
     HatButton,
     Motion,
     Nfc,
@@ -104,14 +105,17 @@ public:
     void EndConfiguration();
 
     // Sets a led pattern for a controller
-    virtual void SetLeds([[maybe_unused]] const PadIdentifier& identifier,
-                         [[maybe_unused]] const Common::Input::LedStatus& led_status) {}
+    virtual Common::Input::DriverResult SetLeds(
+        [[maybe_unused]] const PadIdentifier& identifier,
+        [[maybe_unused]] const Common::Input::LedStatus& led_status) {
+        return Common::Input::DriverResult::NotSupported;
+    }
 
     // Sets rumble to a controller
-    virtual Common::Input::VibrationError SetVibration(
+    virtual Common::Input::DriverResult SetVibration(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] const Common::Input::VibrationStatus& vibration) {
-        return Common::Input::VibrationError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Returns true if device supports vibrations
@@ -120,17 +124,17 @@ public:
     }
 
     // Sets polling mode to a controller
-    virtual Common::Input::PollingError SetPollingMode(
+    virtual Common::Input::DriverResult SetPollingMode(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] const Common::Input::PollingMode polling_mode) {
-        return Common::Input::PollingError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Sets camera format to a controller
-    virtual Common::Input::CameraError SetCameraFormat(
+    virtual Common::Input::DriverResult SetCameraFormat(
         [[maybe_unused]] const PadIdentifier& identifier,
         [[maybe_unused]] Common::Input::CameraFormat camera_format) {
-        return Common::Input::CameraError::NotSupported;
+        return Common::Input::DriverResult::NotSupported;
     }
 
     // Returns success if nfc is supported
@@ -199,6 +203,7 @@ public:
     bool GetHatButton(const PadIdentifier& identifier, int button, u8 direction) const;
     f32 GetAxis(const PadIdentifier& identifier, int axis) const;
     Common::Input::BatteryLevel GetBattery(const PadIdentifier& identifier) const;
+    Common::Input::BodyColorStatus GetColor(const PadIdentifier& identifier) const;
     BasicMotion GetMotion(const PadIdentifier& identifier, int motion) const;
     Common::Input::CameraStatus GetCamera(const PadIdentifier& identifier) const;
     Common::Input::NfcStatus GetNfc(const PadIdentifier& identifier) const;
@@ -212,6 +217,7 @@ protected:
     void SetHatButton(const PadIdentifier& identifier, int button, u8 value);
     void SetAxis(const PadIdentifier& identifier, int axis, f32 value);
     void SetBattery(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
+    void SetColor(const PadIdentifier& identifier, Common::Input::BodyColorStatus value);
     void SetMotion(const PadIdentifier& identifier, int motion, const BasicMotion& value);
     void SetCamera(const PadIdentifier& identifier, const Common::Input::CameraStatus& value);
     void SetNfc(const PadIdentifier& identifier, const Common::Input::NfcStatus& value);
@@ -227,6 +233,7 @@ private:
         std::unordered_map<int, float> axes;
         std::unordered_map<int, BasicMotion> motions;
         Common::Input::BatteryLevel battery{};
+        Common::Input::BodyColorStatus color{};
         Common::Input::CameraStatus camera{};
         Common::Input::NfcStatus nfc{};
     };
@@ -235,6 +242,8 @@ private:
     void TriggerOnHatButtonChange(const PadIdentifier& identifier, int button, u8 value);
     void TriggerOnAxisChange(const PadIdentifier& identifier, int axis, f32 value);
     void TriggerOnBatteryChange(const PadIdentifier& identifier, Common::Input::BatteryLevel value);
+    void TriggerOnColorChange(const PadIdentifier& identifier,
+                              Common::Input::BodyColorStatus value);
     void TriggerOnMotionChange(const PadIdentifier& identifier, int motion,
                                const BasicMotion& value);
     void TriggerOnCameraChange(const PadIdentifier& identifier,

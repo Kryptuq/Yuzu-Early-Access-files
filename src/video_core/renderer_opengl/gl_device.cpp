@@ -166,6 +166,7 @@ Device::Device(Core::Frontend::EmuWindow& emu_window) {
     has_shader_int64 = HasExtension(extensions, "GL_ARB_gpu_shader_int64");
     has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
     has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
+    has_draw_texture = GLAD_GL_NV_draw_texture;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
     need_fastmath_off = is_nvidia;
     can_report_memory = GLAD_GL_NVX_gpu_memory_info;

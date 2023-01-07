@@ -51,6 +51,8 @@ enum class PollingMode {
     NFC,
     // Enable infrared camera polling
     IR,
+    // Enable ring controller polling
+    Ring,
 };
 
 enum class CameraFormat {
@@ -62,18 +64,19 @@ enum class CameraFormat {
     None,
 };
 
-// Vibration reply from the controller
-enum class VibrationError {
-    None,
+// Different results that can happen from a device request
+enum class DriverResult {
+    Success,
+    WrongReply,
+    Timeout,
+    UnsupportedControllerType,
+    HandleInUse,
+    ErrorReadingData,
+    ErrorWritingData,
+    NoDeviceDetected,
+    InvalidHandle,
     NotSupported,
     Disabled,
-    Unknown,
-};
-
-// Polling mode reply from the controller
-enum class PollingError {
-    None,
-    NotSupported,
     Unknown,
 };
 
@@ -87,13 +90,6 @@ enum class NfcState {
     NotSupported,
     WrongDeviceState,
     WriteFailed,
-    Unknown,
-};
-
-// Ir camera reply from the controller
-enum class CameraError {
-    None,
-    NotSupported,
     Unknown,
 };
 
@@ -190,6 +186,8 @@ struct TouchStatus {
 struct BodyColorStatus {
     u32 body{};
     u32 buttons{};
+    u32 left_grip{};
+    u32 right_grip{};
 };
 
 // HD rumble data
@@ -228,17 +226,31 @@ enum class ButtonNames {
     Engine,
     // This will display the button by value instead of the button name
     Value,
+
+    // Joycon button names
     ButtonLeft,
     ButtonRight,
     ButtonDown,
     ButtonUp,
-    TriggerZ,
-    TriggerR,
-    TriggerL,
     ButtonA,
     ButtonB,
     ButtonX,
     ButtonY,
+    ButtonPlus,
+    ButtonMinus,
+    ButtonHome,
+    ButtonCapture,
+    ButtonStickL,
+    ButtonStickR,
+    TriggerL,
+    TriggerZL,
+    TriggerSL,
+    TriggerR,
+    TriggerZR,
+    TriggerSR,
+
+    // GC button names
+    TriggerZ,
     ButtonStart,
 
     // DS4 button names
@@ -319,22 +331,24 @@ class OutputDevice {
 public:
     virtual ~OutputDevice() = default;
 
-    virtual void SetLED([[maybe_unused]] const LedStatus& led_status) {}
+    virtual DriverResult SetLED([[maybe_unused]] const LedStatus& led_status) {
+        return DriverResult::NotSupported;
+    }
 
-    virtual VibrationError SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
-        return VibrationError::NotSupported;
+    virtual DriverResult SetVibration([[maybe_unused]] const VibrationStatus& vibration_status) {
+        return DriverResult::NotSupported;
     }
 
     virtual bool IsVibrationEnabled() {
         return false;
     }
 
-    virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
-        return PollingError::NotSupported;
+    virtual DriverResult SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
+        return DriverResult::NotSupported;
     }
 
-    virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
-        return CameraError::NotSupported;
+    virtual DriverResult SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
+        return DriverResult::NotSupported;
     }
 
     virtual NfcState SupportsNfc() const {

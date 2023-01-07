@@ -11,6 +11,7 @@ set(GLSL_INCLUDES
 
 set(SHADER_FILES
     astc_decoder.comp
+    blit_color_float.frag
     block_linear_unswizzle_2d.comp
     block_linear_unswizzle_3d.comp
     convert_abgr8_to_d24s8.frag
@@ -36,7 +37,6 @@ set(SHADER_FILES
     smaa_blending_weight_calculation.frag
     smaa_neighborhood_blending.vert
     smaa_neighborhood_blending.frag
-    vulkan_blit_color_float.frag
     vulkan_blit_depth_stencil.frag
     vulkan_fidelityfx_fsr_easu_fp16.comp
     vulkan_fidelityfx_fsr_easu_fp32.comp
@@ -47,6 +47,7 @@ set(SHADER_FILES
     vulkan_present_scaleforce_fp16.frag
     vulkan_present_scaleforce_fp32.frag
     vulkan_quad_indexed.comp
+    vulkan_turbo_mode.comp
     vulkan_uint8.comp
 )
 

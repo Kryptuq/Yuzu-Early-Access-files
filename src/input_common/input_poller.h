@@ -191,6 +191,17 @@ private:
         const Common::ParamPackage& params);
 
     /**
+     * Creates a color device from the parameters given.
+     * @param params contains parameters for creating the device:
+     *               - "guid": text string for identifying controllers
+     *               - "port": port of the connected device
+     *               - "pad": slot of the connected controller
+     * @returns a unique input device with the parameters specified
+     */
+    std::unique_ptr<Common::Input::InputDevice> CreateColorDevice(
+        const Common::ParamPackage& params);
+
+    /**
      * Creates a motion device from the parameters given.
      * @param params contains parameters for creating the device:
      *               - "axis_x": the controller horizontal axis id to bind with the input

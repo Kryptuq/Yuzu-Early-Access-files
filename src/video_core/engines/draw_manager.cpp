@@ -51,6 +51,10 @@ void DrawManager::ProcessMethodCall(u32 method, u32 argument) {
         LOG_WARNING(HW_GPU, "(STUBBED) called");
         break;
     }
+    case MAXWELL3D_REG_INDEX(draw_texture.src_y0): {
+        DrawTexture();
+        break;
+    }
     default:
         break;
     }
@@ -177,6 +181,33 @@ void DrawManager::DrawIndexSmall(u32 argument) {
     draw_state.topology = index_small_params.topology;
     maxwell3d->dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
     ProcessDraw(true, 1);
+}
+
+void DrawManager::DrawTexture() {
+    const auto& regs{maxwell3d->regs};
+    draw_texture_state.dst_x0 = static_cast<float>(regs.draw_texture.dst_x0) / 4096.f;
+    draw_texture_state.dst_y0 = static_cast<float>(regs.draw_texture.dst_y0) / 4096.f;
+    const auto dst_width = static_cast<float>(regs.draw_texture.dst_width) / 4096.f;
+    const auto dst_height = static_cast<float>(regs.draw_texture.dst_height) / 4096.f;
+    const bool lower_left{regs.window_origin.mode !=
+                          Maxwell3D::Regs::WindowOrigin::Mode::UpperLeft};
+    if (lower_left) {
+        draw_texture_state.dst_y0 -= dst_height;
+    }
+    draw_texture_state.dst_x1 = draw_texture_state.dst_x0 + dst_width;
+    draw_texture_state.dst_y1 = draw_texture_state.dst_y0 + dst_height;
+    draw_texture_state.src_x0 = static_cast<float>(regs.draw_texture.src_x0) / 4096.f;
+    draw_texture_state.src_y0 = static_cast<float>(regs.draw_texture.src_y0) / 4096.f;
+    draw_texture_state.src_x1 =
+        (static_cast<float>(regs.draw_texture.dx_du) / 4294967295.f) * dst_width +
+        draw_texture_state.src_x0;
+    draw_texture_state.src_y1 =
+        (static_cast<float>(regs.draw_texture.dy_dv) / 4294967295.f) * dst_height +
+        draw_texture_state.src_y0;
+    draw_texture_state.src_sampler = regs.draw_texture.src_sampler;
+    draw_texture_state.src_texture = regs.draw_texture.src_texture;
+
+    maxwell3d->rasterizer->DrawTexture();
 }
 
 void DrawManager::UpdateTopology() {

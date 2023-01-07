@@ -117,6 +117,8 @@ Errno TranslateNativeError(int e) {
         return Errno::NETUNREACH;
     case WSAEMSGSIZE:
         return Errno::MSGSIZE;
+    case WSAETIMEDOUT:
+        return Errno::TIMEDOUT;
     default:
         UNIMPLEMENTED_MSG("Unimplemented errno={}", e);
         return Errno::OTHER;
@@ -211,6 +213,8 @@ Errno TranslateNativeError(int e) {
         return Errno::NETUNREACH;
     case EMSGSIZE:
         return Errno::MSGSIZE;
+    case ETIMEDOUT:
+        return Errno::TIMEDOUT;
     default:
         UNIMPLEMENTED_MSG("Unimplemented errno={}", e);
         return Errno::OTHER;
@@ -226,7 +230,7 @@ Errno GetAndLogLastError() {
     int e = errno;
 #endif
     const Errno err = TranslateNativeError(e);
-    if (err == Errno::AGAIN) {
+    if (err == Errno::AGAIN || err == Errno::TIMEDOUT) {
         return err;
     }
     LOG_ERROR(Network, "Socket operation error: {}", Common::NativeErrorToString(e));
@@ -546,7 +550,7 @@ std::pair<s32, Errno> Socket::RecvFrom(int flags, std::vector<u8>& message, Sock
     return {-1, GetAndLogLastError()};
 }
 
-std::pair<s32, Errno> Socket::Send(const std::vector<u8>& message, int flags) {
+std::pair<s32, Errno> Socket::Send(std::span<const u8> message, int flags) {
     ASSERT(message.size() < static_cast<size_t>(std::numeric_limits<int>::max()));
     ASSERT(flags == 0);
 
@@ -559,7 +563,7 @@ std::pair<s32, Errno> Socket::Send(const std::vector<u8>& message, int flags) {
     return {-1, GetAndLogLastError()};
 }
 
-std::pair<s32, Errno> Socket::SendTo(u32 flags, const std::vector<u8>& message,
+std::pair<s32, Errno> Socket::SendTo(u32 flags, std::span<const u8> message,
                                      const SockAddrIn* addr) {
     ASSERT(flags == 0);
 

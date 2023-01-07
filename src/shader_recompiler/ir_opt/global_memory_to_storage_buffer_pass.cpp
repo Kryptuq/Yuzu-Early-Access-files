@@ -11,6 +11,7 @@
 #include "shader_recompiler/frontend/ir/breadth_first_search.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/host_translate_info.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Optimization {
@@ -402,7 +403,7 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
 }
 
 /// Returns the offset in indices (not bytes) for an equivalent storage instruction
-IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer) {
+IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer, u32 alignment) {
     IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
     IR::U32 offset;
     if (const std::optional<LowAddrInfo> low_addr{TrackLowAddress(&inst)}) {
@@ -415,7 +416,10 @@ IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer
     }
     // Subtract the least significant 32 bits from the guest offset. The result is the storage
     // buffer offset in bytes.
-    const IR::U32 low_cbuf{ir.GetCbuf(ir.Imm32(buffer.index), ir.Imm32(buffer.offset))};
+    IR::U32 low_cbuf{ir.GetCbuf(ir.Imm32(buffer.index), ir.Imm32(buffer.offset))};
+
+    // Align the offset base to match the host alignment requirements
+    low_cbuf = ir.BitwiseAnd(low_cbuf, ir.Imm32(~(alignment - 1U)));
     return ir.ISub(offset, low_cbuf);
 }
 
@@ -510,7 +514,7 @@ void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
 }
 } // Anonymous namespace
 
-void GlobalMemoryToStorageBufferPass(IR::Program& program) {
+void GlobalMemoryToStorageBufferPass(IR::Program& program, const HostTranslateInfo& host_info) {
     StorageInfo info;
     for (IR::Block* const block : program.post_order_blocks) {
         for (IR::Inst& inst : block->Instructions()) {
@@ -534,7 +538,8 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
         const IR::U32 index{IR::Value{static_cast<u32>(info.set.index_of(it))}};
         IR::Block* const block{storage_inst.block};
         IR::Inst* const inst{storage_inst.inst};
-        const IR::U32 offset{StorageOffset(*block, *inst, storage_buffer)};
+        const IR::U32 offset{
+            StorageOffset(*block, *inst, storage_buffer, host_info.min_ssbo_alignment)};
         Replace(*block, *inst, index, offset);
     }
 }
