@@ -60,22 +60,9 @@ std::string GetDriverVersion(const Device& device) {
     return GetReadableVersion(version);
 }
 
-std::string BuildCommaSeparatedExtensions(std::vector<std::string> available_extensions) {
-    std::sort(std::begin(available_extensions), std::end(available_extensions));
-
-    static constexpr std::size_t AverageExtensionSize = 64;
-    std::string separated_extensions;
-    separated_extensions.reserve(available_extensions.size() * AverageExtensionSize);
-
-    const auto end = std::end(available_extensions);
-    for (auto extension = std::begin(available_extensions); extension != end; ++extension) {
-        if (const bool is_last = extension + 1 == end; is_last) {
-            separated_extensions += *extension;
-        } else {
-            separated_extensions += fmt::format("{},", *extension);
-        }
-    }
-    return separated_extensions;
+std::string BuildCommaSeparatedExtensions(
+    const std::set<std::string, std::less<>>& available_extensions) {
+    return fmt::format("{}", fmt::join(available_extensions, ","));
 }
 
 } // Anonymous namespace
@@ -110,7 +97,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
                   screen_info),
       rasterizer(render_window, gpu, cpu_memory, screen_info, device, memory_allocator,
                  state_tracker, scheduler) {
-    if (Settings::values.renderer_force_max_clock.GetValue()) {
+    if (Settings::values.renderer_force_max_clock.GetValue() && device.ShouldBoostClocks()) {
         turbo_mode.emplace(instance, dld);
     }
     Report();

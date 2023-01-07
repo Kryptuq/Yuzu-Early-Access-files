@@ -259,7 +259,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         program.is_geometry_passthrough = sph.common0.geometry_passthrough != 0;
         if (program.is_geometry_passthrough) {
             const auto& mask{env.GpPassthroughMask()};
-            for (size_t i = 0; i < program.info.passthrough.mask.size(); ++i) {
+            for (size_t i = 0; i < mask.size() * 32; ++i) {
                 program.info.passthrough.mask[i] = ((mask[i / 32] >> (i % 32)) & 1) == 0;
             }
 

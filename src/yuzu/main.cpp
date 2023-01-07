@@ -1838,9 +1838,11 @@ void GMainWindow::OnEmulationStopTimeExpired() {
 
 void GMainWindow::OnEmulationStopped() {
     shutdown_timer.stop();
-    emu_thread->disconnect();
-    emu_thread->wait();
-    emu_thread = nullptr;
+    if (emu_thread) {
+        emu_thread->disconnect();
+        emu_thread->wait();
+        emu_thread.reset();
+    }
 
     if (shutdown_dialog) {
         shutdown_dialog->deleteLater();
@@ -3028,6 +3030,8 @@ void GMainWindow::OnStopGame() {
 
     if (OnShutdownBegin()) {
         OnShutdownBeginDialog();
+    } else {
+        OnEmulationStopped();
     }
 }
 
