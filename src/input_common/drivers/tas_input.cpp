@@ -156,10 +156,12 @@ void Tas::RecordInput(u64 buttons, TasAnalog left_axis, TasAnalog right_axis) {
     };
 }
 
-std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
+std::tuple<TasState, size_t, std::array<size_t, PLAYER_NUMBER>> Tas::GetStatus() const {
     TasState state;
+    std::array<size_t, PLAYER_NUMBER> lengths{0};
     if (is_recording) {
-        return {TasState::Recording, 0, record_commands.size()};
+        lengths[0] = record_commands.size();
+        return {TasState::Recording, record_commands.size(), lengths};
     }
 
     if (is_running) {
@@ -168,7 +170,11 @@ std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
         state = TasState::Stopped;
     }
 
-    return {state, current_command, script_length};
+    for (size_t i = 0; i < PLAYER_NUMBER; i++) {
+        lengths[i] = commands[i].size();
+    }
+
+    return {state, current_command, lengths};
 }
 
 void Tas::UpdateThread() {

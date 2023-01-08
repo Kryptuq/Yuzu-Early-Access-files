@@ -29,6 +29,28 @@
 
 namespace InputCommon {
 
+/// Dummy engine to get periodic updates
+class UpdateEngine final : public InputEngine {
+public:
+    explicit UpdateEngine(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
+        PreSetController(identifier);
+    }
+
+    void PumpEvents() {
+        SetButton(identifier, 0, last_state);
+        last_state = !last_state;
+    }
+
+private:
+    static constexpr PadIdentifier identifier = {
+        .guid = Common::UUID{},
+        .port = 0,
+        .pad = 0,
+    };
+
+    bool last_state{};
+};
+
 struct InputSubsystem::Impl {
     template <typename Engine>
     void RegisterEngine(std::string name, std::shared_ptr<Engine>& engine) {
@@ -46,6 +68,7 @@ struct InputSubsystem::Impl {
     void Initialize() {
         mapping_factory = std::make_shared<MappingFactory>();
 
+        RegisterEngine("updater", update_engine);
         RegisterEngine("keyboard", keyboard);
         RegisterEngine("mouse", mouse);
         RegisterEngine("touch", touch_screen);
@@ -76,6 +99,7 @@ struct InputSubsystem::Impl {
     }
 
     void Shutdown() {
+        UnregisterEngine(update_engine);
         UnregisterEngine(keyboard);
         UnregisterEngine(mouse);
         UnregisterEngine(touch_screen);
@@ -265,6 +289,7 @@ struct InputSubsystem::Impl {
     }
 
     void PumpEvents() const {
+        update_engine->PumpEvents();
 #ifdef HAVE_SDL2
         sdl->PumpEvents();
 #endif
@@ -276,6 +301,7 @@ struct InputSubsystem::Impl {
 
     std::shared_ptr<MappingFactory> mapping_factory;
 
+    std::shared_ptr<UpdateEngine> update_engine;
     std::shared_ptr<Keyboard> keyboard;
     std::shared_ptr<Mouse> mouse;
     std::shared_ptr<TouchScreen> touch_screen;

@@ -3729,15 +3729,36 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     }
 }
 
+std::string GMainWindow::CreateTASFramesString(
+    std::array<size_t, InputCommon::TasInput::PLAYER_NUMBER> frames) const {
+    std::string string = "";
+    size_t maxPlayerIndex = 0;
+    for (size_t i = 0; i < frames.size(); i++) {
+        if (frames[i] != 0) {
+            if (maxPlayerIndex != 0)
+                string += ", ";
+            while (maxPlayerIndex++ != i)
+                string += "0, ";
+            string += std::to_string(frames[i]);
+        }
+    }
+    return string;
+}
+
 QString GMainWindow::GetTasStateDescription() const {
     auto [tas_status, current_tas_frame, total_tas_frames] = input_subsystem->GetTas()->GetStatus();
+    std::string tas_frames_string = CreateTASFramesString(total_tas_frames);
     switch (tas_status) {
     case InputCommon::TasInput::TasState::Running:
-        return tr("TAS state: Running %1/%2").arg(current_tas_frame).arg(total_tas_frames);
+        return tr("TAS state: Running %1/%2")
+            .arg(current_tas_frame)
+            .arg(QString::fromStdString(tas_frames_string));
     case InputCommon::TasInput::TasState::Recording:
-        return tr("TAS state: Recording %1").arg(total_tas_frames);
+        return tr("TAS state: Recording %1").arg(total_tas_frames[0]);
     case InputCommon::TasInput::TasState::Stopped:
-        return tr("TAS state: Idle %1/%2").arg(current_tas_frame).arg(total_tas_frames);
+        return tr("TAS state: Idle %1/%2")
+            .arg(current_tas_frame)
+            .arg(QString::fromStdString(tas_frames_string));
     default:
         return tr("TAS State: Invalid");
     }

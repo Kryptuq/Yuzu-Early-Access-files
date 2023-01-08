@@ -304,9 +304,6 @@ class InputDevice {
 public:
     virtual ~InputDevice() = default;
 
-    // Request input device to update if necessary
-    virtual void SoftUpdate() {}
-
     // Force input device to update data regardless of the current state
     virtual void ForceUpdate() {}
 

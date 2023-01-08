@@ -223,7 +223,7 @@ Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, 
 
     // Ensure that we don't leave anything un-freed.
     ON_RESULT_FAILURE {
-        for (const auto& it : out->Nodes()) {
+        for (const auto& it : *out) {
             auto& manager = this->GetManager(it.GetAddress());
             const size_t node_num_pages = std::min<u64>(
                 it.GetNumPages(), (manager.GetEndAddress() - it.GetAddress()) / PageSize);
@@ -285,7 +285,7 @@ Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 op
                                       m_has_optimized_process[static_cast<size_t>(pool)], true));
 
     // Open the first reference to the pages.
-    for (const auto& block : out->Nodes()) {
+    for (const auto& block : *out) {
         PAddr cur_address = block.GetAddress();
         size_t remaining_pages = block.GetNumPages();
         while (remaining_pages > 0) {
@@ -335,7 +335,7 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
     // Perform optimized memory tracking, if we should.
     if (optimized) {
         // Iterate over the allocated blocks.
-        for (const auto& block : out->Nodes()) {
+        for (const auto& block : *out) {
             // Get the block extents.
             const PAddr block_address = block.GetAddress();
             const size_t block_pages = block.GetNumPages();
@@ -391,7 +391,7 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
         }
     } else {
         // Set all the allocated memory.
-        for (const auto& block : out->Nodes()) {
+        for (const auto& block : *out) {
             std::memset(m_system.DeviceMemory().GetPointer<void>(block.GetAddress()), fill_pattern,
                         block.GetSize());
         }

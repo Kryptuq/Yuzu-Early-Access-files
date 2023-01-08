@@ -1583,16 +1583,6 @@ AnalogSticks EmulatedController::GetSticks() const {
         return {};
     }
 
-    // Some drivers like stick from buttons need constant refreshing
-    for (auto& device : stick_devices) {
-        if (!device) {
-            continue;
-        }
-        lock.unlock();
-        device->SoftUpdate();
-        lock.lock();
-    }
-
     return controller.analog_stick_state;
 }
 

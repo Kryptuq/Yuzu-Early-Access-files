@@ -12,6 +12,7 @@
 
 #include "common/announce_multiplayer_room.h"
 #include "common/common_types.h"
+#include "input_common/drivers/tas_input.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
@@ -265,6 +266,9 @@ private:
     void RequestGameResume();
     void changeEvent(QEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
+
+    std::string CreateTASFramesString(
+        std::array<size_t, InputCommon::TasInput::PLAYER_NUMBER> frames) const;
 
 #ifdef __unix__
     void SetupSigInterrupts();

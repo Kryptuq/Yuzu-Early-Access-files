@@ -27,13 +27,13 @@ Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, si
     auto& page_table = m_owner->PageTable();
 
     // Construct the page group.
-    m_page_group = {};
+    m_page_group.emplace(kernel, page_table.GetBlockInfoManager());
 
     // Lock the memory.
-    R_TRY(page_table.LockForCodeMemory(&m_page_group, addr, size))
+    R_TRY(page_table.LockForCodeMemory(std::addressof(*m_page_group), addr, size))
 
     // Clear the memory.
-    for (const auto& block : m_page_group.Nodes()) {
+    for (const auto& block : *m_page_group) {
         std::memset(device_memory.GetPointer<void>(block.GetAddress()), 0xFF, block.GetSize());
     }
 
@@ -51,12 +51,13 @@ Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, si
 void KCodeMemory::Finalize() {
     // Unlock.
     if (!m_is_mapped && !m_is_owner_mapped) {
-        const size_t size = m_page_group.GetNumPages() * PageSize;
-        m_owner->PageTable().UnlockForCodeMemory(m_address, size, m_page_group);
+        const size_t size = m_page_group->GetNumPages() * PageSize;
+        m_owner->PageTable().UnlockForCodeMemory(m_address, size, *m_page_group);
     }
 
     // Close the page group.
-    m_page_group = {};
+    m_page_group->Close();
+    m_page_group->Finalize();
 
     // Close our reference to our owner.
     m_owner->Close();
@@ -64,7 +65,7 @@ void KCodeMemory::Finalize() {
 
 Result KCodeMemory::Map(VAddr address, size_t size) {
     // Validate the size.
-    R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
+    R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
     // Lock ourselves.
     KScopedLightLock lk(m_lock);
@@ -74,7 +75,7 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
 
     // Map the memory.
     R_TRY(kernel.CurrentProcess()->PageTable().MapPages(
-        address, m_page_group, KMemoryState::CodeOut, KMemoryPermission::UserReadWrite));
+        address, *m_page_group, KMemoryState::CodeOut, KMemoryPermission::UserReadWrite));
 
     // Mark ourselves as mapped.
     m_is_mapped = true;
@@ -84,13 +85,13 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
 
 Result KCodeMemory::Unmap(VAddr address, size_t size) {
     // Validate the size.
-    R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
+    R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
     // Lock ourselves.
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(kernel.CurrentProcess()->PageTable().UnmapPages(address, m_page_group,
+    R_TRY(kernel.CurrentProcess()->PageTable().UnmapPages(address, *m_page_group,
                                                           KMemoryState::CodeOut));
 
     // Mark ourselves as unmapped.
@@ -101,7 +102,7 @@ Result KCodeMemory::Unmap(VAddr address, size_t size) {
 
 Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
     // Validate the size.
-    R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
+    R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
     // Lock ourselves.
     KScopedLightLock lk(m_lock);
@@ -125,7 +126,7 @@ Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission
 
     // Map the memory.
     R_TRY(
-        m_owner->PageTable().MapPages(address, m_page_group, KMemoryState::GeneratedCode, k_perm));
+        m_owner->PageTable().MapPages(address, *m_page_group, KMemoryState::GeneratedCode, k_perm));
 
     // Mark ourselves as mapped.
     m_is_owner_mapped = true;
@@ -135,13 +136,13 @@ Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission
 
 Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
     // Validate the size.
-    R_UNLESS(m_page_group.GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
+    R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
     // Lock ourselves.
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(m_owner->PageTable().UnmapPages(address, m_page_group, KMemoryState::GeneratedCode));
+    R_TRY(m_owner->PageTable().UnmapPages(address, *m_page_group, KMemoryState::GeneratedCode));
 
     // Mark ourselves as unmapped.
     m_is_owner_mapped = false;

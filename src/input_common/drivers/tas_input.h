@@ -124,7 +124,7 @@ public:
      * Current playback progress ;
      * Total length of script file currently loaded or being recorded
      */
-    std::tuple<TasState, size_t, size_t> GetStatus() const;
+    std::tuple<TasState, size_t, std::array<size_t, PLAYER_NUMBER>> GetStatus() const;
 
 private:
     enum class TasAxis : u8;

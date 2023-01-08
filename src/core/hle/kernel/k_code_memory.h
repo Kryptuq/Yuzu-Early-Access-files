@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "common/common_types.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_auto_object.h"
@@ -49,11 +51,11 @@ public:
         return m_address;
     }
     size_t GetSize() const {
-        return m_is_initialized ? m_page_group.GetNumPages() * PageSize : 0;
+        return m_is_initialized ? m_page_group->GetNumPages() * PageSize : 0;
     }
 
 private:
-    KPageGroup m_page_group{};
+    std::optional<KPageGroup> m_page_group{};
     KProcess* m_owner{};
     VAddr m_address{};
     KLightLock m_lock;

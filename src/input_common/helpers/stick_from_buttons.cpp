@@ -13,11 +13,11 @@ class Stick final : public Common::Input::InputDevice {
 public:
     using Button = std::unique_ptr<Common::Input::InputDevice>;
 
-    Stick(Button up_, Button down_, Button left_, Button right_, Button modifier_,
+    Stick(Button up_, Button down_, Button left_, Button right_, Button modifier_, Button updater_,
           float modifier_scale_, float modifier_angle_)
         : up(std::move(up_)), down(std::move(down_)), left(std::move(left_)),
-          right(std::move(right_)), modifier(std::move(modifier_)), modifier_scale(modifier_scale_),
-          modifier_angle(modifier_angle_) {
+          right(std::move(right_)), modifier(std::move(modifier_)), updater(std::move(updater_)),
+          modifier_scale(modifier_scale_), modifier_angle(modifier_angle_) {
         up->SetCallback({
             .on_change =
                 [this](const Common::Input::CallbackStatus& callback_) {
@@ -47,6 +47,9 @@ public:
                 [this](const Common::Input::CallbackStatus& callback_) {
                     UpdateModButtonStatus(callback_);
                 },
+        });
+        updater->SetCallback({
+            .on_change = [this](const Common::Input::CallbackStatus& callback_) { SoftUpdate(); },
         });
         last_x_axis_value = 0.0f;
         last_y_axis_value = 0.0f;
@@ -248,7 +251,7 @@ public:
         modifier->ForceUpdate();
     }
 
-    void SoftUpdate() override {
+    void SoftUpdate() {
         Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::Stick,
             .stick_status = GetStatus(),
@@ -308,6 +311,7 @@ private:
     Button left;
     Button right;
     Button modifier;
+    Button updater;
     float modifier_scale{};
     float modifier_angle{};
     float angle{};
@@ -331,11 +335,12 @@ std::unique_ptr<Common::Input::InputDevice> StickFromButton::Create(
     auto left = Common::Input::CreateInputDeviceFromString(params.Get("left", null_engine));
     auto right = Common::Input::CreateInputDeviceFromString(params.Get("right", null_engine));
     auto modifier = Common::Input::CreateInputDeviceFromString(params.Get("modifier", null_engine));
+    auto updater = Common::Input::CreateInputDeviceFromString("engine:updater,button:0");
     auto modifier_scale = params.Get("modifier_scale", 0.5f);
     auto modifier_angle = params.Get("modifier_angle", 5.5f);
     return std::make_unique<Stick>(std::move(up), std::move(down), std::move(left),
-                                   std::move(right), std::move(modifier), modifier_scale,
-                                   modifier_angle);
+                                   std::move(right), std::move(modifier), std::move(updater),
+                                   modifier_scale, modifier_angle);
 }
 
 } // namespace InputCommon

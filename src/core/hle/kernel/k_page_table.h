@@ -107,6 +107,10 @@ public:
         return *m_page_table_impl;
     }
 
+    KBlockInfoManager* GetBlockInfoManager() {
+        return m_block_info_manager;
+    }
+
     bool CanContain(VAddr addr, size_t size, KMemoryState state) const;
 
 protected:
@@ -260,10 +264,6 @@ private:
                              KPageTable& src_page_table, bool send);
     void CleanupForIpcClientOnServerSetupFailure(PageLinkedList* page_list, VAddr address,
                                                  size_t size, KMemoryPermission prot_perm);
-
-    // HACK: These will be removed once we automatically manage page reference counts.
-    void HACK_OpenPages(PAddr phys_addr, size_t num_pages);
-    void HACK_ClosePages(VAddr virt_addr, size_t num_pages);
 
     mutable KLightLock m_general_lock;
     mutable KLightLock m_map_physical_memory_lock;
@@ -488,6 +488,7 @@ private:
     std::unique_ptr<Common::PageTable> m_page_table_impl;
 
     Core::System& m_system;
+    KernelCore& m_kernel;
 };
 
 } // namespace Kernel
