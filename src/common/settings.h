@@ -415,7 +415,7 @@ struct Values {
     // Renderer
     SwitchableSetting<RendererBackend, true> renderer_backend{
         RendererBackend::Vulkan, RendererBackend::OpenGL, RendererBackend::Null, "backend"};
-    SwitchableSetting<bool> renderer_force_max_clock{true, "force_max_clock"};
+    SwitchableSetting<bool> renderer_force_max_clock{false, "force_max_clock"};
     Setting<bool> renderer_debug{false, "debug"};
     Setting<bool> renderer_shader_feedback{false, "shader_feedback"};
     Setting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};

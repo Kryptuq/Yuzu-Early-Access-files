@@ -330,10 +330,6 @@ bool BufferCacheRuntime::CanReportMemoryUsage() const {
     return device.CanReportMemoryUsage();
 }
 
-u32 BufferCacheRuntime::GetStorageBufferAlignment() const {
-    return static_cast<u32>(device.GetStorageBufferAlignment());
-}
-
 void BufferCacheRuntime::Finish() {
     scheduler.Finish();
 }

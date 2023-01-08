@@ -292,7 +292,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::PositionPass(env, program);
 
-    Optimization::GlobalMemoryToStorageBufferPass(program, host_info);
+    Optimization::GlobalMemoryToStorageBufferPass(program);
     Optimization::TexturePass(env, program, host_info);
 
     if (Settings::values.resolution_info.active) {

@@ -236,7 +236,6 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .needs_demote_reorder = device.IsAmd(),
           .support_snorm_render_buffer = false,
           .support_viewport_index_layer = device.HasVertexViewportLayer(),
-          .min_ssbo_alignment = static_cast<u32>(device.GetShaderStorageBufferAlignment()),
           .support_geometry_shader_passthrough = device.HasGeometryShaderPassthrough(),
       } {
     if (use_asynchronous_shaders) {

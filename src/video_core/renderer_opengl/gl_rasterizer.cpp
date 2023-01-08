@@ -140,6 +140,7 @@ void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_load
 void RasterizerOpenGL::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(OpenGL_Clears);
 
+    gpu_memory->FlushCaching();
     const auto& regs = maxwell3d->regs;
     bool use_color{};
     bool use_depth{};
@@ -208,6 +209,7 @@ void RasterizerOpenGL::PrepareDraw(bool is_indexed, Func&& draw_func) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
+    gpu_memory->FlushCaching();
     query_cache.UpdateCounters();
 
     GraphicsPipeline* const pipeline{shader_cache.CurrentGraphicsPipeline()};
@@ -361,6 +363,7 @@ void RasterizerOpenGL::DrawTexture() {
 }
 
 void RasterizerOpenGL::DispatchCompute() {
+    gpu_memory->FlushCaching();
     ComputePipeline* const pipeline{shader_cache.CurrentComputePipeline()};
     if (!pipeline) {
         return;
@@ -568,6 +571,7 @@ void RasterizerOpenGL::TickFrame() {
 }
 
 bool RasterizerOpenGL::AccelerateConditionalRendering() {
+    gpu_memory->FlushCaching();
     if (Settings::IsGPULevelHigh()) {
         // Reimplement Host conditional rendering.
         return false;

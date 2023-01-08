@@ -213,6 +213,11 @@ void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_s
             .signalSemaphoreCount = num_signal_semaphores,
             .pSignalSemaphores = signal_semaphores.data(),
         };
+
+        if (on_submit) {
+            on_submit();
+        }
+
         switch (const VkResult result = device.GetGraphicsQueue().Submit(submit_info)) {
         case VK_SUCCESS:
             break;

@@ -99,6 +99,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
                  state_tracker, scheduler) {
     if (Settings::values.renderer_force_max_clock.GetValue() && device.ShouldBoostClocks()) {
         turbo_mode.emplace(instance, dld);
+        scheduler.RegisterOnSubmit([this] { turbo_mode->QueueSubmitted(); });
     }
     Report();
 } catch (const vk::Exception& exception) {
@@ -107,6 +108,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
 }
 
 RendererVulkan::~RendererVulkan() {
+    scheduler.RegisterOnSubmit([] {});
     void(device.GetLogical().WaitIdle());
 }
 

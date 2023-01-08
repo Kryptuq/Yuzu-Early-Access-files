@@ -5,6 +5,7 @@
 
 #include <condition_variable>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -64,6 +65,11 @@ public:
     /// Assigns the query cache.
     void SetQueryCache(QueryCache& query_cache_) {
         query_cache = &query_cache_;
+    }
+
+    // Registers a callback to perform on queue submission.
+    void RegisterOnSubmit(std::function<void()>&& func) {
+        on_submit = std::move(func);
     }
 
     /// Send work to a separate thread.
@@ -216,6 +222,7 @@ private:
     vk::CommandBuffer current_cmdbuf;
 
     std::unique_ptr<CommandChunk> chunk;
+    std::function<void()> on_submit;
 
     State state;
 

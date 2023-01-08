@@ -15,7 +15,6 @@ struct HostTranslateInfo {
     bool needs_demote_reorder{}; ///< True when the device needs DemoteToHelperInvocation reordered
     bool support_snorm_render_buffer{};  ///< True when the device supports SNORM render buffers
     bool support_viewport_index_layer{}; ///< True when the device supports gl_Layer in VS
-    u32 min_ssbo_alignment{};            ///< Minimum alignment supported by the device for SSBOs
     bool support_geometry_shader_passthrough{}; ///< True when the device supports geometry
                                                 ///< passthrough shaders
 };

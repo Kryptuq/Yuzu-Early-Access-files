@@ -14,10 +14,20 @@ using namespace Common::Literals;
 
 TurboMode::TurboMode(const vk::Instance& instance, const vk::InstanceDispatch& dld)
     : m_device{CreateDevice(instance, dld, VK_NULL_HANDLE)}, m_allocator{m_device, false} {
+    {
+        std::scoped_lock lk{m_submission_lock};
+        m_submission_time = std::chrono::steady_clock::now();
+    }
     m_thread = std::jthread([&](auto stop_token) { Run(stop_token); });
 }
 
 TurboMode::~TurboMode() = default;
+
+void TurboMode::QueueSubmitted() {
+    std::scoped_lock lk{m_submission_lock};
+    m_submission_time = std::chrono::steady_clock::now();
+    m_submission_cv.notify_one();
+}
 
 void TurboMode::Run(std::stop_token stop_token) {
     auto& dld = m_device.GetLogical();
@@ -199,6 +209,13 @@ void TurboMode::Run(std::stop_token stop_token) {
 
         // Wait for completion.
         fence.Wait();
+
+        // Wait for the next graphics queue submission if necessary.
+        std::unique_lock lk{m_submission_lock};
+        Common::CondvarWait(m_submission_cv, lk, stop_token, [this] {
+            return (std::chrono::steady_clock::now() - m_submission_time) <=
+                   std::chrono::milliseconds{100};
+        });
     }
 }
 
