@@ -96,8 +96,8 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdDrawIndexed);
     X(vkCmdDrawIndirect);
     X(vkCmdDrawIndexedIndirect);
-    X(vkCmdDrawIndirectCountKHR);
-    X(vkCmdDrawIndexedIndirectCountKHR);
+    X(vkCmdDrawIndirectCount);
+    X(vkCmdDrawIndexedIndirectCount);
     X(vkCmdEndQuery);
     X(vkCmdEndRenderPass);
     X(vkCmdEndTransformFeedbackEXT);
@@ -220,6 +220,12 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     // Support for host query reset is mandatory in Vulkan 1.2
     if (!dld.vkResetQueryPool) {
         Proc(dld.vkResetQueryPool, dld, "vkResetQueryPoolEXT", device);
+    }
+
+    // Support for draw indirect with count is optional in Vulkan 1.2
+    if (!dld.vkCmdDrawIndirectCount) {
+        Proc(dld.vkCmdDrawIndirectCount, dld, "vkCmdDrawIndirectCountKHR", device);
+        Proc(dld.vkCmdDrawIndexedIndirectCount, dld, "vkCmdDrawIndexedIndirectCountKHR", device);
     }
 #undef X
 }
