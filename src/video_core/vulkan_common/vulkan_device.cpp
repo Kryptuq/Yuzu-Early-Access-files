@@ -889,10 +889,15 @@ void Device::RemoveUnsuitableExtensions() {
                                 VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
 
     // VK_KHR_pipeline_executable_properties
-    extensions.pipeline_executable_properties =
-        features.pipeline_executable_properties.pipelineExecutableInfo;
-    RemoveExtensionIfUnsuitable(extensions.pipeline_executable_properties,
-                                VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    if (Settings::values.renderer_shader_feedback.GetValue()) {
+        extensions.pipeline_executable_properties =
+            features.pipeline_executable_properties.pipelineExecutableInfo;
+        RemoveExtensionIfUnsuitable(extensions.pipeline_executable_properties,
+                                    VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    } else {
+        extensions.pipeline_executable_properties = false;
+        loaded_extensions.erase(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    }
 
     // VK_KHR_workgroup_memory_explicit_layout
     extensions.workgroup_memory_explicit_layout =

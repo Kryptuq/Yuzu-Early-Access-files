@@ -28,7 +28,6 @@ void JoyconDriver::Stop() {
 }
 
 DriverResult JoyconDriver::RequestDeviceAccess(SDL_hid_device_info* device_info) {
-    constexpr u16 nintendo_vendor_id = 0x057e;
     std::scoped_lock lock{mutex};
 
     handle_device_type = ControllerType::None;
@@ -36,7 +35,6 @@ DriverResult JoyconDriver::RequestDeviceAccess(SDL_hid_device_info* device_info)
     if (handle_device_type == ControllerType::None) {
         return DriverResult::UnsupportedControllerType;
     }
-    is_third_party = nintendo_vendor_id != device_info->vendor_id;
 
     hidapi_handle->handle =
         SDL_hid_open(device_info->vendor_id, device_info->product_id, device_info->serial_number);
@@ -336,14 +334,7 @@ JoyconDriver::SupportedFeatures JoyconDriver::GetSupportedFeatures() {
         .passive = true,
         .motion = true,
         .vibration = true,
-        .home_led = true,
     };
-
-    if (is_third_party) {
-        features.passive = false;
-        features.home_led = false;
-        return features;
-    }
 
     if (device_type == ControllerType::Right) {
         features.nfc = true;
@@ -354,7 +345,6 @@ JoyconDriver::SupportedFeatures JoyconDriver::GetSupportedFeatures() {
     if (device_type == ControllerType::Pro) {
         features.nfc = true;
     }
-
     return features;
 }
 
@@ -550,65 +540,23 @@ void JoyconDriver::SetCallbacks(const JoyconCallbacks& callbacks) {
 
 DriverResult JoyconDriver::GetDeviceType(SDL_hid_device_info* device_info,
                                          ControllerType& controller_type) {
+    static constexpr std::array<std::pair<u32, ControllerType>, 2> supported_devices{
+        std::pair<u32, ControllerType>{0x2006, ControllerType::Left},
+        {0x2007, ControllerType::Right},
+    };
     constexpr u16 nintendo_vendor_id = 0x057e;
-    constexpr u16 hori_vendor_id = 0x0f0d;
-    constexpr u16 pdp_vendor_id = 0x0e6f;
-    constexpr u16 powera_vendor_id = 0x20d6;
 
     controller_type = ControllerType::None;
-    if (nintendo_vendor_id == device_info->vendor_id) {
-        switch (device_info->product_id) {
-        case 0x2006: // Nintendo Switch Joy-Con (Left)
-            controller_type = ControllerType::Left;
-            return Joycon::DriverResult::Success;
-        case 0x2007: // Nintendo Switch Joy-Con (Right)
-            controller_type = ControllerType::Right;
-            return Joycon::DriverResult::Success;
-        case 0x2008: // Nintendo Switch Joy-Con (Left+Right Combined)
-        case 0x2009: // Nintendo Switch Pro Controller
-            controller_type = ControllerType::Pro;
-            return Joycon::DriverResult::Success;
-        case 0x200E: // Nintendo Switch Grip Controller
-            controller_type = ControllerType::Grip;
-            return Joycon::DriverResult::Success;
-        }
-    }
-    if (hori_vendor_id == device_info->vendor_id) {
-        switch (device_info->product_id) {
-        case 0x00c1: // HORIPAD for Nintendo Switch
-        case 0x0092: // HORI Pokken Tournament DX Pro Pad
-        case 0x00f6: // HORI Wireless Switch Pad
-        case 0x00aa: // HORI Real Arcade Pro V Hayabusa in Switch Mode
-            controller_type = ControllerType::Pro;
-            return Joycon::DriverResult::Success;
-        }
-    }
-    if (pdp_vendor_id == device_info->vendor_id) {
-        switch (device_info->product_id) {
-        case 0x0180: // PDP Faceoff Wired Pro Controller for Nintendo Switch
-        case 0x0181: // PDP Faceoff Deluxe Wired Pro Controller for Nintendo Switch
-        case 0x0184: // PDP Faceoff Wired Deluxe+ Audio Controller
-        case 0x0185: // PDP Wired Fight Pad Pro for Nintendo Switch
-        case 0x0186: // PDP Afterglow Wireless Switch Controller
-        case 0x0187: // PDP Rockcandy Wired Controller
-        case 0x0188: // PDP Afterglow Wired Deluxe+ Audio Controller
-            controller_type = ControllerType::Pro;
-            return Joycon::DriverResult::Success;
-        }
-    }
-    if (powera_vendor_id == device_info->vendor_id) {
-        switch (device_info->product_id) {
-        case 0xa711: // PowerA Wired Controller Plus/PowerA Wired Controller Nintendo
-        case 0xa712: // PowerA Nintendo Switch Fusion Fight Pad
-        case 0xa713: // PowerA Super Mario Controller
-        case 0xa714: // PowerA Nintendo Switch Spectra Controller
-        case 0xa715: // Power A Fusion Wireless Arcade Stick (USB Mode)
-        case 0xa716: // PowerA Nintendo Switch Fusion Pro Controller
-            controller_type = ControllerType::Pro;
-            return Joycon::DriverResult::Success;
-        }
+    if (device_info->vendor_id != nintendo_vendor_id) {
+        return DriverResult::UnsupportedControllerType;
     }
 
+    for (const auto& [product_id, type] : supported_devices) {
+        if (device_info->product_id == static_cast<u16>(product_id)) {
+            controller_type = type;
+            return Joycon::DriverResult::Success;
+        }
+    }
     return Joycon::DriverResult::UnsupportedControllerType;
 }
 

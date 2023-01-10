@@ -319,7 +319,8 @@ void SDLDriver::InitJoystick(int joystick_index) {
     const auto guid = GetGUID(sdl_joystick);
 
     if (Settings::values.enable_joycon_driver) {
-        if (guid.uuid[5] == 0x05 && guid.uuid[4] == 0x7e) {
+        if (guid.uuid[5] == 0x05 && guid.uuid[4] == 0x7e &&
+            (guid.uuid[8] == 0x06 || guid.uuid[8] == 0x07)) {
             LOG_ERROR(Input, "Device black listed {}", joystick_index);
             SDL_JoystickClose(sdl_joystick);
             return;
@@ -451,11 +452,10 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
     // Disable hidapi drivers for switch controllers when the custom joycon driver is enabled
     if (Settings::values.enable_joycon_driver) {
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "0");
-        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "0");
     } else {
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
-        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
     }
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
 
     // Disable hidapi driver for xbox. Already default on Windows, this causes conflict with native
     // driver on Linux.

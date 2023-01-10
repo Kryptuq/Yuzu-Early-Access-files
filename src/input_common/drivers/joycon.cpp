@@ -44,12 +44,6 @@ void Joycons::Reset() {
         }
         device->Stop();
     }
-    for (const auto& device : pro_joycons) {
-        if (!device) {
-            continue;
-        }
-        device->Stop();
-    }
     SDL_hid_exit();
 }
 
@@ -65,11 +59,6 @@ void Joycons::Setup() {
         PreSetController(GetIdentifier(port, Joycon::ControllerType::Right));
         device = std::make_shared<Joycon::JoyconDriver>(port++);
     }
-    port = 0;
-    for (auto& device : pro_joycons) {
-        PreSetController(GetIdentifier(port, Joycon::ControllerType::Pro));
-        device = std::make_shared<Joycon::JoyconDriver>(port++);
-    }
 
     if (!scan_thread_running) {
         scan_thread = std::jthread([this](std::stop_token stop_token) { ScanThread(stop_token); });
@@ -77,10 +66,11 @@ void Joycons::Setup() {
 }
 
 void Joycons::ScanThread(std::stop_token stop_token) {
+    constexpr u16 nintendo_vendor_id = 0x057e;
     Common::SetCurrentThreadName("yuzu:input:JoyconScanThread");
     scan_thread_running = true;
     while (!stop_token.stop_requested()) {
-        SDL_hid_device_info* devs = SDL_hid_enumerate(0x0, 0x0);
+        SDL_hid_device_info* devs = SDL_hid_enumerate(nintendo_vendor_id, 0x0);
         SDL_hid_device_info* cur_dev = devs;
 
         while (cur_dev) {
@@ -135,14 +125,6 @@ bool Joycons::IsDeviceNew(SDL_hid_device_info* device_info) const {
         break;
     case Joycon::ControllerType::Right:
         for (const auto& device : right_joycons) {
-            if (is_handle_identical(device)) {
-                return false;
-            }
-        }
-        break;
-    case Joycon::ControllerType::Pro:
-    case Joycon::ControllerType::Grip:
-        for (const auto& device : pro_joycons) {
             if (is_handle_identical(device)) {
                 return false;
             }
@@ -213,13 +195,6 @@ std::shared_ptr<Joycon::JoyconDriver> Joycons::GetNextFreeHandle(
     }
     if (type == Joycon::ControllerType::Right) {
         for (const auto& device : right_joycons) {
-            if (!device->IsConnected()) {
-                return device;
-            }
-        }
-    }
-    if (type == Joycon::ControllerType::Pro || type == Joycon::ControllerType::Grip) {
-        for (const auto& device : pro_joycons) {
             if (!device->IsConnected()) {
                 return device;
             }
@@ -430,13 +405,6 @@ std::shared_ptr<Joycon::JoyconDriver> Joycons::GetHandle(PadIdentifier identifie
             }
         }
     }
-    if (type == Joycon::ControllerType::Pro || type == Joycon::ControllerType::Grip) {
-        for (const auto& device : pro_joycons) {
-            if (is_handle_active(device)) {
-                return device;
-            }
-        }
-    }
     return nullptr;
 }
 
@@ -472,9 +440,6 @@ std::vector<Common::ParamPackage> Joycons::GetInputDevices() const {
         add_entry(controller);
     }
     for (const auto& controller : right_joycons) {
-        add_entry(controller);
-    }
-    for (const auto& controller : pro_joycons) {
         add_entry(controller);
     }
 

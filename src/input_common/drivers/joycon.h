@@ -104,7 +104,6 @@ private:
     // Joycon types are split by type to ease supporting dualjoycon configurations
     std::array<std::shared_ptr<Joycon::JoyconDriver>, MaxSupportedControllers> left_joycons{};
     std::array<std::shared_ptr<Joycon::JoyconDriver>, MaxSupportedControllers> right_joycons{};
-    std::array<std::shared_ptr<Joycon::JoyconDriver>, MaxSupportedControllers> pro_joycons{};
 };
 
 } // namespace InputCommon
