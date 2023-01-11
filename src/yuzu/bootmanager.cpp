@@ -96,9 +96,9 @@ void EmuThread::run() {
             m_is_running.store(false);
             m_is_running.notify_all();
 
-            emit DebugModeEntered();
+            EmulationPaused(lk);
             Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return m_should_run; });
-            emit DebugModeLeft();
+            EmulationResumed(lk);
         }
     }
 
@@ -109,6 +109,21 @@ void EmuThread::run() {
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();
 #endif
+}
+
+// Unlock while emitting signals so that the main thread can
+// continue pumping events.
+
+void EmuThread::EmulationPaused(std::unique_lock<std::mutex>& lk) {
+    lk.unlock();
+    emit DebugModeEntered();
+    lk.lock();
+}
+
+void EmuThread::EmulationResumed(std::unique_lock<std::mutex>& lk) {
+    lk.unlock();
+    emit DebugModeLeft();
+    lk.lock();
 }
 
 #ifdef HAS_OPENGL

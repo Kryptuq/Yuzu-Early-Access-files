@@ -22,6 +22,7 @@ ConfigureGraphicsAdvanced::~ConfigureGraphicsAdvanced() = default;
 void ConfigureGraphicsAdvanced::SetConfiguration() {
     const bool runtime_lock = !system.IsPoweredOn();
     ui->use_vsync->setEnabled(runtime_lock);
+    ui->renderer_force_max_clock->setEnabled(runtime_lock);
     ui->use_asynchronous_shaders->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
 
@@ -40,12 +41,12 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
             Settings::values.max_anisotropy.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->gpu_accuracy, &Settings::values.gpu_accuracy);
-        ConfigurationShared::SetPerGameSetting(ui->renderer_force_max_clock,
-                                               &Settings::values.renderer_force_max_clock);
         ConfigurationShared::SetPerGameSetting(ui->anisotropic_filtering_combobox,
                                                &Settings::values.max_anisotropy);
         ConfigurationShared::SetHighlight(ui->label_gpu_accuracy,
                                           !Settings::values.gpu_accuracy.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->renderer_force_max_clock,
+                                          !Settings::values.renderer_force_max_clock.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->af_label,
                                           !Settings::values.max_anisotropy.UsingGlobal());
     }

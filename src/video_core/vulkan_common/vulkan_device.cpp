@@ -298,9 +298,25 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
                const vk::InstanceDispatch& dld_)
     : instance{instance_}, dld{dld_}, physical{physical_},
       format_properties(GetFormatProperties(physical)) {
-    if (!GetSuitability(surface != nullptr)) {
+    // Get suitability and device properties.
+    const bool is_suitable = GetSuitability(surface != nullptr);
+
+    const VkDriverId driver_id = properties.driver.driverID;
+    const bool is_radv = driver_id == VK_DRIVER_ID_MESA_RADV;
+    const bool is_amd_driver =
+        driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
+    const bool is_amd = is_amd_driver || is_radv;
+    const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
+    const bool is_intel_anv = driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;
+    const bool is_nvidia = driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY;
+    const bool is_mvk = driver_id == VK_DRIVER_ID_MOLTENVK;
+
+    if (is_mvk && !is_suitable) {
+        LOG_WARNING(Render_Vulkan, "Unsuitable driver is MoltenVK, continuing anyway");
+    } else if (!is_suitable) {
         throw vk::Exception(VK_ERROR_INCOMPATIBLE_DRIVER);
     }
+
     SetupFamilies(surface);
     const auto queue_cis = GetDeviceQueueCreateInfos();
 
@@ -338,15 +354,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     CollectPhysicalMemoryInfo();
     CollectToolingInfo();
-
-    const VkDriverId driver_id = properties.driver.driverID;
-    const bool is_radv = driver_id == VK_DRIVER_ID_MESA_RADV;
-    const bool is_amd_driver =
-        driver_id == VK_DRIVER_ID_AMD_PROPRIETARY || driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
-    const bool is_amd = is_amd_driver || is_radv;
-    const bool is_intel_windows = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS;
-    const bool is_intel_anv = driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA;
-    const bool is_nvidia = driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY;
 
     if (is_nvidia) {
         const u32 nv_major_version = (properties.properties.driverVersion >> 22) & 0x3ff;
@@ -448,6 +455,14 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     if (is_intel_anv) {
         LOG_WARNING(Render_Vulkan, "ANV driver does not support native BGR format");
         must_emulate_bgr565 = true;
+    }
+    if (is_mvk) {
+        LOG_WARNING(Render_Vulkan,
+                    "MVK driver breaks when using more than 16 vertex attributes/bindings");
+        properties.properties.limits.maxVertexInputAttributes =
+            std::min(properties.properties.limits.maxVertexInputAttributes, 16U);
+        properties.properties.limits.maxVertexInputBindings =
+            std::min(properties.properties.limits.maxVertexInputBindings, 16U);
     }
 
     logical = vk::Device::Create(physical, queue_cis, ExtensionListForVulkan(loaded_extensions),

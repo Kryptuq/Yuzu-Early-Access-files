@@ -116,6 +116,9 @@ private:
     /// Handle mouse button press events.
     void mousePressEvent(QMouseEvent* event) override;
 
+    /// Handle mouse wheel move events.
+    void wheelEvent(QWheelEvent* event) override;
+
     /// Handle key press events.
     void keyPressEvent(QKeyEvent* event) override;
 

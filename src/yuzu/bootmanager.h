@@ -92,6 +92,10 @@ public:
     }
 
 private:
+    void EmulationPaused(std::unique_lock<std::mutex>& lk);
+    void EmulationResumed(std::unique_lock<std::mutex>& lk);
+
+private:
     Core::System& m_system;
 
     std::stop_source m_stop_source;

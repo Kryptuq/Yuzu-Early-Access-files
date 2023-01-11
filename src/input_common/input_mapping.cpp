@@ -76,7 +76,7 @@ void MappingFactory::RegisterButton(const MappingData& data) {
         break;
     case EngineInputType::Analog:
         // Ignore mouse axis when mapping buttons
-        if (data.engine == "mouse") {
+        if (data.engine == "mouse" && data.index != 4) {
             return;
         }
         new_input.Set("axis", data.index);
