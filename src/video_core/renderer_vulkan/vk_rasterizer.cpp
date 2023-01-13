@@ -290,8 +290,9 @@ void RasterizerVulkan::DrawTexture() {
                                     .y = static_cast<s32>(draw_texture_state.src_y0)},
                            Offset2D{.x = static_cast<s32>(draw_texture_state.src_x1),
                                     .y = static_cast<s32>(draw_texture_state.src_y1)}};
-    blit_image.BlitColor(texture_cache.GetFramebuffer(), texture.RenderTarget(), sampler->Handle(),
-                         dst_region, src_region, texture.size);
+    blit_image.BlitColor(texture_cache.GetFramebuffer(), texture.RenderTarget(),
+                         texture.ImageHandle(), sampler->Handle(), dst_region, src_region,
+                         texture.size);
 }
 
 void RasterizerVulkan::Clear(u32 layer_count) {

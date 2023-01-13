@@ -366,6 +366,11 @@
              </item>
              <item>
               <property name="text">
+                  <string>1.5X (1080p/1620p) [EXPERIMENTAL]</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>2X (1440p/2160p)</string>
               </property>
              </item>
@@ -387,6 +392,16 @@
              <item>
               <property name="text">
                <string>6X (4320p/6480p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>7X (5040p/7560p)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>8X (5760p/8640p)</string>
               </property>
              </item>
             </widget>

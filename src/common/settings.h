@@ -56,11 +56,14 @@ enum class ResolutionSetup : u32 {
     Res1_2X = 0,
     Res3_4X = 1,
     Res1X = 2,
-    Res2X = 3,
-    Res3X = 4,
-    Res4X = 5,
-    Res5X = 6,
-    Res6X = 7,
+    Res3_2X = 3,
+    Res2X = 4,
+    Res3X = 5,
+    Res4X = 6,
+    Res5X = 7,
+    Res6X = 8,
+    Res7X = 9,
+    Res8X = 10,
 };
 
 enum class ScalingFilter : u32 {

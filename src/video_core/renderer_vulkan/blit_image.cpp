@@ -350,6 +350,51 @@ VkExtent2D GetConversionExtent(const ImageView& src_image_view) {
         .height = is_rescaled ? resolution.ScaleUp(height) : height,
     };
 }
+
+void TransitionImageLayout(vk::CommandBuffer& cmdbuf, VkImage image, VkImageLayout target_layout,
+                           VkImageLayout source_layout = VK_IMAGE_LAYOUT_GENERAL) {
+    constexpr VkFlags flags{VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT};
+    const VkImageMemoryBarrier barrier{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = flags,
+        .dstAccessMask = flags,
+        .oldLayout = source_layout,
+        .newLayout = target_layout,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image,
+        .subresourceRange{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        },
+    };
+    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0, barrier);
+}
+
+void BeginRenderPass(vk::CommandBuffer& cmdbuf, const Framebuffer* framebuffer) {
+    const VkRenderPass render_pass = framebuffer->RenderPass();
+    const VkFramebuffer framebuffer_handle = framebuffer->Handle();
+    const VkExtent2D render_area = framebuffer->RenderArea();
+    const VkRenderPassBeginInfo renderpass_bi{
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = nullptr,
+        .renderPass = render_pass,
+        .framebuffer = framebuffer_handle,
+        .renderArea{
+            .offset{},
+            .extent = render_area,
+        },
+        .clearValueCount = 0,
+        .pClearValues = nullptr,
+    };
+    cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
+}
 } // Anonymous namespace
 
 BlitImageHelper::BlitImageHelper(const Device& device_, Scheduler& scheduler_,
@@ -408,18 +453,20 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView 
 }
 
 void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView src_image_view,
-                                VkSampler src_sampler, const Region2D& dst_region,
-                                const Region2D& src_region, const Extent3D& src_size) {
+                                VkImage src_image, VkSampler src_sampler,
+                                const Region2D& dst_region, const Region2D& src_region,
+                                const Extent3D& src_size) {
     const BlitImagePipelineKey key{
         .renderpass = dst_framebuffer->RenderPass(),
         .operation = Tegra::Engines::Fermi2D::Operation::SrcCopy,
     };
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
     const VkPipeline pipeline = FindOrEmplaceColorPipeline(key);
-    scheduler.RequestRenderpass(dst_framebuffer);
-    scheduler.Record([this, dst_region, src_region, src_size, pipeline, layout, src_sampler,
-                      src_image_view](vk::CommandBuffer cmdbuf) {
-        // TODO: Barriers
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([this, dst_framebuffer, src_image_view, src_image, src_sampler, dst_region,
+                      src_region, src_size, pipeline, layout](vk::CommandBuffer cmdbuf) {
+        TransitionImageLayout(cmdbuf, src_image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
+        BeginRenderPass(cmdbuf, dst_framebuffer);
         const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
         UpdateOneTextureDescriptorSet(device, descriptor_set, src_sampler, src_image_view);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -427,8 +474,8 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView 
                                   nullptr);
         BindBlitState(cmdbuf, layout, dst_region, src_region, src_size);
         cmdbuf.Draw(3, 1, 0, 0);
+        cmdbuf.EndRenderPass();
     });
-    scheduler.InvalidateState();
 }
 
 void BlitImageHelper::BlitDepthStencil(const Framebuffer* dst_framebuffer,

@@ -199,10 +199,10 @@ void DrawManager::DrawTexture() {
     draw_texture_state.src_x0 = static_cast<float>(regs.draw_texture.src_x0) / 4096.f;
     draw_texture_state.src_y0 = static_cast<float>(regs.draw_texture.src_y0) / 4096.f;
     draw_texture_state.src_x1 =
-        (static_cast<float>(regs.draw_texture.dx_du) / 4294967295.f) * dst_width +
+        (static_cast<float>(regs.draw_texture.dx_du) / 4294967296.f) * dst_width +
         draw_texture_state.src_x0;
     draw_texture_state.src_y1 =
-        (static_cast<float>(regs.draw_texture.dy_dv) / 4294967295.f) * dst_height +
+        (static_cast<float>(regs.draw_texture.dy_dv) / 4294967296.f) * dst_height +
         draw_texture_state.src_y0;
     draw_texture_state.src_sampler = regs.draw_texture.src_sampler;
     draw_texture_state.src_texture = regs.draw_texture.src_texture;
