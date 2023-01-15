@@ -224,9 +224,9 @@ void JoyconPoller::UpdatePasiveLeftPadInput(const InputReportPassive& input) {
         Joycon::PasivePadButton::StickL,
     };
 
-    for (std::size_t i = 0; i < left_buttons.size(); ++i) {
-        const bool button_status = (input.button_input & static_cast<u32>(left_buttons[i])) != 0;
-        const int button = static_cast<int>(left_buttons[i]);
+    for (auto left_button : left_buttons) {
+        const bool button_status = (input.button_input & static_cast<u32>(left_button)) != 0;
+        const int button = static_cast<int>(left_button);
         callbacks.on_button_data(button, button_status);
     }
 }
@@ -241,9 +241,9 @@ void JoyconPoller::UpdatePasiveRightPadInput(const InputReportPassive& input) {
         Joycon::PasivePadButton::StickR,
     };
 
-    for (std::size_t i = 0; i < right_buttons.size(); ++i) {
-        const bool button_status = (input.button_input & static_cast<u32>(right_buttons[i])) != 0;
-        const int button = static_cast<int>(right_buttons[i]);
+    for (auto right_button : right_buttons) {
+        const bool button_status = (input.button_input & static_cast<u32>(right_button)) != 0;
+        const int button = static_cast<int>(right_button);
         callbacks.on_button_data(button, button_status);
     }
 }
@@ -259,9 +259,9 @@ void JoyconPoller::UpdatePasiveProPadInput(const InputReportPassive& input) {
         Joycon::PasivePadButton::StickL,  Joycon::PasivePadButton::StickR,
     };
 
-    for (std::size_t i = 0; i < pro_buttons.size(); ++i) {
-        const bool button_status = (input.button_input & static_cast<u32>(pro_buttons[i])) != 0;
-        const int button = static_cast<int>(pro_buttons[i]);
+    for (auto pro_button : pro_buttons) {
+        const bool button_status = (input.button_input & static_cast<u32>(pro_button)) != 0;
+        const int button = static_cast<int>(pro_button);
         callbacks.on_button_data(button, button_status);
     }
 }

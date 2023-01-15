@@ -18,12 +18,14 @@ RingController::RingController(Core::HID::HIDCore& hid_core_,
 RingController::~RingController() = default;
 
 void RingController::OnInit() {
-    input->SetPollingMode(Common::Input::PollingMode::Ring);
+    input->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                          Common::Input::PollingMode::Ring);
     return;
 }
 
 void RingController::OnRelease() {
-    input->SetPollingMode(Common::Input::PollingMode::Active);
+    input->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                          Common::Input::PollingMode::Active);
     return;
 };
 

@@ -1208,19 +1208,31 @@ bool EmulatedController::IsVibrationEnabled(std::size_t device_index) {
 }
 
 Common::Input::DriverResult EmulatedController::SetPollingMode(
-    Common::Input::PollingMode polling_mode) {
-    LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
-    auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
+    EmulatedDeviceIndex device_index, Common::Input::PollingMode polling_mode) {
+    LOG_INFO(Service_HID, "Set polling mode {}, device_index={}", polling_mode, device_index);
+
+    auto& left_output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Left)];
+    auto& right_output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
     auto& nfc_output_device = output_devices[3];
 
-    const auto virtual_nfc_result = nfc_output_device->SetPollingMode(polling_mode);
-    const auto mapped_nfc_result = output_device->SetPollingMode(polling_mode);
-
-    if (virtual_nfc_result == Common::Input::DriverResult::Success) {
-        return virtual_nfc_result;
+    if (device_index == EmulatedDeviceIndex::LeftIndex) {
+        return left_output_device->SetPollingMode(polling_mode);
     }
 
-    return mapped_nfc_result;
+    if (device_index == EmulatedDeviceIndex::RightIndex) {
+        const auto virtual_nfc_result = nfc_output_device->SetPollingMode(polling_mode);
+        const auto mapped_nfc_result = right_output_device->SetPollingMode(polling_mode);
+
+        if (virtual_nfc_result == Common::Input::DriverResult::Success) {
+            return virtual_nfc_result;
+        }
+        return mapped_nfc_result;
+    }
+
+    left_output_device->SetPollingMode(polling_mode);
+    right_output_device->SetPollingMode(polling_mode);
+    nfc_output_device->SetPollingMode(polling_mode);
+    return Common::Input::DriverResult::Success;
 }
 
 bool EmulatedController::SetCameraFormat(

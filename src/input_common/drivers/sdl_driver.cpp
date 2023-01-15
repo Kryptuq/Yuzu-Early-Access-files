@@ -321,7 +321,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
     if (Settings::values.enable_joycon_driver) {
         if (guid.uuid[5] == 0x05 && guid.uuid[4] == 0x7e &&
             (guid.uuid[8] == 0x06 || guid.uuid[8] == 0x07)) {
-            LOG_ERROR(Input, "Device black listed {}", joystick_index);
+            LOG_WARNING(Input, "Preferring joycon driver for device index {}", joystick_index);
             SDL_JoystickClose(sdl_joystick);
             return;
         }

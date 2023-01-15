@@ -88,8 +88,11 @@ private:
     /// Returns a JoyconHandle corresponding to a PadIdentifier
     std::shared_ptr<Joycon::JoyconDriver> GetHandle(PadIdentifier identifier) const;
 
-    /// Returns a PadIdentifier corresponding to the port number
+    /// Returns a PadIdentifier corresponding to the port number and joycon type
     PadIdentifier GetIdentifier(std::size_t port, Joycon::ControllerType type) const;
+
+    /// Returns a ParamPackage corresponding to the port number and joycon type
+    Common::ParamPackage GetParamPackage(std::size_t port, Joycon::ControllerType type) const;
 
     std::string JoyconName(std::size_t port) const;
 
@@ -99,7 +102,6 @@ private:
     std::string JoyconName(Joycon::ControllerType type) const;
 
     std::jthread scan_thread;
-    bool scan_thread_running{};
 
     // Joycon types are split by type to ease supporting dualjoycon configurations
     std::array<std::shared_ptr<Joycon::JoyconDriver>, MaxSupportedControllers> left_joycons{};

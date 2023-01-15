@@ -130,7 +130,8 @@ Result NfcDevice::StartDetection(NFP::TagProtocol allowed_protocol) {
         return WrongDeviceState;
     }
 
-    if (npad_device->SetPollingMode(Common::Input::PollingMode::NFC) !=
+    if (npad_device->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                                    Common::Input::PollingMode::NFC) !=
         Common::Input::DriverResult::Success) {
         LOG_ERROR(Service_NFC, "Nfc not supported");
         return NfcDisabled;
@@ -142,7 +143,8 @@ Result NfcDevice::StartDetection(NFP::TagProtocol allowed_protocol) {
 }
 
 Result NfcDevice::StopDetection() {
-    npad_device->SetPollingMode(Common::Input::PollingMode::Active);
+    npad_device->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                                Common::Input::PollingMode::Active);
 
     if (device_state == NFP::DeviceState::Initialized) {
         return ResultSuccess;

@@ -337,7 +337,19 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     controller.is_connected = true;
     controller.device->Connect();
     controller.device->SetLedPattern();
-    controller.device->SetPollingMode(Common::Input::PollingMode::Active);
+    if (controller_type == Core::HID::NpadStyleIndex::JoyconDual) {
+        if (controller.is_dual_left_connected) {
+            controller.device->SetPollingMode(Core::HID::EmulatedDeviceIndex::LeftIndex,
+                                              Common::Input::PollingMode::Active);
+        }
+        if (controller.is_dual_right_connected) {
+            controller.device->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                                              Common::Input::PollingMode::Active);
+        }
+    } else {
+        controller.device->SetPollingMode(Core::HID::EmulatedDeviceIndex::AllDevices,
+                                          Common::Input::PollingMode::Active);
+    }
     SignalStyleSetChangedEvent(npad_id);
     WriteEmptyEntry(controller.shared_memory);
 }

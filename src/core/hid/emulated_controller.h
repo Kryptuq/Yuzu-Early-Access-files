@@ -363,10 +363,12 @@ public:
 
     /**
      * Sets the desired data to be polled from a controller
+     * @param device_index index of the controller to set the polling mode
      * @param polling_mode type of input desired buttons, gyro, nfc, ir, etc.
      * @return driver result from this command
      */
-    Common::Input::DriverResult SetPollingMode(Common::Input::PollingMode polling_mode);
+    Common::Input::DriverResult SetPollingMode(EmulatedDeviceIndex device_index,
+                                               Common::Input::PollingMode polling_mode);
 
     /**
      * Sets the desired camera format to be polled from a controller

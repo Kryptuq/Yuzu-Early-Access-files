@@ -214,7 +214,8 @@ ConfigureRingController::ConfigureRingController(QWidget* parent,
 }
 
 ConfigureRingController::~ConfigureRingController() {
-    emulated_controller->SetPollingMode(Common::Input::PollingMode::Active);
+    emulated_controller->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
+                                        Common::Input::PollingMode::Active);
     emulated_controller->DisableConfiguration();
 
     if (is_controller_set) {
@@ -290,7 +291,8 @@ void ConfigureRingController::EnableRingController() {
     // SetPollingMode is blocking. Allow to update the button status before calling the command
     repaint();
 
-    const auto result = emulated_controller->SetPollingMode(Common::Input::PollingMode::Ring);
+    const auto result = emulated_controller->SetPollingMode(
+        Core::HID::EmulatedDeviceIndex::RightIndex, Common::Input::PollingMode::Ring);
     switch (result) {
     case Common::Input::DriverResult::Success:
         is_ring_enabled = true;

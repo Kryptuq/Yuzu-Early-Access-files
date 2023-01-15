@@ -66,9 +66,9 @@ u8 RumbleProtocol::EncodeLowFrequency(f32 frequency) const {
 }
 
 u8 RumbleProtocol::EncodeHighAmplitude(f32 amplitude) const {
-    /* More information about these values can be found here:
-     * https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/rumble_data_table.md
-     */
+    // More information about these values can be found here:
+    // https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/rumble_data_table.md
+
     static constexpr std::array<std::pair<f32, int>, 101> high_fequency_amplitude{
         std::pair<f32, int>{0.0f, 0x0},
         {0.01f, 0x2},
@@ -183,9 +183,9 @@ u8 RumbleProtocol::EncodeHighAmplitude(f32 amplitude) const {
 }
 
 u16 RumbleProtocol::EncodeLowAmplitude(f32 amplitude) const {
-    /* More information about these values can be found here:
-     * https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/rumble_data_table.md
-     */
+    // More information about these values can be found here:
+    // https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/rumble_data_table.md
+
     static constexpr std::array<std::pair<f32, int>, 101> high_fequency_amplitude{
         std::pair<f32, int>{0.0f, 0x0040},
         {0.01f, 0x8040},

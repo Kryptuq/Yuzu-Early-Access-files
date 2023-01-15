@@ -79,7 +79,7 @@ public:
      * @param sc sub command to be send
      * @param buffer data to be send
      */
-    DriverResult SendMcuCommand(SubCommand sc, std::span<const u8> buffer);
+    DriverResult SendMCUCommand(SubCommand sc, std::span<const u8> buffer);
 
     /**
      * Sends vibration data to the joycon
@@ -150,4 +150,17 @@ private:
     std::shared_ptr<JoyconHandle> hidapi_handle;
 };
 
+class ScopedSetBlocking {
+public:
+    explicit ScopedSetBlocking(JoyconCommonProtocol* self) : m_self{self} {
+        m_self->SetBlocking();
+    }
+
+    ~ScopedSetBlocking() {
+        m_self->SetNonBlocking();
+    }
+
+private:
+    JoyconCommonProtocol* m_self{};
+};
 } // namespace InputCommon::Joycon

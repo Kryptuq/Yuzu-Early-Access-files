@@ -176,7 +176,7 @@ loop1:
         auto result = SendReadAmiiboRequest(output, ntag_pages);
 
         int attempt = 0;
-        while (1) {
+        while (true) {
             if (attempt != 0) {
                 result = GetMCUDataResponse(ReportMode::NFC_IR_MODE_60HZ, output);
             }
@@ -364,45 +364,50 @@ DriverResult NfcProtocol::SendReadAmiiboRequest(std::vector<u8>& output, std::si
 }
 
 NFCReadBlockCommand NfcProtocol::GetReadBlockCommand(std::size_t pages) const {
+    constexpr NFCReadBlockCommand block0{
+        .block_count = 1,
+    };
+    constexpr NFCReadBlockCommand block45{
+        .block_count = 1,
+        .blocks =
+            {
+                NFCReadBlock{0x00, 0x2C},
+            },
+    };
+    constexpr NFCReadBlockCommand block135{
+        .block_count = 3,
+        .blocks =
+            {
+                NFCReadBlock{0x00, 0x3b},
+                {0x3c, 0x77},
+                {0x78, 0x86},
+            },
+    };
+    constexpr NFCReadBlockCommand block231{
+        .block_count = 4,
+        .blocks =
+            {
+                NFCReadBlock{0x00, 0x3b},
+                {0x3c, 0x77},
+                {0x78, 0x83},
+                {0xb4, 0xe6},
+            },
+    };
+
     if (pages == 0) {
-        return {
-            .block_count = 1,
-        };
+        return block0;
     }
 
     if (pages == 45) {
-        return {
-            .block_count = 1,
-            .blocks =
-                {
-                    NFCReadBlock{0x00, 0x2C},
-                },
-        };
+        return block45;
     }
 
     if (pages == 135) {
-        return {
-            .block_count = 3,
-            .blocks =
-                {
-                    NFCReadBlock{0x00, 0x3b},
-                    {0x3c, 0x77},
-                    {0x78, 0x86},
-                },
-        };
+        return block135;
     }
 
     if (pages == 231) {
-        return {
-            .block_count = 4,
-            .blocks =
-                {
-                    NFCReadBlock{0x00, 0x3b},
-                    {0x3c, 0x77},
-                    {0x78, 0x83},
-                    {0xb4, 0xe6},
-                },
-        };
+        return block231;
     }
 
     return {};

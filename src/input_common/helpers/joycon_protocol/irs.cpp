@@ -208,7 +208,7 @@ DriverResult IrsProtocol::WriteRegistersStep1() {
 
         // First time we need to set the report mode
         if (result == DriverResult::Success && tries == 0) {
-            result = SendMcuCommand(SubCommand::SET_REPORT_MODE, mcu_request);
+            result = SendMCUCommand(SubCommand::SET_REPORT_MODE, mcu_request);
         }
         if (result == DriverResult::Success && tries == 0) {
             GetSubCommandResponse(SubCommand::SET_MCU_CONFIG, output);
@@ -272,7 +272,7 @@ DriverResult IrsProtocol::RequestFrame(u8 frame) {
     mcu_request[3] = frame;
     mcu_request[36] = CalculateMCU_CRC8(mcu_request.data(), 36);
     mcu_request[37] = 0xFF;
-    return SendMcuCommand(SubCommand::SET_REPORT_MODE, mcu_request);
+    return SendMCUCommand(SubCommand::SET_REPORT_MODE, mcu_request);
 }
 
 DriverResult IrsProtocol::ResendFrame(u8 frame) {
@@ -282,7 +282,7 @@ DriverResult IrsProtocol::ResendFrame(u8 frame) {
     mcu_request[3] = 0x0;
     mcu_request[36] = CalculateMCU_CRC8(mcu_request.data(), 36);
     mcu_request[37] = 0xFF;
-    return SendMcuCommand(SubCommand::SET_REPORT_MODE, mcu_request);
+    return SendMCUCommand(SubCommand::SET_REPORT_MODE, mcu_request);
 }
 
 std::vector<u8> IrsProtocol::GetImage() const {
