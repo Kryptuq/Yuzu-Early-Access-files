@@ -312,8 +312,6 @@ void NVFlinger::Compose() {
 }
 
 s64 NVFlinger::GetNextTicks() const {
-    static constexpr s64 max_hertz = 120LL;
-
     const auto& settings = Settings::values;
     auto speed_scale = 1.f;
     if (settings.use_multi_core.GetValue()) {
@@ -327,9 +325,11 @@ s64 NVFlinger::GetNextTicks() const {
         }
     }
 
-    const auto next_ticks = ((1000000000 * (1LL << swap_interval)) / max_hertz);
+    // As an extension, treat nonpositive swap interval as framerate multiplier.
+    const f32 effective_fps = swap_interval <= 0 ? 120.f * static_cast<f32>(1 - swap_interval)
+                                                 : 60.f / static_cast<f32>(swap_interval);
 
-    return static_cast<s64>(speed_scale * static_cast<float>(next_ticks));
+    return static_cast<s64>(speed_scale * (1000000000.f / effective_fps));
 }
 
 } // namespace Service::NVFlinger

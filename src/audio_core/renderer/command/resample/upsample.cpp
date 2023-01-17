@@ -20,25 +20,25 @@ static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
                             const u32 target_sample_count, const u32 source_sample_count,
                             UpsamplerState* state) {
     constexpr u32 WindowSize = 10;
-    constexpr std::array<Common::FixedPoint<24, 8>, WindowSize> SincWindow1{
-        51.93359375f, -18.80078125f, 9.73046875f, -5.33203125f, 2.84375f,
-        -1.41015625f, 0.62109375f,   -0.2265625f, 0.0625f,      -0.00390625f,
+    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc1{
+        0.95376587f,   -0.12872314f, 0.060028076f,  -0.032470703f, 0.017669678f,
+        -0.009124756f, 0.004272461f, -0.001739502f, 0.000579834f,  -0.000091552734f,
     };
-    constexpr std::array<Common::FixedPoint<24, 8>, WindowSize> SincWindow2{
-        105.35546875f, -24.52734375f, 11.9609375f,  -6.515625f, 3.52734375f,
-        -1.796875f,    0.828125f,     -0.32421875f, 0.1015625f, -0.015625f,
+    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc2{
+        0.8230896f,    -0.19161987f,  0.093444824f,  -0.05090332f,   0.027557373f,
+        -0.014038086f, 0.0064697266f, -0.002532959f, 0.00079345703f, -0.00012207031f,
     };
-    constexpr std::array<Common::FixedPoint<24, 8>, WindowSize> SincWindow3{
-        122.08203125f, -16.47656250f, 7.68359375f,  -4.15625000f, 2.26171875f,
-        -1.16796875f,  0.54687500f,   -0.22265625f, 0.07421875f,  -0.01171875f,
+    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc3{
+        0.6298828f,    -0.19274902f, 0.09725952f,    -0.05319214f,  0.028625488f,
+        -0.014373779f, 0.006500244f, -0.0024719238f, 0.0007324219f, -0.000091552734f,
     };
-    constexpr std::array<Common::FixedPoint<24, 8>, WindowSize> SincWindow4{
-        23.73437500f, -9.62109375f, 5.07812500f,  -2.78125000f, 1.46875000f,
-        -0.71484375f, 0.30859375f,  -0.10546875f, 0.02734375f,  0.00000000f,
+    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc4{
+        0.4057312f,    -0.1468811f,  0.07601929f,    -0.041656494f,  0.022216797f,
+        -0.011016846f, 0.004852295f, -0.0017700195f, 0.00048828125f, -0.000030517578f,
     };
-    constexpr std::array<Common::FixedPoint<24, 8>, WindowSize> SincWindow5{
-        80.62500000f, -24.67187500f, 12.44921875f, -6.80859375f, 3.66406250f,
-        -1.83984375f, 0.83203125f,   -0.31640625f, 0.09375000f,  -0.01171875f,
+    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc5{
+        0.1854248f,    -0.075164795f, 0.03967285f,    -0.021728516f,  0.011474609f,
+        -0.005584717f, 0.0024108887f, -0.0008239746f, 0.00021362305f, 0.0f,
     };
 
     if (!state->initialized) {
@@ -91,52 +91,31 @@ static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
             static_cast<u16>((state->history_output_index + 1) % UpsamplerState::HistorySize);
     };
 
-    auto calculate_sample = [&state](std::span<const Common::FixedPoint<24, 8>> coeffs1,
-                                     std::span<const Common::FixedPoint<24, 8>> coeffs2) -> s32 {
+    auto calculate_sample = [&state](std::span<const Common::FixedPoint<17, 15>> coeffs1,
+                                     std::span<const Common::FixedPoint<17, 15>> coeffs2) -> s32 {
         auto output_index{state->history_output_index};
-        auto start_pos{output_index - state->history_start_index + 1U};
-        auto end_pos{10U};
+        u64 result{0};
 
-        if (start_pos < 10) {
-            end_pos = start_pos;
-        }
+        for (u32 coeff_index = 0; coeff_index < 10; coeff_index++) {
+            result += static_cast<u64>(state->history[output_index].to_raw()) *
+                      coeffs1[coeff_index].to_raw();
 
-        u64 prev_contrib{0};
-        u32 coeff_index{0};
-        for (; coeff_index < end_pos; coeff_index++, output_index--) {
-            prev_contrib += static_cast<u64>(state->history[output_index].to_raw()) *
-                            coeffs1[coeff_index].to_raw();
-        }
-
-        auto end_index{state->history_end_index};
-        for (; start_pos < 9; start_pos++, coeff_index++, end_index--) {
-            prev_contrib += static_cast<u64>(state->history[end_index].to_raw()) *
-                            coeffs1[coeff_index].to_raw();
+            output_index = output_index == state->history_start_index ? state->history_end_index
+                                                                      : output_index - 1;
         }
 
         output_index =
             static_cast<u16>((state->history_output_index + 1) % UpsamplerState::HistorySize);
-        start_pos = state->history_end_index - output_index + 1U;
-        end_pos = 10U;
 
-        if (start_pos < 10) {
-            end_pos = start_pos;
+        for (u32 coeff_index = 0; coeff_index < 10; coeff_index++) {
+            result += static_cast<u64>(state->history[output_index].to_raw()) *
+                      coeffs2[coeff_index].to_raw();
+
+            output_index = output_index == state->history_end_index ? state->history_start_index
+                                                                    : output_index + 1;
         }
 
-        u64 next_contrib{0};
-        coeff_index = 0;
-        for (; coeff_index < end_pos; coeff_index++, output_index++) {
-            next_contrib += static_cast<u64>(state->history[output_index].to_raw()) *
-                            coeffs2[coeff_index].to_raw();
-        }
-
-        auto start_index{state->history_start_index};
-        for (; start_pos < 9; start_pos++, start_index++, coeff_index++) {
-            next_contrib += static_cast<u64>(state->history[start_index].to_raw()) *
-                            coeffs2[coeff_index].to_raw();
-        }
-
-        return static_cast<s32>(((prev_contrib >> 15) + (next_contrib >> 15)) >> 8);
+        return static_cast<s32>(result >> (8 + 15));
     };
 
     switch (state->ratio.to_int_floor()) {
@@ -150,23 +129,23 @@ static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
                 break;
 
             case 1:
-                output[write_index] = calculate_sample(SincWindow3, SincWindow4);
+                output[write_index] = calculate_sample(WindowedSinc1, WindowedSinc5);
                 break;
 
             case 2:
-                output[write_index] = calculate_sample(SincWindow2, SincWindow1);
+                output[write_index] = calculate_sample(WindowedSinc2, WindowedSinc4);
                 break;
 
             case 3:
-                output[write_index] = calculate_sample(SincWindow5, SincWindow5);
+                output[write_index] = calculate_sample(WindowedSinc3, WindowedSinc3);
                 break;
 
             case 4:
-                output[write_index] = calculate_sample(SincWindow1, SincWindow2);
+                output[write_index] = calculate_sample(WindowedSinc4, WindowedSinc2);
                 break;
 
             case 5:
-                output[write_index] = calculate_sample(SincWindow4, SincWindow3);
+                output[write_index] = calculate_sample(WindowedSinc5, WindowedSinc1);
                 break;
             }
             state->sample_index = static_cast<u8>((state->sample_index + 1) % 6);
@@ -183,11 +162,11 @@ static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
                 break;
 
             case 1:
-                output[write_index] = calculate_sample(SincWindow2, SincWindow1);
+                output[write_index] = calculate_sample(WindowedSinc2, WindowedSinc4);
                 break;
 
             case 2:
-                output[write_index] = calculate_sample(SincWindow1, SincWindow2);
+                output[write_index] = calculate_sample(WindowedSinc4, WindowedSinc2);
                 break;
             }
             state->sample_index = static_cast<u8>((state->sample_index + 1) % 3);
@@ -204,12 +183,12 @@ static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
                 break;
 
             case 1:
-                output[write_index] = calculate_sample(SincWindow1, SincWindow2);
+                output[write_index] = calculate_sample(WindowedSinc4, WindowedSinc2);
                 break;
 
             case 2:
                 increment();
-                output[write_index] = calculate_sample(SincWindow2, SincWindow1);
+                output[write_index] = calculate_sample(WindowedSinc2, WindowedSinc4);
                 break;
             }
             state->sample_index = static_cast<u8>((state->sample_index + 1) % 3);

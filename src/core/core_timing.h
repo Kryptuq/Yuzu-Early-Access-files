@@ -98,10 +98,13 @@ public:
                               const std::shared_ptr<EventType>& event_type,
                               std::uintptr_t user_data = 0, bool absolute_time = false);
 
-    void UnscheduleEvent(const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data);
+    void UnscheduleEvent(const std::shared_ptr<EventType>& event_type, std::uintptr_t user_data,
+                         bool wait = true);
 
-    /// We only permit one event of each type in the queue at a time.
-    void RemoveEvent(const std::shared_ptr<EventType>& event_type);
+    void UnscheduleEventWithoutWait(const std::shared_ptr<EventType>& event_type,
+                                    std::uintptr_t user_data) {
+        UnscheduleEvent(event_type, user_data, false);
+    }
 
     void AddTicks(u64 ticks_to_add);
 

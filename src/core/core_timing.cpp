@@ -142,16 +142,24 @@ void CoreTiming::ScheduleLoopingEvent(std::chrono::nanoseconds start_time,
 }
 
 void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
-                                 std::uintptr_t user_data) {
-    std::scoped_lock scope{basic_lock};
-    const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
-        return e.type.lock().get() == event_type.get() && e.user_data == user_data;
-    });
+                                 std::uintptr_t user_data, bool wait) {
+    {
+        std::scoped_lock lk{basic_lock};
+        const auto itr =
+            std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
+                return e.type.lock().get() == event_type.get() && e.user_data == user_data;
+            });
 
-    // Removing random items breaks the invariant so we have to re-establish it.
-    if (itr != event_queue.end()) {
-        event_queue.erase(itr, event_queue.end());
-        std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+        // Removing random items breaks the invariant so we have to re-establish it.
+        if (itr != event_queue.end()) {
+            event_queue.erase(itr, event_queue.end());
+            std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
+        }
+    }
+
+    // Force any in-progress events to finish
+    if (wait) {
+        std::scoped_lock lk{advance_lock};
     }
 }
 
@@ -188,20 +196,6 @@ u64 CoreTiming::GetClockTicks() const {
         return clock->GetClockCycles();
     }
     return CpuCyclesToClockCycles(ticks);
-}
-
-void CoreTiming::RemoveEvent(const std::shared_ptr<EventType>& event_type) {
-    std::scoped_lock lock{basic_lock};
-
-    const auto itr = std::remove_if(event_queue.begin(), event_queue.end(), [&](const Event& e) {
-        return e.type.lock().get() == event_type.get();
-    });
-
-    // Removing random items breaks the invariant so we have to re-establish it.
-    if (itr != event_queue.end()) {
-        event_queue.erase(itr, event_queue.end());
-        std::make_heap(event_queue.begin(), event_queue.end(), std::greater<>());
-    }
 }
 
 std::optional<s64> CoreTiming::Advance() {

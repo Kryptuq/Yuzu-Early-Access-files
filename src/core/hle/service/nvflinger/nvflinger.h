@@ -133,7 +133,7 @@ private:
     /// layers.
     u32 next_buffer_queue_id = 1;
 
-    u32 swap_interval = 1;
+    s32 swap_interval = 1;
 
     /// Event that handles screen composition.
     std::shared_ptr<Core::Timing::EventType> multi_composition_event;

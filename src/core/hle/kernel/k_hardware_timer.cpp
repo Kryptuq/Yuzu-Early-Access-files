@@ -18,7 +18,8 @@ void KHardwareTimer::Initialize() {
 }
 
 void KHardwareTimer::Finalize() {
-    this->DisableInterrupt();
+    m_kernel.System().CoreTiming().UnscheduleEvent(m_event_type, reinterpret_cast<uintptr_t>(this));
+    m_wakeup_time = std::numeric_limits<s64>::max();
     m_event_type.reset();
 }
 
@@ -59,7 +60,8 @@ void KHardwareTimer::EnableInterrupt(s64 wakeup_time) {
 }
 
 void KHardwareTimer::DisableInterrupt() {
-    m_kernel.System().CoreTiming().UnscheduleEvent(m_event_type, reinterpret_cast<uintptr_t>(this));
+    m_kernel.System().CoreTiming().UnscheduleEventWithoutWait(m_event_type,
+                                                              reinterpret_cast<uintptr_t>(this));
     m_wakeup_time = std::numeric_limits<s64>::max();
 }
 
