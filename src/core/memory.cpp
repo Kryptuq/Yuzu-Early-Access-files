@@ -383,6 +383,10 @@ struct Memory::Impl {
             return;
         }
 
+        if (Settings::IsFastmemEnabled()) {
+            system.DeviceMemory().buffer.Protect(vaddr, size, !debug, !debug);
+        }
+
         // Iterate over a contiguous CPU address space, marking/unmarking the region.
         // The region is at a granularity of CPU pages.
 
