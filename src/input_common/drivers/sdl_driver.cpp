@@ -40,25 +40,26 @@ public:
     }
 
     void EnableMotion() {
-        if (sdl_controller) {
-            SDL_GameController* controller = sdl_controller.get();
-            has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL) == SDL_TRUE;
-            has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO) == SDL_TRUE;
-            if (has_accel) {
-                SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
-            }
-            if (has_gyro) {
-                SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
-            }
+        if (!sdl_controller) {
+            return;
+        }
+        SDL_GameController* controller = sdl_controller.get();
+        if (HasMotion()) {
+            SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_FALSE);
+            SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_FALSE);
+        }
+        has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL) == SDL_TRUE;
+        has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO) == SDL_TRUE;
+        if (has_accel) {
+            SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
+        }
+        if (has_gyro) {
+            SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
         }
     }
 
-    bool HasGyro() const {
-        return has_gyro;
-    }
-
-    bool HasAccel() const {
-        return has_accel;
+    bool HasMotion() const {
+        return has_gyro || has_accel;
     }
 
     bool UpdateMotion(SDL_ControllerSensorEvent event) {
@@ -85,6 +86,20 @@ public:
         if (time_difference == 0) {
             return false;
         }
+
+        // Motion data is invalid
+        if (motion.accel_x == 0 && motion.gyro_x == 0 && motion.accel_y == 0 &&
+            motion.gyro_y == 0 && motion.accel_z == 0 && motion.gyro_z == 0) {
+            if (motion_error_count++ < 200) {
+                return false;
+            }
+            // Try restarting the sensor
+            motion_error_count = 0;
+            EnableMotion();
+            return false;
+        }
+
+        motion_error_count = 0;
         motion.delta_timestamp = time_difference * 1000;
         return true;
     }
@@ -250,6 +265,7 @@ private:
     mutable std::mutex mutex;
 
     u64 last_motion_update{};
+    std::size_t motion_error_count{};
     bool has_gyro{false};
     bool has_accel{false};
     bool has_vibration{false};
@@ -955,18 +971,18 @@ MotionMapping SDLDriver::GetMotionMappingForDevice(const Common::ParamPackage& p
     MotionMapping mapping = {};
     joystick->EnableMotion();
 
-    if (joystick->HasGyro() || joystick->HasAccel()) {
+    if (joystick->HasMotion()) {
         mapping.insert_or_assign(Settings::NativeMotion::MotionRight,
                                  BuildMotionParam(joystick->GetPort(), joystick->GetGUID()));
     }
     if (params.Has("guid2")) {
         joystick2->EnableMotion();
-        if (joystick2->HasGyro() || joystick2->HasAccel()) {
+        if (joystick2->HasMotion()) {
             mapping.insert_or_assign(Settings::NativeMotion::MotionLeft,
                                      BuildMotionParam(joystick2->GetPort(), joystick2->GetGUID()));
         }
     } else {
-        if (joystick->HasGyro() || joystick->HasAccel()) {
+        if (joystick->HasMotion()) {
             mapping.insert_or_assign(Settings::NativeMotion::MotionLeft,
                                      BuildMotionParam(joystick->GetPort(), joystick->GetGUID()));
         }

@@ -58,9 +58,8 @@ DriverResult JoyconCommonProtocol::CheckDeviceAccess(SDL_hid_device_info* device
 }
 
 DriverResult JoyconCommonProtocol::SetReportMode(ReportMode report_mode) {
-    const std::vector<u8> buffer{static_cast<u8>(report_mode)};
-    std::vector<u8> output;
-    return SendSubCommand(SubCommand::SET_REPORT_MODE, buffer, output);
+    const std::array<u8, 1> buffer{static_cast<u8>(report_mode)};
+    return SendSubCommand(SubCommand::SET_REPORT_MODE, buffer);
 }
 
 DriverResult JoyconCommonProtocol::SendData(std::span<const u8> buffer) {
@@ -120,6 +119,11 @@ DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const
     return DriverResult::Success;
 }
 
+DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const u8> buffer) {
+    std::vector<u8> output;
+    return SendSubCommand(sc, buffer, output);
+}
+
 DriverResult JoyconCommonProtocol::SendMCUCommand(SubCommand sc, std::span<const u8> buffer) {
     std::vector<u8> local_buffer(MaxResponseSize);
 
@@ -147,7 +151,7 @@ DriverResult JoyconCommonProtocol::SendVibrationReport(std::span<const u8> buffe
 DriverResult JoyconCommonProtocol::ReadSPI(CalAddr addr, u8 size, std::vector<u8>& output) {
     constexpr std::size_t MaxTries = 10;
     std::size_t tries = 0;
-    std::vector<u8> buffer = {0x00, 0x00, 0x00, 0x00, size};
+    std::array<u8, 5> buffer = {0x00, 0x00, 0x00, 0x00, size};
     std::vector<u8> local_buffer(size + 20);
 
     buffer[0] = static_cast<u8>(static_cast<u16>(addr) & 0x00FF);
@@ -169,10 +173,8 @@ DriverResult JoyconCommonProtocol::ReadSPI(CalAddr addr, u8 size, std::vector<u8
 }
 
 DriverResult JoyconCommonProtocol::EnableMCU(bool enable) {
-    std::vector<u8> output;
-
-    const std::vector<u8> mcu_state{static_cast<u8>(enable ? 1 : 0)};
-    const auto result = SendSubCommand(SubCommand::SET_MCU_STATE, mcu_state, output);
+    const std::array<u8, 1> mcu_state{static_cast<u8>(enable ? 1 : 0)};
+    const auto result = SendSubCommand(SubCommand::SET_MCU_STATE, mcu_state);
 
     if (result != DriverResult::Success) {
         LOG_ERROR(Input, "SendMCUData failed with error {}", result);
@@ -183,13 +185,11 @@ DriverResult JoyconCommonProtocol::EnableMCU(bool enable) {
 
 DriverResult JoyconCommonProtocol::ConfigureMCU(const MCUConfig& config) {
     LOG_DEBUG(Input, "ConfigureMCU");
-    std::vector<u8> output;
-
     std::array<u8, sizeof(MCUConfig)> config_buffer;
     memcpy(config_buffer.data(), &config, sizeof(MCUConfig));
     config_buffer[37] = CalculateMCU_CRC8(config_buffer.data() + 1, 36);
 
-    const auto result = SendSubCommand(SubCommand::SET_MCU_CONFIG, config_buffer, output);
+    const auto result = SendSubCommand(SubCommand::SET_MCU_CONFIG, config_buffer);
 
     if (result != DriverResult::Success) {
         LOG_ERROR(Input, "Set MCU config failed with error {}", result);

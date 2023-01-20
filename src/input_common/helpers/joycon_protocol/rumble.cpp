@@ -14,12 +14,9 @@ RumbleProtocol::RumbleProtocol(std::shared_ptr<JoyconHandle> handle)
 
 DriverResult RumbleProtocol::EnableRumble(bool is_enabled) {
     LOG_DEBUG(Input, "Enable Rumble");
+    ScopedSetBlocking sb(this);
     const std::array<u8, 1> buffer{static_cast<u8>(is_enabled ? 1 : 0)};
-    std::vector<u8> output;
-    SetBlocking();
-    const auto result = SendSubCommand(SubCommand::ENABLE_VIBRATION, buffer, output);
-    SetNonBlocking();
-    return result;
+    return SendSubCommand(SubCommand::ENABLE_VIBRATION, buffer);
 }
 
 DriverResult RumbleProtocol::SendVibration(const VibrationValue& vibration) {

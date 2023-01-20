@@ -10,22 +10,18 @@ GenericProtocol::GenericProtocol(std::shared_ptr<JoyconHandle> handle)
     : JoyconCommonProtocol(std::move(handle)) {}
 
 DriverResult GenericProtocol::EnablePassiveMode() {
-    SetBlocking();
-    const auto result = SetReportMode(ReportMode::SIMPLE_HID_MODE);
-    SetNonBlocking();
-    return result;
+    ScopedSetBlocking sb(this);
+    return SetReportMode(ReportMode::SIMPLE_HID_MODE);
 }
 
 DriverResult GenericProtocol::EnableActiveMode() {
-    SetBlocking();
-    const auto result = SetReportMode(ReportMode::STANDARD_FULL_60HZ);
-    SetNonBlocking();
-    return result;
+    ScopedSetBlocking sb(this);
+    return SetReportMode(ReportMode::STANDARD_FULL_60HZ);
 }
 
 DriverResult GenericProtocol::GetDeviceInfo(DeviceInfo& device_info) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> output;
-    SetBlocking();
 
     const auto result = SendSubCommand(SubCommand::REQ_DEV_INFO, {}, output);
 
@@ -34,7 +30,6 @@ DriverResult GenericProtocol::GetDeviceInfo(DeviceInfo& device_info) {
         memcpy(&device_info, output.data(), sizeof(DeviceInfo));
     }
 
-    SetNonBlocking();
     return result;
 }
 
@@ -43,36 +38,30 @@ DriverResult GenericProtocol::GetControllerType(ControllerType& controller_type)
 }
 
 DriverResult GenericProtocol::EnableImu(bool enable) {
+    ScopedSetBlocking sb(this);
     const std::array<u8, 1> buffer{static_cast<u8>(enable ? 1 : 0)};
-    std::vector<u8> output;
-    SetBlocking();
-    const auto result = SendSubCommand(SubCommand::ENABLE_IMU, buffer, output);
-    SetNonBlocking();
-    return result;
+    return SendSubCommand(SubCommand::ENABLE_IMU, buffer);
 }
 
 DriverResult GenericProtocol::SetImuConfig(GyroSensitivity gsen, GyroPerformance gfrec,
                                            AccelerometerSensitivity asen,
                                            AccelerometerPerformance afrec) {
+    ScopedSetBlocking sb(this);
     const std::array<u8, 4> buffer{static_cast<u8>(gsen), static_cast<u8>(asen),
                                    static_cast<u8>(gfrec), static_cast<u8>(afrec)};
-    std::vector<u8> output;
-    SetBlocking();
-    const auto result = SendSubCommand(SubCommand::SET_IMU_SENSITIVITY, buffer, output);
-    SetNonBlocking();
-    return result;
+    return SendSubCommand(SubCommand::SET_IMU_SENSITIVITY, buffer);
 }
 
 DriverResult GenericProtocol::GetBattery(u32& battery_level) {
+    // This function is meant to request the high resolution battery status
     battery_level = 0;
     return DriverResult::NotSupported;
 }
 
 DriverResult GenericProtocol::GetColor(Color& color) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> buffer;
-    SetBlocking();
     const auto result = ReadSPI(CalAddr::COLOR_DATA, 12, buffer);
-    SetNonBlocking();
 
     color = {};
     if (result == DriverResult::Success) {
@@ -86,10 +75,9 @@ DriverResult GenericProtocol::GetColor(Color& color) {
 }
 
 DriverResult GenericProtocol::GetSerialNumber(SerialNumber& serial_number) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> buffer;
-    SetBlocking();
     const auto result = ReadSPI(CalAddr::SERIAL_NUMBER, 16, buffer);
-    SetNonBlocking();
 
     serial_number = {};
     if (result == DriverResult::Success) {
@@ -115,14 +103,9 @@ DriverResult GenericProtocol::GetVersionNumber(FirmwareVersion& version) {
 }
 
 DriverResult GenericProtocol::SetHomeLight() {
+    ScopedSetBlocking sb(this);
     static constexpr std::array<u8, 3> buffer{0x0f, 0xf0, 0x00};
-    std::vector<u8> output;
-    SetBlocking();
-
-    const auto result = SendSubCommand(SubCommand::SET_HOME_LIGHT, buffer, output);
-
-    SetNonBlocking();
-    return result;
+    return SendSubCommand(SubCommand::SET_HOME_LIGHT, buffer);
 }
 
 DriverResult GenericProtocol::SetLedBusy() {
@@ -130,14 +113,9 @@ DriverResult GenericProtocol::SetLedBusy() {
 }
 
 DriverResult GenericProtocol::SetLedPattern(u8 leds) {
+    ScopedSetBlocking sb(this);
     const std::array<u8, 1> buffer{leds};
-    std::vector<u8> output;
-    SetBlocking();
-
-    const auto result = SendSubCommand(SubCommand::SET_PLAYER_LIGHTS, buffer, output);
-
-    SetNonBlocking();
-    return result;
+    return SendSubCommand(SubCommand::SET_PLAYER_LIGHTS, buffer);
 }
 
 DriverResult GenericProtocol::SetLedBlinkPattern(u8 leds) {

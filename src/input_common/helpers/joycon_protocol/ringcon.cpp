@@ -11,8 +11,8 @@ RingConProtocol::RingConProtocol(std::shared_ptr<JoyconHandle> handle)
 
 DriverResult RingConProtocol::EnableRingCon() {
     LOG_DEBUG(Input, "Enable Ringcon");
+    ScopedSetBlocking sb(this);
     DriverResult result{DriverResult::Success};
-    SetBlocking();
 
     if (result == DriverResult::Success) {
         result = SetReportMode(ReportMode::STANDARD_FULL_60HZ);
@@ -30,14 +30,13 @@ DriverResult RingConProtocol::EnableRingCon() {
         result = ConfigureMCU(config);
     }
 
-    SetNonBlocking();
     return result;
 }
 
 DriverResult RingConProtocol::DisableRingCon() {
     LOG_DEBUG(Input, "Disable RingCon");
+    ScopedSetBlocking sb(this);
     DriverResult result{DriverResult::Success};
-    SetBlocking();
 
     if (result == DriverResult::Success) {
         result = EnableMCU(false);
@@ -45,15 +44,14 @@ DriverResult RingConProtocol::DisableRingCon() {
 
     is_enabled = false;
 
-    SetNonBlocking();
     return result;
 }
 
 DriverResult RingConProtocol::StartRingconPolling() {
     LOG_DEBUG(Input, "Enable Ringcon");
-    bool is_connected = false;
+    ScopedSetBlocking sb(this);
     DriverResult result{DriverResult::Success};
-    SetBlocking();
+    bool is_connected = false;
 
     if (result == DriverResult::Success) {
         result = IsRingConnected(is_connected);
@@ -66,13 +64,13 @@ DriverResult RingConProtocol::StartRingconPolling() {
         is_enabled = true;
     }
 
-    SetNonBlocking();
     return result;
 }
 
 DriverResult RingConProtocol::IsRingConnected(bool& is_connected) {
     LOG_DEBUG(Input, "IsRingConnected");
     constexpr std::size_t max_tries = 28;
+    constexpr u8 ring_controller_id = 0x20;
     std::vector<u8> output;
     std::size_t tries = 0;
     is_connected = false;
@@ -88,7 +86,7 @@ DriverResult RingConProtocol::IsRingConnected(bool& is_connected) {
         if (tries++ >= max_tries) {
             return DriverResult::NoDeviceDetected;
         }
-    } while (output[14] != 0x59 || output[16] != 0x20);
+    } while (output[16] != ring_controller_id);
 
     is_connected = true;
     return DriverResult::Success;
@@ -96,30 +94,20 @@ DriverResult RingConProtocol::IsRingConnected(bool& is_connected) {
 
 DriverResult RingConProtocol::ConfigureRing() {
     LOG_DEBUG(Input, "ConfigureRing");
-    constexpr std::size_t max_tries = 28;
-    DriverResult result{DriverResult::Success};
-    std::vector<u8> output;
-    std::size_t tries = 0;
 
     static constexpr std::array<u8, 37> ring_config{
         0x06, 0x03, 0x25, 0x06, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x16, 0xED, 0x34, 0x36,
         0x00, 0x00, 0x00, 0x0A, 0x64, 0x0B, 0xE6, 0xA9, 0x22, 0x00, 0x00, 0x04, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0xA8, 0xE1, 0x34, 0x36};
-    do {
-        result = SendSubCommand(SubCommand::UNKNOWN_RINGCON3, ring_config, output);
 
-        if (result != DriverResult::Success) {
-            return result;
-        }
-        if (tries++ >= max_tries) {
-            return DriverResult::NoDeviceDetected;
-        }
-    } while (output[14] != 0x5C);
+    const DriverResult result = SendSubCommand(SubCommand::UNKNOWN_RINGCON3, ring_config);
+
+    if (result != DriverResult::Success) {
+        return result;
+    }
 
     static constexpr std::array<u8, 4> ringcon_data{0x04, 0x01, 0x01, 0x02};
-    result = SendSubCommand(SubCommand::UNKNOWN_RINGCON2, ringcon_data, output);
-
-    return result;
+    return SendSubCommand(SubCommand::UNKNOWN_RINGCON2, ringcon_data);
 }
 
 bool RingConProtocol::IsEnabled() const {

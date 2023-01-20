@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <common/scope_exit.h>
 
 #include "common/polyfill_ranges.h"
 #include "common/thread.h"
@@ -834,17 +835,21 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
     if (index >= controller.stick_values.size()) {
         return;
     }
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Stick, !is_configuring); });
+    std::scoped_lock lock{mutex};
     const auto stick_value = TransformToStick(callback);
 
     // Only read stick values that have the same uuid or are over the threshold to avoid flapping
     if (controller.stick_values[index].uuid != uuid) {
         const bool is_tas = uuid == TAS_UUID;
         if (is_tas && stick_value.x.value == 0 && stick_value.y.value == 0) {
+            trigger_guard.Cancel();
             return;
         }
         if (!is_tas && !stick_value.down && !stick_value.up && !stick_value.left &&
             !stick_value.right) {
+            trigger_guard.Cancel();
             return;
         }
     }
@@ -855,8 +860,6 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
     if (is_configuring) {
         controller.analog_stick_state.left = {};
         controller.analog_stick_state.right = {};
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Stick, false);
         return;
     }
 
@@ -881,9 +884,6 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
         controller.npad_button_state.stick_r_down.Assign(controller.stick_values[index].down);
         break;
     }
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Stick, true);
 }
 
 void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callback,
@@ -891,7 +891,9 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
     if (index >= controller.trigger_values.size()) {
         return;
     }
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Trigger, !is_configuring); });
+    std::scoped_lock lock{mutex};
     const auto trigger_value = TransformToTrigger(callback);
 
     // Only read trigger values that have the same uuid or are pressed once
@@ -907,13 +909,12 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
     if (is_configuring) {
         controller.gc_trigger_state.left = 0;
         controller.gc_trigger_state.right = 0;
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Trigger, false);
         return;
     }
 
     // Only GC controllers have analog triggers
     if (npad_type != NpadStyleIndex::GameCube) {
+        trigger_guard.Cancel();
         return;
     }
 
@@ -930,9 +931,6 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
         controller.npad_button_state.zr.Assign(trigger.pressed.value);
         break;
     }
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Trigger, true);
 }
 
 void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback,
@@ -940,7 +938,8 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     if (index >= controller.motion_values.size()) {
         return;
     }
-    std::unique_lock lock{mutex};
+    SCOPE_EXIT({ TriggerOnChange(ControllerTriggerType::Motion, !is_configuring); });
+    std::scoped_lock lock{mutex};
     auto& raw_status = controller.motion_values[index].raw_status;
     auto& emulated = controller.motion_values[index].emulated;
 
@@ -961,8 +960,6 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     force_update_motion = raw_status.force_update;
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Motion, false);
         return;
     }
 
@@ -972,9 +969,6 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
     motion.rotation = emulated.GetRotations();
     motion.orientation = emulated.GetOrientation();
     motion.is_at_rest = !emulated.IsMoving(motion_sensitivity);
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Motion, true);
 }
 
 void EmulatedController::SetColors(const Common::Input::CallbackStatus& callback,
@@ -982,16 +976,17 @@ void EmulatedController::SetColors(const Common::Input::CallbackStatus& callback
     if (index >= controller.color_values.size()) {
         return;
     }
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Color, !is_configuring); });
+    std::scoped_lock lock{mutex};
     controller.color_values[index] = TransformToColor(callback);
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Color, false);
         return;
     }
 
     if (controller.color_values[index].body == 0) {
+        trigger_guard.Cancel();
         return;
     }
 
@@ -1024,9 +1019,6 @@ void EmulatedController::SetColors(const Common::Input::CallbackStatus& callback
             break;
         }
     }
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Color, true);
 }
 
 void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callback,
@@ -1034,12 +1026,11 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
     if (index >= controller.battery_values.size()) {
         return;
     }
-    std::unique_lock lock{mutex};
+    SCOPE_EXIT({ TriggerOnChange(ControllerTriggerType::Battery, !is_configuring); });
+    std::scoped_lock lock{mutex};
     controller.battery_values[index] = TransformToBattery(callback);
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Battery, false);
         return;
     }
 
@@ -1095,18 +1086,14 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
         };
         break;
     }
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Battery, true);
 }
 
 void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback) {
-    std::unique_lock lock{mutex};
+    SCOPE_EXIT({ TriggerOnChange(ControllerTriggerType::IrSensor, !is_configuring); });
+    std::scoped_lock lock{mutex};
     controller.camera_values = TransformToCamera(callback);
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::IrSensor, false);
         return;
     }
 
@@ -1114,36 +1101,28 @@ void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback
     controller.camera_state.format =
         static_cast<Core::IrSensor::ImageTransferProcessorFormat>(controller.camera_values.format);
     controller.camera_state.data = controller.camera_values.data;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::IrSensor, true);
 }
 
 void EmulatedController::SetRingAnalog(const Common::Input::CallbackStatus& callback) {
-    std::unique_lock lock{mutex};
+    SCOPE_EXIT({ TriggerOnChange(ControllerTriggerType::RingController, !is_configuring); });
+    std::scoped_lock lock{mutex};
     const auto force_value = TransformToStick(callback);
 
     controller.ring_analog_value = force_value.x;
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::RingController, false);
         return;
     }
 
     controller.ring_analog_state.force = force_value.x.value;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::RingController, true);
 }
 
 void EmulatedController::SetNfc(const Common::Input::CallbackStatus& callback) {
-    std::unique_lock lock{mutex};
+    SCOPE_EXIT({ TriggerOnChange(ControllerTriggerType::Nfc, !is_configuring); });
+    std::scoped_lock lock{mutex};
     controller.nfc_values = TransformToNfc(callback);
 
     if (is_configuring) {
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Nfc, false);
         return;
     }
 
@@ -1151,9 +1130,6 @@ void EmulatedController::SetNfc(const Common::Input::CallbackStatus& callback) {
         controller.nfc_values.state,
         controller.nfc_values.data,
     };
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Nfc, true);
 }
 
 bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue vibration) {
@@ -1412,39 +1388,35 @@ void EmulatedController::Connect(bool use_temporary_value) {
         return;
     }
 
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Connected, !is_configuring); });
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         tmp_is_connected = true;
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Connected, false);
         return;
     }
 
     if (is_connected) {
+        trigger_guard.Cancel();
         return;
     }
     is_connected = true;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Connected, true);
 }
 
 void EmulatedController::Disconnect() {
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Disconnected, !is_configuring); });
+    std::scoped_lock lock{mutex};
     if (is_configuring) {
         tmp_is_connected = false;
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Disconnected, false);
         return;
     }
 
     if (!is_connected) {
+        trigger_guard.Cancel();
         return;
     }
     is_connected = false;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Disconnected, true);
 }
 
 bool EmulatedController::IsConnected(bool get_temporary_value) const {
@@ -1469,19 +1441,21 @@ NpadStyleIndex EmulatedController::GetNpadStyleIndex(bool get_temporary_value) c
 }
 
 void EmulatedController::SetNpadStyleIndex(NpadStyleIndex npad_type_) {
-    std::unique_lock lock{mutex};
+    auto trigger_guard =
+        SCOPE_GUARD({ TriggerOnChange(ControllerTriggerType::Type, !is_configuring); });
+    std::scoped_lock lock{mutex};
 
     if (is_configuring) {
         if (tmp_npad_type == npad_type_) {
+            trigger_guard.Cancel();
             return;
         }
         tmp_npad_type = npad_type_;
-        lock.unlock();
-        TriggerOnChange(ControllerTriggerType::Type, false);
         return;
     }
 
     if (npad_type == npad_type_) {
+        trigger_guard.Cancel();
         return;
     }
     if (is_connected) {
@@ -1489,9 +1463,6 @@ void EmulatedController::SetNpadStyleIndex(NpadStyleIndex npad_type_) {
                     NpadIdTypeToIndex(npad_id_type));
     }
     npad_type = npad_type_;
-
-    lock.unlock();
-    TriggerOnChange(ControllerTriggerType::Type, true);
 }
 
 LedPattern EmulatedController::GetLedPattern() const {
@@ -1589,7 +1560,7 @@ DebugPadButton EmulatedController::GetDebugPadButtons() const {
 }
 
 AnalogSticks EmulatedController::GetSticks() const {
-    std::unique_lock lock{mutex};
+    std::scoped_lock lock{mutex};
 
     if (is_configuring) {
         return {};

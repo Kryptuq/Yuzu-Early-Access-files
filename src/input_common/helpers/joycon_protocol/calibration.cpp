@@ -12,10 +12,10 @@ CalibrationProtocol::CalibrationProtocol(std::shared_ptr<JoyconHandle> handle)
     : JoyconCommonProtocol(std::move(handle)) {}
 
 DriverResult CalibrationProtocol::GetLeftJoyStickCalibration(JoyStickCalibration& calibration) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> buffer;
     DriverResult result{DriverResult::Success};
     calibration = {};
-    SetBlocking();
 
     result = ReadSPI(CalAddr::USER_LEFT_MAGIC, sizeof(u16), buffer);
 
@@ -44,15 +44,14 @@ DriverResult CalibrationProtocol::GetLeftJoyStickCalibration(JoyStickCalibration
     // Set a valid default calibration if data is missing
     ValidateCalibration(calibration);
 
-    SetNonBlocking();
     return result;
 }
 
 DriverResult CalibrationProtocol::GetRightJoyStickCalibration(JoyStickCalibration& calibration) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> buffer;
     DriverResult result{DriverResult::Success};
     calibration = {};
-    SetBlocking();
 
     result = ReadSPI(CalAddr::USER_RIGHT_MAGIC, sizeof(u16), buffer);
 
@@ -81,15 +80,14 @@ DriverResult CalibrationProtocol::GetRightJoyStickCalibration(JoyStickCalibratio
     // Set a valid default calibration if data is missing
     ValidateCalibration(calibration);
 
-    SetNonBlocking();
     return result;
 }
 
 DriverResult CalibrationProtocol::GetImuCalibration(MotionCalibration& calibration) {
+    ScopedSetBlocking sb(this);
     std::vector<u8> buffer;
     DriverResult result{DriverResult::Success};
     calibration = {};
-    SetBlocking();
 
     result = ReadSPI(CalAddr::USER_IMU_MAGIC, sizeof(u16), buffer);
 
@@ -124,7 +122,6 @@ DriverResult CalibrationProtocol::GetImuCalibration(MotionCalibration& calibrati
 
     ValidateCalibration(calibration);
 
-    SetNonBlocking();
     return result;
 }
 

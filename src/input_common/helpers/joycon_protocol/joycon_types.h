@@ -347,6 +347,13 @@ enum class IrRegistersAddress : u16 {
     DenoiseColor = 0x6901,
 };
 
+enum class NFCBlock {
+    Block0 = 0,
+    Block45 = 45,
+    Block135 = 135,
+    Block231 = 231,
+};
+
 enum class DriverResult {
     Success,
     WrongReply,

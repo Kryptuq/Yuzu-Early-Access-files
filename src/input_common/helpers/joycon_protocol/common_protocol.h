@@ -75,6 +75,13 @@ public:
     DriverResult SendSubCommand(SubCommand sc, std::span<const u8> buffer, std::vector<u8>& output);
 
     /**
+     * Sends a sub command to the device and waits for it's reply and ignores the output
+     * @param sc sub command to be send
+     * @param buffer data to be send
+     */
+    DriverResult SendSubCommand(SubCommand sc, std::span<const u8> buffer);
+
+    /**
      * Sends a mcu command to the device
      * @param sc sub command to be send
      * @param buffer data to be send
