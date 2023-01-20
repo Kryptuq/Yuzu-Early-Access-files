@@ -21,7 +21,7 @@ void HotkeyRegistry::SaveHotkeys() {
                 {hotkey.first, group.first,
                  UISettings::ContextualShortcut({hotkey.second.keyseq.toString(),
                                                  hotkey.second.controller_keyseq,
-                                                 hotkey.second.context})});
+                                                 hotkey.second.context, hotkey.second.repeat})});
         }
     }
 }
@@ -47,6 +47,7 @@ void HotkeyRegistry::LoadHotkeys() {
             hk.controller_shortcut->disconnect();
             hk.controller_shortcut->SetKey(hk.controller_keyseq);
         }
+        hk.repeat = shortcut.shortcut.repeat;
     }
 }
 
@@ -57,8 +58,7 @@ QShortcut* HotkeyRegistry::GetHotkey(const QString& group, const QString& action
         hk.shortcut = new QShortcut(hk.keyseq, widget, nullptr, nullptr, hk.context);
     }
 
-    hk.shortcut->setAutoRepeat(false);
-
+    hk.shortcut->setAutoRepeat(hk.repeat);
     return hk.shortcut;
 }
 

@@ -11,6 +11,7 @@
 #include "common/hex_util.h"
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
+#include "common/settings.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
 #include "core/debugger/gdbstub.h"
@@ -731,7 +732,25 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
     auto* process = system.CurrentProcess();
     auto& page_table = process->PageTable();
 
-    if (command_str == "get info") {
+    const char* commands = "Commands:\n"
+                           "  get fastmem\n"
+                           "  get info\n"
+                           "  get mappings\n";
+
+    if (command_str == "get fastmem") {
+        if (Settings::IsFastmemEnabled()) {
+            const auto& impl = page_table.PageTableImpl();
+            const auto region = reinterpret_cast<uintptr_t>(impl.fastmem_arena);
+            const auto region_bits = impl.current_address_space_width_in_bits;
+            const auto region_size = 1ULL << region_bits;
+
+            reply = fmt::format("Region bits:  {}\n"
+                                "Host address: {:#x} - {:#x}\n",
+                                region_bits, region, region + region_size - 1);
+        } else {
+            reply = "Fastmem is not enabled.\n";
+        }
+    } else if (command_str == "get info") {
         Loader::AppLoader::Modules modules;
         system.GetAppLoader().ReadNSOModules(modules);
 
@@ -787,9 +806,10 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
             cur_addr = next_address;
         }
     } else if (command_str == "help") {
-        reply = "Commands:\n  get info\n  get mappings\n";
+        reply = commands;
     } else {
-        reply = "Unknown command.\nCommands:\n  get info\n  get mappings\n";
+        reply = "Unknown command.\n";
+        reply += commands;
     }
 
     std::span<const u8> reply_span{reinterpret_cast<u8*>(&reply.front()), reply.size()};

@@ -273,6 +273,18 @@ enum class NFCTagType : u8 {
     Ntag215 = 0x01,
 };
 
+enum class NFCPages {
+    Block0 = 0,
+    Block45 = 45,
+    Block135 = 135,
+    Block231 = 231,
+};
+
+enum class NFCStatus : u8 {
+    LastPackage = 0x04,
+    TagLost = 0x07,
+};
+
 enum class IrsMode : u8 {
     None = 0x02,
     Moment = 0x03,
@@ -345,13 +357,6 @@ enum class IrRegistersAddress : u16 {
     DenoiseSmoothing = 0x6701,
     DenoiseEdge = 0x6801,
     DenoiseColor = 0x6901,
-};
-
-enum class NFCBlock {
-    Block0 = 0,
-    Block45 = 45,
-    Block135 = 135,
-    Block231 = 231,
 };
 
 enum class DriverResult {

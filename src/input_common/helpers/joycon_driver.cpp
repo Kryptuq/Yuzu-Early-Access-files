@@ -349,7 +349,7 @@ JoyconDriver::SupportedFeatures JoyconDriver::GetSupportedFeatures() {
 }
 
 bool JoyconDriver::IsInputThreadValid() const {
-    if (!is_connected) {
+    if (!is_connected.load()) {
         return false;
     }
     if (hidapi_handle->handle == nullptr) {
@@ -491,7 +491,7 @@ DriverResult JoyconDriver::SetRingConMode() {
 
 bool JoyconDriver::IsConnected() const {
     std::scoped_lock lock{mutex};
-    return is_connected;
+    return is_connected.load();
 }
 
 bool JoyconDriver::IsVibrationEnabled() const {

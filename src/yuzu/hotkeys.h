@@ -115,6 +115,7 @@ private:
         QShortcut* shortcut = nullptr;
         ControllerShortcut* controller_shortcut = nullptr;
         Qt::ShortcutContext context = Qt::WindowShortcut;
+        bool repeat;
     };
 
     using HotkeyMap = std::map<QString, Hotkey>;

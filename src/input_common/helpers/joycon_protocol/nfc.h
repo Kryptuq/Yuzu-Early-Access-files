@@ -51,9 +51,9 @@ private:
 
     DriverResult SendStartWaitingRecieveRequest(std::vector<u8>& output);
 
-    DriverResult SendReadAmiiboRequest(std::vector<u8>& output, std::size_t ntag_pages);
+    DriverResult SendReadAmiiboRequest(std::vector<u8>& output, NFCPages ntag_pages);
 
-    NFCReadBlockCommand GetReadBlockCommand(std::size_t pages) const;
+    NFCReadBlockCommand GetReadBlockCommand(NFCPages pages) const;
 
     bool is_enabled{};
 };

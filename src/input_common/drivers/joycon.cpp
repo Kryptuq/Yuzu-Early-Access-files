@@ -182,19 +182,19 @@ void Joycons::RegisterNewDevice(SDL_hid_device_info* device_info) {
 
 std::shared_ptr<Joycon::JoyconDriver> Joycons::GetNextFreeHandle(
     Joycon::ControllerType type) const {
-
     if (type == Joycon::ControllerType::Left) {
-        for (const auto& device : left_joycons) {
-            if (!device->IsConnected()) {
-                return device;
-            }
+        const auto unconnected_device =
+            std::ranges::find_if(left_joycons, [](auto& device) { return !device->IsConnected(); });
+        if (unconnected_device != left_joycons.end()) {
+            return *unconnected_device;
         }
     }
     if (type == Joycon::ControllerType::Right) {
-        for (const auto& device : right_joycons) {
-            if (!device->IsConnected()) {
-                return device;
-            }
+        const auto unconnected_device = std::ranges::find_if(
+            right_joycons, [](auto& device) { return !device->IsConnected(); });
+
+        if (unconnected_device != right_joycons.end()) {
+            return *unconnected_device;
         }
     }
     return nullptr;
@@ -388,20 +388,25 @@ std::shared_ptr<Joycon::JoyconDriver> Joycons::GetHandle(PadIdentifier identifie
         return false;
     };
     const auto type = static_cast<Joycon::ControllerType>(identifier.pad);
+
     if (type == Joycon::ControllerType::Left) {
-        for (const auto& device : left_joycons) {
-            if (is_handle_active(device)) {
-                return device;
-            }
+        const auto matching_device = std::ranges::find_if(
+            left_joycons, [is_handle_active](auto& device) { return is_handle_active(device); });
+
+        if (matching_device != left_joycons.end()) {
+            return *matching_device;
         }
     }
+
     if (type == Joycon::ControllerType::Right) {
-        for (const auto& device : right_joycons) {
-            if (is_handle_active(device)) {
-                return device;
-            }
+        const auto matching_device = std::ranges::find_if(
+            right_joycons, [is_handle_active](auto& device) { return is_handle_active(device); });
+
+        if (matching_device != right_joycons.end()) {
+            return *matching_device;
         }
     }
+
     return nullptr;
 }
 

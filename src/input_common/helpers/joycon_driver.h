@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <mutex>
 #include <span>
@@ -97,7 +98,7 @@ private:
     std::unique_ptr<RumbleProtocol> rumble_protocol;
 
     // Connection status
-    bool is_connected{};
+    std::atomic<bool> is_connected{};
     u64 delta_time;
     std::size_t error_counter{};
     std::shared_ptr<JoyconHandle> hidapi_handle;

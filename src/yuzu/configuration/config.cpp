@@ -70,28 +70,28 @@ const std::array<int, 2> Config::default_ringcon_analogs{{
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
 const std::array<UISettings::Shortcut, 22> Config::default_hotkeys{{
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Mute/Unmute")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+M"),  QStringLiteral("Home+Dpad_Right"), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Down")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("-"),       QStringLiteral("Home+Dpad_Down"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Up")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("="),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Capture Screenshot")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Adapting Filter")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F8"),      QStringLiteral("Home+L"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Docked Mode")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change GPU Accuracy")),      QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F9"),      QStringLiteral("Home+R"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Continue/Pause Emulation")), QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit Fullscreen")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit yuzu")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Fullscreen")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load File")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load/Remove Amiibo")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Restart Emulation")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Stop Emulation")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Record")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F7"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Reset")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F6"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Start/Stop")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Filter Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Framerate Limit")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Mouse Panning")),     QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut}},
-    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Status Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Mute/Unmute")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+M"),  QStringLiteral("Home+Dpad_Right"), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Down")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("-"),       QStringLiteral("Home+Dpad_Down"), Qt::ApplicationShortcut, true}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Audio Volume Up")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("="),       QStringLiteral("Home+Dpad_Up"), Qt::ApplicationShortcut, true}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Capture Screenshot")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+P"),  QStringLiteral("Screenshot"), Qt::WidgetWithChildrenShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Adapting Filter")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F8"),      QStringLiteral("Home+L"), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change Docked Mode")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F10"),     QStringLiteral("Home+X"), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Change GPU Accuracy")),      QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F9"),      QStringLiteral("Home+R"), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Continue/Pause Emulation")), QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F4"),      QStringLiteral("Home+Plus"), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit Fullscreen")),          QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Esc"),     QStringLiteral(""), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Exit yuzu")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+Q"),  QStringLiteral("Home+Minus"), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Fullscreen")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F11"),     QStringLiteral("Home+B"), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load File")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+O"),  QStringLiteral(""), Qt::WidgetWithChildrenShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Load/Remove Amiibo")),       QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F2"),      QStringLiteral("Home+A"), Qt::WidgetWithChildrenShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Restart Emulation")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F6"),      QStringLiteral(""), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Stop Emulation")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("F5"),      QStringLiteral(""), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Record")),               QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F7"), QStringLiteral(""), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Reset")),                QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F6"), QStringLiteral(""), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "TAS Start/Stop")),           QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F5"), QStringLiteral(""), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Filter Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F"),  QStringLiteral(""), Qt::WindowShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Framerate Limit")),   QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+U"),  QStringLiteral("Home+Y"), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Mouse Panning")),     QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+F9"), QStringLiteral(""), Qt::ApplicationShortcut, false}},
+    {QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Toggle Status Bar")),        QStringLiteral(QT_TRANSLATE_NOOP("Hotkeys", "Main Window")), {QStringLiteral("Ctrl+S"),  QStringLiteral(""), Qt::WindowShortcut, false}},
 }};
 // clang-format on
 
@@ -748,7 +748,7 @@ void Config::ReadShortcutValues() {
     for (const auto& [name, group, shortcut] : default_hotkeys) {
         qt_config->beginGroup(group);
         qt_config->beginGroup(name);
-        // No longer using ReadSetting for shortcut.second as it innacurately returns a value of 1
+        // No longer using ReadSetting for shortcut.second as it inaccurately returns a value of 1
         // for WidgetWithChildrenShortcut which is a value of 3. Needed to fix shortcuts the open
         // a file dialog in windowed mode
         UISettings::values.shortcuts.push_back(
@@ -757,7 +757,7 @@ void Config::ReadShortcutValues() {
              {ReadSetting(QStringLiteral("KeySeq"), shortcut.keyseq).toString(),
               ReadSetting(QStringLiteral("Controller_KeySeq"), shortcut.controller_keyseq)
                   .toString(),
-              shortcut.context}});
+              shortcut.context, ReadSetting(QStringLiteral("Repeat"), shortcut.repeat).toBool()}});
         qt_config->endGroup();
         qt_config->endGroup();
     }
@@ -1395,6 +1395,7 @@ void Config::SaveShortcutValues() {
         WriteSetting(QStringLiteral("Controller_KeySeq"), shortcut.controller_keyseq,
                      default_hotkey.controller_keyseq);
         WriteSetting(QStringLiteral("Context"), shortcut.context, default_hotkey.context);
+        WriteSetting(QStringLiteral("Repeat"), shortcut.repeat, default_hotkey.repeat);
         qt_config->endGroup();
         qt_config->endGroup();
     }

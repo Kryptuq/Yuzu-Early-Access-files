@@ -22,6 +22,7 @@ struct ContextualShortcut {
     QString keyseq;
     QString controller_keyseq;
     int context;
+    bool repeat;
 };
 
 struct Shortcut {
