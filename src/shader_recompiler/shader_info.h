@@ -109,6 +109,7 @@ using ImageBufferDescriptors = boost::container::small_vector<ImageBufferDescrip
 struct TextureDescriptor {
     TextureType type;
     bool is_depth;
+    bool is_multisample;
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;

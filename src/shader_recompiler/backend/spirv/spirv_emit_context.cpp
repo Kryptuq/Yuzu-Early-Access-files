@@ -35,6 +35,7 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     const spv::ImageFormat format{spv::ImageFormat::Unknown};
     const Id type{ctx.F32[1]};
     const bool depth{desc.is_depth};
+    const bool ms{desc.is_multisample};
     switch (desc.type) {
     case TextureType::Color1D:
         return ctx.TypeImage(type, spv::Dim::Dim1D, depth, false, false, 1, format);
@@ -42,9 +43,9 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
         return ctx.TypeImage(type, spv::Dim::Dim1D, depth, true, false, 1, format);
     case TextureType::Color2D:
     case TextureType::Color2DRect:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, false, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, false, ms, 1, format);
     case TextureType::ColorArray2D:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, true, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, true, ms, 1, format);
     case TextureType::Color3D:
         return ctx.TypeImage(type, spv::Dim::Dim3D, depth, false, false, 1, format);
     case TextureType::ColorCube:

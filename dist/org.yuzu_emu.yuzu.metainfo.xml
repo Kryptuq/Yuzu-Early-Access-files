@@ -53,10 +53,10 @@ SPDX-License-Identifier: CC0-1.0
   <developer_name>yuzu Emulator Team</developer_name>
   <content_rating type="oars-1.0"/>
   <screenshots>
-    <screenshot type="default">https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/001-Super%20Mario%20Odyssey%20.png</screenshot>
-    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/004-The%20Legend%20of%20Zelda%20Skyward%20Sword%20HD.png</screenshot>
-    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/007-Pokemon%20Sword.png</screenshot>
-    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/010-Hyrule%20Warriors%20Age%20of%20Calamity.png</screenshot>
-    <screenshot>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/039-Pok%C3%A9mon%20Mystery%20Dungeon%20Rescue%20Team%20DX.png.png.png</screenshot>
+    <screenshot type="default"><image>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/001-Super%20Mario%20Odyssey%20.png</image></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/004-The%20Legend%20of%20Zelda%20Skyward%20Sword%20HD.png</image></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/007-Pokemon%20Sword.png</image></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/010-Hyrule%20Warriors%20Age%20of%20Calamity.png</image></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/yuzu-emu/yuzu-emu.github.io/master/images/screenshots/039-Pok%C3%A9mon%20Mystery%20Dungeon%20Rescue%20Team%20DX.png.png.png</image></screenshot>
   </screenshots>
 </component>

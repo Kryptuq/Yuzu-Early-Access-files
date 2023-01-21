@@ -436,6 +436,10 @@ Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id c
     if (info.type == TextureType::Buffer) {
         lod = Id{};
     }
+    if (Sirit::ValidId(ms)) {
+        // This image is multisampled, lod must be implicit
+        lod = Id{};
+    }
     const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
                 TextureImage(ctx, info, index), coords, operands.MaskOptional(), operands.Span());

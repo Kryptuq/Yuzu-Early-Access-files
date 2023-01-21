@@ -524,6 +524,7 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
 
         const auto& cbuf{texture_inst.cbuf};
         auto flags{inst->Flags<IR::TextureInstInfo>()};
+        bool is_multisample{false};
         switch (inst->GetOpcode()) {
         case IR::Opcode::ImageQueryDimensions:
             flags.type.Assign(ReadTextureType(env, cbuf));
@@ -538,6 +539,12 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
             }
             break;
         case IR::Opcode::ImageFetch:
+            if (flags.type == TextureType::Color2D || flags.type == TextureType::Color2DRect ||
+                flags.type == TextureType::ColorArray2D) {
+                is_multisample = !inst->Arg(4).IsEmpty();
+            } else {
+                inst->SetArg(4, IR::U32{});
+            }
             if (flags.type != TextureType::Color1D) {
                 break;
             }
@@ -613,6 +620,7 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
                 index = descriptors.Add(TextureDescriptor{
                     .type = flags.type,
                     .is_depth = flags.is_depth != 0,
+                    .is_multisample = is_multisample,
                     .has_secondary = cbuf.has_secondary,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
