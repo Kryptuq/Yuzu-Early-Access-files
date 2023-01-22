@@ -42,13 +42,7 @@ private:
     std::unique_ptr<Ui::ConfigureSystem> ui;
     bool enabled = false;
 
-    int language_index = 0;
-    int region_index = 0;
-    int time_zone_index = 0;
-    int sound_index = 0;
-
     ConfigurationShared::CheckState use_rng_seed;
-    ConfigurationShared::CheckState use_custom_rtc;
 
     Core::System& system;
 };

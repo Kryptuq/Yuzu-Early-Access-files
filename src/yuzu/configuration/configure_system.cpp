@@ -31,6 +31,9 @@ constexpr std::array<u32, 7> LOCALE_BLOCKLIST{
 };
 
 static bool IsValidLocale(u32 region_index, u32 language_index) {
+    if (region_index >= LOCALE_BLOCKLIST.size()) {
+        return false;
+    }
     return ((LOCALE_BLOCKLIST.at(region_index) >> language_index) & 1) == 0;
 }
 
@@ -55,8 +58,11 @@ ConfigureSystem::ConfigureSystem(Core::System& system_, QWidget* parent)
     });
 
     const auto locale_check = [this](int index) {
-        const bool valid_locale =
-            IsValidLocale(ui->combo_region->currentIndex(), ui->combo_language->currentIndex());
+        const auto region_index = ConfigurationShared::GetComboboxIndex(
+            Settings::values.region_index.GetValue(true), ui->combo_region);
+        const auto language_index = ConfigurationShared::GetComboboxIndex(
+            Settings::values.language_index.GetValue(true), ui->combo_language);
+        const bool valid_locale = IsValidLocale(region_index, language_index);
         ui->label_warn_invalid_locale->setVisible(!valid_locale);
         if (!valid_locale) {
             ui->label_warn_invalid_locale->setText(

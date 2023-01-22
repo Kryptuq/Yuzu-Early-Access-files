@@ -154,3 +154,7 @@ endif()
 if (YUZU_USE_EXTERNAL_VULKAN_HEADERS)
     add_subdirectory(Vulkan-Headers EXCLUDE_FROM_ALL)
 endif()
+
+add_library(demangle STATIC)
+target_include_directories(demangle PUBLIC ./demangle)
+target_sources(demangle PRIVATE demangle/ItaniumDemangle.cpp)

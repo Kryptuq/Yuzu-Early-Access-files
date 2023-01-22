@@ -69,4 +69,7 @@ void SetColoredComboBox(QComboBox* combobox, QWidget* target, int global);
 // Adds the "Use Global Configuration" selection and separator to the beginning of a QComboBox
 void InsertGlobalItem(QComboBox* combobox, int global_index);
 
+// Returns the correct index of a QComboBox taking into account global configuration
+int GetComboboxIndex(int global_setting_index, const QComboBox* combobox);
+
 } // namespace ConfigurationShared

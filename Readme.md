@@ -21,3 +21,5 @@ __Download Link__: [128Bit Downloader](https://mostlywhat.github.io/128Bit-Yuzu-
 __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script.
 
 __Current Latest Early Access__: [Github Releases](https://github.com/Kryptuq/Yuzu-Early-Access-files/releases/)
+
+__Join Our Discord__: [Discord](https://discord.gg/87bsZWwF3X)

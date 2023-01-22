@@ -57,7 +57,7 @@ NsightAftermathTracker::NsightAftermathTracker() {
     if (!GFSDK_Aftermath_SUCCEED(GFSDK_Aftermath_EnableGpuCrashDumps(
             GFSDK_Aftermath_Version_API, GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_Vulkan,
             GFSDK_Aftermath_GpuCrashDumpFeatureFlags_Default, GpuCrashDumpCallback,
-            ShaderDebugInfoCallback, CrashDumpDescriptionCallback, this))) {
+            ShaderDebugInfoCallback, CrashDumpDescriptionCallback, nullptr, this))) {
         LOG_ERROR(Render_Vulkan, "GFSDK_Aftermath_EnableGpuCrashDumps failed");
         return;
     }
@@ -83,7 +83,7 @@ void NsightAftermathTracker::SaveShader(std::span<const u32> spirv) const {
 
     std::scoped_lock lock{mutex};
 
-    GFSDK_Aftermath_ShaderHash hash;
+    GFSDK_Aftermath_ShaderBinaryHash hash;
     if (!GFSDK_Aftermath_SUCCEED(
             GFSDK_Aftermath_GetShaderHashSpirv(GFSDK_Aftermath_Version_API, &shader, &hash))) {
         LOG_ERROR(Render_Vulkan, "Failed to hash SPIR-V module");
@@ -121,8 +121,8 @@ void NsightAftermathTracker::OnGpuCrashDumpCallback(const void* gpu_crash_dump,
     u32 json_size = 0;
     if (!GFSDK_Aftermath_SUCCEED(GFSDK_Aftermath_GpuCrashDump_GenerateJSON(
             decoder, GFSDK_Aftermath_GpuCrashDumpDecoderFlags_ALL_INFO,
-            GFSDK_Aftermath_GpuCrashDumpFormatterFlags_NONE, nullptr, nullptr, nullptr, nullptr,
-            this, &json_size))) {
+            GFSDK_Aftermath_GpuCrashDumpFormatterFlags_NONE, nullptr, nullptr, nullptr, this,
+            &json_size))) {
         LOG_ERROR(Render_Vulkan, "Failed to generate JSON");
         return;
     }

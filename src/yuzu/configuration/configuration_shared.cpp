@@ -92,3 +92,13 @@ void ConfigurationShared::InsertGlobalItem(QComboBox* combobox, int global_index
     combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX, use_global_text);
     combobox->insertSeparator(ConfigurationShared::USE_GLOBAL_SEPARATOR_INDEX);
 }
+
+int ConfigurationShared::GetComboboxIndex(int global_setting_index, const QComboBox* combobox) {
+    if (Settings::IsConfiguringGlobal()) {
+        return combobox->currentIndex();
+    }
+    if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+        return global_setting_index;
+    }
+    return combobox->currentIndex() - ConfigurationShared::USE_GLOBAL_OFFSET;
+}
