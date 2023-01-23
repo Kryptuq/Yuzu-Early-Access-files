@@ -5,7 +5,7 @@
 #include <array>
 #include <cstring>
 #include <span>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "common/common_types.h"
 #include "common/scratch_buffer.h"
 

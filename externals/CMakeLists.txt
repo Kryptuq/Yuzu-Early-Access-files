@@ -5,6 +5,9 @@
 # some of its variables, which is only possible in 3.13+
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+# Disable tests in all externals supporting the standard option name
+set(BUILD_TESTING OFF)
+
 # xbyak
 if ((ARCHITECTURE_x86 OR ARCHITECTURE_x86_64) AND NOT TARGET xbyak::xbyak)
     add_subdirectory(xbyak EXCLUDE_FROM_ALL)

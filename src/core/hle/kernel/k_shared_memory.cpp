@@ -94,15 +94,15 @@ Result KSharedMemory::Map(KProcess& target_process, VAddr address, std::size_t m
         R_UNLESS(map_perm == test_perm, ResultInvalidNewMemoryPermission);
     }
 
-    return target_process.PageTable().MapPages(address, *page_group, KMemoryState::Shared,
-                                               ConvertToKMemoryPermission(map_perm));
+    return target_process.PageTable().MapPageGroup(address, *page_group, KMemoryState::Shared,
+                                                   ConvertToKMemoryPermission(map_perm));
 }
 
 Result KSharedMemory::Unmap(KProcess& target_process, VAddr address, std::size_t unmap_size) {
     // Validate the size.
     R_UNLESS(size == unmap_size, ResultInvalidSize);
 
-    return target_process.PageTable().UnmapPages(address, *page_group, KMemoryState::Shared);
+    return target_process.PageTable().UnmapPageGroup(address, *page_group, KMemoryState::Shared);
 }
 
 } // namespace Kernel

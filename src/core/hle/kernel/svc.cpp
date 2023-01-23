@@ -1492,8 +1492,8 @@ static Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle p
         KMemoryAttribute::All, KMemoryAttribute::None));
 
     // Map the group.
-    R_TRY(dst_pt.MapPages(dst_address, pg, KMemoryState::SharedCode,
-                          KMemoryPermission::UserReadWrite));
+    R_TRY(dst_pt.MapPageGroup(dst_address, pg, KMemoryState::SharedCode,
+                              KMemoryPermission::UserReadWrite));
 
     return ResultSuccess;
 }

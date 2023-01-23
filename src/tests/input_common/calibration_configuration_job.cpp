@@ -6,7 +6,7 @@
 #include <thread>
 #include <boost/asio.hpp>
 #include <boost/crc.hpp>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "input_common/drivers/udp_client.h"
 #include "input_common/helpers/udp_protocol.h"

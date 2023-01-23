@@ -14,7 +14,6 @@ add_executable(tests
     core/core_timing.cpp
     core/internal_network/network.cpp
     precompiled_headers.h
-    tests.cpp
     video_core/buffer_base.cpp
     input_common/calibration_configuration_job.cpp
 )
@@ -22,7 +21,7 @@ add_executable(tests
 create_target_directory_groups(tests)
 
 target_link_libraries(tests PRIVATE common core input_common)
-target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2 Threads::Threads)
+target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
 add_test(NAME tests COMMAND tests)
 

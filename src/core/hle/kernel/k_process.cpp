@@ -417,9 +417,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
 }
 
 void KProcess::Run(s32 main_thread_priority, u64 stack_size) {
-    AllocateMainThreadStack(stack_size);
+    ASSERT(AllocateMainThreadStack(stack_size) == ResultSuccess);
     resource_limit->Reserve(LimitableResource::ThreadCountMax, 1);
-    resource_limit->Reserve(LimitableResource::PhysicalMemoryMax, main_thread_stack_size);
 
     const std::size_t heap_capacity{memory_usage_capacity - (main_thread_stack_size + image_size)};
     ASSERT(!page_table.SetMaxHeapSize(heap_capacity).IsError());
@@ -675,20 +674,31 @@ void KProcess::ChangeState(State new_state) {
 }
 
 Result KProcess::AllocateMainThreadStack(std::size_t stack_size) {
-    ASSERT(stack_size);
+    // Ensure that we haven't already allocated stack.
+    ASSERT(main_thread_stack_size == 0);
 
-    // The kernel always ensures that the given stack size is page aligned.
-    main_thread_stack_size = Common::AlignUp(stack_size, PageSize);
+    // Ensure that we're allocating a valid stack.
+    stack_size = Common::AlignUp(stack_size, PageSize);
+    // R_UNLESS(stack_size + image_size <= m_max_process_memory, ResultOutOfMemory);
+    R_UNLESS(stack_size + image_size >= image_size, ResultOutOfMemory);
 
-    const VAddr start{page_table.GetStackRegionStart()};
-    const std::size_t size{page_table.GetStackRegionEnd() - start};
+    // Place a tentative reservation of memory for our new stack.
+    KScopedResourceReservation mem_reservation(this, Svc::LimitableResource::PhysicalMemoryMax,
+                                               stack_size);
+    R_UNLESS(mem_reservation.Succeeded(), ResultLimitReached);
 
-    CASCADE_RESULT(main_thread_stack_top,
-                   page_table.AllocateAndMapMemory(
-                       main_thread_stack_size / PageSize, PageSize, false, start, size / PageSize,
-                       KMemoryState::Stack, KMemoryPermission::UserReadWrite));
+    // Allocate and map our stack.
+    if (stack_size) {
+        KProcessAddress stack_bottom;
+        R_TRY(page_table.MapPages(std::addressof(stack_bottom), stack_size / PageSize,
+                                  KMemoryState::Stack, KMemoryPermission::UserReadWrite));
 
-    main_thread_stack_top += main_thread_stack_size;
+        main_thread_stack_top = stack_bottom + stack_size;
+        main_thread_stack_size = stack_size;
+    }
+
+    // We succeeded! Commit our memory reservation.
+    mem_reservation.Commit();
 
     R_SUCCEED();
 }

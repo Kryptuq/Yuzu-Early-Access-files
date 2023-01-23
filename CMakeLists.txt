@@ -3,12 +3,14 @@
 
 cmake_minimum_required(VERSION 3.22)
 
+project(yuzu)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
+
 include(DownloadExternals)
 include(CMakeDependentOption)
-
-project(yuzu)
+include(CTest)
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
@@ -42,7 +44,7 @@ option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
-option(YUZU_TESTS "Compile tests" ON)
+option(YUZU_TESTS "Compile tests" "${BUILD_TESTING}")
 
 option(YUZU_USE_PRECOMPILED_HEADERS "Use precompiled headers" ON)
 
@@ -242,7 +244,7 @@ if (ENABLE_WEB_SERVICE)
 endif()
 
 if (YUZU_TESTS)
-    find_package(Catch2 2.13.7 REQUIRED)
+    find_package(Catch2 3.0.1 REQUIRED)
 endif()
 
 find_package(Boost 1.73.0 COMPONENTS context)
@@ -606,7 +608,6 @@ if (YUZU_USE_FASTER_LD AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-enable_testing()
 add_subdirectory(externals)
 add_subdirectory(src)
 
