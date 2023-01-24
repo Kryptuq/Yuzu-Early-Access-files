@@ -1,12 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <llvm/Demangle/Demangle.h>
+
 #include "common/demangle.h"
 #include "common/scope_exit.h"
-
-namespace llvm {
-char* itaniumDemangle(const char* mangled_name, char* buf, size_t* n, int* status);
-}
 
 namespace Common {
 

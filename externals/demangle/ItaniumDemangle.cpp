@@ -11,8 +11,8 @@
 // file does not yet support:
 //   - C++ modules TS
 
-#include "Demangle.h"
-#include "ItaniumDemangle.h"
+#include "llvm/Demangle/Demangle.h"
+#include "llvm/Demangle/ItaniumDemangle.h"
 
 #include <cassert>
 #include <cctype>

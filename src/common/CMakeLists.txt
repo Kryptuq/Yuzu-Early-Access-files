@@ -177,7 +177,7 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
-target_link_libraries(common PRIVATE lz4::lz4 zstd::zstd demangle)
+target_link_libraries(common PRIVATE lz4::lz4 zstd::zstd LLVM::Demangle)
 
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(common PRIVATE precompiled_headers.h)
