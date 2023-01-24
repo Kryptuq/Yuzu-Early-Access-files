@@ -73,7 +73,7 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
     const IR::Reg reg_a{tlds.src_reg_a};
     const IR::Reg reg_b{tlds.src_reg_b};
     IR::Value coords;
-    IR::U32 lod;
+    IR::U32 lod{v.ir.Imm32(0U)};
     IR::Value offsets;
     IR::U32 multisample;
     Shader::TextureType texture_type{};
