@@ -89,7 +89,6 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent,
            "using-a-controller-or-android-phone-for-motion-or-touch-input'><span "
            "style=\"text-decoration: underline; color:#039be5;\">Learn More</span></a>"));
 
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     SetConfiguration();
     UpdateUiDisplay();
     ConnectEvents();

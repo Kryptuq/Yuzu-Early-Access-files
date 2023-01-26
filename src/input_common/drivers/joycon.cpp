@@ -4,6 +4,8 @@
 #include <fmt/format.h>
 
 #include "common/param_package.h"
+#include "common/polyfill_ranges.h"
+#include "common/polyfill_thread.h"
 #include "common/settings.h"
 #include "common/thread.h"
 #include "input_common/drivers/joycon.h"
@@ -66,7 +68,8 @@ void Joycons::Setup() {
 void Joycons::ScanThread(std::stop_token stop_token) {
     constexpr u16 nintendo_vendor_id = 0x057e;
     Common::SetCurrentThreadName("JoyconScanThread");
-    while (!stop_token.stop_requested()) {
+
+    do {
         SDL_hid_device_info* devs = SDL_hid_enumerate(nintendo_vendor_id, 0x0);
         SDL_hid_device_info* cur_dev = devs;
 
@@ -80,8 +83,7 @@ void Joycons::ScanThread(std::stop_token stop_token) {
         }
 
         SDL_hid_free_enumeration(devs);
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-    }
+    } while (Common::StoppableTimedWait(stop_token, std::chrono::seconds{5}));
 }
 
 bool Joycons::IsDeviceNew(SDL_hid_device_info* device_info) const {

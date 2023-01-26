@@ -197,7 +197,6 @@ void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Regist
 void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
-void EmitBitCastS32F32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastF16U16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastF64U64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);

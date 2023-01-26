@@ -11,6 +11,11 @@ namespace InputCommon {
 
 class Stick final : public Common::Input::InputDevice {
 public:
+    // Some games such as EARTH DEFENSE FORCE: WORLD BROTHERS
+    // do not play nicely with the theoretical maximum range.
+    // Using a value one lower from the maximum emulates real stick behavior.
+    static constexpr float MAX_RANGE = 32766.0f / 32767.0f;
+
     using Button = std::unique_ptr<Common::Input::InputDevice>;
 
     Stick(Button up_, Button down_, Button left_, Button right_, Button modifier_, Button updater_,
@@ -196,7 +201,7 @@ public:
     }
 
     void UpdateStatus() {
-        const float coef = modifier_status.value ? modifier_scale : 1.0f;
+        const float coef = modifier_status.value ? modifier_scale : MAX_RANGE;
 
         bool r = right_status;
         bool l = left_status;
@@ -290,7 +295,7 @@ public:
         if (down_status) {
             --y;
         }
-        const float coef = modifier_status.value ? modifier_scale : 1.0f;
+        const float coef = modifier_status.value ? modifier_scale : MAX_RANGE;
         status.x.raw_value = static_cast<float>(x) * coef * (y == 0 ? 1.0f : SQRT_HALF);
         status.y.raw_value = static_cast<float>(y) * coef * (x == 0 ? 1.0f : SQRT_HALF);
         return status;

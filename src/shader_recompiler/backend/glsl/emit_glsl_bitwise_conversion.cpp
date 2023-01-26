@@ -48,10 +48,6 @@ void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, std::string_view value)
     ctx.AddU64("{}=doubleBitsToUint64({});", inst, value);
 }
 
-void EmitBitCastS32F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddF32("{}=ftoi({});", inst, value);
-}
-
 void EmitBitCastF16U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
     NotImplemented();
 }

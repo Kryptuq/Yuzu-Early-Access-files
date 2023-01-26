@@ -680,8 +680,10 @@ void GMainWindow::SoftwareKeyboardShowNormal() {
     const auto y = layout.screen.top;
     const auto w = layout.screen.GetWidth();
     const auto h = layout.screen.GetHeight();
+    const auto scale_ratio = devicePixelRatioF();
 
-    software_keyboard->ShowNormalKeyboard(render_window->mapToGlobal(QPoint(x, y)), QSize(w, h));
+    software_keyboard->ShowNormalKeyboard(render_window->mapToGlobal(QPoint(x, y) / scale_ratio),
+                                          QSize(w, h) / scale_ratio);
 }
 
 void GMainWindow::SoftwareKeyboardShowTextCheck(
@@ -714,9 +716,11 @@ void GMainWindow::SoftwareKeyboardShowInline(
                                                (1.0f - appear_parameters.key_top_scale_y))));
     const auto w = static_cast<int>(layout.screen.GetWidth() * appear_parameters.key_top_scale_x);
     const auto h = static_cast<int>(layout.screen.GetHeight() * appear_parameters.key_top_scale_y);
+    const auto scale_ratio = devicePixelRatioF();
 
     software_keyboard->ShowInlineKeyboard(std::move(appear_parameters),
-                                          render_window->mapToGlobal(QPoint(x, y)), QSize(w, h));
+                                          render_window->mapToGlobal(QPoint(x, y) / scale_ratio),
+                                          QSize(w, h) / scale_ratio);
 }
 
 void GMainWindow::SoftwareKeyboardHideInline() {
@@ -796,10 +800,11 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
         }
 
         const auto& layout = render_window->GetFramebufferLayout();
-        web_browser_view.resize(layout.screen.GetWidth(), layout.screen.GetHeight());
-        web_browser_view.move(layout.screen.left, layout.screen.top + menuBar()->height());
-        web_browser_view.setZoomFactor(static_cast<qreal>(layout.screen.GetWidth()) /
-                                       static_cast<qreal>(Layout::ScreenUndocked::Width));
+        const auto scale_ratio = devicePixelRatioF();
+        web_browser_view.resize(layout.screen.GetWidth() / scale_ratio,
+                                layout.screen.GetHeight() / scale_ratio);
+        web_browser_view.move(layout.screen.left / scale_ratio,
+                              (layout.screen.top / scale_ratio) + menuBar()->height());
 
         web_browser_view.setFocus();
         web_browser_view.show();
@@ -2757,8 +2762,7 @@ void GMainWindow::OnMenuInstallToNAND() {
     ui->action_Install_File_NAND->setEnabled(false);
 
     install_progress = new QProgressDialog(QString{}, tr("Cancel"), 0, total_size, this);
-    install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
-                                     ~Qt::WindowMaximizeButtonHint);
+    install_progress->setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
     install_progress->setAttribute(Qt::WA_DeleteOnClose, true);
     install_progress->setFixedWidth(installDialog.GetMinimumWidth() + 40);
     install_progress->show();
@@ -4400,6 +4404,55 @@ void GMainWindow::changeEvent(QEvent* event) {
 #undef main
 #endif
 
+static void SetHighDPIAttributes() {
+#ifdef _WIN32
+    // For Windows, we want to avoid scaling artifacts on fractional scaling ratios.
+    // This is done by setting the optimal scaling policy for the primary screen.
+
+    // Create a temporary QApplication.
+    int temp_argc = 0;
+    char** temp_argv = nullptr;
+    QApplication temp{temp_argc, temp_argv};
+
+    // Get the current screen geometry.
+    const QScreen* primary_screen = QGuiApplication::primaryScreen();
+    if (primary_screen == nullptr) {
+        return;
+    }
+
+    const QRect screen_rect = primary_screen->geometry();
+    const int real_width = screen_rect.width();
+    const int real_height = screen_rect.height();
+    const float real_ratio = primary_screen->logicalDotsPerInch() / 96.0f;
+
+    // Recommended minimum width and height for proper window fit.
+    // Any screen with a lower resolution than this will still have a scale of 1.
+    constexpr float minimum_width = 1350.0f;
+    constexpr float minimum_height = 900.0f;
+
+    const float width_ratio = std::max(1.0f, real_width / minimum_width);
+    const float height_ratio = std::max(1.0f, real_height / minimum_height);
+
+    // Get the lower of the 2 ratios and truncate, this is the maximum integer scale.
+    const float max_ratio = std::trunc(std::min(width_ratio, height_ratio));
+
+    if (max_ratio > real_ratio) {
+        QApplication::setHighDpiScaleFactorRoundingPolicy(
+            Qt::HighDpiScaleFactorRoundingPolicy::Round);
+    } else {
+        QApplication::setHighDpiScaleFactorRoundingPolicy(
+            Qt::HighDpiScaleFactorRoundingPolicy::Floor);
+    }
+#else
+    // Other OSes should be better than Windows at fractional scaling.
+    QApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
+
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+}
+
 int main(int argc, char* argv[]) {
     std::unique_ptr<Config> config = std::make_unique<Config>();
     bool has_broken_vulkan = false;
@@ -4455,8 +4508,16 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    SetHighDPIAttributes();
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    // Disables the "?" button on all dialogs. Disabled by default on Qt6.
+    QCoreApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
+#endif
+
     // Enables the core to make the qt created contexts current on std::threads
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
+
     QApplication app(argc, argv);
 
 #ifdef _WIN32

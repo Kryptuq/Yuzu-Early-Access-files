@@ -68,7 +68,7 @@ bool KLightLock::LockSlowPath(uintptr_t _owner, uintptr_t _cur_thread) {
 
         // Add the current thread as a waiter on the owner.
         KThread* owner_thread = reinterpret_cast<KThread*>(_owner & ~1ULL);
-        cur_thread->SetAddressKey(reinterpret_cast<uintptr_t>(std::addressof(tag)));
+        cur_thread->SetKernelAddressKey(reinterpret_cast<uintptr_t>(std::addressof(tag)));
         owner_thread->AddWaiter(cur_thread);
 
         // Begin waiting to hold the lock.

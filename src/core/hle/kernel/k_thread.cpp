@@ -330,7 +330,7 @@ void KThread::Finalize() {
             KThread* const waiter = std::addressof(*it);
 
             // The thread shouldn't be a kernel waiter.
-            ASSERT(!IsKernelAddressKey(waiter->GetAddressKey()));
+            ASSERT(!waiter->GetAddressKeyIsKernel());
 
             // Clear the lock owner.
             waiter->SetLockOwner(nullptr);
@@ -763,19 +763,6 @@ void KThread::Continue() {
     KScheduler::OnThreadStateChanged(kernel, this, old_state);
 }
 
-void KThread::WaitUntilSuspended() {
-    // Make sure we have a suspend requested.
-    ASSERT(IsSuspendRequested());
-
-    // Loop until the thread is not executing on any core.
-    for (std::size_t i = 0; i < static_cast<std::size_t>(Core::Hardware::NUM_CPU_CORES); ++i) {
-        KThread* core_thread{};
-        do {
-            core_thread = kernel.Scheduler(i).GetSchedulerCurrentThread();
-        } while (core_thread == this);
-    }
-}
-
 Result KThread::SetActivity(Svc::ThreadActivity activity) {
     // Lock ourselves.
     KScopedLightLock lk(activity_pause_lock);
@@ -897,7 +884,7 @@ void KThread::AddWaiterImpl(KThread* thread) {
     }
 
     // Keep track of how many kernel waiters we have.
-    if (IsKernelAddressKey(thread->GetAddressKey())) {
+    if (thread->GetAddressKeyIsKernel()) {
         ASSERT((num_kernel_waiters++) >= 0);
         KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
@@ -911,7 +898,7 @@ void KThread::RemoveWaiterImpl(KThread* thread) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Keep track of how many kernel waiters we have.
-    if (IsKernelAddressKey(thread->GetAddressKey())) {
+    if (thread->GetAddressKeyIsKernel()) {
         ASSERT((num_kernel_waiters--) > 0);
         KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
@@ -987,7 +974,7 @@ KThread* KThread::RemoveWaiterByKey(s32* out_num_waiters, VAddr key) {
             KThread* thread = std::addressof(*it);
 
             // Keep track of how many kernel waiters we have.
-            if (IsKernelAddressKey(thread->GetAddressKey())) {
+            if (thread->GetAddressKeyIsKernel()) {
                 ASSERT((num_kernel_waiters--) > 0);
                 KScheduler::SetSchedulerUpdateNeeded(kernel);
             }

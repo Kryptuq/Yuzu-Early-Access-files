@@ -16,8 +16,6 @@ LimitableInputDialog::LimitableInputDialog(QWidget* parent) : QDialog{parent} {
 LimitableInputDialog::~LimitableInputDialog() = default;
 
 void LimitableInputDialog::CreateUI() {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
     text_label = new QLabel(this);
     text_entry = new QLineEdit(this);
     text_label_invalid = new QLabel(this);

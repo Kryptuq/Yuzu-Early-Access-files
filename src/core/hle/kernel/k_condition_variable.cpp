@@ -171,7 +171,7 @@ Result KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) 
         R_UNLESS(owner_thread != nullptr, ResultInvalidHandle);
 
         // Update the lock.
-        cur_thread->SetAddressKey(addr, value);
+        cur_thread->SetUserAddressKey(addr, value);
         owner_thread->AddWaiter(cur_thread);
 
         // Begin waiting.

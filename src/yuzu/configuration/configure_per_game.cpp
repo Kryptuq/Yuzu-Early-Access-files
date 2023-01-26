@@ -66,8 +66,6 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
 
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
-    // remove Help question mark button from the title bar
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     addons_tab->SetTitleId(title_id);
 

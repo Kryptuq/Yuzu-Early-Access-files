@@ -66,7 +66,6 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
 
     web_tab->SetWebServiceConfigEnabled(enable_web_config);
     hotkeys_tab->Populate(registry);
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     input_tab->Initialize(input_subsystem);
 

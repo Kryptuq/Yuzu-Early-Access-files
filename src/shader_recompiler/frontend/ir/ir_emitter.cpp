@@ -704,11 +704,6 @@ IR::U32 IREmitter::BitCast<IR::U32, IR::F32>(const IR::F32& value) {
 }
 
 template <>
-IR::S32 IREmitter::BitCast<IR::S32, IR::F32>(const IR::F32& value) {
-    return Inst<IR::S32>(Opcode::BitCastS32F32, value);
-}
-
-template <>
 IR::F32 IREmitter::BitCast<IR::F32, IR::U32>(const IR::U32& value) {
     return Inst<IR::F32>(Opcode::BitCastF32U32, value);
 }

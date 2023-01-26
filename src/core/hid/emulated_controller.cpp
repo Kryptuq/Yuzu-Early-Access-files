@@ -11,7 +11,6 @@
 
 namespace Core::HID {
 constexpr s32 HID_JOYSTICK_MAX = 0x7fff;
-constexpr s32 HID_JOYSTICK_MIN = 0x7ffe;
 constexpr s32 HID_TRIGGER_MAX = 0x7fff;
 // Use a common UUID for TAS and Virtual Gamepad
 constexpr Common::UUID TAS_UUID =
@@ -864,16 +863,9 @@ void EmulatedController::SetStick(const Common::Input::CallbackStatus& callback,
         return;
     }
 
-    const auto FloatToShort = [](float a) {
-        if (a > 0) {
-            return static_cast<s32>(a * HID_JOYSTICK_MAX);
-        }
-        return static_cast<s32>(a * HID_JOYSTICK_MIN);
-    };
-
     const AnalogStickState stick{
-        .x = FloatToShort(controller.stick_values[index].x.value),
-        .y = FloatToShort(controller.stick_values[index].y.value),
+        .x = static_cast<s32>(controller.stick_values[index].x.value * HID_JOYSTICK_MAX),
+        .y = static_cast<s32>(controller.stick_values[index].y.value * HID_JOYSTICK_MAX),
     };
 
     switch (index) {

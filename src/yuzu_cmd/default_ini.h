@@ -5,8 +5,8 @@
 
 namespace DefaultINI {
 
-const char* sdl2_config_file = R"(
-
+const char* sdl2_config_file =
+    R"(
 [ControlsP0]
 # The input devices and parameters for each Switch native input
 # The config section determines the player number where the config will be applied on. For example "ControlsP0", "ControlsP1", ...
@@ -143,6 +143,8 @@ mouse_enabled =
 # 0 (default): Disabled, 1: Enabled
 keyboard_enabled =
 
+)"
+    R"(
 [Core]
 # Whether to use multi-core for CPU emulation
 # 0: Disabled, 1 (default): Enabled
@@ -242,6 +244,8 @@ cpuopt_unsafe_fastmem_check =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_unsafe_ignore_global_monitor =
 
+)"
+    R"(
 [Renderer]
 # Which backend API to use.
 # 0: OpenGL, 1 (default): Vulkan
@@ -360,6 +364,8 @@ bg_red =
 bg_blue =
 bg_green =
 
+)"
+    R"(
 [Audio]
 # Which audio output engine to use.
 # auto (default): Auto-select

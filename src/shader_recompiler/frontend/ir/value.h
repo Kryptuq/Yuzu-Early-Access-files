@@ -268,7 +268,6 @@ using U8 = TypedValue<Type::U8>;
 using U16 = TypedValue<Type::U16>;
 using U32 = TypedValue<Type::U32>;
 using U64 = TypedValue<Type::U64>;
-using S32 = TypedValue<Type::S32>;
 using F16 = TypedValue<Type::F16>;
 using F32 = TypedValue<Type::F32>;
 using F64 = TypedValue<Type::F64>;

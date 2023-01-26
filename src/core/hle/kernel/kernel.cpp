@@ -1198,27 +1198,34 @@ void KernelCore::Suspend(bool suspended) {
     const bool should_suspend{exception_exited || suspended};
     const auto activity = should_suspend ? ProcessActivity::Paused : ProcessActivity::Runnable;
 
-    std::vector<KScopedAutoObject<KThread>> process_threads;
-    {
-        KScopedSchedulerLock sl{*this};
-
-        if (auto* process = CurrentProcess(); process != nullptr) {
-            process->SetActivity(activity);
-
-            if (!should_suspend) {
-                // Runnable now; no need to wait.
-                return;
-            }
-
-            for (auto* thread : process->GetThreadList()) {
-                process_threads.emplace_back(thread);
-            }
-        }
+    //! This refers to the application process, not the current process.
+    KScopedAutoObject<KProcess> process = CurrentProcess();
+    if (process.IsNull()) {
+        return;
     }
 
-    // Wait for execution to stop.
-    for (auto& thread : process_threads) {
-        thread->WaitUntilSuspended();
+    // Set the new activity.
+    process->SetActivity(activity);
+
+    // Wait for process execution to stop.
+    bool must_wait{should_suspend};
+
+    // KernelCore::Suspend must be called from locked context, or we
+    // could race another call to SetActivity, interfering with waiting.
+    while (must_wait) {
+        KScopedSchedulerLock sl{*this};
+
+        // Assume that all threads have finished running.
+        must_wait = false;
+
+        for (auto i = 0; i < static_cast<s32>(Core::Hardware::NUM_CPU_CORES); ++i) {
+            if (Scheduler(i).GetSchedulerCurrentThread()->GetOwnerProcess() ==
+                process.GetPointerUnsafe()) {
+                // A thread has not finished running yet.
+                // Continue waiting.
+                must_wait = true;
+            }
+        }
     }
 }
 

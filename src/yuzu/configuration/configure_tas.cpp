@@ -17,7 +17,6 @@ ConfigureTasDialog::ConfigureTasDialog(QWidget* parent)
 
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("TAS Configuration"));
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     connect(ui->tas_path_button, &QToolButton::pressed, this,
             [this] { SetDirectory(DirectoryTarget::TAS, ui->tas_path_edit); });

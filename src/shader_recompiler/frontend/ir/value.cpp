@@ -23,8 +23,6 @@ Value::Value(u16 value) noexcept : type{Type::U16}, imm_u16{value} {}
 
 Value::Value(u32 value) noexcept : type{Type::U32}, imm_u32{value} {}
 
-Value::Value(s32 value) noexcept : type{Type::S32}, imm_s32{value} {}
-
 Value::Value(f32 value) noexcept : type{Type::F32}, imm_f32{value} {}
 
 Value::Value(u64 value) noexcept : type{Type::U64}, imm_u64{value} {}
@@ -71,7 +69,6 @@ bool Value::operator==(const Value& other) const {
         return imm_u16 == other.imm_u16;
     case Type::U32:
     case Type::F32:
-    case Type::S32:
         return imm_u32 == other.imm_u32;
     case Type::U64:
     case Type::F64:

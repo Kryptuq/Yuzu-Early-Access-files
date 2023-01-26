@@ -67,9 +67,9 @@ constexpr size_t KernelPageBufferAdditionalSize = 0x33C000;
 constexpr std::size_t KernelResourceSize = KernelPageTableHeapSize + KernelInitialPageHeapSize +
                                            KernelSlabHeapSize + KernelPageBufferHeapSize;
 
-constexpr bool IsKernelAddressKey(VAddr key) {
-    return KernelVirtualAddressSpaceBase <= key && key <= KernelVirtualAddressSpaceLast;
-}
+//! NB: Use KThread::GetAddressKeyIsKernel().
+//! See explanation for deviation of GetAddressKey.
+bool IsKernelAddressKey(VAddr key) = delete;
 
 constexpr bool IsKernelAddress(VAddr address) {
     return KernelVirtualAddressSpaceBase <= address && address < KernelVirtualAddressSpaceEnd;

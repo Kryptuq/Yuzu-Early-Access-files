@@ -486,10 +486,10 @@ void PatchTexelFetch(IR::Block& block, IR::Inst& inst, TexturePixelFormat pixel_
     const IR::F32 w(ir.CompositeExtract(new_inst, 3));
     const IR::F16F32F64 max_value(ir.Imm32(get_max_value()));
     const IR::Value converted =
-        ir.CompositeConstruct(ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(x)), max_value),
-                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(y)), max_value),
-                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(z)), max_value),
-                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::S32>(w)), max_value));
+        ir.CompositeConstruct(ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::U32>(x)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::U32>(y)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::U32>(z)), max_value),
+                              ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::U32>(w)), max_value));
     inst.ReplaceUsesWith(converted);
 }
 } // Anonymous namespace

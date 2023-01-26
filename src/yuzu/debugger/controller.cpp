@@ -20,9 +20,8 @@ ControllerDialog::ControllerDialog(Core::HID::HIDCore& hid_core_,
     setWindowTitle(tr("Controller P1"));
     resize(500, 350);
     setMinimumSize(500, 350);
-    // Remove the "?" button from the titlebar and enable the maximize button
-    setWindowFlags((windowFlags() & ~Qt::WindowContextHelpButtonHint) |
-                   Qt::WindowMaximizeButtonHint);
+    // Enable the maximize button
+    setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint);
 
     widget = new PlayerControlPreview(this);
     refreshConfiguration();

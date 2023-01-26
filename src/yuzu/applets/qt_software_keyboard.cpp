@@ -575,7 +575,7 @@ void QtSoftwareKeyboardDialog::MoveAndResizeWindow(QPoint pos, QSize size) {
     QDialog::resize(size);
 
     // High DPI
-    const float dpi_scale = qApp->screenAt(pos)->logicalDotsPerInch() / 96.0f;
+    const float dpi_scale = screen()->logicalDotsPerInch() / 96.0f;
 
     RescaleKeyboardElements(size.width(), size.height(), dpi_scale);
 }

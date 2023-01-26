@@ -214,8 +214,6 @@ public:
 
     void Continue();
 
-    void WaitUntilSuspended();
-
     constexpr void SetSyncedIndex(s32 index) {
         synced_index = index;
     }
@@ -607,13 +605,30 @@ public:
         return address_key_value;
     }
 
-    void SetAddressKey(VAddr key) {
-        address_key = key;
+    [[nodiscard]] bool GetAddressKeyIsKernel() const {
+        return address_key_is_kernel;
     }
 
-    void SetAddressKey(VAddr key, u32 val) {
+    //! NB: intentional deviation from official kernel.
+    //
+    // Separate SetAddressKey into user and kernel versions
+    // to cope with arbitrary host pointers making their way
+    // into things.
+
+    void SetUserAddressKey(VAddr key) {
+        address_key = key;
+        address_key_is_kernel = false;
+    }
+
+    void SetUserAddressKey(VAddr key, u32 val) {
         address_key = key;
         address_key_value = val;
+        address_key_is_kernel = false;
+    }
+
+    void SetKernelAddressKey(VAddr key) {
+        address_key = key;
+        address_key_is_kernel = true;
     }
 
     void ClearWaitQueue() {
@@ -772,6 +787,7 @@ private:
     bool debug_attached{};
     s8 priority_inheritance_count{};
     bool resource_limit_release_hint{};
+    bool address_key_is_kernel{};
     StackParameters stack_parameters{};
     Common::SpinLock context_guard{};
 

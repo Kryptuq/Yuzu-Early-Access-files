@@ -175,7 +175,6 @@ OPCODE(SelectF64,                                           F64,            U1, 
 OPCODE(BitCastU16F16,                                       U16,            F16,                                                                            )
 OPCODE(BitCastU32F32,                                       U32,            F32,                                                                            )
 OPCODE(BitCastU64F64,                                       U64,            F64,                                                                            )
-OPCODE(BitCastS32F32,                                       S32,            F32,                                                                            )
 OPCODE(BitCastF16U16,                                       F16,            U16,                                                                            )
 OPCODE(BitCastF32U32,                                       F32,            U32,                                                                            )
 OPCODE(BitCastF64U64,                                       F64,            U64,                                                                            )

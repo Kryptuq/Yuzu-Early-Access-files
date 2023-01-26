@@ -46,7 +46,6 @@ InstallDialog::InstallDialog(QWidget* parent, const QStringList& files) : QDialo
     vbox_layout->addLayout(hbox_layout);
 
     setLayout(vbox_layout);
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     setWindowTitle(tr("Install Files to NAND"));
 }
 

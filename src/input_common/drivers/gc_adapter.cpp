@@ -6,6 +6,7 @@
 
 #include "common/logging/log.h"
 #include "common/param_package.h"
+#include "common/polyfill_thread.h"
 #include "common/settings_input.h"
 #include "common/thread.h"
 #include "input_common/drivers/gc_adapter.h"
@@ -217,8 +218,7 @@ void GCAdapter::AdapterScanThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("ScanGCAdapter");
     usb_adapter_handle = nullptr;
     pads = {};
-    while (!stop_token.stop_requested() && !Setup()) {
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+    while (!Setup() && Common::StoppableTimedWait(stop_token, std::chrono::seconds{2})) {
     }
 }
 
