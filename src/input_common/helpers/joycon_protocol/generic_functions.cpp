@@ -19,6 +19,17 @@ DriverResult GenericProtocol::EnableActiveMode() {
     return SetReportMode(ReportMode::STANDARD_FULL_60HZ);
 }
 
+DriverResult GenericProtocol::SetLowPowerMode(bool enable) {
+    ScopedSetBlocking sb(this);
+    const std::array<u8, 1> buffer{static_cast<u8>(enable ? 1 : 0)};
+    return SendSubCommand(SubCommand::LOW_POWER_MODE, buffer);
+}
+
+DriverResult GenericProtocol::TriggersElapsed() {
+    ScopedSetBlocking sb(this);
+    return SendSubCommand(SubCommand::TRIGGERS_ELAPSED, {});
+}
+
 DriverResult GenericProtocol::GetDeviceInfo(DeviceInfo& device_info) {
     ScopedSetBlocking sb(this);
     std::vector<u8> output;

@@ -86,6 +86,7 @@ DriverResult JoyconDriver::InitializeDevice() {
 
     // Get fixed joycon info
     generic_protocol->GetVersionNumber(version);
+    generic_protocol->SetLowPowerMode(false);
     generic_protocol->GetColor(color);
     if (handle_device_type == ControllerType::Pro) {
         // Some 3rd party controllers aren't pro controllers
@@ -324,6 +325,8 @@ DriverResult JoyconDriver::SetPollingMode() {
     if (result != DriverResult::Success) {
         LOG_ERROR(Input, "Error enabling active mode");
     }
+    // Switch calls this function after enabling active mode
+    generic_protocol->TriggersElapsed();
 
     disable_input_thread = false;
     return result;

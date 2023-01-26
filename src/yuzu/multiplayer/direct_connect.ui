@@ -76,16 +76,10 @@
               <property name="placeholderText">
                <string notr="true" extracomment="placeholder string that tells user default port">24872</string>
               </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
               <property name="maximumSize">
                <size>
-                  <width>65</width>
-                  <height>50</height>
+                <width>65</width>
+                <height>50</height>
                </size>
               </property>
              </widget>

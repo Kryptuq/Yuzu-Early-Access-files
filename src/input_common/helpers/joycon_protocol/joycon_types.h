@@ -129,6 +129,7 @@ enum class SubCommand : u8 {
     LOW_POWER_MODE = 0x08,
     SPI_FLASH_READ = 0x10,
     SPI_FLASH_WRITE = 0x11,
+    SPI_SECTOR_ERASE = 0x12,
     RESET_MCU = 0x20,
     SET_MCU_CONFIG = 0x21,
     SET_MCU_STATE = 0x22,

@@ -25,6 +25,12 @@ public:
     /// Enables active mode. This mode will return the current status every 5-15ms
     DriverResult EnableActiveMode();
 
+    /// Enables or disables the low power mode
+    DriverResult SetLowPowerMode(bool enable);
+
+    /// Unknown function used by the switch
+    DriverResult TriggersElapsed();
+
     /**
      * Sends a request to obtain the joycon firmware and mac from handle
      * @returns controller device info
