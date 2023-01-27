@@ -3,10 +3,14 @@
 
 set(FIDELITYFX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/externals/FidelityFX-FSR/ffx-fsr)
 
-set(GLSL_INCLUDES
-    fidelityfx_fsr.comp
+set(FIDELITYFX_FILES
     ${FIDELITYFX_INCLUDE_DIR}/ffx_a.h
     ${FIDELITYFX_INCLUDE_DIR}/ffx_fsr1.h
+)
+
+set(GLSL_INCLUDES
+    fidelityfx_fsr.comp
+    ${FIDELITYFX_FILES}
 )
 
 set(SHADER_FILES
@@ -24,6 +28,9 @@ set(SHADER_FILES
     fxaa.vert
     opengl_convert_s8d24.comp
     opengl_copy_bc4.comp
+    opengl_fidelityfx_fsr.frag
+    opengl_fidelityfx_fsr_easu.frag
+    opengl_fidelityfx_fsr_rcas.frag
     opengl_present.frag
     opengl_present.vert
     opengl_present_scaleforce.frag
@@ -116,6 +123,25 @@ foreach(FILENAME IN ITEMS ${SHADER_FILES})
         )
         set(SHADER_HEADERS ${SHADER_HEADERS} ${SPIRV_HEADER_FILE})
     endif()
+endforeach()
+
+foreach(FILEPATH IN ITEMS ${FIDELITYFX_FILES})
+    get_filename_component(FILENAME ${FILEPATH} NAME)
+    string(REPLACE "." "_" HEADER_NAME ${FILENAME})
+    set(SOURCE_FILE ${FILEPATH})
+    set(SOURCE_HEADER_FILE ${SHADER_DIR}/${HEADER_NAME}.h)
+    add_custom_command(
+        OUTPUT
+            ${SOURCE_HEADER_FILE}
+        COMMAND
+            ${CMAKE_COMMAND} -P ${HEADER_GENERATOR} ${SOURCE_FILE} ${SOURCE_HEADER_FILE} ${INPUT_FILE}
+        MAIN_DEPENDENCY
+            ${SOURCE_FILE}
+        DEPENDS
+            ${INPUT_FILE}
+            # HEADER_GENERATOR should be included here but msbuild seems to assume it's always modified
+    )
+    set(SHADER_HEADERS ${SHADER_HEADERS} ${SOURCE_HEADER_FILE})
 endforeach()
 
 set(SHADER_SOURCES ${SHADER_FILES})

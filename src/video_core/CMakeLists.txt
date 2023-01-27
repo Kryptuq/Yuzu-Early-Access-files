@@ -52,6 +52,8 @@ add_library(video_core STATIC
     engines/puller.cpp
     engines/puller.h
     framebuffer_config.h
+    fsr.cpp
+    fsr.h
     host1x/codecs/codec.cpp
     host1x/codecs/codec.h
     host1x/codecs/h264.cpp
@@ -110,6 +112,8 @@ add_library(video_core STATIC
     renderer_opengl/gl_device.h
     renderer_opengl/gl_fence_manager.cpp
     renderer_opengl/gl_fence_manager.h
+    renderer_opengl/gl_fsr.cpp
+    renderer_opengl/gl_fsr.h
     renderer_opengl/gl_graphics_pipeline.cpp
     renderer_opengl/gl_graphics_pipeline.h
     renderer_opengl/gl_rasterizer.cpp

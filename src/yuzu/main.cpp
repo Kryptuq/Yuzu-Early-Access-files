@@ -987,11 +987,6 @@ void GMainWindow::InitializeWidgets() {
     filter_status_button->setFocusPolicy(Qt::NoFocus);
     connect(filter_status_button, &QPushButton::clicked, this,
             &GMainWindow::OnToggleAdaptingFilter);
-    auto filter = Settings::values.scaling_filter.GetValue();
-    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
-        filter == Settings::ScalingFilter::Fsr) {
-        Settings::values.scaling_filter.SetValue(Settings::ScalingFilter::NearestNeighbor);
-    }
     UpdateFilterText();
     filter_status_button->setCheckable(true);
     filter_status_button->setChecked(true);
@@ -3471,10 +3466,6 @@ void GMainWindow::OnToggleAdaptingFilter() {
         filter = Settings::ScalingFilter::NearestNeighbor;
     } else {
         filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
-    }
-    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL &&
-        filter == Settings::ScalingFilter::Fsr) {
-        filter = Settings::ScalingFilter::NearestNeighbor;
     }
     Settings::values.scaling_filter.SetValue(filter);
     filter_status_button->setChecked(true);

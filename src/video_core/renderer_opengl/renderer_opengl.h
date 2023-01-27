@@ -10,6 +10,7 @@
 
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/gl_device.h"
+#include "video_core/renderer_opengl/gl_fsr.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
@@ -140,6 +141,8 @@ private:
     OGLTexture smaa_search_tex;
     OGLTexture smaa_edges_tex;
     OGLTexture smaa_blend_tex;
+
+    std::unique_ptr<FSR> fsr;
 
     /// OpenGL framebuffer data
     std::vector<u8> gl_framebuffer_data;

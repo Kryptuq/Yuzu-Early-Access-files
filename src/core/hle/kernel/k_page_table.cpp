@@ -2144,8 +2144,8 @@ void KPageTable::RemapPageGroup(PageLinkedList* page_list, KProcessAddress addre
         const KMemoryInfo info = it->GetMemoryInfo();
 
         // Determine the range to map.
-        KProcessAddress map_address = std::max(info.GetAddress(), start_address);
-        const KProcessAddress map_end_address = std::min(info.GetEndAddress(), end_address);
+        KProcessAddress map_address = std::max<VAddr>(info.GetAddress(), start_address);
+        const KProcessAddress map_end_address = std::min<VAddr>(info.GetEndAddress(), end_address);
         ASSERT(map_end_address != map_address);
 
         // Determine if we should disable head merge.

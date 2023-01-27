@@ -17,8 +17,14 @@
 #include "core/frontend/emu_window.h"
 #include "core/memory.h"
 #include "core/telemetry_session.h"
+#include "video_core/host_shaders/ffx_a_h.h"
+#include "video_core/host_shaders/ffx_fsr1_h.h"
+#include "video_core/host_shaders/full_screen_triangle_vert.h"
 #include "video_core/host_shaders/fxaa_frag.h"
 #include "video_core/host_shaders/fxaa_vert.h"
+#include "video_core/host_shaders/opengl_fidelityfx_fsr_easu_frag.h"
+#include "video_core/host_shaders/opengl_fidelityfx_fsr_frag.h"
+#include "video_core/host_shaders/opengl_fidelityfx_fsr_rcas_frag.h"
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_scaleforce_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
@@ -31,6 +37,7 @@
 #include "video_core/host_shaders/smaa_edge_detection_vert.h"
 #include "video_core/host_shaders/smaa_neighborhood_blending_frag.h"
 #include "video_core/host_shaders/smaa_neighborhood_blending_vert.h"
+#include "video_core/renderer_opengl/gl_fsr.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
@@ -268,12 +275,17 @@ void RendererOpenGL::InitOpenGLObjects() {
     fxaa_vertex = CreateProgram(HostShaders::FXAA_VERT, GL_VERTEX_SHADER);
     fxaa_fragment = CreateProgram(HostShaders::FXAA_FRAG, GL_FRAGMENT_SHADER);
 
-    const auto SmaaShader = [](std::string_view specialized_source, GLenum stage) {
-        std::string shader_source{specialized_source};
-        constexpr std::string_view include_string = "#include \"opengl_smaa.glsl\"";
+    const auto replace_include = [](std::string& shader_source, std::string_view include_name,
+                                    std::string_view include_content) {
+        const std::string include_string = fmt::format("#include \"{}\"", include_name);
         const std::size_t pos = shader_source.find(include_string);
         ASSERT(pos != std::string::npos);
-        shader_source.replace(pos, include_string.size(), HostShaders::OPENGL_SMAA_GLSL);
+        shader_source.replace(pos, include_string.size(), include_content);
+    };
+
+    const auto SmaaShader = [&](std::string_view specialized_source, GLenum stage) {
+        std::string shader_source{specialized_source};
+        replace_include(shader_source, "opengl_smaa.glsl", HostShaders::OPENGL_SMAA_GLSL);
         return CreateProgram(shader_source, stage);
     };
 
@@ -298,14 +310,32 @@ void RendererOpenGL::InitOpenGLObjects() {
         CreateProgram(fmt::format("#version 460\n{}", HostShaders::OPENGL_PRESENT_SCALEFORCE_FRAG),
                       GL_FRAGMENT_SHADER);
 
+    std::string fsr_source{HostShaders::OPENGL_FIDELITYFX_FSR_FRAG};
+    replace_include(fsr_source, "ffx_a.h", HostShaders::FFX_A_H);
+    replace_include(fsr_source, "ffx_fsr1.h", HostShaders::FFX_FSR1_H);
+
+    std::string fsr_easu_frag_source{HostShaders::OPENGL_FIDELITYFX_FSR_EASU_FRAG};
+    std::string fsr_rcas_frag_source{HostShaders::OPENGL_FIDELITYFX_FSR_RCAS_FRAG};
+    replace_include(fsr_easu_frag_source, "opengl_fidelityfx_fsr.frag", fsr_source);
+    replace_include(fsr_rcas_frag_source, "opengl_fidelityfx_fsr.frag", fsr_source);
+
+    fsr = std::make_unique<FSR>(HostShaders::FULL_SCREEN_TRIANGLE_VERT, fsr_easu_frag_source,
+                                fsr_rcas_frag_source);
+
     // Generate presentation sampler
     present_sampler.Create();
     glSamplerParameteri(present_sampler.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glSamplerParameteri(present_sampler.handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glSamplerParameteri(present_sampler.handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(present_sampler.handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(present_sampler.handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     present_sampler_nn.Create();
     glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(present_sampler_nn.handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     // Generate VBO handle for drawing
     vertex_buffer.Create();
@@ -525,6 +555,31 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
         glBindTextureUnit(0, aa_texture.handle);
     }
+    glDisablei(GL_SCISSOR_TEST, 0);
+
+    if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
+        if (!fsr->AreBuffersInitialized()) {
+            fsr->InitBuffers();
+        }
+
+        auto crop_rect = framebuffer_crop_rect;
+        if (crop_rect.GetWidth() == 0) {
+            crop_rect.right = framebuffer_width;
+        }
+        if (crop_rect.GetHeight() == 0) {
+            crop_rect.bottom = framebuffer_height;
+        }
+        crop_rect = crop_rect.Scale(Settings::values.resolution_info.up_factor);
+        const auto fsr_input_width = Settings::values.resolution_info.ScaleUp(framebuffer_width);
+        const auto fsr_input_height = Settings::values.resolution_info.ScaleUp(framebuffer_height);
+        glBindSampler(0, present_sampler.handle);
+        fsr->Draw(program_manager, layout.screen, fsr_input_width, fsr_input_height, crop_rect);
+    } else {
+        if (fsr->AreBuffersInitialized()) {
+            fsr->ReleaseBuffers();
+        }
+    }
+
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
 
@@ -540,10 +595,7 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         case Settings::ScalingFilter::ScaleForce:
             return present_scaleforce_fragment.handle;
         case Settings::ScalingFilter::Fsr:
-            LOG_WARNING(
-                Render_OpenGL,
-                "FidelityFX Super Resolution is not supported in OpenGL, changing to ScaleForce");
-            return present_scaleforce_fragment.handle;
+            return fsr->GetPresentFragmentProgram().handle;
         default:
             return present_bilinear_fragment.handle;
         }
@@ -578,15 +630,18 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     f32 scale_u = static_cast<f32>(framebuffer_width) / static_cast<f32>(screen_info.texture.width);
     f32 scale_v =
         static_cast<f32>(framebuffer_height) / static_cast<f32>(screen_info.texture.height);
-    // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
-    // (e.g. handheld mode) on a 1920x1080 framebuffer.
-    if (framebuffer_crop_rect.GetWidth() > 0) {
-        scale_u = static_cast<f32>(framebuffer_crop_rect.GetWidth()) /
-                  static_cast<f32>(screen_info.texture.width);
-    }
-    if (framebuffer_crop_rect.GetHeight() > 0) {
-        scale_v = static_cast<f32>(framebuffer_crop_rect.GetHeight()) /
-                  static_cast<f32>(screen_info.texture.height);
+
+    if (Settings::values.scaling_filter.GetValue() != Settings::ScalingFilter::Fsr) {
+        // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
+        // (e.g. handheld mode) on a 1920x1080 framebuffer.
+        if (framebuffer_crop_rect.GetWidth() > 0) {
+            scale_u = static_cast<f32>(framebuffer_crop_rect.GetWidth()) /
+                      static_cast<f32>(screen_info.texture.width);
+        }
+        if (framebuffer_crop_rect.GetHeight() > 0) {
+            scale_v = static_cast<f32>(framebuffer_crop_rect.GetHeight()) /
+                      static_cast<f32>(screen_info.texture.height);
+        }
     }
     if (Settings::values.anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa &&
         !screen_info.was_accelerated) {
@@ -612,7 +667,6 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     } else {
         glDisable(GL_FRAMEBUFFER_SRGB);
     }
-    glDisablei(GL_SCISSOR_TEST, 0);
     glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(layout.width),
                        static_cast<GLfloat>(layout.height));
 
