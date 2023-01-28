@@ -452,7 +452,8 @@ void PatchImageSampleImplicitLod(IR::Block& block, IR::Inst& inst) {
     const IR::Value coord(inst.Arg(1));
     const IR::Value handle(ir.Imm32(0));
     const IR::U32 lod{ir.Imm32(0)};
-    const IR::Value texture_size = ir.ImageQueryDimension(handle, lod, info);
+    const IR::U1 skip_mips{ir.Imm1(true)};
+    const IR::Value texture_size = ir.ImageQueryDimension(handle, lod, skip_mips, info);
     inst.SetArg(
         1, ir.CompositeConstruct(
                ir.FPMul(IR::F32(ir.CompositeExtract(coord, 0)),

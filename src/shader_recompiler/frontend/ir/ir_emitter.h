@@ -320,9 +320,10 @@ public:
     [[nodiscard]] F32 ImageSampleDrefExplicitLod(const Value& handle, const Value& coords,
                                                  const F32& dref, const F32& lod,
                                                  const Value& offset, TextureInstInfo info);
-    [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod);
     [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod,
-                                            TextureInstInfo info);
+                                            const IR::U1& skip_mips);
+    [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod,
+                                            const IR::U1& skip_mips, TextureInstInfo info);
 
     [[nodiscard]] Value ImageQueryLod(const Value& handle, const Value& coords,
                                       TextureInstInfo info);

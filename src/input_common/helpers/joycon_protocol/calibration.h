@@ -53,8 +53,26 @@ public:
     DriverResult GetRingCalibration(RingCalibration& calibration, s16 current_value);
 
 private:
+    /// Returns true if the specified address corresponds to the magic value of user calibration
+    DriverResult HasUserCalibration(SpiAddress address, bool& has_user_calibration);
+
+    /// Converts a raw calibration block to an u16 value containing the x axis value
+    u16 GetXAxisCalibrationValue(std::span<u8> block) const;
+
+    /// Converts a raw calibration block to an u16 value containing the y axis value
+    u16 GetYAxisCalibrationValue(std::span<u8> block) const;
+
+    /// Ensures that all joystick calibration values are set
     void ValidateCalibration(JoyStickCalibration& calibration);
+
+    /// Ensures that all motion calibration values are set
     void ValidateCalibration(MotionCalibration& calibration);
+
+    /// Returns the default value if the value is either zero or 0xFFF
+    u16 ValidateValue(u16 value, u16 default_value) const;
+
+    /// Returns the default value if the value is either zero or 0xFFF
+    s16 ValidateValue(s16 value, s16 default_value) const;
 
     s16 ring_data_max = 0;
     s16 ring_data_default = 0;

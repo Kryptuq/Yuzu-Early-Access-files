@@ -159,13 +159,12 @@ enum class UsbSubCommand : u8 {
     SEND_UART = 0x92,
 };
 
-enum class CalMagic : u8 {
+enum class CalibrationMagic : u8 {
     USR_MAGIC_0 = 0xB2,
     USR_MAGIC_1 = 0xA1,
-    USRR_MAGI_SIZE = 2,
 };
 
-enum class CalAddr {
+enum class SpiAddress {
     SERIAL_NUMBER = 0X6000,
     DEVICE_TYPE = 0X6012,
     COLOR_EXIST = 0X601B,
@@ -396,16 +395,49 @@ struct MotionData {
     u64 delta_timestamp{};
 };
 
+// Output from SPI read command containing user calibration magic
+struct MagicSpiCalibration {
+    CalibrationMagic first;
+    CalibrationMagic second;
+};
+static_assert(sizeof(MagicSpiCalibration) == 0x2, "MagicSpiCalibration is an invalid size");
+
+// Output from SPI read command containing left joystick calibration
+struct JoystickLeftSpiCalibration {
+    std::array<u8, 3> max;
+    std::array<u8, 3> center;
+    std::array<u8, 3> min;
+};
+static_assert(sizeof(JoystickLeftSpiCalibration) == 0x9,
+              "JoystickLeftSpiCalibration is an invalid size");
+
+// Output from SPI read command containing right joystick calibration
+struct JoystickRightSpiCalibration {
+    std::array<u8, 3> center;
+    std::array<u8, 3> min;
+    std::array<u8, 3> max;
+};
+static_assert(sizeof(JoystickRightSpiCalibration) == 0x9,
+              "JoystickRightSpiCalibration is an invalid size");
+
 struct JoyStickAxisCalibration {
-    u16 max{1};
-    u16 min{1};
-    u16 center{0};
+    u16 max;
+    u16 min;
+    u16 center;
 };
 
 struct JoyStickCalibration {
     JoyStickAxisCalibration x;
     JoyStickAxisCalibration y;
 };
+
+struct ImuSpiCalibration {
+    std::array<s16, 3> accelerometer_offset;
+    std::array<s16, 3> accelerometer_scale;
+    std::array<s16, 3> gyroscope_offset;
+    std::array<s16, 3> gyroscope_scale;
+};
+static_assert(sizeof(ImuSpiCalibration) == 0x18, "ImuSpiCalibration is an invalid size");
 
 struct RingCalibration {
     s16 default_value;
@@ -487,14 +519,6 @@ struct InputReportNfcIr {
 };
 static_assert(sizeof(InputReportNfcIr) == 0x29, "InputReportNfcIr is an invalid size");
 #pragma pack(pop)
-
-struct IMUCalibration {
-    std::array<s16, 3> accelerometer_offset;
-    std::array<s16, 3> accelerometer_scale;
-    std::array<s16, 3> gyroscope_offset;
-    std::array<s16, 3> gyroscope_scale;
-};
-static_assert(sizeof(IMUCalibration) == 0x18, "IMUCalibration is an invalid size");
 
 struct NFCReadBlock {
     u8 start;

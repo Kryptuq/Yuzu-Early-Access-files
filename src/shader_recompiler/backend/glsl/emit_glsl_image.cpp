@@ -414,7 +414,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
 
 void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     std::string_view coords, std::string_view offset, std::string_view lod,
-                    [[maybe_unused]] std::string_view ms) {
+                    std::string_view ms) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_bias) {
         throw NotImplementedException("EmitImageFetch Bias texture samples");
@@ -431,18 +431,23 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
-        if (!offset.empty()) {
-            ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,
-                    CoordsCastToInt(coords, info), lod, CoordsCastToInt(offset, info));
+        const auto int_coords{CoordsCastToInt(coords, info)};
+        if (!ms.empty()) {
+            ctx.Add("{}=texelFetch({},{},int({}));", texel, texture, int_coords, ms);
+        } else if (!offset.empty()) {
+            ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture, int_coords, lod,
+                    CoordsCastToInt(offset, info));
         } else {
             if (info.type == TextureType::Buffer) {
                 ctx.Add("{}=texelFetch({},int({}));", texel, texture, coords);
             } else {
-                ctx.Add("{}=texelFetch({},{},int({}));", texel, texture,
-                        CoordsCastToInt(coords, info), lod);
+                ctx.Add("{}=texelFetch({},{},int({}));", texel, texture, int_coords, lod);
             }
         }
         return;
+    }
+    if (!ms.empty()) {
+        throw NotImplementedException("EmitImageFetch Sparse MSAA samples");
     }
     if (!offset.empty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
@@ -455,27 +460,27 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
 }
 
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              std::string_view lod) {
+                              std::string_view lod, const IR::Value& skip_mips_val) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto texture{Texture(ctx, info, index)};
+    const bool skip_mips{skip_mips_val.U1()};
+    const auto mips{
+        [&] { return skip_mips ? "0u" : fmt::format("uint(textureQueryLevels({}))", texture); }};
     switch (info.type) {
     case TextureType::Color1D:
-        return ctx.AddU32x4(
-            "{}=uvec4(uint(textureSize({},int({}))),0u,0u,uint(textureQueryLevels({})));", inst,
-            texture, lod, texture);
+        return ctx.AddU32x4("{}=uvec4(uint(textureSize({},int({}))),0u,0u,{});", inst, texture, lod,
+                            mips());
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
     case TextureType::Color2DRect:
-        return ctx.AddU32x4(
-            "{}=uvec4(uvec2(textureSize({},int({}))),0u,uint(textureQueryLevels({})));", inst,
-            texture, lod, texture);
+        return ctx.AddU32x4("{}=uvec4(uvec2(textureSize({},int({}))),0u,{});", inst, texture, lod,
+                            mips());
     case TextureType::ColorArray2D:
     case TextureType::Color3D:
     case TextureType::ColorArrayCube:
-        return ctx.AddU32x4(
-            "{}=uvec4(uvec3(textureSize({},int({}))),uint(textureQueryLevels({})));", inst, texture,
-            lod, texture);
+        return ctx.AddU32x4("{}=uvec4(uvec3(textureSize({},int({}))),{});", inst, texture, lod,
+                            mips());
     case TextureType::Buffer:
         throw NotImplementedException("EmitImageQueryDimensions Texture buffers");
     }
