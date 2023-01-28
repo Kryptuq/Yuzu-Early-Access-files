@@ -100,6 +100,10 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         ASSERT_MSG(false, "Invalid texture_type={}", static_cast<int>(config.texture_type.Value()));
         break;
     }
+    if (num_samples > 1) {
+        size.width *= NumSamplesX(config.msaa_mode);
+        size.height *= NumSamplesY(config.msaa_mode);
+    }
     if (type != ImageType::Linear) {
         // FIXME: Call this without passing *this
         layer_stride = CalculateLayerStride(*this);

@@ -279,6 +279,8 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     header += "OPTION NV_internal;"
               "OPTION NV_shader_storage_buffer;"
               "OPTION NV_gpu_program_fp64;";
+    // TODO: Enable only when MS is used
+    header += "OPTION NV_texture_multisample;";
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
     }

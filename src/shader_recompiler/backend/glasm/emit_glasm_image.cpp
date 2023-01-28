@@ -59,7 +59,7 @@ std::string Image(EmitContext& ctx, IR::TextureInstInfo info,
     }
 }
 
-std::string_view TextureType(IR::TextureInstInfo info) {
+std::string_view TextureType(IR::TextureInstInfo info, bool is_ms = false) {
     if (info.is_depth) {
         switch (info.type) {
         case TextureType::Color1D:
@@ -88,9 +88,9 @@ std::string_view TextureType(IR::TextureInstInfo info) {
             return "ARRAY1D";
         case TextureType::Color2D:
         case TextureType::Color2DRect:
-            return "2D";
+            return is_ms ? "2DMS" : "2D";
         case TextureType::ColorArray2D:
-            return "ARRAY2D";
+            return is_ms ? "ARRAY2DMS" : "ARRAY2D";
         case TextureType::Color3D:
             return "3D";
         case TextureType::ColorCube:
@@ -510,15 +510,16 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     const IR::Value& coord, const IR::Value& offset, ScalarS32 lod, ScalarS32 ms) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
+    const bool is_multisample{ms.type != Type::Void};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
-    const std::string_view type{TextureType(info)};
+    const std::string_view type{TextureType(info, is_multisample)};
     const std::string texture{Texture(ctx, info, index)};
     const std::string offset_vec{Offset(ctx, offset)};
     const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
     const Register ret{ctx.reg_alloc.Define(inst)};
     if (info.type == TextureType::Buffer) {
         ctx.Add("TXF.F{} {},{},{},{}{};", sparse_mod, ret, coord_vec, texture, type, offset_vec);
-    } else if (ms.type != Type::Void) {
+    } else if (is_multisample) {
         ctx.Add("MOV.S {}.w,{};"
                 "TXFMS.F{} {},{},{},{}{};",
                 coord_vec, ms, sparse_mod, ret, coord_vec, texture, type, offset_vec);

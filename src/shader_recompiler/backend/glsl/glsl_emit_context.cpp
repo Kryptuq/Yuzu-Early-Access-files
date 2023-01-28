@@ -61,24 +61,28 @@ std::string OutputDecorator(Stage stage, u32 size) {
     }
 }
 
-std::string_view SamplerType(TextureType type, bool is_depth) {
-    if (is_depth) {
-        switch (type) {
-        case TextureType::Color1D:
-            return "sampler1DShadow";
-        case TextureType::ColorArray1D:
-            return "sampler1DArrayShadow";
-        case TextureType::Color2D:
-            return "sampler2DShadow";
-        case TextureType::ColorArray2D:
-            return "sampler2DArrayShadow";
-        case TextureType::ColorCube:
-            return "samplerCubeShadow";
-        case TextureType::ColorArrayCube:
-            return "samplerCubeArrayShadow";
-        default:
-            throw NotImplementedException("Texture type: {}", type);
-        }
+std::string_view DepthSamplerType(TextureType type) {
+    switch (type) {
+    case TextureType::Color1D:
+        return "sampler1DShadow";
+    case TextureType::ColorArray1D:
+        return "sampler1DArrayShadow";
+    case TextureType::Color2D:
+        return "sampler2DShadow";
+    case TextureType::ColorArray2D:
+        return "sampler2DArrayShadow";
+    case TextureType::ColorCube:
+        return "samplerCubeShadow";
+    case TextureType::ColorArrayCube:
+        return "samplerCubeArrayShadow";
+    default:
+        throw NotImplementedException("Texture type: {}", type);
+    }
+}
+
+std::string_view ColorSamplerType(TextureType type, bool is_multisample = false) {
+    if (is_multisample) {
+        ASSERT(type == TextureType::Color2D || type == TextureType::ColorArray2D);
     }
     switch (type) {
     case TextureType::Color1D:
@@ -87,9 +91,9 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
         return "sampler1DArray";
     case TextureType::Color2D:
     case TextureType::Color2DRect:
-        return "sampler2D";
+        return is_multisample ? "sampler2DMS" : "sampler2D";
     case TextureType::ColorArray2D:
-        return "sampler2DArray";
+        return is_multisample ? "sampler2DMSArray" : "sampler2DArray";
     case TextureType::Color3D:
         return "sampler3D";
     case TextureType::ColorCube:
@@ -677,7 +681,7 @@ void EmitContext::SetupTextures(Bindings& bindings) {
     texture_buffers.reserve(info.texture_buffer_descriptors.size());
     for (const auto& desc : info.texture_buffer_descriptors) {
         texture_buffers.push_back({bindings.texture, desc.count});
-        const auto sampler_type{SamplerType(TextureType::Buffer, false)};
+        const auto sampler_type{ColorSamplerType(TextureType::Buffer)};
         const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
         header += fmt::format("layout(binding={}) uniform {} tex{}{};", bindings.texture,
                               sampler_type, bindings.texture, array_decorator);
@@ -686,7 +690,8 @@ void EmitContext::SetupTextures(Bindings& bindings) {
     textures.reserve(info.texture_descriptors.size());
     for (const auto& desc : info.texture_descriptors) {
         textures.push_back({bindings.texture, desc.count});
-        const auto sampler_type{SamplerType(desc.type, desc.is_depth)};
+        const auto sampler_type{desc.is_depth ? DepthSamplerType(desc.type)
+                                              : ColorSamplerType(desc.type, desc.is_multisample)};
         const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
         header += fmt::format("layout(binding={}) uniform {} tex{}{};", bindings.texture,
                               sampler_type, bindings.texture, array_decorator);

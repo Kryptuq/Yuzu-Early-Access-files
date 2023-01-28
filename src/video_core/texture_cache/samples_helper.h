@@ -51,4 +51,48 @@ namespace VideoCommon {
     return 1;
 }
 
+[[nodiscard]] inline int NumSamplesX(Tegra::Texture::MsaaMode msaa_mode) {
+    using Tegra::Texture::MsaaMode;
+    switch (msaa_mode) {
+    case MsaaMode::Msaa1x1:
+        return 1;
+    case MsaaMode::Msaa2x1:
+    case MsaaMode::Msaa2x1_D3D:
+    case MsaaMode::Msaa2x2:
+    case MsaaMode::Msaa2x2_VC4:
+    case MsaaMode::Msaa2x2_VC12:
+        return 2;
+    case MsaaMode::Msaa4x2:
+    case MsaaMode::Msaa4x2_D3D:
+    case MsaaMode::Msaa4x2_VC8:
+    case MsaaMode::Msaa4x2_VC24:
+    case MsaaMode::Msaa4x4:
+        return 4;
+    }
+    ASSERT_MSG(false, "Invalid MSAA mode={}", static_cast<int>(msaa_mode));
+    return 1;
+}
+
+[[nodiscard]] inline int NumSamplesY(Tegra::Texture::MsaaMode msaa_mode) {
+    using Tegra::Texture::MsaaMode;
+    switch (msaa_mode) {
+    case MsaaMode::Msaa1x1:
+    case MsaaMode::Msaa2x1:
+    case MsaaMode::Msaa2x1_D3D:
+        return 1;
+    case MsaaMode::Msaa2x2:
+    case MsaaMode::Msaa2x2_VC4:
+    case MsaaMode::Msaa2x2_VC12:
+    case MsaaMode::Msaa4x2:
+    case MsaaMode::Msaa4x2_D3D:
+    case MsaaMode::Msaa4x2_VC8:
+    case MsaaMode::Msaa4x2_VC24:
+        return 2;
+    case MsaaMode::Msaa4x4:
+        return 4;
+    }
+    ASSERT_MSG(false, "Invalid MSAA mode={}", static_cast<int>(msaa_mode));
+    return 1;
+}
+
 } // namespace VideoCommon
