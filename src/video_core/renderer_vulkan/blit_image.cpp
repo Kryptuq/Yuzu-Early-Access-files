@@ -12,8 +12,6 @@
 #include "video_core/host_shaders/convert_s8d24_to_abgr8_frag_spv.h"
 #include "video_core/host_shaders/full_screen_triangle_vert_spv.h"
 #include "video_core/host_shaders/vulkan_blit_depth_stencil_frag_spv.h"
-#include "video_core/host_shaders/vulkan_color_clear_frag_spv.h"
-#include "video_core/host_shaders/vulkan_color_clear_vert_spv.h"
 #include "video_core/renderer_vulkan/blit_image.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -71,11 +69,10 @@ constexpr VkDescriptorSetLayoutCreateInfo TWO_TEXTURES_DESCRIPTOR_SET_LAYOUT_CRE
     .bindingCount = static_cast<u32>(TWO_TEXTURES_DESCRIPTOR_SET_LAYOUT_BINDINGS.size()),
     .pBindings = TWO_TEXTURES_DESCRIPTOR_SET_LAYOUT_BINDINGS.data(),
 };
-template <VkShaderStageFlags stageFlags, size_t size>
-inline constexpr VkPushConstantRange PUSH_CONSTANT_RANGE{
-    .stageFlags = stageFlags,
+constexpr VkPushConstantRange PUSH_CONSTANT_RANGE{
+    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
     .offset = 0,
-    .size = static_cast<u32>(size),
+    .size = sizeof(PushConstants),
 };
 constexpr VkPipelineVertexInputStateCreateInfo PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -128,8 +125,10 @@ constexpr VkPipelineMultisampleStateCreateInfo PIPELINE_MULTISAMPLE_STATE_CREATE
     .alphaToCoverageEnable = VK_FALSE,
     .alphaToOneEnable = VK_FALSE,
 };
-constexpr std::array DYNAMIC_STATES{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-                                    VK_DYNAMIC_STATE_BLEND_CONSTANTS};
+constexpr std::array DYNAMIC_STATES{
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR,
+};
 constexpr VkPipelineDynamicStateCreateInfo PIPELINE_DYNAMIC_STATE_CREATE_INFO{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
     .pNext = nullptr,
@@ -206,15 +205,15 @@ inline constexpr VkSamplerCreateInfo SAMPLER_CREATE_INFO{
 };
 
 constexpr VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo(
-    const VkDescriptorSetLayout* set_layout, vk::Span<VkPushConstantRange> push_constants) {
+    const VkDescriptorSetLayout* set_layout) {
     return VkPipelineLayoutCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .setLayoutCount = (set_layout != nullptr ? 1u : 0u),
+        .setLayoutCount = 1,
         .pSetLayouts = set_layout,
-        .pushConstantRangeCount = push_constants.size(),
-        .pPushConstantRanges = push_constants.data(),
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &PUSH_CONSTANT_RANGE,
     };
 }
 
@@ -303,7 +302,8 @@ void UpdateTwoTexturesDescriptorSet(const Device& device, VkDescriptorSet descri
     device.GetLogical().UpdateDescriptorSets(write_descriptor_sets, nullptr);
 }
 
-void BindBlitState(vk::CommandBuffer cmdbuf, const Region2D& dst_region) {
+void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Region2D& dst_region,
+                   const Region2D& src_region, const Extent3D& src_size = {1, 1, 1}) {
     const VkOffset2D offset{
         .x = std::min(dst_region.start.x, dst_region.end.x),
         .y = std::min(dst_region.start.y, dst_region.end.y),
@@ -325,13 +325,6 @@ void BindBlitState(vk::CommandBuffer cmdbuf, const Region2D& dst_region) {
         .offset = offset,
         .extent = extent,
     };
-    cmdbuf.SetViewport(0, viewport);
-    cmdbuf.SetScissor(0, scissor);
-}
-
-void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Region2D& dst_region,
-                   const Region2D& src_region, const Extent3D& src_size = {1, 1, 1}) {
-    BindBlitState(cmdbuf, dst_region);
     const float scale_x = static_cast<float>(src_region.end.x - src_region.start.x) /
                           static_cast<float>(src_size.width);
     const float scale_y = static_cast<float>(src_region.end.y - src_region.start.y) /
@@ -342,6 +335,8 @@ void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Regi
                        static_cast<float>(src_region.start.y) /
                            static_cast<float>(src_size.height)},
     };
+    cmdbuf.SetViewport(0, viewport);
+    cmdbuf.SetScissor(0, scissor);
     cmdbuf.PushConstants(layout, VK_SHADER_STAGE_VERTEX_BIT, push_constants);
 }
 
@@ -413,20 +408,13 @@ BlitImageHelper::BlitImageHelper(const Device& device_, Scheduler& scheduler_,
           descriptor_pool.Allocator(*one_texture_set_layout, TEXTURE_DESCRIPTOR_BANK_INFO<1>)},
       two_textures_descriptor_allocator{
           descriptor_pool.Allocator(*two_textures_set_layout, TEXTURE_DESCRIPTOR_BANK_INFO<2>)},
-      one_texture_pipeline_layout(device.GetLogical().CreatePipelineLayout(PipelineLayoutCreateInfo(
-          one_texture_set_layout.address(),
-          PUSH_CONSTANT_RANGE<VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushConstants)>))),
-      two_textures_pipeline_layout(
-          device.GetLogical().CreatePipelineLayout(PipelineLayoutCreateInfo(
-              two_textures_set_layout.address(),
-              PUSH_CONSTANT_RANGE<VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushConstants)>))),
-      clear_color_pipeline_layout(device.GetLogical().CreatePipelineLayout(PipelineLayoutCreateInfo(
-          nullptr, PUSH_CONSTANT_RANGE<VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(float) * 4>))),
+      one_texture_pipeline_layout(device.GetLogical().CreatePipelineLayout(
+          PipelineLayoutCreateInfo(one_texture_set_layout.address()))),
+      two_textures_pipeline_layout(device.GetLogical().CreatePipelineLayout(
+          PipelineLayoutCreateInfo(two_textures_set_layout.address()))),
       full_screen_vert(BuildShader(device, FULL_SCREEN_TRIANGLE_VERT_SPV)),
       blit_color_to_color_frag(BuildShader(device, BLIT_COLOR_FLOAT_FRAG_SPV)),
       blit_depth_stencil_frag(BuildShader(device, VULKAN_BLIT_DEPTH_STENCIL_FRAG_SPV)),
-      clear_color_vert(BuildShader(device, VULKAN_COLOR_CLEAR_VERT_SPV)),
-      clear_color_frag(BuildShader(device, VULKAN_COLOR_CLEAR_FRAG_SPV)),
       convert_depth_to_float_frag(BuildShader(device, CONVERT_DEPTH_TO_FLOAT_FRAG_SPV)),
       convert_float_to_depth_frag(BuildShader(device, CONVERT_FLOAT_TO_DEPTH_FRAG_SPV)),
       convert_abgr8_to_d24s8_frag(BuildShader(device, CONVERT_ABGR8_TO_D24S8_FRAG_SPV)),
@@ -563,30 +551,6 @@ void BlitImageHelper::ConvertS8D24ToABGR8(const Framebuffer* dst_framebuffer,
     ConvertPipelineColorTargetEx(convert_s8d24_to_abgr8_pipeline, dst_framebuffer->RenderPass(),
                                  convert_s8d24_to_abgr8_frag);
     ConvertDepthStencil(*convert_s8d24_to_abgr8_pipeline, dst_framebuffer, src_image_view);
-}
-
-void BlitImageHelper::ClearColor(const Framebuffer* dst_framebuffer, u8 color_mask,
-                                 const std::array<f32, 4>& clear_color,
-                                 const Region2D& dst_region) {
-    const BlitImagePipelineKey key{
-        .renderpass = dst_framebuffer->RenderPass(),
-        .operation = Tegra::Engines::Fermi2D::Operation::BlendPremult,
-    };
-    const VkPipeline pipeline = FindOrEmplaceClearColorPipeline(key);
-    const VkPipelineLayout layout = *clear_color_pipeline_layout;
-    scheduler.RequestRenderpass(dst_framebuffer);
-    scheduler.Record(
-        [pipeline, layout, color_mask, clear_color, dst_region](vk::CommandBuffer cmdbuf) {
-            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-            const std::array blend_color = {
-                (color_mask & 0x1) ? 1.0f : 0.0f, (color_mask & 0x2) ? 1.0f : 0.0f,
-                (color_mask & 0x4) ? 1.0f : 0.0f, (color_mask & 0x8) ? 1.0f : 0.0f};
-            cmdbuf.SetBlendConstants(blend_color.data());
-            BindBlitState(cmdbuf, dst_region);
-            cmdbuf.PushConstants(layout, VK_SHADER_STAGE_FRAGMENT_BIT, clear_color);
-            cmdbuf.Draw(3, 1, 0, 0);
-        });
-    scheduler.InvalidateState();
 }
 
 void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
@@ -762,58 +726,6 @@ VkPipeline BlitImageHelper::FindOrEmplaceDepthStencilPipeline(const BlitImagePip
         .basePipelineIndex = 0,
     }));
     return *blit_depth_stencil_pipelines.back();
-}
-
-VkPipeline BlitImageHelper::FindOrEmplaceClearColorPipeline(const BlitImagePipelineKey& key) {
-    const auto it = std::ranges::find(clear_color_keys, key);
-    if (it != clear_color_keys.end()) {
-        return *clear_color_pipelines[std::distance(clear_color_keys.begin(), it)];
-    }
-    clear_color_keys.push_back(key);
-    const std::array stages = MakeStages(*clear_color_vert, *clear_color_frag);
-    const VkPipelineColorBlendAttachmentState color_blend_attachment_state{
-        .blendEnable = VK_TRUE,
-        .srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR,
-        .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
-        .colorBlendOp = VK_BLEND_OP_ADD,
-        .srcAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA,
-        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
-        .alphaBlendOp = VK_BLEND_OP_ADD,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
-    const VkPipelineColorBlendStateCreateInfo color_blend_state_generic_create_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .logicOpEnable = VK_FALSE,
-        .logicOp = VK_LOGIC_OP_CLEAR,
-        .attachmentCount = 1,
-        .pAttachments = &color_blend_attachment_state,
-        .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
-    };
-    clear_color_pipelines.push_back(device.GetLogical().CreateGraphicsPipeline({
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .stageCount = static_cast<u32>(stages.size()),
-        .pStages = stages.data(),
-        .pVertexInputState = &PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .pInputAssemblyState = &PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .pTessellationState = nullptr,
-        .pViewportState = &PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .pRasterizationState = &PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .pMultisampleState = &PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .pDepthStencilState = &PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .pColorBlendState = &color_blend_state_generic_create_info,
-        .pDynamicState = &PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .layout = *clear_color_pipeline_layout,
-        .renderPass = key.renderpass,
-        .subpass = 0,
-        .basePipelineHandle = VK_NULL_HANDLE,
-        .basePipelineIndex = 0,
-    }));
-    return *clear_color_pipelines.back();
 }
 
 void BlitImageHelper::ConvertPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass,

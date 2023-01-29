@@ -532,7 +532,7 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
 }
 
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              ScalarS32 lod, [[maybe_unused]] const IR::Value& skip_mips) {
+                              ScalarS32 lod) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const std::string texture{Texture(ctx, info, index)};
     const std::string_view type{TextureType(info)};

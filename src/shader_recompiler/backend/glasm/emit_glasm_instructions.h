@@ -581,7 +581,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
 void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     const IR::Value& coord, const IR::Value& offset, ScalarS32 lod, ScalarS32 ms);
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              ScalarS32 lod, const IR::Value& skip_mips);
+                              ScalarS32 lod);
 void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord);
 void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                        const IR::Value& coord, const IR::Value& derivatives,

@@ -6,7 +6,6 @@
 #include <array>
 #include <atomic>
 #include <mutex>
-#include <span>
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -96,7 +95,7 @@ public:
     void SetSupportedStyleSet(Core::HID::NpadStyleTag style_set);
     Core::HID::NpadStyleTag GetSupportedStyleSet() const;
 
-    void SetSupportedNpadIdTypes(std::span<const u8> data);
+    void SetSupportedNpadIdTypes(u8* data, std::size_t length);
     void GetSupportedNpadIdTypes(u32* data, std::size_t max_length);
     std::size_t GetSupportedNpadIdTypesSize() const;
 

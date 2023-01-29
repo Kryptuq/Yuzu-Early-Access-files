@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <span>
 
 #include "common/common_types.h"
 #include "core/hle/service/hid/hidbus/hidbus_base.h"
@@ -32,7 +31,7 @@ public:
     u8 GetDeviceId() const override;
 
     // Assigns a command from data
-    bool SetCommand(std::span<const u8> data) override;
+    bool SetCommand(const std::vector<u8>& data) override;
 
     // Returns a reply from a command
     std::vector<u8> GetReply() const override;

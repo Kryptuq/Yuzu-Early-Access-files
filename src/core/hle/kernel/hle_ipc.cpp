@@ -11,7 +11,6 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "common/scratch_buffer.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_auto_object.h"
@@ -326,7 +325,7 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_threa
     return ResultSuccess;
 }
 
-std::vector<u8> HLERequestContext::ReadBufferCopy(std::size_t buffer_index) const {
+std::vector<u8> HLERequestContext::ReadBuffer(std::size_t buffer_index) const {
     const bool is_buffer_a{BufferDescriptorA().size() > buffer_index &&
                            BufferDescriptorA()[buffer_index].Size()};
     if (is_buffer_a) {
@@ -343,33 +342,6 @@ std::vector<u8> HLERequestContext::ReadBufferCopy(std::size_t buffer_index) cons
         std::vector<u8> buffer(BufferDescriptorX()[buffer_index].Size());
         memory.ReadBlock(BufferDescriptorX()[buffer_index].Address(), buffer.data(), buffer.size());
         return buffer;
-    }
-}
-
-std::span<const u8> HLERequestContext::ReadBuffer(std::size_t buffer_index) const {
-    static thread_local std::array<Common::ScratchBuffer<u8>, 2> read_buffer_a;
-    static thread_local std::array<Common::ScratchBuffer<u8>, 2> read_buffer_x;
-
-    const bool is_buffer_a{BufferDescriptorA().size() > buffer_index &&
-                           BufferDescriptorA()[buffer_index].Size()};
-    if (is_buffer_a) {
-        ASSERT_OR_EXECUTE_MSG(
-            BufferDescriptorA().size() > buffer_index, { return {}; },
-            "BufferDescriptorA invalid buffer_index {}", buffer_index);
-        auto& read_buffer = read_buffer_a[buffer_index];
-        read_buffer.resize_destructive(BufferDescriptorA()[buffer_index].Size());
-        memory.ReadBlock(BufferDescriptorA()[buffer_index].Address(), read_buffer.data(),
-                         read_buffer.size());
-        return read_buffer;
-    } else {
-        ASSERT_OR_EXECUTE_MSG(
-            BufferDescriptorX().size() > buffer_index, { return {}; },
-            "BufferDescriptorX invalid buffer_index {}", buffer_index);
-        auto& read_buffer = read_buffer_x[buffer_index];
-        read_buffer.resize_destructive(BufferDescriptorX()[buffer_index].Size());
-        memory.ReadBlock(BufferDescriptorX()[buffer_index].Address(), read_buffer.data(),
-                         read_buffer.size());
-        return read_buffer;
     }
 }
 

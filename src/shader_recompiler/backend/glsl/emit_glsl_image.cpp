@@ -460,27 +460,27 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
 }
 
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              std::string_view lod, const IR::Value& skip_mips_val) {
+                              std::string_view lod) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto texture{Texture(ctx, info, index)};
-    const bool skip_mips{skip_mips_val.U1()};
-    const auto mips{
-        [&] { return skip_mips ? "0u" : fmt::format("uint(textureQueryLevels({}))", texture); }};
     switch (info.type) {
     case TextureType::Color1D:
-        return ctx.AddU32x4("{}=uvec4(uint(textureSize({},int({}))),0u,0u,{});", inst, texture, lod,
-                            mips());
+        return ctx.AddU32x4(
+            "{}=uvec4(uint(textureSize({},int({}))),0u,0u,uint(textureQueryLevels({})));", inst,
+            texture, lod, texture);
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
     case TextureType::Color2DRect:
-        return ctx.AddU32x4("{}=uvec4(uvec2(textureSize({},int({}))),0u,{});", inst, texture, lod,
-                            mips());
+        return ctx.AddU32x4(
+            "{}=uvec4(uvec2(textureSize({},int({}))),0u,uint(textureQueryLevels({})));", inst,
+            texture, lod, texture);
     case TextureType::ColorArray2D:
     case TextureType::Color3D:
     case TextureType::ColorArrayCube:
-        return ctx.AddU32x4("{}=uvec4(uvec3(textureSize({},int({}))),{});", inst, texture, lod,
-                            mips());
+        return ctx.AddU32x4(
+            "{}=uvec4(uvec3(textureSize({},int({}))),uint(textureQueryLevels({})));", inst, texture,
+            lod, texture);
     case TextureType::Buffer:
         throw NotImplementedException("EmitImageQueryDimensions Texture buffers");
     }

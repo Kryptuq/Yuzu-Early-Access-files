@@ -93,7 +93,7 @@ private:
         ctx.WriteBuffer(samples);
     }
 
-    bool DecodeOpusData(u32& consumed, u32& sample_count, std::span<const u8> input,
+    bool DecodeOpusData(u32& consumed, u32& sample_count, const std::vector<u8>& input,
                         std::vector<opus_int16>& output, u64* out_performance_time) const {
         const auto start_time = std::chrono::steady_clock::now();
         const std::size_t raw_output_sz = output.size() * sizeof(opus_int16);

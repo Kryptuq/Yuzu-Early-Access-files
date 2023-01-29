@@ -22,8 +22,8 @@ void JoyconCommonProtocol::SetNonBlocking() {
 }
 
 DriverResult JoyconCommonProtocol::GetDeviceType(ControllerType& controller_type) {
-    std::array<u8, 1> buffer{};
-    const auto result = ReadRawSPI(SpiAddress::DEVICE_TYPE, buffer);
+    std::vector<u8> buffer;
+    const auto result = ReadSPI(CalAddr::DEVICE_TYPE, 1, buffer);
     controller_type = ControllerType::None;
 
     if (result == DriverResult::Success) {
@@ -148,13 +148,11 @@ DriverResult JoyconCommonProtocol::SendVibrationReport(std::span<const u8> buffe
     return SendData(local_buffer);
 }
 
-DriverResult JoyconCommonProtocol::ReadRawSPI(SpiAddress addr, std::span<u8> output) {
-    constexpr std::size_t HeaderSize = 20;
+DriverResult JoyconCommonProtocol::ReadSPI(CalAddr addr, u8 size, std::vector<u8>& output) {
     constexpr std::size_t MaxTries = 10;
-    const auto size = output.size();
     std::size_t tries = 0;
-    std::array<u8, 5> buffer = {0x00, 0x00, 0x00, 0x00, static_cast<u8>(size)};
-    std::vector<u8> local_buffer{};
+    std::array<u8, 5> buffer = {0x00, 0x00, 0x00, 0x00, size};
+    std::vector<u8> local_buffer(size + 20);
 
     buffer[0] = static_cast<u8>(static_cast<u16>(addr) & 0x00FF);
     buffer[1] = static_cast<u8>((static_cast<u16>(addr) & 0xFF00) >> 8);
@@ -169,12 +167,8 @@ DriverResult JoyconCommonProtocol::ReadRawSPI(SpiAddress addr, std::span<u8> out
         }
     } while (local_buffer[15] != buffer[0] || local_buffer[16] != buffer[1]);
 
-    if (local_buffer.size() < size + HeaderSize) {
-        return DriverResult::WrongReply;
-    }
-
     // Remove header from output
-    memcpy(output.data(), local_buffer.data() + HeaderSize, size);
+    output = std::vector<u8>(local_buffer.begin() + 20, local_buffer.begin() + 20 + size);
     return DriverResult::Success;
 }
 

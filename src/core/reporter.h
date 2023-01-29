@@ -5,7 +5,6 @@
 
 #include <array>
 #include <optional>
-#include <span>
 #include <string>
 #include <vector>
 #include "common/common_types.h"
@@ -57,8 +56,7 @@ public:
         System,
     };
 
-    void SavePlayReport(PlayReportType type, u64 title_id,
-                        const std::vector<std::span<const u8>>& data,
+    void SavePlayReport(PlayReportType type, u64 title_id, const std::vector<std::vector<u8>>& data,
                         std::optional<u64> process_id = {}, std::optional<u128> user_id = {}) const;
 
     // Used by error applet

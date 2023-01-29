@@ -5,7 +5,6 @@
 
 #include <map>
 #include <memory>
-#include <span>
 #include <utility>
 
 #if defined(_WIN32)
@@ -67,9 +66,9 @@ public:
     virtual std::pair<s32, Errno> RecvFrom(int flags, std::vector<u8>& message,
                                            SockAddrIn* addr) = 0;
 
-    virtual std::pair<s32, Errno> Send(std::span<const u8> message, int flags) = 0;
+    virtual std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags) = 0;
 
-    virtual std::pair<s32, Errno> SendTo(u32 flags, std::span<const u8> message,
+    virtual std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message,
                                          const SockAddrIn* addr) = 0;
 
     virtual Errno SetLinger(bool enable, u32 linger) = 0;
@@ -139,9 +138,9 @@ public:
 
     std::pair<s32, Errno> RecvFrom(int flags, std::vector<u8>& message, SockAddrIn* addr) override;
 
-    std::pair<s32, Errno> Send(std::span<const u8> message, int flags) override;
+    std::pair<s32, Errno> Send(const std::vector<u8>& message, int flags) override;
 
-    std::pair<s32, Errno> SendTo(u32 flags, std::span<const u8> message,
+    std::pair<s32, Errno> SendTo(u32 flags, const std::vector<u8>& message,
                                  const SockAddrIn* addr) override;
 
     Errno SetLinger(bool enable, u32 linger) override;

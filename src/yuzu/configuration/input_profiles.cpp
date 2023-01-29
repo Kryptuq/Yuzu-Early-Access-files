@@ -58,13 +58,16 @@ std::vector<std::string> InputProfiles::GetInputProfileNames() {
     std::vector<std::string> profile_names;
     profile_names.reserve(map_profiles.size());
 
-    for (const auto& [profile_name, config] : map_profiles) {
+    auto it = map_profiles.cbegin();
+    while (it != map_profiles.cend()) {
+        const auto& [profile_name, config] = *it;
         if (!ProfileExistsInFilesystem(profile_name)) {
-            DeleteProfile(profile_name);
+            it = map_profiles.erase(it);
             continue;
         }
 
         profile_names.push_back(profile_name);
+        ++it;
     }
 
     std::stable_sort(profile_names.begin(), profile_names.end());

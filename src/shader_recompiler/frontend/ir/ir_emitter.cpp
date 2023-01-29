@@ -1846,16 +1846,15 @@ Value IREmitter::ImageFetch(const Value& handle, const Value& coords, const Valu
     return Inst(op, Flags{info}, handle, coords, offset, lod, multisampling);
 }
 
-Value IREmitter::ImageQueryDimension(const Value& handle, const IR::U32& lod,
-                                     const IR::U1& skip_mips) {
+Value IREmitter::ImageQueryDimension(const Value& handle, const IR::U32& lod) {
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageQueryDimensions
                                          : Opcode::BindlessImageQueryDimensions};
-    return Inst(op, handle, lod, skip_mips);
+    return Inst(op, handle, lod);
 }
 
 Value IREmitter::ImageQueryDimension(const Value& handle, const IR::U32& lod,
-                                     const IR::U1& skip_mips, TextureInstInfo info) {
-    return Inst(Opcode::ImageQueryDimensions, Flags{info}, handle, lod, skip_mips);
+                                     TextureInstInfo info) {
+    return Inst(Opcode::ImageQueryDimensions, Flags{info}, handle, lod);
 }
 
 Value IREmitter::ImageQueryLod(const Value& handle, const Value& coords, TextureInstInfo info) {

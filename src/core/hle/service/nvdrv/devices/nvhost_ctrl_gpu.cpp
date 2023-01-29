@@ -21,7 +21,7 @@ nvhost_ctrl_gpu::~nvhost_ctrl_gpu() {
     events_interface.FreeEvent(unknown_event);
 }
 
-NvResult nvhost_ctrl_gpu::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
+NvResult nvhost_ctrl_gpu::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  std::vector<u8>& output) {
     switch (command.group) {
     case 'G':
@@ -53,13 +53,13 @@ NvResult nvhost_ctrl_gpu::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8>
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_ctrl_gpu::Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
-                                 std::span<const u8> inline_input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                                 const std::vector<u8>& inline_input, std::vector<u8>& output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_ctrl_gpu::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input,
+NvResult nvhost_ctrl_gpu::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  std::vector<u8>& output, std::vector<u8>& inline_output) {
     switch (command.group) {
     case 'G':
@@ -82,7 +82,8 @@ NvResult nvhost_ctrl_gpu::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8>
 void nvhost_ctrl_gpu::OnOpen(DeviceFD fd) {}
 void nvhost_ctrl_gpu::OnClose(DeviceFD fd) {}
 
-NvResult nvhost_ctrl_gpu::GetCharacteristics(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input,
+                                             std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
     IoctlCharacteristics params{};
     std::memcpy(&params, input.data(), input.size());
@@ -127,7 +128,7 @@ NvResult nvhost_ctrl_gpu::GetCharacteristics(std::span<const u8> input, std::vec
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::GetCharacteristics(std::span<const u8> input, std::vector<u8>& output,
+NvResult nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output,
                                              std::vector<u8>& inline_output) {
     LOG_DEBUG(Service_NVDRV, "called");
     IoctlCharacteristics params{};
@@ -175,7 +176,7 @@ NvResult nvhost_ctrl_gpu::GetCharacteristics(std::span<const u8> input, std::vec
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::GetTPCMasks(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, mask_buffer_size=0x{:X}", params.mask_buffer_size);
@@ -186,7 +187,7 @@ NvResult nvhost_ctrl_gpu::GetTPCMasks(std::span<const u8> input, std::vector<u8>
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::GetTPCMasks(std::span<const u8> input, std::vector<u8>& output,
+NvResult nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output,
                                       std::vector<u8>& inline_output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
@@ -199,7 +200,7 @@ NvResult nvhost_ctrl_gpu::GetTPCMasks(std::span<const u8> input, std::vector<u8>
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::GetActiveSlotMask(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlActiveSlotMask params{};
@@ -212,7 +213,7 @@ NvResult nvhost_ctrl_gpu::GetActiveSlotMask(std::span<const u8> input, std::vect
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::ZCullGetCtxSize(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlZcullGetCtxSize params{};
@@ -224,7 +225,7 @@ NvResult nvhost_ctrl_gpu::ZCullGetCtxSize(std::span<const u8> input, std::vector
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::ZCullGetInfo(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlNvgpuGpuZcullGetInfoArgs params{};
@@ -247,7 +248,7 @@ NvResult nvhost_ctrl_gpu::ZCullGetInfo(std::span<const u8> input, std::vector<u8
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::ZBCSetTable(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IoctlZbcSetTable params{};
@@ -263,7 +264,7 @@ NvResult nvhost_ctrl_gpu::ZBCSetTable(std::span<const u8> input, std::vector<u8>
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::ZBCQueryTable(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IoctlZbcQueryTable params{};
@@ -273,7 +274,7 @@ NvResult nvhost_ctrl_gpu::ZBCQueryTable(std::span<const u8> input, std::vector<u
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::FlushL2(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::FlushL2(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IoctlFlushL2 params{};
@@ -283,7 +284,7 @@ NvResult nvhost_ctrl_gpu::FlushL2(std::span<const u8> input, std::vector<u8>& ou
     return NvResult::Success;
 }
 
-NvResult nvhost_ctrl_gpu::GetGpuTime(std::span<const u8> input, std::vector<u8>& output) {
+NvResult nvhost_ctrl_gpu::GetGpuTime(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     IoctlGetGpuTime params{};
