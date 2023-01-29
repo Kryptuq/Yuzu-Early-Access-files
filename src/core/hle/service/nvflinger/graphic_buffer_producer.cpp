@@ -9,7 +9,7 @@
 
 namespace Service::android {
 
-QueueBufferInput::QueueBufferInput(Parcel& parcel) {
+QueueBufferInput::QueueBufferInput(InputParcel& parcel) {
     parcel.ReadFlattened(*this);
 }
 

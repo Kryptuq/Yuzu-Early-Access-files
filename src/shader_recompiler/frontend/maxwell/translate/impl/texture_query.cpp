@@ -15,11 +15,13 @@ enum class Mode : u64 {
     SamplePos = 5,
 };
 
-IR::Value Query(TranslatorVisitor& v, const IR::U32& handle, Mode mode, IR::Reg src_reg) {
+IR::Value Query(TranslatorVisitor& v, const IR::U32& handle, Mode mode, IR::Reg src_reg, u64 mask) {
     switch (mode) {
     case Mode::Dimension: {
+        const bool needs_num_mips{((mask >> 3) & 1) != 0};
+        const IR::U1 skip_mips{v.ir.Imm1(!needs_num_mips)};
         const IR::U32 lod{v.X(src_reg)};
-        return v.ir.ImageQueryDimension(handle, lod);
+        return v.ir.ImageQueryDimension(handle, lod, skip_mips);
     }
     case Mode::TextureType:
     case Mode::SamplePos:
@@ -46,7 +48,7 @@ void Impl(TranslatorVisitor& v, u64 insn, std::optional<u32> cbuf_offset) {
         handle = v.X(src_reg);
         ++src_reg;
     }
-    const IR::Value query{Query(v, handle, txq.mode, src_reg)};
+    const IR::Value query{Query(v, handle, txq.mode, src_reg, txq.mask)};
     IR::Reg dest_reg{txq.dest_reg};
     for (int element = 0; element < 4; ++element) {
         if (((txq.mask >> element) & 1) == 0) {

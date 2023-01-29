@@ -130,6 +130,8 @@ struct ButtonStatus {
     bool inverted{};
     // Press once to activate, press again to release
     bool toggle{};
+    // Spams the button when active
+    bool turbo{};
     // Internal lock for the toggle status
     bool locked{};
 };

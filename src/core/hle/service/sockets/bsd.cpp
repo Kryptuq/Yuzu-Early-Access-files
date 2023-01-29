@@ -208,7 +208,6 @@ void BSD::Bind(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
 
     LOG_DEBUG(Service, "called. fd={} addrlen={}", fd, ctx.GetReadBufferSize());
-
     BuildErrnoResponse(ctx, BindImpl(fd, ctx.ReadBuffer()));
 }
 
@@ -312,7 +311,7 @@ void BSD::SetSockOpt(Kernel::HLERequestContext& ctx) {
     const u32 level = rp.Pop<u32>();
     const OptName optname = static_cast<OptName>(rp.Pop<u32>());
 
-    const std::vector<u8> buffer = ctx.ReadBuffer();
+    const auto buffer = ctx.ReadBuffer();
     const u8* optval = buffer.empty() ? nullptr : buffer.data();
     size_t optlen = buffer.size();
 
@@ -489,7 +488,7 @@ std::pair<s32, Errno> BSD::SocketImpl(Domain domain, Type type, Protocol protoco
     return {fd, Errno::SUCCESS};
 }
 
-std::pair<s32, Errno> BSD::PollImpl(std::vector<u8>& write_buffer, std::vector<u8> read_buffer,
+std::pair<s32, Errno> BSD::PollImpl(std::vector<u8>& write_buffer, std::span<const u8> read_buffer,
                                     s32 nfds, s32 timeout) {
     if (write_buffer.size() < nfds * sizeof(PollFD)) {
         return {-1, Errno::INVAL};
@@ -584,7 +583,7 @@ std::pair<s32, Errno> BSD::AcceptImpl(s32 fd, std::vector<u8>& write_buffer) {
     return {new_fd, Errno::SUCCESS};
 }
 
-Errno BSD::BindImpl(s32 fd, const std::vector<u8>& addr) {
+Errno BSD::BindImpl(s32 fd, std::span<const u8> addr) {
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
@@ -595,7 +594,7 @@ Errno BSD::BindImpl(s32 fd, const std::vector<u8>& addr) {
     return Translate(file_descriptors[fd]->socket->Bind(Translate(addr_in)));
 }
 
-Errno BSD::ConnectImpl(s32 fd, const std::vector<u8>& addr) {
+Errno BSD::ConnectImpl(s32 fd, std::span<const u8> addr) {
     if (!IsFileDescriptorValid(fd)) {
         return Errno::BADF;
     }
@@ -800,15 +799,15 @@ std::pair<s32, Errno> BSD::RecvFromImpl(s32 fd, u32 flags, std::vector<u8>& mess
     return {ret, bsd_errno};
 }
 
-std::pair<s32, Errno> BSD::SendImpl(s32 fd, u32 flags, const std::vector<u8>& message) {
+std::pair<s32, Errno> BSD::SendImpl(s32 fd, u32 flags, std::span<const u8> message) {
     if (!IsFileDescriptorValid(fd)) {
         return {-1, Errno::BADF};
     }
     return Translate(file_descriptors[fd]->socket->Send(message, flags));
 }
 
-std::pair<s32, Errno> BSD::SendToImpl(s32 fd, u32 flags, const std::vector<u8>& message,
-                                      const std::vector<u8>& addr) {
+std::pair<s32, Errno> BSD::SendToImpl(s32 fd, u32 flags, std::span<const u8> message,
+                                      std::span<const u8> addr) {
     if (!IsFileDescriptorValid(fd)) {
         return {-1, Errno::BADF};
     }

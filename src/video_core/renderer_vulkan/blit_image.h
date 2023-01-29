@@ -61,6 +61,9 @@ public:
 
     void ConvertS8D24ToABGR8(const Framebuffer* dst_framebuffer, ImageView& src_image_view);
 
+    void ClearColor(const Framebuffer* dst_framebuffer, u8 color_mask,
+                    const std::array<f32, 4>& clear_color, const Region2D& dst_region);
+
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                  const ImageView& src_image_view);
@@ -71,6 +74,8 @@ private:
     [[nodiscard]] VkPipeline FindOrEmplaceColorPipeline(const BlitImagePipelineKey& key);
 
     [[nodiscard]] VkPipeline FindOrEmplaceDepthStencilPipeline(const BlitImagePipelineKey& key);
+
+    [[nodiscard]] VkPipeline FindOrEmplaceClearColorPipeline(const BlitImagePipelineKey& key);
 
     void ConvertPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass, bool is_target_depth);
 
@@ -97,9 +102,12 @@ private:
     DescriptorAllocator two_textures_descriptor_allocator;
     vk::PipelineLayout one_texture_pipeline_layout;
     vk::PipelineLayout two_textures_pipeline_layout;
+    vk::PipelineLayout clear_color_pipeline_layout;
     vk::ShaderModule full_screen_vert;
     vk::ShaderModule blit_color_to_color_frag;
     vk::ShaderModule blit_depth_stencil_frag;
+    vk::ShaderModule clear_color_vert;
+    vk::ShaderModule clear_color_frag;
     vk::ShaderModule convert_depth_to_float_frag;
     vk::ShaderModule convert_float_to_depth_frag;
     vk::ShaderModule convert_abgr8_to_d24s8_frag;
@@ -112,6 +120,8 @@ private:
     std::vector<vk::Pipeline> blit_color_pipelines;
     std::vector<BlitImagePipelineKey> blit_depth_stencil_keys;
     std::vector<vk::Pipeline> blit_depth_stencil_pipelines;
+    std::vector<BlitImagePipelineKey> clear_color_keys;
+    std::vector<vk::Pipeline> clear_color_pipelines;
     vk::Pipeline convert_d32_to_r32_pipeline;
     vk::Pipeline convert_r32_to_d32_pipeline;
     vk::Pipeline convert_d16_to_r16_pipeline;

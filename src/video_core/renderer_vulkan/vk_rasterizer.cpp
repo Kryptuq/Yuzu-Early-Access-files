@@ -394,7 +394,15 @@ void RasterizerVulkan::Clear(u32 layer_count) {
                 cmdbuf.ClearAttachments(attachment, clear_rect);
             });
         } else {
-            UNIMPLEMENTED_MSG("Unimplemented Clear only the specified channel");
+            u8 color_mask = static_cast<u8>(regs.clear_surface.R | regs.clear_surface.G << 1 |
+                                            regs.clear_surface.B << 2 | regs.clear_surface.A << 3);
+            Region2D dst_region = {
+                Offset2D{.x = clear_rect.rect.offset.x, .y = clear_rect.rect.offset.y},
+                Offset2D{.x = clear_rect.rect.offset.x +
+                              static_cast<s32>(clear_rect.rect.extent.width),
+                         .y = clear_rect.rect.offset.y +
+                              static_cast<s32>(clear_rect.rect.extent.height)}};
+            blit_image.ClearColor(framebuffer, color_mask, regs.clear_color, dst_region);
         }
     }
 

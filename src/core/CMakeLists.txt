@@ -182,6 +182,8 @@ add_library(core STATIC
     hle/kernel/k_auto_object_container.cpp
     hle/kernel/k_auto_object_container.h
     hle/kernel/k_affinity_mask.h
+    hle/kernel/k_capabilities.cpp
+    hle/kernel/k_capabilities.h
     hle/kernel/k_class_token.cpp
     hle/kernel/k_class_token.h
     hle/kernel/k_client_port.cpp

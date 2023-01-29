@@ -63,7 +63,7 @@ private:
                 return ctx.ReadBuffer(1);
             }
 
-            return std::vector<u8>{};
+            return std::span<const u8>{};
         }();
 
         LOG_DEBUG(Service_PREPO,
@@ -90,7 +90,7 @@ private:
                 return ctx.ReadBuffer(1);
             }
 
-            return std::vector<u8>{};
+            return std::span<const u8>{};
         }();
 
         LOG_DEBUG(Service_PREPO,
@@ -142,7 +142,7 @@ private:
                 return ctx.ReadBuffer(1);
             }
 
-            return std::vector<u8>{};
+            return std::span<const u8>{};
         }();
 
         LOG_DEBUG(Service_PREPO, "called, title_id={:016X}, data1_size={:016X}, data2_size={:016X}",
@@ -166,7 +166,7 @@ private:
                 return ctx.ReadBuffer(1);
             }
 
-            return std::vector<u8>{};
+            return std::span<const u8>{};
         }();
 
         LOG_DEBUG(Service_PREPO,

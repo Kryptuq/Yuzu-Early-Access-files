@@ -16,10 +16,10 @@ public:
 
 class InputFromButton final : public Common::Input::InputDevice {
 public:
-    explicit InputFromButton(PadIdentifier identifier_, int button_, bool toggle_, bool inverted_,
-                             InputEngine* input_engine_)
-        : identifier(identifier_), button(button_), toggle(toggle_), inverted(inverted_),
-          input_engine(input_engine_) {
+    explicit InputFromButton(PadIdentifier identifier_, int button_, bool turbo_, bool toggle_,
+                             bool inverted_, InputEngine* input_engine_)
+        : identifier(identifier_), button(button_), turbo(turbo_), toggle(toggle_),
+          inverted(inverted_), input_engine(input_engine_) {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier input_identifier{
             .identifier = identifier,
@@ -40,6 +40,7 @@ public:
             .value = input_engine->GetButton(identifier, button),
             .inverted = inverted,
             .toggle = toggle,
+            .turbo = turbo,
         };
     }
 
@@ -68,6 +69,7 @@ public:
 private:
     const PadIdentifier identifier;
     const int button;
+    const bool turbo;
     const bool toggle;
     const bool inverted;
     int callback_key;
@@ -77,10 +79,10 @@ private:
 
 class InputFromHatButton final : public Common::Input::InputDevice {
 public:
-    explicit InputFromHatButton(PadIdentifier identifier_, int button_, u8 direction_, bool toggle_,
-                                bool inverted_, InputEngine* input_engine_)
-        : identifier(identifier_), button(button_), direction(direction_), toggle(toggle_),
-          inverted(inverted_), input_engine(input_engine_) {
+    explicit InputFromHatButton(PadIdentifier identifier_, int button_, u8 direction_, bool turbo_,
+                                bool toggle_, bool inverted_, InputEngine* input_engine_)
+        : identifier(identifier_), button(button_), direction(direction_), turbo(turbo_),
+          toggle(toggle_), inverted(inverted_), input_engine(input_engine_) {
         UpdateCallback engine_callback{[this]() { OnChange(); }};
         const InputIdentifier input_identifier{
             .identifier = identifier,
@@ -101,6 +103,7 @@ public:
             .value = input_engine->GetHatButton(identifier, button, direction),
             .inverted = inverted,
             .toggle = toggle,
+            .turbo = turbo,
         };
     }
 
@@ -130,6 +133,7 @@ private:
     const PadIdentifier identifier;
     const int button;
     const u8 direction;
+    const bool turbo;
     const bool toggle;
     const bool inverted;
     int callback_key;
@@ -853,14 +857,15 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateButtonDevice(
     const auto keyboard_key = params.Get("code", 0);
     const auto toggle = params.Get("toggle", false) != 0;
     const auto inverted = params.Get("inverted", false) != 0;
+    const auto turbo = params.Get("turbo", false) != 0;
     input_engine->PreSetController(identifier);
     input_engine->PreSetButton(identifier, button_id);
     input_engine->PreSetButton(identifier, keyboard_key);
     if (keyboard_key != 0) {
-        return std::make_unique<InputFromButton>(identifier, keyboard_key, toggle, inverted,
+        return std::make_unique<InputFromButton>(identifier, keyboard_key, turbo, toggle, inverted,
                                                  input_engine.get());
     }
-    return std::make_unique<InputFromButton>(identifier, button_id, toggle, inverted,
+    return std::make_unique<InputFromButton>(identifier, button_id, turbo, toggle, inverted,
                                              input_engine.get());
 }
 
@@ -876,11 +881,12 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateHatButtonDevice(
     const auto direction = input_engine->GetHatButtonId(params.Get("direction", ""));
     const auto toggle = params.Get("toggle", false) != 0;
     const auto inverted = params.Get("inverted", false) != 0;
+    const auto turbo = params.Get("turbo", false) != 0;
 
     input_engine->PreSetController(identifier);
     input_engine->PreSetHatButton(identifier, button_id);
-    return std::make_unique<InputFromHatButton>(identifier, button_id, direction, toggle, inverted,
-                                                input_engine.get());
+    return std::make_unique<InputFromHatButton>(identifier, button_id, direction, turbo, toggle,
+                                                inverted, input_engine.get());
 }
 
 std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateStickDevice(

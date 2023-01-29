@@ -182,12 +182,13 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
     const QString toggle = QString::fromStdString(param.Get("toggle", false) ? "~" : "");
     const QString inverted = QString::fromStdString(param.Get("inverted", false) ? "!" : "");
     const QString invert = QString::fromStdString(param.Get("invert", "+") == "-" ? "-" : "");
+    const QString turbo = QString::fromStdString(param.Get("turbo", false) ? "$" : "");
     const auto common_button_name = input_subsystem->GetButtonName(param);
 
     // Retrieve the names from Qt
     if (param.Get("engine", "") == "keyboard") {
         const QString button_str = GetKeyName(param.Get("code", 0));
-        return QObject::tr("%1%2%3").arg(toggle, inverted, button_str);
+        return QObject::tr("%1%2%3%4").arg(turbo, toggle, inverted, button_str);
     }
 
     if (common_button_name == Common::Input::ButtonNames::Invalid) {
@@ -201,7 +202,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
     if (common_button_name == Common::Input::ButtonNames::Value) {
         if (param.Has("hat")) {
             const QString hat = GetDirectionName(param.Get("direction", ""));
-            return QObject::tr("%1%2Hat %3").arg(toggle, inverted, hat);
+            return QObject::tr("%1%2%3Hat %4").arg(turbo, toggle, inverted, hat);
         }
         if (param.Has("axis")) {
             const QString axis = QString::fromStdString(param.Get("axis", ""));
@@ -219,13 +220,13 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
         }
         if (param.Has("button")) {
             const QString button = QString::fromStdString(param.Get("button", ""));
-            return QObject::tr("%1%2Button %3").arg(toggle, inverted, button);
+            return QObject::tr("%1%2%3Button %4").arg(turbo, toggle, inverted, button);
         }
     }
 
     QString button_name = GetButtonName(common_button_name);
     if (param.Has("hat")) {
-        return QObject::tr("%1%2Hat %3").arg(toggle, inverted, button_name);
+        return QObject::tr("%1%2%3Hat %4").arg(turbo, toggle, inverted, button_name);
     }
     if (param.Has("axis")) {
         return QObject::tr("%1%2Axis %3").arg(toggle, inverted, button_name);
@@ -234,7 +235,7 @@ QString ConfigureInputPlayer::ButtonToText(const Common::ParamPackage& param) {
         return QObject::tr("%1%2Axis %3").arg(toggle, inverted, button_name);
     }
     if (param.Has("button")) {
-        return QObject::tr("%1%2Button %3").arg(toggle, inverted, button_name);
+        return QObject::tr("%1%2%3Button %4").arg(turbo, toggle, inverted, button_name);
     }
 
     return QObject::tr("[unknown]");
@@ -392,6 +393,12 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         context_menu.addAction(tr("Toggle button"), [&] {
                             const bool toggle_value = !param.Get("toggle", false);
                             param.Set("toggle", toggle_value);
+                            button_map[button_id]->setText(ButtonToText(param));
+                            emulated_controller->SetButtonParam(button_id, param);
+                        });
+                        context_menu.addAction(tr("Turbo button"), [&] {
+                            const bool turbo_value = !param.Get("turbo", false);
+                            param.Set("turbo", turbo_value);
                             button_map[button_id]->setText(ButtonToText(param));
                             emulated_controller->SetButtonParam(button_id, param);
                         });

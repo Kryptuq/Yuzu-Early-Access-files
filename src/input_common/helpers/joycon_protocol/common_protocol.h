@@ -97,10 +97,29 @@ public:
     /**
      * Reads the SPI memory stored on the joycon
      * @param Initial address location
-     * @param size in bytes to be read
      * @returns output buffer containing the responce
      */
-    DriverResult ReadSPI(CalAddr addr, u8 size, std::vector<u8>& output);
+    DriverResult ReadRawSPI(SpiAddress addr, std::span<u8> output);
+
+    /**
+     * Reads the SPI memory stored on the joycon
+     * @param Initial address location
+     * @returns output object containing the responce
+     */
+    template <typename Output>
+    requires std::is_trivially_copyable_v<Output> DriverResult ReadSPI(SpiAddress addr,
+                                                                       Output& output) {
+        std::array<u8, sizeof(Output)> buffer;
+        output = {};
+
+        const auto result = ReadRawSPI(addr, buffer);
+        if (result != DriverResult::Success) {
+            return result;
+        }
+
+        std::memcpy(&output, buffer.data(), sizeof(Output));
+        return DriverResult::Success;
+    }
 
     /**
      * Enables MCU chip on the joycon

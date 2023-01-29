@@ -411,6 +411,9 @@ public:
      */
     void DeleteCallback(int key);
 
+    /// Swaps the state of the turbo buttons
+    void TurboButtonUpdate();
+
 private:
     /// creates input devices from params
     void LoadDevices();
@@ -511,6 +514,8 @@ private:
      */
     void TriggerOnChange(ControllerTriggerType type, bool is_service_update);
 
+    NpadButton GetTurboButtonMask() const;
+
     const NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
     NpadStyleIndex original_npad_type{NpadStyleIndex::None};
@@ -520,6 +525,7 @@ private:
     bool system_buttons_enabled{true};
     f32 motion_sensitivity{0.01f};
     bool force_update_motion{false};
+    bool turbo_button_state{false};
 
     // Temporary values to avoid doing changes while the controller is in configuring mode
     NpadStyleIndex tmp_npad_type{NpadStyleIndex::None};

@@ -41,17 +41,18 @@ bool StoppableTimedWait(std::stop_token token, const std::chrono::duration<Rep, 
 #include <chrono>
 #include <condition_variable>
 #include <functional>
-#include <list>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
 #include <type_traits>
+#include <utility>
 
 namespace std {
 namespace polyfill {
 
-using stop_state_callbacks = list<function<void()>>;
+using stop_state_callback = size_t;
 
 class stop_state {
 public:
@@ -59,61 +60,69 @@ public:
     ~stop_state() = default;
 
     bool request_stop() {
-        stop_state_callbacks callbacks;
+        unique_lock lk{m_lock};
 
-        {
-            scoped_lock lk{m_lock};
-
-            if (m_stop_requested.load()) {
-                // Already set, nothing to do
-                return false;
-            }
-
-            // Set as requested
-            m_stop_requested = true;
-
-            // Copy callback list
-            callbacks = m_callbacks;
+        if (m_stop_requested) {
+            // Already set, nothing to do.
+            return false;
         }
 
-        for (auto callback : callbacks) {
-            callback();
+        // Mark stop requested.
+        m_stop_requested = true;
+
+        while (!m_callbacks.empty()) {
+            // Get an iterator to the first element.
+            const auto it = m_callbacks.begin();
+
+            // Move the callback function out of the map.
+            function<void()> f;
+            swap(it->second, f);
+
+            // Erase the now-empty map element.
+            m_callbacks.erase(it);
+
+            // Run the callback.
+            if (f) {
+                f();
+            }
         }
 
         return true;
     }
 
     bool stop_requested() const {
-        return m_stop_requested.load();
+        unique_lock lk{m_lock};
+        return m_stop_requested;
     }
 
-    stop_state_callbacks::const_iterator insert_callback(function<void()> f) {
-        stop_state_callbacks::const_iterator ret{};
-        bool should_run{};
+    stop_state_callback insert_callback(function<void()> f) {
+        unique_lock lk{m_lock};
 
-        {
-            scoped_lock lk{m_lock};
-            should_run = m_stop_requested.load();
-            m_callbacks.push_front(f);
-            ret = m_callbacks.begin();
+        if (m_stop_requested) {
+            // Stop already requested. Don't insert anything,
+            // just run the callback synchronously.
+            if (f) {
+                f();
+            }
+            return 0;
         }
 
-        if (should_run) {
-            f();
-        }
-
+        // Insert the callback.
+        stop_state_callback ret = ++m_next_callback;
+        m_callbacks.emplace(ret, move(f));
         return ret;
     }
 
-    void remove_callback(stop_state_callbacks::const_iterator it) {
-        scoped_lock lk{m_lock};
-        m_callbacks.erase(it);
+    void remove_callback(stop_state_callback cb) {
+        unique_lock lk{m_lock};
+        m_callbacks.erase(cb);
     }
 
 private:
-    mutex m_lock;
-    atomic<bool> m_stop_requested;
-    stop_state_callbacks m_callbacks;
+    mutable recursive_mutex m_lock;
+    map<stop_state_callback, function<void()>> m_callbacks;
+    stop_state_callback m_next_callback{0};
+    bool m_stop_requested{false};
 };
 
 } // namespace polyfill
@@ -223,7 +232,7 @@ public:
     }
     ~stop_callback() {
         if (m_stop_state && m_callback) {
-            m_stop_state->remove_callback(*m_callback);
+            m_stop_state->remove_callback(m_callback);
         }
     }
 
@@ -234,7 +243,7 @@ public:
 
 private:
     shared_ptr<polyfill::stop_state> m_stop_state;
-    optional<polyfill::stop_state_callbacks::const_iterator> m_callback;
+    polyfill::stop_state_callback m_callback;
 };
 
 template <typename Callback>

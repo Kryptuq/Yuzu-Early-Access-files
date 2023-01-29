@@ -15,7 +15,7 @@ nvhost_nvdec::nvhost_nvdec(Core::System& system_, NvCore::Container& core_)
     : nvhost_nvdec_common{system_, core_, NvCore::ChannelType::NvDec} {}
 nvhost_nvdec::~nvhost_nvdec() = default;
 
-NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
                               std::vector<u8>& output) {
     switch (command.group) {
     case 0x0:
@@ -55,13 +55,13 @@ NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>&
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_nvdec::Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
-                              const std::vector<u8>& inline_input, std::vector<u8>& output) {
+NvResult nvhost_nvdec::Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
+                              std::span<const u8> inline_input, std::vector<u8>& output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_nvdec::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+NvResult nvhost_nvdec::Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input,
                               std::vector<u8>& output, std::vector<u8>& inline_output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;

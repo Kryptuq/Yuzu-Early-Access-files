@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <bitset>
+
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 
@@ -591,5 +593,8 @@ struct CreateProcessParameter {
     s32 system_resource_num_pages;
 };
 static_assert(sizeof(CreateProcessParameter) == 0x30);
+
+constexpr size_t NumSupervisorCalls = 0xC0;
+using SvcAccessFlagSet = std::bitset<NumSupervisorCalls>;
 
 } // namespace Kernel::Svc

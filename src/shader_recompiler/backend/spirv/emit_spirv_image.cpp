@@ -445,11 +445,13 @@ Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id c
                 TextureImage(ctx, info, index), coords, operands.MaskOptional(), operands.Span());
 }
 
-Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod) {
+Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod,
+                            const IR::Value& skip_mips_val) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const Id image{TextureImage(ctx, info, index)};
     const Id zero{ctx.u32_zero_value};
-    const auto mips{[&] { return ctx.OpImageQueryLevels(ctx.U32[1], image); }};
+    const bool skip_mips{skip_mips_val.U1()};
+    const auto mips{[&] { return skip_mips ? zero : ctx.OpImageQueryLevels(ctx.U32[1], image); }};
     switch (info.type) {
     case TextureType::Color1D:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[1], image, lod),

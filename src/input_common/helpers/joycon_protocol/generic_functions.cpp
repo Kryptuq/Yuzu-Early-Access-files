@@ -71,8 +71,8 @@ DriverResult GenericProtocol::GetBattery(u32& battery_level) {
 
 DriverResult GenericProtocol::GetColor(Color& color) {
     ScopedSetBlocking sb(this);
-    std::vector<u8> buffer;
-    const auto result = ReadSPI(CalAddr::COLOR_DATA, 12, buffer);
+    std::array<u8, 12> buffer{};
+    const auto result = ReadRawSPI(SpiAddress::COLOR_DATA, buffer);
 
     color = {};
     if (result == DriverResult::Success) {
@@ -87,8 +87,8 @@ DriverResult GenericProtocol::GetColor(Color& color) {
 
 DriverResult GenericProtocol::GetSerialNumber(SerialNumber& serial_number) {
     ScopedSetBlocking sb(this);
-    std::vector<u8> buffer;
-    const auto result = ReadSPI(CalAddr::SERIAL_NUMBER, 16, buffer);
+    std::array<u8, 16> buffer{};
+    const auto result = ReadRawSPI(SpiAddress::SERIAL_NUMBER, buffer);
 
     serial_number = {};
     if (result == DriverResult::Success) {
