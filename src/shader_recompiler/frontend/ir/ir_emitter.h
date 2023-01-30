@@ -409,7 +409,8 @@ private:
     }
 
     template <typename T>
-    requires(sizeof(T) <= sizeof(u32) && std::is_trivially_copyable_v<T>) struct Flags {
+        requires(sizeof(T) <= sizeof(u32) && std::is_trivially_copyable_v<T>)
+    struct Flags {
         Flags() = default;
         Flags(T proxy_) : proxy{proxy_} {}
 

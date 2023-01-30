@@ -103,12 +103,12 @@ concept IsRBEntry = CheckRBEntry<T>::value;
 
 template <typename T>
 concept HasRBEntry = requires(T& t, const T& ct) {
-    { t.GetRBEntry() } -> std::same_as<RBEntry<T>&>;
-    { ct.GetRBEntry() } -> std::same_as<const RBEntry<T>&>;
-};
+                         { t.GetRBEntry() } -> std::same_as<RBEntry<T>&>;
+                         { ct.GetRBEntry() } -> std::same_as<const RBEntry<T>&>;
+                     };
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 class RBHead {
 private:
     T* m_rbh_root = nullptr;
@@ -130,90 +130,90 @@ public:
 };
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr RBEntry<T>& RB_ENTRY(T* t) {
     return t->GetRBEntry();
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr const RBEntry<T>& RB_ENTRY(const T* t) {
     return t->GetRBEntry();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr T* RB_LEFT(T* t) {
     return RB_ENTRY(t).Left();
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr const T* RB_LEFT(const T* t) {
     return RB_ENTRY(t).Left();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr T* RB_RIGHT(T* t) {
     return RB_ENTRY(t).Right();
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr const T* RB_RIGHT(const T* t) {
     return RB_ENTRY(t).Right();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr T* RB_PARENT(T* t) {
     return RB_ENTRY(t).Parent();
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr const T* RB_PARENT(const T* t) {
     return RB_ENTRY(t).Parent();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET_LEFT(T* t, T* e) {
     RB_ENTRY(t).SetLeft(e);
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET_RIGHT(T* t, T* e) {
     RB_ENTRY(t).SetRight(e);
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET_PARENT(T* t, T* e) {
     RB_ENTRY(t).SetParent(e);
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr bool RB_IS_BLACK(const T* t) {
     return RB_ENTRY(t).IsBlack();
 }
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr bool RB_IS_RED(const T* t) {
     return RB_ENTRY(t).IsRed();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 [[nodiscard]] constexpr RBColor RB_COLOR(const T* t) {
     return RB_ENTRY(t).Color();
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET_COLOR(T* t, RBColor c) {
     RB_ENTRY(t).SetColor(c);
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET(T* elm, T* parent) {
     auto& rb_entry = RB_ENTRY(elm);
     rb_entry.SetParent(parent);
@@ -223,14 +223,14 @@ constexpr void RB_SET(T* elm, T* parent) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_SET_BLACKRED(T* black, T* red) {
     RB_SET_COLOR(black, RBColor::RB_BLACK);
     RB_SET_COLOR(red, RBColor::RB_RED);
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_ROTATE_LEFT(RBHead<T>& head, T* elm, T*& tmp) {
     tmp = RB_RIGHT(elm);
     if (RB_SET_RIGHT(elm, RB_LEFT(tmp)); RB_RIGHT(elm) != nullptr) {
@@ -252,7 +252,7 @@ constexpr void RB_ROTATE_LEFT(RBHead<T>& head, T* elm, T*& tmp) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_ROTATE_RIGHT(RBHead<T>& head, T* elm, T*& tmp) {
     tmp = RB_LEFT(elm);
     if (RB_SET_LEFT(elm, RB_RIGHT(tmp)); RB_LEFT(elm) != nullptr) {
@@ -274,7 +274,7 @@ constexpr void RB_ROTATE_RIGHT(RBHead<T>& head, T* elm, T*& tmp) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_REMOVE_COLOR(RBHead<T>& head, T* parent, T* elm) {
     T* tmp;
     while ((elm == nullptr || RB_IS_BLACK(elm)) && elm != head.Root()) {
@@ -358,7 +358,7 @@ constexpr void RB_REMOVE_COLOR(RBHead<T>& head, T* parent, T* elm) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_REMOVE(RBHead<T>& head, T* elm) {
     T* child = nullptr;
     T* parent = nullptr;
@@ -451,7 +451,7 @@ constexpr T* RB_REMOVE(RBHead<T>& head, T* elm) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr void RB_INSERT_COLOR(RBHead<T>& head, T* elm) {
     T *parent = nullptr, *tmp = nullptr;
     while ((parent = RB_PARENT(elm)) != nullptr && RB_IS_RED(parent)) {
@@ -499,7 +499,7 @@ constexpr void RB_INSERT_COLOR(RBHead<T>& head, T* elm) {
 }
 
 template <typename T, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_INSERT(RBHead<T>& head, T* elm, Compare cmp) {
     T* parent = nullptr;
     T* tmp = head.Root();
@@ -534,7 +534,7 @@ constexpr T* RB_INSERT(RBHead<T>& head, T* elm, Compare cmp) {
 }
 
 template <typename T, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_FIND(RBHead<T>& head, T* elm, Compare cmp) {
     T* tmp = head.Root();
 
@@ -553,7 +553,7 @@ constexpr T* RB_FIND(RBHead<T>& head, T* elm, Compare cmp) {
 }
 
 template <typename T, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_NFIND(RBHead<T>& head, T* elm, Compare cmp) {
     T* tmp = head.Root();
     T* res = nullptr;
@@ -574,7 +574,7 @@ constexpr T* RB_NFIND(RBHead<T>& head, T* elm, Compare cmp) {
 }
 
 template <typename T, typename U, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_FIND_KEY(RBHead<T>& head, const U& key, Compare cmp) {
     T* tmp = head.Root();
 
@@ -593,7 +593,7 @@ constexpr T* RB_FIND_KEY(RBHead<T>& head, const U& key, Compare cmp) {
 }
 
 template <typename T, typename U, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_NFIND_KEY(RBHead<T>& head, const U& key, Compare cmp) {
     T* tmp = head.Root();
     T* res = nullptr;
@@ -614,7 +614,7 @@ constexpr T* RB_NFIND_KEY(RBHead<T>& head, const U& key, Compare cmp) {
 }
 
 template <typename T, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_FIND_EXISTING(RBHead<T>& head, T* elm, Compare cmp) {
     T* tmp = head.Root();
 
@@ -631,7 +631,7 @@ constexpr T* RB_FIND_EXISTING(RBHead<T>& head, T* elm, Compare cmp) {
 }
 
 template <typename T, typename U, typename Compare>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_FIND_EXISTING_KEY(RBHead<T>& head, const U& key, Compare cmp) {
     T* tmp = head.Root();
 
@@ -648,7 +648,7 @@ constexpr T* RB_FIND_EXISTING_KEY(RBHead<T>& head, const U& key, Compare cmp) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_NEXT(T* elm) {
     if (RB_RIGHT(elm)) {
         elm = RB_RIGHT(elm);
@@ -669,7 +669,7 @@ constexpr T* RB_NEXT(T* elm) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_PREV(T* elm) {
     if (RB_LEFT(elm)) {
         elm = RB_LEFT(elm);
@@ -690,7 +690,7 @@ constexpr T* RB_PREV(T* elm) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_MIN(RBHead<T>& head) {
     T* tmp = head.Root();
     T* parent = nullptr;
@@ -704,7 +704,7 @@ constexpr T* RB_MIN(RBHead<T>& head) {
 }
 
 template <typename T>
-requires HasRBEntry<T>
+    requires HasRBEntry<T>
 constexpr T* RB_MAX(RBHead<T>& head) {
     T* tmp = head.Root();
     T* parent = nullptr;

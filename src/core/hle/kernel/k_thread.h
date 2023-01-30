@@ -677,7 +677,7 @@ private:
     union SyncObjectBuffer {
         std::array<KSynchronizationObject*, Svc::ArgumentHandleCountMax> sync_objects{};
         std::array<Handle,
-                   Svc::ArgumentHandleCountMax*(sizeof(KSynchronizationObject*) / sizeof(Handle))>
+                   Svc::ArgumentHandleCountMax * (sizeof(KSynchronizationObject*) / sizeof(Handle))>
             handles;
         constexpr SyncObjectBuffer() {}
     };
@@ -698,10 +698,8 @@ private:
         };
 
         template <typename T>
-        requires(
-            std::same_as<T, KThread> ||
-            std::same_as<T, RedBlackKeyType>) static constexpr int Compare(const T& lhs,
-                                                                           const KThread& rhs) {
+            requires(std::same_as<T, KThread> || std::same_as<T, RedBlackKeyType>)
+        static constexpr int Compare(const T& lhs, const KThread& rhs) {
             const u64 l_key = lhs.GetConditionVariableKey();
             const u64 r_key = rhs.GetConditionVariableKey();
 

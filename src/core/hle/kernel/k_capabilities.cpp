@@ -112,7 +112,7 @@ Result KCapabilities::SetSyscallMaskCapability(const u32 cap, u32& set_svc) {
 
     // Set SVCs.
     for (size_t i = 0; i < decltype(SyscallMask::mask)::bits; i++) {
-        const u32 svc_id = static_cast<u32>(decltype(SyscallMask::mask)::bits* index + i);
+        const u32 svc_id = static_cast<u32>(decltype(SyscallMask::mask)::bits * index + i);
         if (mask & (1U << i)) {
             R_UNLESS(this->SetSvcAllowed(svc_id), ResultOutOfRange);
         }

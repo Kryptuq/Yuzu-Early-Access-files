@@ -75,7 +75,7 @@ extern "C" void AnnotateHappensAfter(const char*, int, void*);
 #if defined(AE_VCPP) || defined(AE_ICC)
 #define AE_FORCEINLINE __forceinline
 #elif defined(AE_GCC)
-//#define AE_FORCEINLINE __attribute__((always_inline))
+// #define AE_FORCEINLINE __attribute__((always_inline))
 #define AE_FORCEINLINE inline
 #else
 #define AE_FORCEINLINE inline

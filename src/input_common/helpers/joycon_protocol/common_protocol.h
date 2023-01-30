@@ -60,7 +60,8 @@ public:
     DriverResult SendRawData(std::span<const u8> buffer);
 
     template <typename Output>
-    requires std::is_trivially_copyable_v<Output> DriverResult SendData(const Output& output) {
+        requires std::is_trivially_copyable_v<Output>
+    DriverResult SendData(const Output& output) {
         std::array<u8, sizeof(Output)> buffer;
         std::memcpy(buffer.data(), &output, sizeof(Output));
         return SendRawData(buffer);
@@ -115,8 +116,8 @@ public:
      * @returns output object containing the response
      */
     template <typename Output>
-    requires std::is_trivially_copyable_v<Output> DriverResult ReadSPI(SpiAddress addr,
-                                                                       Output& output) {
+        requires std::is_trivially_copyable_v<Output>
+    DriverResult ReadSPI(SpiAddress addr, Output& output) {
         std::array<u8, sizeof(Output)> buffer;
         output = {};
 

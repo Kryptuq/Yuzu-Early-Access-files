@@ -101,9 +101,8 @@ public:
     TypedValue() = default;
 
     template <IR::Type other_type>
-    requires((other_type & type_) != IR::Type::Void) explicit(false)
-        TypedValue(const TypedValue<other_type>& value)
-        : Value(value) {}
+        requires((other_type & type_) != IR::Type::Void)
+    explicit(false) TypedValue(const TypedValue<other_type>& value) : Value(value) {}
 
     explicit TypedValue(const Value& value) : Value(value) {
         if ((value.Type() & type_) == IR::Type::Void) {
@@ -194,16 +193,16 @@ public:
     void ReplaceOpcode(IR::Opcode opcode);
 
     template <typename FlagsType>
-    requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
-        [[nodiscard]] FlagsType Flags() const noexcept {
+        requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
+    [[nodiscard]] FlagsType Flags() const noexcept {
         FlagsType ret;
         std::memcpy(reinterpret_cast<char*>(&ret), &flags, sizeof(ret));
         return ret;
     }
 
     template <typename FlagsType>
-    requires(sizeof(FlagsType) <= sizeof(u32) &&
-             std::is_trivially_copyable_v<FlagsType>) void SetFlags(FlagsType value) noexcept {
+        requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
+    void SetFlags(FlagsType value) noexcept {
         std::memcpy(&flags, &value, sizeof(value));
     }
 

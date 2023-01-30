@@ -64,7 +64,7 @@ struct no_init_t {
  * Additionally, this requires E to be trivially destructible
  */
 template <typename T, typename E, bool = std::is_trivially_destructible_v<T>>
-requires std::is_trivially_destructible_v<E>
+    requires std::is_trivially_destructible_v<E>
 struct expected_storage_base {
     constexpr expected_storage_base() : m_val{T{}}, m_has_val{true} {}
 
@@ -111,7 +111,7 @@ struct expected_storage_base {
  * Additionally, this requires E to be trivially destructible
  */
 template <typename T, typename E>
-requires std::is_trivially_destructible_v<E>
+    requires std::is_trivially_destructible_v<E>
 struct expected_storage_base<T, E, true> {
     constexpr expected_storage_base() : m_val{T{}}, m_has_val{true} {}
 
@@ -251,7 +251,7 @@ struct expected_operations_base : expected_storage_base<T, E> {
  * Additionally, this requires E to be trivially copy constructible
  */
 template <typename T, typename E, bool = std::is_trivially_copy_constructible_v<T>>
-requires std::is_trivially_copy_constructible_v<E>
+    requires std::is_trivially_copy_constructible_v<E>
 struct expected_copy_base : expected_operations_base<T, E> {
     using expected_operations_base<T, E>::expected_operations_base;
 };
@@ -261,7 +261,7 @@ struct expected_copy_base : expected_operations_base<T, E> {
  * Additionally, this requires E to be trivially copy constructible
  */
 template <typename T, typename E>
-requires std::is_trivially_copy_constructible_v<E>
+    requires std::is_trivially_copy_constructible_v<E>
 struct expected_copy_base<T, E, false> : expected_operations_base<T, E> {
     using expected_operations_base<T, E>::expected_operations_base;
 
@@ -289,7 +289,7 @@ struct expected_copy_base<T, E, false> : expected_operations_base<T, E> {
  * Additionally, this requires E to be trivially move constructible
  */
 template <typename T, typename E, bool = std::is_trivially_move_constructible_v<T>>
-requires std::is_trivially_move_constructible_v<E>
+    requires std::is_trivially_move_constructible_v<E>
 struct expected_move_base : expected_copy_base<T, E> {
     using expected_copy_base<T, E>::expected_copy_base;
 };
@@ -299,7 +299,7 @@ struct expected_move_base : expected_copy_base<T, E> {
  * Additionally, this requires E to be trivially move constructible
  */
 template <typename T, typename E>
-requires std::is_trivially_move_constructible_v<E>
+    requires std::is_trivially_move_constructible_v<E>
 struct expected_move_base<T, E, false> : expected_copy_base<T, E> {
     using expected_copy_base<T, E>::expected_copy_base;
 
@@ -330,9 +330,9 @@ template <typename T, typename E,
           bool = std::conjunction_v<std::is_trivially_copy_assignable<T>,
                                     std::is_trivially_copy_constructible<T>,
                                     std::is_trivially_destructible<T>>>
-requires std::conjunction_v<std::is_trivially_copy_assignable<E>,
-                            std::is_trivially_copy_constructible<E>,
-                            std::is_trivially_destructible<E>>
+    requires std::conjunction_v<std::is_trivially_copy_assignable<E>,
+                                std::is_trivially_copy_constructible<E>,
+                                std::is_trivially_destructible<E>>
 struct expected_copy_assign_base : expected_move_base<T, E> {
     using expected_move_base<T, E>::expected_move_base;
 };
@@ -342,9 +342,9 @@ struct expected_copy_assign_base : expected_move_base<T, E> {
  * Additionally, this requires E to be trivially copy assignable
  */
 template <typename T, typename E>
-requires std::conjunction_v<std::is_trivially_copy_assignable<E>,
-                            std::is_trivially_copy_constructible<E>,
-                            std::is_trivially_destructible<E>>
+    requires std::conjunction_v<std::is_trivially_copy_assignable<E>,
+                                std::is_trivially_copy_constructible<E>,
+                                std::is_trivially_destructible<E>>
 struct expected_copy_assign_base<T, E, false> : expected_move_base<T, E> {
     using expected_move_base<T, E>::expected_move_base;
 
@@ -371,9 +371,9 @@ template <typename T, typename E,
           bool = std::conjunction_v<std::is_trivially_move_assignable<T>,
                                     std::is_trivially_move_constructible<T>,
                                     std::is_trivially_destructible<T>>>
-requires std::conjunction_v<std::is_trivially_move_assignable<E>,
-                            std::is_trivially_move_constructible<E>,
-                            std::is_trivially_destructible<E>>
+    requires std::conjunction_v<std::is_trivially_move_assignable<E>,
+                                std::is_trivially_move_constructible<E>,
+                                std::is_trivially_destructible<E>>
 struct expected_move_assign_base : expected_copy_assign_base<T, E> {
     using expected_copy_assign_base<T, E>::expected_copy_assign_base;
 };
@@ -383,9 +383,9 @@ struct expected_move_assign_base : expected_copy_assign_base<T, E> {
  * Additionally, this requires E to be trivially move assignable
  */
 template <typename T, typename E>
-requires std::conjunction_v<std::is_trivially_move_assignable<E>,
-                            std::is_trivially_move_constructible<E>,
-                            std::is_trivially_destructible<E>>
+    requires std::conjunction_v<std::is_trivially_move_assignable<E>,
+                                std::is_trivially_move_constructible<E>,
+                                std::is_trivially_destructible<E>>
 struct expected_move_assign_base<T, E, false> : expected_copy_assign_base<T, E> {
     using expected_copy_assign_base<T, E>::expected_copy_assign_base;
 
@@ -412,7 +412,7 @@ struct expected_move_assign_base<T, E, false> : expected_copy_assign_base<T, E> 
  */
 template <typename T, typename E, bool EnableCopy = std::is_copy_constructible_v<T>,
           bool EnableMove = std::is_move_constructible_v<T>>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
 struct expected_delete_ctor_base {
     expected_delete_ctor_base() = default;
     expected_delete_ctor_base(const expected_delete_ctor_base&) = default;
@@ -422,7 +422,7 @@ struct expected_delete_ctor_base {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
 struct expected_delete_ctor_base<T, E, true, false> {
     expected_delete_ctor_base() = default;
     expected_delete_ctor_base(const expected_delete_ctor_base&) = default;
@@ -432,7 +432,7 @@ struct expected_delete_ctor_base<T, E, true, false> {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
 struct expected_delete_ctor_base<T, E, false, true> {
     expected_delete_ctor_base() = default;
     expected_delete_ctor_base(const expected_delete_ctor_base&) = delete;
@@ -442,7 +442,7 @@ struct expected_delete_ctor_base<T, E, false, true> {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>>
 struct expected_delete_ctor_base<T, E, false, false> {
     expected_delete_ctor_base() = default;
     expected_delete_ctor_base(const expected_delete_ctor_base&) = delete;
@@ -460,8 +460,8 @@ template <
     typename T, typename E,
     bool EnableCopy = std::conjunction_v<std::is_copy_constructible<T>, std::is_copy_assignable<T>>,
     bool EnableMove = std::conjunction_v<std::is_move_constructible<T>, std::is_move_assignable<T>>>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
-                            std::is_copy_assignable<E>, std::is_move_assignable<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
+                                std::is_copy_assignable<E>, std::is_move_assignable<E>>
 struct expected_delete_assign_base {
     expected_delete_assign_base() = default;
     expected_delete_assign_base(const expected_delete_assign_base&) = default;
@@ -471,8 +471,8 @@ struct expected_delete_assign_base {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
-                            std::is_copy_assignable<E>, std::is_move_assignable<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
+                                std::is_copy_assignable<E>, std::is_move_assignable<E>>
 struct expected_delete_assign_base<T, E, true, false> {
     expected_delete_assign_base() = default;
     expected_delete_assign_base(const expected_delete_assign_base&) = default;
@@ -482,8 +482,8 @@ struct expected_delete_assign_base<T, E, true, false> {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
-                            std::is_copy_assignable<E>, std::is_move_assignable<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
+                                std::is_copy_assignable<E>, std::is_move_assignable<E>>
 struct expected_delete_assign_base<T, E, false, true> {
     expected_delete_assign_base() = default;
     expected_delete_assign_base(const expected_delete_assign_base&) = default;
@@ -493,8 +493,8 @@ struct expected_delete_assign_base<T, E, false, true> {
 };
 
 template <typename T, typename E>
-requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
-                            std::is_copy_assignable<E>, std::is_move_assignable<E>>
+    requires std::conjunction_v<std::is_copy_constructible<E>, std::is_move_constructible<E>,
+                                std::is_copy_assignable<E>, std::is_move_assignable<E>>
 struct expected_delete_assign_base<T, E, false, false> {
     expected_delete_assign_base() = default;
     expected_delete_assign_base(const expected_delete_assign_base&) = default;

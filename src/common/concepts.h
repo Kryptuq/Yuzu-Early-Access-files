@@ -16,9 +16,9 @@ concept IsContiguousContainer = std::contiguous_iterator<typename T::iterator>;
 //       is available on all supported platforms.
 template <typename Derived, typename Base>
 concept DerivedFrom = requires {
-    std::is_base_of_v<Base, Derived>;
-    std::is_convertible_v<const volatile Derived*, const volatile Base*>;
-};
+                          std::is_base_of_v<Base, Derived>;
+                          std::is_convertible_v<const volatile Derived*, const volatile Base*>;
+                      };
 
 // TODO: Replace with std::convertible_to when libc++ implements it.
 template <typename From, typename To>

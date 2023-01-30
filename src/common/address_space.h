@@ -12,7 +12,8 @@
 
 namespace Common {
 template <typename VaType, size_t AddressSpaceBits>
-concept AddressSpaceValid = std::is_unsigned_v<VaType> && sizeof(VaType) * 8 >= AddressSpaceBits;
+concept AddressSpaceValid = std::is_unsigned_v<VaType> && sizeof(VaType) * 8 >=
+AddressSpaceBits;
 
 struct EmptyStruct {};
 
@@ -21,7 +22,7 @@ struct EmptyStruct {};
  */
 template <typename VaType, VaType UnmappedVa, typename PaType, PaType UnmappedPa,
           bool PaContigSplit, size_t AddressSpaceBits, typename ExtraBlockInfo = EmptyStruct>
-requires AddressSpaceValid<VaType, AddressSpaceBits>
+    requires AddressSpaceValid<VaType, AddressSpaceBits>
 class FlatAddressSpaceMap {
 public:
     /// The maximum VA that this AS can technically reach
@@ -109,7 +110,7 @@ private:
  * initial, fast linear pass and a subsequent slower pass that iterates until it finds a free block
  */
 template <typename VaType, VaType UnmappedVa, size_t AddressSpaceBits>
-requires AddressSpaceValid<VaType, AddressSpaceBits>
+    requires AddressSpaceValid<VaType, AddressSpaceBits>
 class FlatAllocator
     : public FlatAddressSpaceMap<VaType, UnmappedVa, bool, false, false, AddressSpaceBits> {
 private:

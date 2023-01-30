@@ -201,6 +201,13 @@ Id Image(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
     }
 }
 
+bool IsTextureMsaa(EmitContext& ctx, const IR::TextureInstInfo& info) {
+    if (info.type == TextureType::Buffer) {
+        return false;
+    }
+    return ctx.textures.at(info.descriptor_index).is_multisample;
+}
+
 Id Decorate(EmitContext& ctx, IR::Inst* inst, Id sample) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     if (info.relaxed_precision != 0) {
@@ -452,24 +459,26 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
     const Id zero{ctx.u32_zero_value};
     const bool skip_mips{skip_mips_val.U1()};
     const auto mips{[&] { return skip_mips ? zero : ctx.OpImageQueryLevels(ctx.U32[1], image); }};
+    const bool is_msaa{IsTextureMsaa(ctx, info)};
+    const bool uses_lod{!is_msaa && info.type != TextureType::Buffer};
+    const auto query{[&](Id type) {
+        return uses_lod ? ctx.OpImageQuerySizeLod(type, image, lod)
+                        : ctx.OpImageQuerySize(type, image);
+    }};
     switch (info.type) {
     case TextureType::Color1D:
-        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[1], image, lod),
-                                        zero, zero, mips());
+        return ctx.OpCompositeConstruct(ctx.U32[4], query(ctx.U32[1]), zero, zero, mips());
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
     case TextureType::Color2DRect:
-        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[2], image, lod),
-                                        zero, mips());
+        return ctx.OpCompositeConstruct(ctx.U32[4], query(ctx.U32[2]), zero, mips());
     case TextureType::ColorArray2D:
     case TextureType::Color3D:
     case TextureType::ColorArrayCube:
-        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[3], image, lod),
-                                        mips());
+        return ctx.OpCompositeConstruct(ctx.U32[4], query(ctx.U32[3]), mips());
     case TextureType::Buffer:
-        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySize(ctx.U32[1], image), zero,
-                                        zero, mips());
+        return ctx.OpCompositeConstruct(ctx.U32[4], query(ctx.U32[1]), zero, zero, mips());
     }
     throw LogicError("Unspecified image type {}", info.type.Value());
 }

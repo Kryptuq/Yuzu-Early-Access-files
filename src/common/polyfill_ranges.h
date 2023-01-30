@@ -18,9 +18,9 @@ namespace ranges {
 
 template <typename T>
 concept range = requires(T& t) {
-    begin(t);
-    end(t);
-};
+                    begin(t);
+                    end(t);
+                };
 
 template <typename T>
 concept input_range = range<T>;
@@ -421,7 +421,7 @@ struct generate_fn {
     }
 
     template <typename R, std::copy_constructible F>
-    requires std::invocable<F&> && ranges::output_range<R>
+        requires std::invocable<F&> && ranges::output_range<R>
     constexpr ranges::iterator_t<R> operator()(R&& r, F gen) const {
         return operator()(ranges::begin(r), ranges::end(r), std::move(gen));
     }

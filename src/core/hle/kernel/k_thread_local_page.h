@@ -70,10 +70,8 @@ public:
     }
 
     template <typename T>
-    requires(std::same_as<T, KThreadLocalPage> ||
-             std::same_as<T, RedBlackKeyType>) static constexpr int Compare(const T& lhs,
-                                                                            const KThreadLocalPage&
-                                                                                rhs) {
+        requires(std::same_as<T, KThreadLocalPage> || std::same_as<T, RedBlackKeyType>)
+    static constexpr int Compare(const T& lhs, const KThreadLocalPage& rhs) {
         const VAddr lval = GetRedBlackKey(lhs);
         const VAddr rval = GetRedBlackKey(rhs);
 

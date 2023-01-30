@@ -242,19 +242,21 @@ public:
 
 template <typename T>
 concept HasRedBlackKeyType = requires {
-    { std::is_same<typename T::RedBlackKeyType, void>::value } -> std::convertible_to<bool>;
-};
+                                 {
+                                     std::is_same<typename T::RedBlackKeyType, void>::value
+                                     } -> std::convertible_to<bool>;
+                             };
 
 namespace impl {
 
-    template <typename T, typename Default>
-    consteval auto* GetRedBlackKeyType() {
-        if constexpr (HasRedBlackKeyType<T>) {
-            return static_cast<typename T::RedBlackKeyType*>(nullptr);
-        } else {
-            return static_cast<Default*>(nullptr);
-        }
+template <typename T, typename Default>
+consteval auto* GetRedBlackKeyType() {
+    if constexpr (HasRedBlackKeyType<T>) {
+        return static_cast<typename T::RedBlackKeyType*>(nullptr);
+    } else {
+        return static_cast<Default*>(nullptr);
     }
+}
 
 } // namespace impl
 

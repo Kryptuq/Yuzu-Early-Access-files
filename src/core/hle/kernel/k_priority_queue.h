@@ -17,35 +17,41 @@ namespace Kernel {
 class KThread;
 
 template <typename T>
-concept KPriorityQueueAffinityMask = !std::is_reference_v<T> && requires(T & t) {
-    { t.GetAffinityMask() } -> Common::ConvertibleTo<u64>;
-    {t.SetAffinityMask(0)};
+concept KPriorityQueueAffinityMask = !
+std::is_reference_v<T>&& requires(T& t) {
+                             { t.GetAffinityMask() } -> Common::ConvertibleTo<u64>;
+                             { t.SetAffinityMask(0) };
 
-    { t.GetAffinity(0) } -> std::same_as<bool>;
-    {t.SetAffinity(0, false)};
-    {t.SetAll()};
-};
+                             { t.GetAffinity(0) } -> std::same_as<bool>;
+                             { t.SetAffinity(0, false) };
+                             { t.SetAll() };
+                         };
 
 template <typename T>
-concept KPriorityQueueMember = !std::is_reference_v<T> && requires(T & t) {
-    {typename T::QueueEntry()};
-    {(typename T::QueueEntry()).Initialize()};
-    {(typename T::QueueEntry()).SetPrev(std::addressof(t))};
-    {(typename T::QueueEntry()).SetNext(std::addressof(t))};
-    { (typename T::QueueEntry()).GetNext() } -> std::same_as<T*>;
-    { (typename T::QueueEntry()).GetPrev() } -> std::same_as<T*>;
-    { t.GetPriorityQueueEntry(0) } -> std::same_as<typename T::QueueEntry&>;
+concept KPriorityQueueMember = !
+std::is_reference_v<T>&& requires(T& t) {
+                             { typename T::QueueEntry() };
+                             { (typename T::QueueEntry()).Initialize() };
+                             { (typename T::QueueEntry()).SetPrev(std::addressof(t)) };
+                             { (typename T::QueueEntry()).SetNext(std::addressof(t)) };
+                             { (typename T::QueueEntry()).GetNext() } -> std::same_as<T*>;
+                             { (typename T::QueueEntry()).GetPrev() } -> std::same_as<T*>;
+                             {
+                                 t.GetPriorityQueueEntry(0)
+                                 } -> std::same_as<typename T::QueueEntry&>;
 
-    {t.GetAffinityMask()};
-    { std::remove_cvref_t<decltype(t.GetAffinityMask())>() } -> KPriorityQueueAffinityMask;
+                             { t.GetAffinityMask() };
+                             {
+                                 std::remove_cvref_t<decltype(t.GetAffinityMask())>()
+                                 } -> KPriorityQueueAffinityMask;
 
-    { t.GetActiveCore() } -> Common::ConvertibleTo<s32>;
-    { t.GetPriority() } -> Common::ConvertibleTo<s32>;
-    { t.IsDummyThread() } -> Common::ConvertibleTo<bool>;
-};
+                             { t.GetActiveCore() } -> Common::ConvertibleTo<s32>;
+                             { t.GetPriority() } -> Common::ConvertibleTo<s32>;
+                             { t.IsDummyThread() } -> Common::ConvertibleTo<bool>;
+                         };
 
 template <typename Member, size_t NumCores_, int LowestPriority, int HighestPriority>
-requires KPriorityQueueMember<Member>
+    requires KPriorityQueueMember<Member>
 class KPriorityQueue {
 public:
     using AffinityMaskType = std::remove_cv_t<

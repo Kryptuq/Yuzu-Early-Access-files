@@ -10,7 +10,7 @@
 namespace Shader {
 
 template <typename T>
-requires std::is_destructible_v<T>
+    requires std::is_destructible_v<T>
 class ObjectPool {
 public:
     explicit ObjectPool(size_t chunk_size = 8192) : new_chunk_size{chunk_size} {
@@ -18,7 +18,7 @@ public:
     }
 
     template <typename... Args>
-    requires std::is_constructible_v<T, Args...>
+        requires std::is_constructible_v<T, Args...>
     [[nodiscard]] T* Create(Args&&... args) {
         return std::construct_at(Memory(), std::forward<Args>(args)...);
     }

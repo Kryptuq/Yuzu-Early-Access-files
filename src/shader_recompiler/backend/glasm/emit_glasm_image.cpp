@@ -59,6 +59,13 @@ std::string Image(EmitContext& ctx, IR::TextureInstInfo info,
     }
 }
 
+bool IsTextureMsaa(EmitContext& ctx, const IR::TextureInstInfo& info) {
+    if (info.type == TextureType::Buffer) {
+        return false;
+    }
+    return ctx.info.texture_descriptors.at(info.descriptor_index).is_multisample;
+}
+
 std::string_view TextureType(IR::TextureInstInfo info, bool is_ms = false) {
     if (info.is_depth) {
         switch (info.type) {
@@ -535,7 +542,8 @@ void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value&
                               ScalarS32 lod, [[maybe_unused]] const IR::Value& skip_mips) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const std::string texture{Texture(ctx, info, index)};
-    const std::string_view type{TextureType(info)};
+    const bool is_msaa{IsTextureMsaa(ctx, info)};
+    const std::string_view type{TextureType(info, is_msaa)};
     ctx.Add("TXQ {},{},{},{};", inst, lod, texture, type);
 }
 

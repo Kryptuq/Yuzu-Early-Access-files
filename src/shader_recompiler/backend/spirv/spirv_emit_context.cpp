@@ -1288,6 +1288,7 @@ void EmitContext::DefineTextures(const Info& info, u32& binding, u32& scaling_in
             .pointer_type = pointer_type,
             .image_type = image_type,
             .count = desc.count,
+            .is_multisample = desc.is_multisample,
         });
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);

@@ -45,19 +45,19 @@ template <typename T>
 }
 
 template <typename T>
-requires std::is_unsigned_v<T>
+    requires std::is_unsigned_v<T>
 [[nodiscard]] constexpr bool IsPow2(T value) {
     return std::has_single_bit(value);
 }
 
 template <typename T>
-requires std::is_integral_v<T>
+    requires std::is_integral_v<T>
 [[nodiscard]] T NextPow2(T value) {
     return static_cast<T>(1ULL << ((8U * sizeof(T)) - std::countl_zero(value - 1U)));
 }
 
 template <size_t bit_index, typename T>
-requires std::is_integral_v<T>
+    requires std::is_integral_v<T>
 [[nodiscard]] constexpr bool Bit(const T value) {
     static_assert(bit_index < BitSize<T>(), "bit_index must be smaller than size of T");
     return ((value >> bit_index) & T(1)) == T(1);
