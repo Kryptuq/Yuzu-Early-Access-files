@@ -70,14 +70,12 @@ DriverResult RingConProtocol::StartRingconPolling() {
 DriverResult RingConProtocol::IsRingConnected(bool& is_connected) {
     LOG_DEBUG(Input, "IsRingConnected");
     constexpr std::size_t max_tries = 28;
-    constexpr u8 ring_controller_id = 0x20;
-    std::vector<u8> output;
+    SubCommandResponse output{};
     std::size_t tries = 0;
     is_connected = false;
 
     do {
-        std::array<u8, 1> empty_data{};
-        const auto result = SendSubCommand(SubCommand::UNKNOWN_RINGCON, empty_data, output);
+        const auto result = SendSubCommand(SubCommand::GET_EXTERNAL_DEVICE_INFO, {}, output);
 
         if (result != DriverResult::Success) {
             return result;
@@ -86,7 +84,7 @@ DriverResult RingConProtocol::IsRingConnected(bool& is_connected) {
         if (tries++ >= max_tries) {
             return DriverResult::NoDeviceDetected;
         }
-    } while (output[16] != ring_controller_id);
+    } while (output.external_device_id != ExternalDeviceId::RingController);
 
     is_connected = true;
     return DriverResult::Success;
@@ -100,14 +98,14 @@ DriverResult RingConProtocol::ConfigureRing() {
         0x00, 0x00, 0x00, 0x0A, 0x64, 0x0B, 0xE6, 0xA9, 0x22, 0x00, 0x00, 0x04, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0xA8, 0xE1, 0x34, 0x36};
 
-    const DriverResult result = SendSubCommand(SubCommand::UNKNOWN_RINGCON3, ring_config);
+    const DriverResult result = SendSubCommand(SubCommand::SET_EXTERNAL_FORMAT_CONFIG, ring_config);
 
     if (result != DriverResult::Success) {
         return result;
     }
 
     static constexpr std::array<u8, 4> ringcon_data{0x04, 0x01, 0x01, 0x02};
-    return SendSubCommand(SubCommand::UNKNOWN_RINGCON2, ringcon_data);
+    return SendSubCommand(SubCommand::ENABLE_EXTERNAL_POLLING, ringcon_data);
 }
 
 bool RingConProtocol::IsEnabled() const {

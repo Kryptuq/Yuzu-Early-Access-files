@@ -81,6 +81,7 @@ private:
         QColor right{};
         QColor button{};
         QColor button2{};
+        QColor button_turbo{};
         QColor font{};
         QColor font2{};
         QColor highlight{};
@@ -183,6 +184,7 @@ private:
                          const Common::Input::ButtonStatus& pressed, float size = 1.0f);
     void DrawTriggerButton(QPainter& p, QPointF center, Direction direction,
                            const Common::Input::ButtonStatus& pressed);
+    QColor GetButtonColor(QColor default_color, bool is_pressed, bool turbo);
 
     // Draw battery functions
     void DrawBattery(QPainter& p, QPointF center, Common::Input::BatteryLevel battery);

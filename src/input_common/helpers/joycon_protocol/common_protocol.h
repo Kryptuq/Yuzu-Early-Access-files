@@ -57,22 +57,30 @@ public:
      * Sends data to the joycon device
      * @param buffer data to be send
      */
-    DriverResult SendData(std::span<const u8> buffer);
+    DriverResult SendRawData(std::span<const u8> buffer);
+
+    template <typename Output>
+    requires std::is_trivially_copyable_v<Output> DriverResult SendData(const Output& output) {
+        std::array<u8, sizeof(Output)> buffer;
+        std::memcpy(buffer.data(), &output, sizeof(Output));
+        return SendRawData(buffer);
+    }
 
     /**
      * Waits for incoming data of the joycon device that matchs the subcommand
      * @param sub_command type of data to be returned
-     * @returns a buffer containing the responce
+     * @returns a buffer containing the response
      */
-    DriverResult GetSubCommandResponse(SubCommand sub_command, std::vector<u8>& output);
+    DriverResult GetSubCommandResponse(SubCommand sub_command, SubCommandResponse& output);
 
     /**
      * Sends a sub command to the device and waits for it's reply
      * @param sc sub command to be send
      * @param buffer data to be send
-     * @returns output buffer containing the responce
+     * @returns output buffer containing the response
      */
-    DriverResult SendSubCommand(SubCommand sc, std::span<const u8> buffer, std::vector<u8>& output);
+    DriverResult SendSubCommand(SubCommand sc, std::span<const u8> buffer,
+                                SubCommandResponse& output);
 
     /**
      * Sends a sub command to the device and waits for it's reply and ignores the output
@@ -97,14 +105,14 @@ public:
     /**
      * Reads the SPI memory stored on the joycon
      * @param Initial address location
-     * @returns output buffer containing the responce
+     * @returns output buffer containing the response
      */
     DriverResult ReadRawSPI(SpiAddress addr, std::span<u8> output);
 
     /**
      * Reads the SPI memory stored on the joycon
      * @param Initial address location
-     * @returns output object containing the responce
+     * @returns output object containing the response
      */
     template <typename Output>
     requires std::is_trivially_copyable_v<Output> DriverResult ReadSPI(SpiAddress addr,
@@ -136,19 +144,19 @@ public:
     /**
      * Waits until there's MCU data available. On timeout returns error
      * @param report mode of the expected reply
-     * @returns a buffer containing the responce
+     * @returns a buffer containing the response
      */
-    DriverResult GetMCUDataResponse(ReportMode report_mode_, std::vector<u8>& output);
+    DriverResult GetMCUDataResponse(ReportMode report_mode_, MCUCommandResponse& output);
 
     /**
      * Sends data to the MCU chip and waits for it's reply
      * @param report mode of the expected reply
      * @param sub command to be send
      * @param buffer data to be send
-     * @returns output buffer containing the responce
+     * @returns output buffer containing the response
      */
     DriverResult SendMCUData(ReportMode report_mode, SubCommand sc, std::span<const u8> buffer,
-                             std::vector<u8>& output);
+                             MCUCommandResponse& output);
 
     /**
      * Wait's until the MCU chip is on the specified mode

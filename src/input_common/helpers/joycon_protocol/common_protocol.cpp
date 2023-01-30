@@ -22,12 +22,9 @@ void JoyconCommonProtocol::SetNonBlocking() {
 }
 
 DriverResult JoyconCommonProtocol::GetDeviceType(ControllerType& controller_type) {
-    std::array<u8, 1> buffer{};
-    const auto result = ReadRawSPI(SpiAddress::DEVICE_TYPE, buffer);
-    controller_type = ControllerType::None;
+    const auto result = ReadSPI(SpiAddress::DEVICE_TYPE, controller_type);
 
     if (result == DriverResult::Success) {
-        controller_type = static_cast<ControllerType>(buffer[0]);
         // Fallback to 3rd party pro controllers
         if (controller_type == ControllerType::None) {
             controller_type = ControllerType::Pro;
@@ -40,6 +37,7 @@ DriverResult JoyconCommonProtocol::GetDeviceType(ControllerType& controller_type
 DriverResult JoyconCommonProtocol::CheckDeviceAccess(SDL_hid_device_info* device_info) {
     ControllerType controller_type{ControllerType::None};
     const auto result = GetDeviceType(controller_type);
+
     if (result != DriverResult::Success || controller_type == ControllerType::None) {
         return DriverResult::UnsupportedControllerType;
     }
@@ -62,7 +60,7 @@ DriverResult JoyconCommonProtocol::SetReportMode(ReportMode report_mode) {
     return SendSubCommand(SubCommand::SET_REPORT_MODE, buffer);
 }
 
-DriverResult JoyconCommonProtocol::SendData(std::span<const u8> buffer) {
+DriverResult JoyconCommonProtocol::SendRawData(std::span<const u8> buffer) {
     const auto result = SDL_hid_write(hidapi_handle->handle, buffer.data(), buffer.size());
 
     if (result == -1) {
@@ -72,15 +70,15 @@ DriverResult JoyconCommonProtocol::SendData(std::span<const u8> buffer) {
     return DriverResult::Success;
 }
 
-DriverResult JoyconCommonProtocol::GetSubCommandResponse(SubCommand sc, std::vector<u8>& output) {
+DriverResult JoyconCommonProtocol::GetSubCommandResponse(SubCommand sc,
+                                                         SubCommandResponse& output) {
     constexpr int timeout_mili = 66;
     constexpr int MaxTries = 15;
     int tries = 0;
-    output.resize(MaxSubCommandResponseSize);
 
     do {
-        int result = SDL_hid_read_timeout(hidapi_handle->handle, output.data(),
-                                          MaxSubCommandResponseSize, timeout_mili);
+        int result = SDL_hid_read_timeout(hidapi_handle->handle, reinterpret_cast<u8*>(&output),
+                                          sizeof(SubCommandResponse), timeout_mili);
 
         if (result < 1) {
             LOG_ERROR(Input, "No response from joycon");
@@ -88,27 +86,28 @@ DriverResult JoyconCommonProtocol::GetSubCommandResponse(SubCommand sc, std::vec
         if (tries++ > MaxTries) {
             return DriverResult::Timeout;
         }
-    } while (output[0] != 0x21 && output[14] != static_cast<u8>(sc));
-
-    if (output[0] != 0x21 && output[14] != static_cast<u8>(sc)) {
-        return DriverResult::WrongReply;
-    }
+    } while (output.input_report.report_mode != ReportMode::SUBCMD_REPLY &&
+             output.sub_command != sc);
 
     return DriverResult::Success;
 }
 
 DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const u8> buffer,
-                                                  std::vector<u8>& output) {
-    std::vector<u8> local_buffer(MaxResponseSize);
+                                                  SubCommandResponse& output) {
+    SubCommandPacket packet{
+        .output_report = OutputReport::RUMBLE_AND_SUBCMD,
+        .packet_counter = GetCounter(),
+        .sub_command = sc,
+        .command_data = {},
+    };
 
-    local_buffer[0] = static_cast<u8>(OutputReport::RUMBLE_AND_SUBCMD);
-    local_buffer[1] = GetCounter();
-    local_buffer[10] = static_cast<u8>(sc);
-    for (std::size_t i = 0; i < buffer.size(); ++i) {
-        local_buffer[11 + i] = buffer[i];
+    if (buffer.size() > packet.command_data.size()) {
+        return DriverResult::InvalidParameters;
     }
 
-    auto result = SendData(local_buffer);
+    memcpy(packet.command_data.data(), buffer.data(), buffer.size());
+
+    auto result = SendData(packet);
 
     if (result != DriverResult::Success) {
         return result;
@@ -120,46 +119,57 @@ DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const
 }
 
 DriverResult JoyconCommonProtocol::SendSubCommand(SubCommand sc, std::span<const u8> buffer) {
-    std::vector<u8> output;
+    SubCommandResponse output{};
     return SendSubCommand(sc, buffer, output);
 }
 
 DriverResult JoyconCommonProtocol::SendMCUCommand(SubCommand sc, std::span<const u8> buffer) {
-    std::vector<u8> local_buffer(MaxResponseSize);
+    SubCommandPacket packet{
+        .output_report = OutputReport::MCU_DATA,
+        .packet_counter = GetCounter(),
+        .sub_command = sc,
+        .command_data = {},
+    };
 
-    local_buffer[0] = static_cast<u8>(OutputReport::MCU_DATA);
-    local_buffer[1] = GetCounter();
-    local_buffer[10] = static_cast<u8>(sc);
-    for (std::size_t i = 0; i < buffer.size(); ++i) {
-        local_buffer[11 + i] = buffer[i];
+    if (buffer.size() > packet.command_data.size()) {
+        return DriverResult::InvalidParameters;
     }
 
-    return SendData(local_buffer);
+    memcpy(packet.command_data.data(), buffer.data(), buffer.size());
+
+    return SendData(packet);
 }
 
 DriverResult JoyconCommonProtocol::SendVibrationReport(std::span<const u8> buffer) {
-    std::vector<u8> local_buffer(MaxResponseSize);
+    VibrationPacket packet{
+        .output_report = OutputReport::RUMBLE_ONLY,
+        .packet_counter = GetCounter(),
+        .vibration_data = {},
+    };
 
-    local_buffer[0] = static_cast<u8>(Joycon::OutputReport::RUMBLE_ONLY);
-    local_buffer[1] = GetCounter();
+    if (buffer.size() > packet.vibration_data.size()) {
+        return DriverResult::InvalidParameters;
+    }
 
-    memcpy(local_buffer.data() + 2, buffer.data(), buffer.size());
+    memcpy(packet.vibration_data.data(), buffer.data(), buffer.size());
 
-    return SendData(local_buffer);
+    return SendData(packet);
 }
 
 DriverResult JoyconCommonProtocol::ReadRawSPI(SpiAddress addr, std::span<u8> output) {
-    constexpr std::size_t HeaderSize = 20;
+    constexpr std::size_t HeaderSize = 5;
     constexpr std::size_t MaxTries = 10;
-    const auto size = output.size();
     std::size_t tries = 0;
-    std::array<u8, 5> buffer = {0x00, 0x00, 0x00, 0x00, static_cast<u8>(size)};
-    std::vector<u8> local_buffer{};
+    SubCommandResponse response{};
+    std::array<u8, sizeof(ReadSpiPacket)> buffer{};
+    const ReadSpiPacket packet_data{
+        .spi_address = addr,
+        .size = static_cast<u8>(output.size()),
+    };
 
-    buffer[0] = static_cast<u8>(static_cast<u16>(addr) & 0x00FF);
-    buffer[1] = static_cast<u8>((static_cast<u16>(addr) & 0xFF00) >> 8);
+    memcpy(buffer.data(), &packet_data, sizeof(ReadSpiPacket));
     do {
-        const auto result = SendSubCommand(SubCommand::SPI_FLASH_READ, buffer, local_buffer);
+        const auto result = SendSubCommand(SubCommand::SPI_FLASH_READ, buffer, response);
         if (result != DriverResult::Success) {
             return result;
         }
@@ -167,14 +177,14 @@ DriverResult JoyconCommonProtocol::ReadRawSPI(SpiAddress addr, std::span<u8> out
         if (tries++ > MaxTries) {
             return DriverResult::Timeout;
         }
-    } while (local_buffer[15] != buffer[0] || local_buffer[16] != buffer[1]);
+    } while (response.spi_address != addr);
 
-    if (local_buffer.size() < size + HeaderSize) {
+    if (response.command_data.size() < packet_data.size + HeaderSize) {
         return DriverResult::WrongReply;
     }
 
     // Remove header from output
-    memcpy(output.data(), local_buffer.data() + HeaderSize, size);
+    memcpy(output.data(), response.command_data.data() + HeaderSize, packet_data.size);
     return DriverResult::Success;
 }
 
@@ -183,7 +193,7 @@ DriverResult JoyconCommonProtocol::EnableMCU(bool enable) {
     const auto result = SendSubCommand(SubCommand::SET_MCU_STATE, mcu_state);
 
     if (result != DriverResult::Success) {
-        LOG_ERROR(Input, "SendMCUData failed with error {}", result);
+        LOG_ERROR(Input, "Failed with error {}", result);
     }
 
     return result;
@@ -198,22 +208,21 @@ DriverResult JoyconCommonProtocol::ConfigureMCU(const MCUConfig& config) {
     const auto result = SendSubCommand(SubCommand::SET_MCU_CONFIG, config_buffer);
 
     if (result != DriverResult::Success) {
-        LOG_ERROR(Input, "Set MCU config failed with error {}", result);
+        LOG_ERROR(Input, "Failed with error {}", result);
     }
 
     return result;
 }
 
-DriverResult JoyconCommonProtocol::GetMCUDataResponse(ReportMode report_mode_,
-                                                      std::vector<u8>& output) {
-    const int report_mode = static_cast<u8>(report_mode_);
+DriverResult JoyconCommonProtocol::GetMCUDataResponse(ReportMode report_mode,
+                                                      MCUCommandResponse& output) {
     constexpr int TimeoutMili = 200;
     constexpr int MaxTries = 9;
     int tries = 0;
-    output.resize(0x170);
 
     do {
-        int result = SDL_hid_read_timeout(hidapi_handle->handle, output.data(), 0x170, TimeoutMili);
+        int result = SDL_hid_read_timeout(hidapi_handle->handle, reinterpret_cast<u8*>(&output),
+                                          sizeof(MCUCommandResponse), TimeoutMili);
 
         if (result < 1) {
             LOG_ERROR(Input, "No response from joycon attempt {}", tries);
@@ -221,28 +230,29 @@ DriverResult JoyconCommonProtocol::GetMCUDataResponse(ReportMode report_mode_,
         if (tries++ > MaxTries) {
             return DriverResult::Timeout;
         }
-    } while (output[0] != report_mode || output[49] == 0xFF);
-
-    if (output[0] != report_mode || output[49] == 0xFF) {
-        return DriverResult::WrongReply;
-    }
+    } while (output.input_report.report_mode != report_mode ||
+             output.mcu_report == MCUReport::EmptyAwaitingCmd);
 
     return DriverResult::Success;
 }
 
 DriverResult JoyconCommonProtocol::SendMCUData(ReportMode report_mode, SubCommand sc,
                                                std::span<const u8> buffer,
-                                               std::vector<u8>& output) {
-    std::vector<u8> local_buffer(MaxResponseSize);
+                                               MCUCommandResponse& output) {
+    SubCommandPacket packet{
+        .output_report = OutputReport::MCU_DATA,
+        .packet_counter = GetCounter(),
+        .sub_command = sc,
+        .command_data = {},
+    };
 
-    local_buffer[0] = static_cast<u8>(OutputReport::MCU_DATA);
-    local_buffer[1] = GetCounter();
-    local_buffer[9] = static_cast<u8>(sc);
-    for (std::size_t i = 0; i < buffer.size(); ++i) {
-        local_buffer[10 + i] = buffer[i];
+    if (buffer.size() > packet.command_data.size()) {
+        return DriverResult::InvalidParameters;
     }
 
-    auto result = SendData(local_buffer);
+    memcpy(packet.command_data.data(), buffer.data(), buffer.size());
+
+    auto result = SendData(packet);
 
     if (result != DriverResult::Success) {
         return result;
@@ -254,7 +264,7 @@ DriverResult JoyconCommonProtocol::SendMCUData(ReportMode report_mode, SubComman
 }
 
 DriverResult JoyconCommonProtocol::WaitSetMCUMode(ReportMode report_mode, MCUMode mode) {
-    std::vector<u8> output;
+    MCUCommandResponse output{};
     constexpr std::size_t MaxTries{8};
     std::size_t tries{};
 
@@ -269,7 +279,8 @@ DriverResult JoyconCommonProtocol::WaitSetMCUMode(ReportMode report_mode, MCUMod
         if (tries++ > MaxTries) {
             return DriverResult::WrongReply;
         }
-    } while (output[49] != 1 || output[56] != static_cast<u8>(mode));
+    } while (output.mcu_report != MCUReport::StateReport ||
+             output.mcu_data[6] != static_cast<u8>(mode));
 
     return DriverResult::Success;
 }

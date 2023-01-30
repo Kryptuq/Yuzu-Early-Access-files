@@ -162,14 +162,14 @@ void JoyconDriver::InputThread(std::stop_token stop_token) {
 }
 
 void JoyconDriver::OnNewData(std::span<u8> buffer) {
-    const auto report_mode = static_cast<InputReport>(buffer[0]);
+    const auto report_mode = static_cast<ReportMode>(buffer[0]);
 
     // Packages can be a litte bit inconsistent. Average the delta time to provide a smoother motion
     // experience
     switch (report_mode) {
-    case InputReport::STANDARD_FULL_60HZ:
-    case InputReport::NFC_IR_MODE_60HZ:
-    case InputReport::SIMPLE_HID_MODE: {
+    case ReportMode::STANDARD_FULL_60HZ:
+    case ReportMode::NFC_IR_MODE_60HZ:
+    case ReportMode::SIMPLE_HID_MODE: {
         const auto now = std::chrono::steady_clock::now();
         const auto new_delta_time = static_cast<u64>(
             std::chrono::duration_cast<std::chrono::microseconds>(now - last_update).count());
@@ -190,7 +190,7 @@ void JoyconDriver::OnNewData(std::span<u8> buffer) {
     };
 
     // TODO: Remove this when calibration is properly loaded and not calculated
-    if (ring_connected && report_mode == InputReport::STANDARD_FULL_60HZ) {
+    if (ring_connected && report_mode == ReportMode::STANDARD_FULL_60HZ) {
         InputReportActive data{};
         memcpy(&data, buffer.data(), sizeof(InputReportActive));
         calibration_protocol->GetRingCalibration(ring_calibration, data.ring_input);
@@ -228,16 +228,16 @@ void JoyconDriver::OnNewData(std::span<u8> buffer) {
     }
 
     switch (report_mode) {
-    case InputReport::STANDARD_FULL_60HZ:
+    case ReportMode::STANDARD_FULL_60HZ:
         joycon_poller->ReadActiveMode(buffer, motion_status, ring_status);
         break;
-    case InputReport::NFC_IR_MODE_60HZ:
+    case ReportMode::NFC_IR_MODE_60HZ:
         joycon_poller->ReadNfcIRMode(buffer, motion_status);
         break;
-    case InputReport::SIMPLE_HID_MODE:
+    case ReportMode::SIMPLE_HID_MODE:
         joycon_poller->ReadPassiveMode(buffer);
         break;
-    case InputReport::SUBCMD_REPLY:
+    case ReportMode::SUBCMD_REPLY:
         LOG_DEBUG(Input, "Unhandled command reply");
         break;
     default:

@@ -668,12 +668,10 @@ std::string Joycons::JoyconName(Joycon::ControllerType type) const {
         return "Right Joycon";
     case Joycon::ControllerType::Pro:
         return "Pro Controller";
-    case Joycon::ControllerType::Grip:
-        return "Grip Controller";
     case Joycon::ControllerType::Dual:
         return "Dual Joycon";
     default:
-        return "Unknown Joycon";
+        return "Unknown Switch Controller";
     }
 }
 } // namespace InputCommon

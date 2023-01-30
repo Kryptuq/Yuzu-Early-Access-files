@@ -19,20 +19,24 @@
 namespace InputCommon::Joycon {
 constexpr u32 MaxErrorCount = 50;
 constexpr u32 MaxBufferSize = 368;
-constexpr u32 MaxResponseSize = 49;
-constexpr u32 MaxSubCommandResponseSize = 64;
 constexpr std::array<u8, 8> DefaultVibrationBuffer{0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40};
 
 using MacAddress = std::array<u8, 6>;
 using SerialNumber = std::array<u8, 15>;
 
-enum class ControllerType {
-    None,
-    Left,
-    Right,
-    Pro,
-    Grip,
-    Dual,
+enum class ControllerType : u8 {
+    None = 0x00,
+    Left = 0x01,
+    Right = 0x02,
+    Pro = 0x03,
+    Dual = 0x05, // TODO: Verify this id
+    LarkHvc1 = 0x07,
+    LarkHvc2 = 0x08,
+    LarkNesLeft = 0x09,
+    LarkNesRight = 0x0A,
+    Lucia = 0x0B,
+    Lagon = 0x0C,
+    Lager = 0x0D,
 };
 
 enum class PadAxes {
@@ -99,14 +103,6 @@ enum class OutputReport : u8 {
     USB_CMD = 0x80,
 };
 
-enum class InputReport : u8 {
-    SUBCMD_REPLY = 0x21,
-    STANDARD_FULL_60HZ = 0x30,
-    NFC_IR_MODE_60HZ = 0x31,
-    SIMPLE_HID_MODE = 0x3F,
-    INPUT_USB_RESPONSE = 0x81,
-};
-
 enum class FeatureReport : u8 {
     Last_SUBCMD = 0x02,
     OTA_GW_UPGRADE = 0x70,
@@ -143,9 +139,10 @@ enum class SubCommand : u8 {
     ENABLE_VIBRATION = 0x48,
     GET_REGULATED_VOLTAGE = 0x50,
     SET_EXTERNAL_CONFIG = 0x58,
-    UNKNOWN_RINGCON = 0x59,
-    UNKNOWN_RINGCON2 = 0x5A,
-    UNKNOWN_RINGCON3 = 0x5C,
+    GET_EXTERNAL_DEVICE_INFO = 0x59,
+    ENABLE_EXTERNAL_POLLING = 0x5A,
+    DISABLE_EXTERNAL_POLLING = 0x5B,
+    SET_EXTERNAL_FORMAT_CONFIG = 0x5C,
 };
 
 enum class UsbSubCommand : u8 {
@@ -164,20 +161,26 @@ enum class CalibrationMagic : u8 {
     USR_MAGIC_1 = 0xA1,
 };
 
-enum class SpiAddress {
-    SERIAL_NUMBER = 0X6000,
-    DEVICE_TYPE = 0X6012,
-    COLOR_EXIST = 0X601B,
-    FACT_LEFT_DATA = 0X603d,
-    FACT_RIGHT_DATA = 0X6046,
-    COLOR_DATA = 0X6050,
-    FACT_IMU_DATA = 0X6020,
-    USER_LEFT_MAGIC = 0X8010,
-    USER_LEFT_DATA = 0X8012,
-    USER_RIGHT_MAGIC = 0X801B,
-    USER_RIGHT_DATA = 0X801D,
-    USER_IMU_MAGIC = 0X8026,
-    USER_IMU_DATA = 0X8028,
+enum class SpiAddress : u16 {
+    MAGIC = 0x0000,
+    MAC_ADDRESS = 0x0015,
+    PAIRING_INFO = 0x2000,
+    SHIPMENT = 0x5000,
+    SERIAL_NUMBER = 0x6000,
+    DEVICE_TYPE = 0x6012,
+    FORMAT_VERSION = 0x601B,
+    FACT_IMU_DATA = 0x6020,
+    FACT_LEFT_DATA = 0x603d,
+    FACT_RIGHT_DATA = 0x6046,
+    COLOR_DATA = 0x6050,
+    DESIGN_VARIATION = 0x605C,
+    SENSOR_DATA = 0x6080,
+    USER_LEFT_MAGIC = 0x8010,
+    USER_LEFT_DATA = 0x8012,
+    USER_RIGHT_MAGIC = 0x801B,
+    USER_RIGHT_DATA = 0x801D,
+    USER_IMU_MAGIC = 0x8026,
+    USER_IMU_DATA = 0x8028,
 };
 
 enum class ReportMode : u8 {
@@ -185,10 +188,12 @@ enum class ReportMode : u8 {
     ACTIVE_POLLING_NFC_IR_CAMERA_CONFIGURATION = 0x01,
     ACTIVE_POLLING_NFC_IR_CAMERA_DATA_CONFIGURATION = 0x02,
     ACTIVE_POLLING_IR_CAMERA_DATA = 0x03,
+    SUBCMD_REPLY = 0x21,
     MCU_UPDATE_STATE = 0x23,
     STANDARD_FULL_60HZ = 0x30,
     NFC_IR_MODE_60HZ = 0x31,
     SIMPLE_HID_MODE = 0x3F,
+    INPUT_USB_RESPONSE = 0x81,
 };
 
 enum class GyroSensitivity : u8 {
@@ -359,10 +364,16 @@ enum class IrRegistersAddress : u16 {
     DenoiseColor = 0x6901,
 };
 
+enum class ExternalDeviceId : u16 {
+    RingController = 0x2000,
+    Starlink = 0x2800,
+};
+
 enum class DriverResult {
     Success,
     WrongReply,
     Timeout,
+    InvalidParameters,
     UnsupportedControllerType,
     HandleInUse,
     ErrorReadingData,
@@ -485,7 +496,7 @@ static_assert(sizeof(MCUConfig) == 0x26, "MCUConfig is an invalid size");
 
 #pragma pack(push, 1)
 struct InputReportPassive {
-    InputReport report_mode;
+    ReportMode report_mode;
     u16 button_input;
     u8 stick_state;
     std::array<u8, 10> unknown_data;
@@ -493,7 +504,7 @@ struct InputReportPassive {
 static_assert(sizeof(InputReportPassive) == 0xE, "InputReportPassive is an invalid size");
 
 struct InputReportActive {
-    InputReport report_mode;
+    ReportMode report_mode;
     u8 packet_id;
     Battery battery_status;
     std::array<u8, 3> button_input;
@@ -507,7 +518,7 @@ struct InputReportActive {
 static_assert(sizeof(InputReportActive) == 0x29, "InputReportActive is an invalid size");
 
 struct InputReportNfcIr {
-    InputReport report_mode;
+    ReportMode report_mode;
     u8 packet_id;
     Battery battery_status;
     std::array<u8, 3> button_input;
@@ -605,9 +616,11 @@ static_assert(sizeof(FirmwareVersion) == 0x2, "FirmwareVersion is an invalid siz
 
 struct DeviceInfo {
     FirmwareVersion firmware;
+    std::array<u8, 2> unknown_1;
     MacAddress mac_address;
+    std::array<u8, 2> unknown_2;
 };
-static_assert(sizeof(DeviceInfo) == 0x8, "DeviceInfo is an invalid size");
+static_assert(sizeof(DeviceInfo) == 0xC, "DeviceInfo is an invalid size");
 
 struct MotionStatus {
     bool is_enabled;
@@ -622,6 +635,53 @@ struct RingStatus {
     s16 max_value;
     s16 min_value;
 };
+
+struct VibrationPacket {
+    OutputReport output_report;
+    u8 packet_counter;
+    std::array<u8, 0x8> vibration_data;
+};
+static_assert(sizeof(VibrationPacket) == 0xA, "VibrationPacket is an invalid size");
+
+struct SubCommandPacket {
+    OutputReport output_report;
+    u8 packet_counter;
+    INSERT_PADDING_BYTES(0x8); // This contains vibration data
+    SubCommand sub_command;
+    std::array<u8, 0x26> command_data;
+};
+static_assert(sizeof(SubCommandPacket) == 0x31, "SubCommandPacket is an invalid size");
+
+#pragma pack(push, 1)
+struct ReadSpiPacket {
+    SpiAddress spi_address;
+    INSERT_PADDING_BYTES(0x2);
+    u8 size;
+};
+static_assert(sizeof(ReadSpiPacket) == 0x5, "ReadSpiPacket is an invalid size");
+
+struct SubCommandResponse {
+    InputReportPassive input_report;
+    SubCommand sub_command;
+    union {
+        std::array<u8, 0x30> command_data;
+        SpiAddress spi_address;              // Reply from SPI_FLASH_READ subcommand
+        ExternalDeviceId external_device_id; // Reply from GET_EXTERNAL_DEVICE_INFO subcommand
+        DeviceInfo device_info;              // Reply from REQ_DEV_INFO subcommand
+    };
+    u8 crc; // This is never used
+};
+static_assert(sizeof(SubCommandResponse) == 0x40, "SubCommandResponse is an invalid size");
+#pragma pack(pop)
+
+struct MCUCommandResponse {
+    InputReportNfcIr input_report;
+    INSERT_PADDING_BYTES(0x8);
+    MCUReport mcu_report;
+    std::array<u8, 0x13D> mcu_data;
+    u8 crc;
+};
+static_assert(sizeof(MCUCommandResponse) == 0x170, "MCUCommandResponse is an invalid size");
 
 struct JoyconCallbacks {
     std::function<void(Battery)> on_battery_data;

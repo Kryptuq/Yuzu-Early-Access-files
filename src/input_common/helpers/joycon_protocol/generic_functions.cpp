@@ -32,13 +32,13 @@ DriverResult GenericProtocol::TriggersElapsed() {
 
 DriverResult GenericProtocol::GetDeviceInfo(DeviceInfo& device_info) {
     ScopedSetBlocking sb(this);
-    std::vector<u8> output;
+    SubCommandResponse output{};
 
     const auto result = SendSubCommand(SubCommand::REQ_DEV_INFO, {}, output);
 
     device_info = {};
     if (result == DriverResult::Success) {
-        memcpy(&device_info, output.data(), sizeof(DeviceInfo));
+        device_info = output.device_info;
     }
 
     return result;

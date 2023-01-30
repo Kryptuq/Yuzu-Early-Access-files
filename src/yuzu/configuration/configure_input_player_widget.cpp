@@ -81,7 +81,6 @@ void PlayerControlPreview::UpdateColors() {
         colors.outline = QColor(0, 0, 0);
         colors.primary = QColor(225, 225, 225);
         colors.button = QColor(109, 111, 114);
-        colors.button2 = QColor(109, 111, 114);
         colors.button2 = QColor(77, 80, 84);
         colors.slider_arrow = QColor(65, 68, 73);
         colors.font2 = QColor(0, 0, 0);
@@ -100,6 +99,7 @@ void PlayerControlPreview::UpdateColors() {
     colors.led_off = QColor(170, 238, 255);
     colors.indicator2 = QColor(59, 165, 93);
     colors.charging = QColor(250, 168, 26);
+    colors.button_turbo = QColor(217, 158, 4);
 
     colors.left = colors.primary;
     colors.right = colors.primary;
@@ -2469,7 +2469,6 @@ void PlayerControlPreview::DrawJoystickDot(QPainter& p, const QPointF center,
 void PlayerControlPreview::DrawRoundButton(QPainter& p, QPointF center,
                                            const Common::Input::ButtonStatus& pressed, float width,
                                            float height, Direction direction, float radius) {
-    p.setBrush(button_color);
     if (pressed.value) {
         switch (direction) {
         case Direction::Left:
@@ -2487,16 +2486,16 @@ void PlayerControlPreview::DrawRoundButton(QPainter& p, QPointF center,
         case Direction::None:
             break;
         }
-        p.setBrush(colors.highlight);
     }
     QRectF rect = {center.x() - width, center.y() - height, width * 2.0f, height * 2.0f};
+    p.setBrush(GetButtonColor(button_color, pressed.value, pressed.turbo));
     p.drawRoundedRect(rect, radius, radius);
 }
 void PlayerControlPreview::DrawMinusButton(QPainter& p, const QPointF center,
                                            const Common::Input::ButtonStatus& pressed,
                                            int button_size) {
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawRectangle(p, center, button_size, button_size / 3.0f);
 }
 void PlayerControlPreview::DrawPlusButton(QPainter& p, const QPointF center,
@@ -2504,7 +2503,7 @@ void PlayerControlPreview::DrawPlusButton(QPainter& p, const QPointF center,
                                           int button_size) {
     // Draw outer line
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawRectangle(p, center, button_size, button_size / 3.0f);
     DrawRectangle(p, center, button_size / 3.0f, button_size);
 
@@ -2526,7 +2525,7 @@ void PlayerControlPreview::DrawGCButtonX(QPainter& p, const QPointF center,
     }
 
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawPolygon(p, button_x);
 }
 
@@ -2539,7 +2538,7 @@ void PlayerControlPreview::DrawGCButtonY(QPainter& p, const QPointF center,
     }
 
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawPolygon(p, button_x);
 }
 
@@ -2553,17 +2552,15 @@ void PlayerControlPreview::DrawGCButtonZ(QPainter& p, const QPointF center,
     }
 
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button2);
+    p.setBrush(GetButtonColor(colors.button2, pressed.value, pressed.turbo));
     DrawPolygon(p, button_x);
 }
 
 void PlayerControlPreview::DrawCircleButton(QPainter& p, const QPointF center,
                                             const Common::Input::ButtonStatus& pressed,
                                             float button_size) {
-    p.setBrush(button_color);
-    if (pressed.value) {
-        p.setBrush(colors.highlight);
-    }
+
+    p.setBrush(GetButtonColor(button_color, pressed.value, pressed.turbo));
     p.drawEllipse(center, button_size, button_size);
 }
 
@@ -2620,7 +2617,7 @@ void PlayerControlPreview::DrawArrowButton(QPainter& p, const QPointF center,
 
     // Draw arrow button
     p.setPen(pressed.value ? colors.highlight : colors.button);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawPolygon(p, arrow_button);
 
     switch (direction) {
@@ -2672,8 +2669,18 @@ void PlayerControlPreview::DrawTriggerButton(QPainter& p, const QPointF center,
 
     // Draw arrow button
     p.setPen(colors.outline);
-    p.setBrush(pressed.value ? colors.highlight : colors.button);
+    p.setBrush(GetButtonColor(colors.button, pressed.value, pressed.turbo));
     DrawPolygon(p, qtrigger_button);
+}
+
+QColor PlayerControlPreview::GetButtonColor(QColor default_color, bool is_pressed, bool turbo) {
+    if (is_pressed && turbo) {
+        return colors.button_turbo;
+    }
+    if (is_pressed) {
+        return colors.highlight;
+    }
+    return default_color;
 }
 
 void PlayerControlPreview::DrawBattery(QPainter& p, QPointF center,

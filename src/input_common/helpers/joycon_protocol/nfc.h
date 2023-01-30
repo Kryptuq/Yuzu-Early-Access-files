@@ -45,13 +45,13 @@ private:
 
     DriverResult GetAmiiboData(std::vector<u8>& data);
 
-    DriverResult SendStartPollingRequest(std::vector<u8>& output);
+    DriverResult SendStartPollingRequest(MCUCommandResponse& output);
 
-    DriverResult SendStopPollingRequest(std::vector<u8>& output);
+    DriverResult SendStopPollingRequest(MCUCommandResponse& output);
 
-    DriverResult SendStartWaitingRecieveRequest(std::vector<u8>& output);
+    DriverResult SendStartWaitingRecieveRequest(MCUCommandResponse& output);
 
-    DriverResult SendReadAmiiboRequest(std::vector<u8>& output, NFCPages ntag_pages);
+    DriverResult SendReadAmiiboRequest(MCUCommandResponse& output, NFCPages ntag_pages);
 
     NFCReadBlockCommand GetReadBlockCommand(NFCPages pages) const;
 

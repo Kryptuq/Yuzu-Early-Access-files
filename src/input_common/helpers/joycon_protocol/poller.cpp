@@ -31,9 +31,7 @@ void JoyconPoller::ReadActiveMode(std::span<u8> buffer, const MotionStatus& moti
     case Joycon::ControllerType::Pro:
         UpdateActiveProPadInput(data, motion_status);
         break;
-    case Joycon::ControllerType::Grip:
-    case Joycon::ControllerType::Dual:
-    case Joycon::ControllerType::None:
+    default:
         break;
     }
 
@@ -58,9 +56,7 @@ void JoyconPoller::ReadPassiveMode(std::span<u8> buffer) {
     case Joycon::ControllerType::Pro:
         UpdatePasiveProPadInput(data);
         break;
-    case Joycon::ControllerType::Grip:
-    case Joycon::ControllerType::Dual:
-    case Joycon::ControllerType::None:
+    default:
         break;
     }
 }

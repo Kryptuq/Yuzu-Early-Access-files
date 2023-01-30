@@ -15,7 +15,7 @@ using SerialNumber = std::array<u8, 15>;
 struct Battery;
 struct Color;
 struct MotionData;
-enum class ControllerType;
+enum class ControllerType : u8;
 enum class DriverResult;
 enum class IrsResolution;
 class JoyconDriver;

@@ -132,7 +132,7 @@ DriverResult IrsProtocol::RequestImage(std::span<u8> buffer) {
 DriverResult IrsProtocol::ConfigureIrs() {
     LOG_DEBUG(Input, "Configure IRS");
     constexpr std::size_t max_tries = 28;
-    std::vector<u8> output;
+    SubCommandResponse output{};
     std::size_t tries = 0;
 
     const IrsConfigure irs_configuration{
@@ -158,7 +158,7 @@ DriverResult IrsProtocol::ConfigureIrs() {
         if (tries++ >= max_tries) {
             return DriverResult::WrongReply;
         }
-    } while (output[15] != 0x0b);
+    } while (output.command_data[0] != 0x0b);
 
     return DriverResult::Success;
 }
@@ -167,7 +167,7 @@ DriverResult IrsProtocol::WriteRegistersStep1() {
     LOG_DEBUG(Input, "WriteRegistersStep1");
     DriverResult result{DriverResult::Success};
     constexpr std::size_t max_tries = 28;
-    std::vector<u8> output;
+    SubCommandResponse output{};
     std::size_t tries = 0;
 
     const IrsWriteRegisters irs_registers{
@@ -218,7 +218,8 @@ DriverResult IrsProtocol::WriteRegistersStep1() {
         if (tries++ >= max_tries) {
             return DriverResult::WrongReply;
         }
-    } while (!(output[15] == 0x13 && output[17] == 0x07) && output[15] != 0x23);
+    } while (!(output.command_data[0] == 0x13 && output.command_data[2] == 0x07) &&
+             output.command_data[0] != 0x23);
 
     return DriverResult::Success;
 }
@@ -226,7 +227,7 @@ DriverResult IrsProtocol::WriteRegistersStep1() {
 DriverResult IrsProtocol::WriteRegistersStep2() {
     LOG_DEBUG(Input, "WriteRegistersStep2");
     constexpr std::size_t max_tries = 28;
-    std::vector<u8> output;
+    SubCommandResponse output{};
     std::size_t tries = 0;
 
     const IrsWriteRegisters irs_registers{
@@ -260,7 +261,7 @@ DriverResult IrsProtocol::WriteRegistersStep2() {
         if (tries++ >= max_tries) {
             return DriverResult::WrongReply;
         }
-    } while (output[15] != 0x13 && output[15] != 0x23);
+    } while (output.command_data[0] != 0x13 && output.command_data[0] != 0x23);
 
     return DriverResult::Success;
 }
