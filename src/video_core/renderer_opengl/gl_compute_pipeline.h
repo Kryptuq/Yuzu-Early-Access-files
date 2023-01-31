@@ -50,7 +50,8 @@ class ComputePipeline {
 public:
     explicit ComputePipeline(const Device& device, TextureCache& texture_cache_,
                              BufferCache& buffer_cache_, ProgramManager& program_manager_,
-                             const Shader::Info& info_, std::string code, std::vector<u32> code_v);
+                             const Shader::Info& info_, std::string code, std::vector<u32> code_v,
+                             bool force_context_flush = false);
 
     void Configure();
 
@@ -65,6 +66,8 @@ public:
     }
 
 private:
+    void WaitForBuild();
+
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
     Tegra::MemoryManager* gpu_memory;
@@ -81,6 +84,11 @@ private:
 
     bool use_storage_buffers{};
     bool writes_global_memory{};
+
+    std::mutex built_mutex;
+    std::condition_variable built_condvar;
+    OGLSync built_fence{};
+    bool is_built{false};
 };
 
 } // namespace OpenGL

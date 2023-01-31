@@ -30,7 +30,7 @@ bool ComputePipelineKey::operator==(const ComputePipelineKey& rhs) const noexcep
 ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cache_,
                                  BufferCache& buffer_cache_, ProgramManager& program_manager_,
                                  const Shader::Info& info_, std::string code,
-                                 std::vector<u32> code_v)
+                                 std::vector<u32> code_v, bool force_context_flush)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
       program_manager{program_manager_}, info{info_} {
     switch (device.GetShaderBackend()) {
@@ -63,6 +63,15 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
     writes_global_memory = !use_storage_buffers &&
                            std::ranges::any_of(info.storage_buffers_descriptors,
                                                [](const auto& desc) { return desc.is_written; });
+    if (force_context_flush) {
+        std::scoped_lock lock{built_mutex};
+        built_fence.Create();
+        // Flush this context to ensure compilation commands and fence are in the GPU pipe.
+        glFlush();
+        built_condvar.notify_one();
+    } else {
+        is_built = true;
+    }
 }
 
 void ComputePipeline::Configure() {
@@ -142,6 +151,9 @@ void ComputePipeline::Configure() {
     }
     texture_cache.FillComputeImageViews(std::span(views.data(), views.size()));
 
+    if (!is_built) {
+        WaitForBuild();
+    }
     if (assembly_program.handle != 0) {
         program_manager.BindComputeAssemblyProgram(assembly_program.handle);
     } else {
@@ -221,6 +233,15 @@ void ComputePipeline::Configure() {
     if (image_binding != 0) {
         glBindImageTextures(0, image_binding, images.data());
     }
+}
+
+void ComputePipeline::WaitForBuild() {
+    if (built_fence.handle == 0) {
+        std::unique_lock lock{built_mutex};
+        built_condvar.wait(lock, [this] { return built_fence.handle != 0; });
+    }
+    ASSERT(glClientWaitSync(built_fence.handle, 0, GL_TIMEOUT_IGNORED) != GL_WAIT_FAILED);
+    is_built = true;
 }
 
 } // namespace OpenGL

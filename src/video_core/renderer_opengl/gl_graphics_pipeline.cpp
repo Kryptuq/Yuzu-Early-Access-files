@@ -176,7 +176,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                                    std::array<std::string, 5> sources,
                                    std::array<std::vector<u32>, 5> sources_spirv,
                                    const std::array<const Shader::Info*, 5>& infos,
-                                   const GraphicsPipelineKey& key_)
+                                   const GraphicsPipelineKey& key_, bool force_context_flush)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, program_manager{program_manager_},
       state_tracker{state_tracker_}, key{key_} {
     if (shader_notify) {
@@ -231,7 +231,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     const bool in_parallel = thread_worker != nullptr;
     const auto backend = device.GetShaderBackend();
     auto func{[this, sources = std::move(sources), sources_spirv = std::move(sources_spirv),
-               shader_notify, backend, in_parallel](ShaderContext::Context*) mutable {
+               shader_notify, backend, in_parallel,
+               force_context_flush](ShaderContext::Context*) mutable {
         for (size_t stage = 0; stage < 5; ++stage) {
             switch (backend) {
             case Settings::ShaderBackend::GLSL:
@@ -251,7 +252,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                 break;
             }
         }
-        if (in_parallel) {
+        if (force_context_flush || in_parallel) {
             std::scoped_lock lock{built_mutex};
             built_fence.Create();
             // Flush this context to ensure compilation commands and fence are in the GPU pipe.
