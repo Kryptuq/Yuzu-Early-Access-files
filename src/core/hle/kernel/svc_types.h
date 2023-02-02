@@ -5,6 +5,7 @@
 
 #include <bitset>
 
+#include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 
@@ -496,6 +497,19 @@ enum class MemoryMapping : u32 {
     IoRegister = 0,
     Uncached = 1,
     Memory = 2,
+};
+
+enum class MapDeviceAddressSpaceFlag : u32 {
+    None = (0U << 0),
+    NotIoRegister = (1U << 0),
+};
+DECLARE_ENUM_FLAG_OPERATORS(MapDeviceAddressSpaceFlag);
+
+union MapDeviceAddressSpaceOption {
+    u32 raw;
+    BitField<0, 16, MemoryPermission> permission;
+    BitField<16, 1, MapDeviceAddressSpaceFlag> flags;
+    BitField<17, 15, u32> reserved;
 };
 
 enum class KernelDebugType : u32 {

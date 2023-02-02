@@ -35,6 +35,7 @@ class GlobalSchedulerContext;
 class KAutoObjectWithListContainer;
 class KClientSession;
 class KDebug;
+class KDeviceAddressSpace;
 class KDynamicPageManager;
 class KEvent;
 class KEventInfo;
@@ -359,6 +360,8 @@ public:
             return slab_heap_container->transfer_memory;
         } else if constexpr (std::is_same_v<T, KCodeMemory>) {
             return slab_heap_container->code_memory;
+        } else if constexpr (std::is_same_v<T, KDeviceAddressSpace>) {
+            return slab_heap_container->device_address_space;
         } else if constexpr (std::is_same_v<T, KPageBuffer>) {
             return slab_heap_container->page_buffer;
         } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
@@ -431,6 +434,7 @@ private:
         KSlabHeap<KThread> thread;
         KSlabHeap<KTransferMemory> transfer_memory;
         KSlabHeap<KCodeMemory> code_memory;
+        KSlabHeap<KDeviceAddressSpace> device_address_space;
         KSlabHeap<KPageBuffer> page_buffer;
         KSlabHeap<KThreadLocalPage> thread_local_page;
         KSlabHeap<KSessionRequest> session_request;

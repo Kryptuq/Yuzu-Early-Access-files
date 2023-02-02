@@ -12,6 +12,7 @@
 namespace Core::HID {
 constexpr s32 HID_JOYSTICK_MAX = 0x7fff;
 constexpr s32 HID_TRIGGER_MAX = 0x7fff;
+constexpr u32 TURBO_BUTTON_DELAY = 4;
 // Use a common UUID for TAS and Virtual Gamepad
 constexpr Common::UUID TAS_UUID =
     Common::UUID{{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
@@ -447,6 +448,7 @@ void EmulatedController::ReloadInput() {
                 },
         });
     }
+    turbo_button_state = 0;
 }
 
 void EmulatedController::UnloadInput() {
@@ -1659,12 +1661,12 @@ void EmulatedController::DeleteCallback(int key) {
 }
 
 void EmulatedController::TurboButtonUpdate() {
-    turbo_button_state = !turbo_button_state;
+    turbo_button_state = (turbo_button_state + 1) % (TURBO_BUTTON_DELAY * 2);
 }
 
 NpadButton EmulatedController::GetTurboButtonMask() const {
     // Apply no mask when disabled
-    if (!turbo_button_state) {
+    if (turbo_button_state < TURBO_BUTTON_DELAY) {
         return {NpadButton::All};
     }
 

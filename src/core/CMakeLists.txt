@@ -195,6 +195,8 @@ add_library(core STATIC
     hle/kernel/k_condition_variable.cpp
     hle/kernel/k_condition_variable.h
     hle/kernel/k_debug.h
+    hle/kernel/k_device_address_space.cpp
+    hle/kernel/k_device_address_space.h
     hle/kernel/k_dynamic_page_manager.h
     hle/kernel/k_dynamic_resource_manager.h
     hle/kernel/k_dynamic_slab_heap.h

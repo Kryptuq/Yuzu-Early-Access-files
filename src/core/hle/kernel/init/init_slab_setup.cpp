@@ -11,6 +11,7 @@
 #include "core/hle/kernel/init/init_slab_setup.h"
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_debug.h"
+#include "core/hle/kernel/k_device_address_space.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_event_info.h"
 #include "core/hle/kernel/k_memory_layout.h"
@@ -43,6 +44,7 @@ namespace Kernel::Init {
     HANDLER(KSharedMemoryInfo, (SLAB_COUNT(KSharedMemory) * 8), ##__VA_ARGS__)                     \
     HANDLER(KTransferMemory, (SLAB_COUNT(KTransferMemory)), ##__VA_ARGS__)                         \
     HANDLER(KCodeMemory, (SLAB_COUNT(KCodeMemory)), ##__VA_ARGS__)                                 \
+    HANDLER(KDeviceAddressSpace, (SLAB_COUNT(KDeviceAddressSpace)), ##__VA_ARGS__)                 \
     HANDLER(KSession, (SLAB_COUNT(KSession)), ##__VA_ARGS__)                                       \
     HANDLER(KThreadLocalPage,                                                                      \
             (SLAB_COUNT(KProcess) + (SLAB_COUNT(KProcess) + SLAB_COUNT(KThread)) / 8),             \

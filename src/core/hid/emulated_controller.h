@@ -525,7 +525,7 @@ private:
     bool system_buttons_enabled{true};
     f32 motion_sensitivity{0.01f};
     bool force_update_motion{false};
-    bool turbo_button_state{false};
+    u32 turbo_button_state{0};
 
     // Temporary values to avoid doing changes while the controller is in configuring mode
     NpadStyleIndex tmp_npad_type{NpadStyleIndex::None};
