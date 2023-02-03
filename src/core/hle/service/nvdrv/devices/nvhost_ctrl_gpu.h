@@ -21,12 +21,12 @@ public:
     explicit nvhost_ctrl_gpu(Core::System& system_, EventInterface& events_interface_);
     ~nvhost_ctrl_gpu() override;
 
-    NvResult Ioctl1(DeviceFD fd, Ioctl command, std::span<const u8> input,
+    NvResult Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                     std::vector<u8>& output) override;
-    NvResult Ioctl2(DeviceFD fd, Ioctl command, std::span<const u8> input,
-                    std::span<const u8> inline_input, std::vector<u8>& output) override;
-    NvResult Ioctl3(DeviceFD fd, Ioctl command, std::span<const u8> input, std::vector<u8>& output,
-                    std::vector<u8>& inline_output) override;
+    NvResult Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    const std::vector<u8>& inline_input, std::vector<u8>& output) override;
+    NvResult Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
+                    std::vector<u8>& output, std::vector<u8>& inline_output) override;
 
     void OnOpen(DeviceFD fd) override;
     void OnClose(DeviceFD fd) override;
@@ -151,21 +151,21 @@ private:
     };
     static_assert(sizeof(IoctlGetGpuTime) == 0x10, "IoctlGetGpuTime is incorrect size");
 
-    NvResult GetCharacteristics(std::span<const u8> input, std::vector<u8>& output);
-    NvResult GetCharacteristics(std::span<const u8> input, std::vector<u8>& output,
+    NvResult GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output,
                                 std::vector<u8>& inline_output);
 
-    NvResult GetTPCMasks(std::span<const u8> input, std::vector<u8>& output);
-    NvResult GetTPCMasks(std::span<const u8> input, std::vector<u8>& output,
+    NvResult GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output,
                          std::vector<u8>& inline_output);
 
-    NvResult GetActiveSlotMask(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ZCullGetCtxSize(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ZCullGetInfo(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ZBCSetTable(std::span<const u8> input, std::vector<u8>& output);
-    NvResult ZBCQueryTable(std::span<const u8> input, std::vector<u8>& output);
-    NvResult FlushL2(std::span<const u8> input, std::vector<u8>& output);
-    NvResult GetGpuTime(std::span<const u8> input, std::vector<u8>& output);
+    NvResult GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult FlushL2(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult GetGpuTime(const std::vector<u8>& input, std::vector<u8>& output);
 
     EventInterface& events_interface;
 

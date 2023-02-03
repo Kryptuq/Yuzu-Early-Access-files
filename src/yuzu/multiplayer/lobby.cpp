@@ -77,6 +77,7 @@ Lobby::Lobby(QWidget* parent, QStandardItemModel* list,
     // UI Buttons
     connect(ui->refresh_list, &QPushButton::clicked, this, &Lobby::RefreshLobby);
     connect(ui->games_owned, &QCheckBox::toggled, proxy, &LobbyFilterProxyModel::SetFilterOwned);
+    connect(ui->hide_empty, &QCheckBox::toggled, proxy, &LobbyFilterProxyModel::SetFilterEmpty);
     connect(ui->hide_full, &QCheckBox::toggled, proxy, &LobbyFilterProxyModel::SetFilterFull);
     connect(ui->search, &QLineEdit::textChanged, proxy, &LobbyFilterProxyModel::SetFilterSearch);
     connect(ui->room_list, &QTreeView::doubleClicked, this, &Lobby::OnJoinRoom);
@@ -329,6 +330,16 @@ bool LobbyFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex& s
         return true;
     }
 
+    // filter by empty rooms
+    if (filter_empty) {
+        QModelIndex member_list = sourceModel()->index(sourceRow, Column::MEMBER, sourceParent);
+        int player_count =
+            sourceModel()->data(member_list, LobbyItemMemberList::MemberListRole).toList().size();
+        if (player_count == 0) {
+            return false;
+        }
+    }
+
     // filter by filled rooms
     if (filter_full) {
         QModelIndex member_list = sourceModel()->index(sourceRow, Column::MEMBER, sourceParent);
@@ -396,6 +407,11 @@ void LobbyFilterProxyModel::sort(int column, Qt::SortOrder order) {
 
 void LobbyFilterProxyModel::SetFilterOwned(bool filter) {
     filter_owned = filter;
+    invalidate();
+}
+
+void LobbyFilterProxyModel::SetFilterEmpty(bool filter) {
+    filter_empty = filter;
     invalidate();
 }
 

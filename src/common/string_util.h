@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
 #include <string>
 #include <vector>
 #include "common/common_types.h"
@@ -18,7 +17,7 @@ namespace Common {
 /// Make a string uppercase
 [[nodiscard]] std::string ToUpper(std::string str);
 
-[[nodiscard]] std::string StringFromBuffer(std::span<const u8> data);
+[[nodiscard]] std::string StringFromBuffer(const std::vector<u8>& data);
 
 [[nodiscard]] std::string StripSpaces(const std::string& s);
 [[nodiscard]] std::string StripQuotes(const std::string& s);

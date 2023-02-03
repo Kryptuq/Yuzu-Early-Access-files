@@ -15,6 +15,9 @@ public:
     // do not play nicely with the theoretical maximum range.
     // Using a value one lower from the maximum emulates real stick behavior.
     static constexpr float MAX_RANGE = 32766.0f / 32767.0f;
+    static constexpr float TAU = Common::PI * 2.0f;
+    // Use wider angle to ease the transition.
+    static constexpr float APERTURE = TAU * 0.15f;
 
     using Button = std::unique_ptr<Common::Input::InputDevice>;
 
@@ -61,30 +64,23 @@ public:
     }
 
     bool IsAngleGreater(float old_angle, float new_angle) const {
-        constexpr float TAU = Common::PI * 2.0f;
-        // Use wider angle to ease the transition.
-        constexpr float aperture = TAU * 0.15f;
-        const float top_limit = new_angle + aperture;
+        const float top_limit = new_angle + APERTURE;
         return (old_angle > new_angle && old_angle <= top_limit) ||
                (old_angle + TAU > new_angle && old_angle + TAU <= top_limit);
     }
 
     bool IsAngleSmaller(float old_angle, float new_angle) const {
-        constexpr float TAU = Common::PI * 2.0f;
-        // Use wider angle to ease the transition.
-        constexpr float aperture = TAU * 0.15f;
-        const float bottom_limit = new_angle - aperture;
+        const float bottom_limit = new_angle - APERTURE;
         return (old_angle >= bottom_limit && old_angle < new_angle) ||
                (old_angle - TAU >= bottom_limit && old_angle - TAU < new_angle);
     }
 
     float GetAngle(std::chrono::time_point<std::chrono::steady_clock> now) const {
-        constexpr float TAU = Common::PI * 2.0f;
         float new_angle = angle;
 
         auto time_difference = static_cast<float>(
-            std::chrono::duration_cast<std::chrono::microseconds>(now - last_update).count());
-        time_difference /= 1000.0f * 1000.0f;
+            std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count());
+        time_difference /= 1000.0f;
         if (time_difference > 0.5f) {
             time_difference = 0.5f;
         }
@@ -201,8 +197,6 @@ public:
     }
 
     void UpdateStatus() {
-        const float coef = modifier_status.value ? modifier_scale : MAX_RANGE;
-
         bool r = right_status;
         bool l = left_status;
         bool u = up_status;
@@ -220,7 +214,7 @@ public:
 
         // Move if a key is pressed
         if (r || l || u || d) {
-            amplitude = coef;
+            amplitude = modifier_status.value ? modifier_scale : MAX_RANGE;
         } else {
             amplitude = 0;
         }
@@ -274,30 +268,17 @@ public:
         Common::Input::StickStatus status{};
         status.x.properties = properties;
         status.y.properties = properties;
+
         if (Settings::values.emulate_analog_keyboard) {
             const auto now = std::chrono::steady_clock::now();
-            float angle_ = GetAngle(now);
+            const float angle_ = GetAngle(now);
             status.x.raw_value = std::cos(angle_) * amplitude;
             status.y.raw_value = std::sin(angle_) * amplitude;
             return status;
         }
-        constexpr float SQRT_HALF = 0.707106781f;
-        int x = 0, y = 0;
-        if (right_status) {
-            ++x;
-        }
-        if (left_status) {
-            --x;
-        }
-        if (up_status) {
-            ++y;
-        }
-        if (down_status) {
-            --y;
-        }
-        const float coef = modifier_status.value ? modifier_scale : MAX_RANGE;
-        status.x.raw_value = static_cast<float>(x) * coef * (y == 0 ? 1.0f : SQRT_HALF);
-        status.y.raw_value = static_cast<float>(y) * coef * (x == 0 ? 1.0f : SQRT_HALF);
+
+        status.x.raw_value = std::cos(goal_angle) * amplitude;
+        status.y.raw_value = std::sin(goal_angle) * amplitude;
         return status;
     }
 
