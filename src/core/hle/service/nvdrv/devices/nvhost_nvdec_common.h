@@ -107,13 +107,13 @@ protected:
     static_assert(sizeof(IoctlMapBuffer) == 0x0C, "IoctlMapBuffer is incorrect size");
 
     /// Ioctl command implementations
-    NvResult SetNVMAPfd(const std::vector<u8>& input);
-    NvResult Submit(DeviceFD fd, const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult GetSyncpoint(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult MapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
-    NvResult SetSubmitTimeout(const std::vector<u8>& input, std::vector<u8>& output);
+    NvResult SetNVMAPfd(std::span<const u8> input);
+    NvResult Submit(DeviceFD fd, std::span<const u8> input, std::vector<u8>& output);
+    NvResult GetSyncpoint(std::span<const u8> input, std::vector<u8>& output);
+    NvResult GetWaitbase(std::span<const u8> input, std::vector<u8>& output);
+    NvResult MapBuffer(std::span<const u8> input, std::vector<u8>& output);
+    NvResult UnmapBuffer(std::span<const u8> input, std::vector<u8>& output);
+    NvResult SetSubmitTimeout(std::span<const u8> input, std::vector<u8>& output);
 
     Kernel::KEvent* QueryEvent(u32 event_id) override;
 

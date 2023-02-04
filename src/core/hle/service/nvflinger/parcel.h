@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "common/alignment.h"
@@ -12,18 +13,17 @@
 
 namespace Service::android {
 
-class Parcel final {
+struct ParcelHeader {
+    u32 data_size;
+    u32 data_offset;
+    u32 objects_size;
+    u32 objects_offset;
+};
+static_assert(sizeof(ParcelHeader) == 16, "ParcelHeader has wrong size");
+
+class InputParcel final {
 public:
-    static constexpr std::size_t DefaultBufferSize = 0x40;
-
-    Parcel() : buffer(DefaultBufferSize) {}
-
-    template <typename T>
-    explicit Parcel(const T& out_data) : buffer(DefaultBufferSize) {
-        Write(out_data);
-    }
-
-    explicit Parcel(std::vector<u8> in_data) : buffer(std::move(in_data)) {
+    explicit InputParcel(std::span<const u8> in_data) : read_buffer(std::move(in_data)) {
         DeserializeHeader();
         [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
     }
@@ -31,9 +31,9 @@ public:
     template <typename T>
     void Read(T& val) {
         static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-        ASSERT(read_index + sizeof(T) <= buffer.size());
+        ASSERT(read_index + sizeof(T) <= read_buffer.size());
 
-        std::memcpy(&val, buffer.data() + read_index, sizeof(T));
+        std::memcpy(&val, read_buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
         read_index = Common::AlignUp(read_index, 4);
     }
@@ -62,10 +62,10 @@ public:
     template <typename T>
     T ReadUnaligned() {
         static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-        ASSERT(read_index + sizeof(T) <= buffer.size());
+        ASSERT(read_index + sizeof(T) <= read_buffer.size());
 
         T val;
-        std::memcpy(&val, buffer.data() + read_index, sizeof(T));
+        std::memcpy(&val, read_buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
         return val;
     }
@@ -101,6 +101,31 @@ public:
         return token;
     }
 
+    void DeserializeHeader() {
+        ASSERT(read_buffer.size() > sizeof(ParcelHeader));
+
+        ParcelHeader header{};
+        std::memcpy(&header, read_buffer.data(), sizeof(ParcelHeader));
+
+        read_index = header.data_offset;
+    }
+
+private:
+    std::span<const u8> read_buffer;
+    std::size_t read_index = 0;
+};
+
+class OutputParcel final {
+public:
+    static constexpr std::size_t DefaultBufferSize = 0x40;
+
+    OutputParcel() : buffer(DefaultBufferSize) {}
+
+    template <typename T>
+    explicit OutputParcel(const T& out_data) : buffer(DefaultBufferSize) {
+        Write(out_data);
+    }
+
     template <typename T>
     void Write(const T& val) {
         static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
@@ -133,40 +158,20 @@ public:
         WriteObject(ptr.get());
     }
 
-    void DeserializeHeader() {
-        ASSERT(buffer.size() > sizeof(Header));
-
-        Header header{};
-        std::memcpy(&header, buffer.data(), sizeof(Header));
-
-        read_index = header.data_offset;
-    }
-
     std::vector<u8> Serialize() const {
-        ASSERT(read_index == 0);
-
-        Header header{};
-        header.data_size = static_cast<u32>(write_index - sizeof(Header));
-        header.data_offset = sizeof(Header);
+        ParcelHeader header{};
+        header.data_size = static_cast<u32>(write_index - sizeof(ParcelHeader));
+        header.data_offset = sizeof(ParcelHeader);
         header.objects_size = 4;
-        header.objects_offset = static_cast<u32>(sizeof(Header) + header.data_size);
-        std::memcpy(buffer.data(), &header, sizeof(Header));
+        header.objects_offset = static_cast<u32>(sizeof(ParcelHeader) + header.data_size);
+        std::memcpy(buffer.data(), &header, sizeof(ParcelHeader));
 
         return buffer;
     }
 
 private:
-    struct Header {
-        u32 data_size;
-        u32 data_offset;
-        u32 objects_size;
-        u32 objects_offset;
-    };
-    static_assert(sizeof(Header) == 16, "ParcelHeader has wrong size");
-
     mutable std::vector<u8> buffer;
-    std::size_t read_index = 0;
-    std::size_t write_index = sizeof(Header);
+    std::size_t write_index = sizeof(ParcelHeader);
 };
 
 } // namespace Service::android

@@ -182,7 +182,7 @@ std::pair<s32, Errno> ProxySocket::ReceivePacket(int flags, std::vector<u8>& mes
     return {static_cast<u32>(read_bytes), Errno::SUCCESS};
 }
 
-std::pair<s32, Errno> ProxySocket::Send(const std::vector<u8>& message, int flags) {
+std::pair<s32, Errno> ProxySocket::Send(std::span<const u8> message, int flags) {
     LOG_WARNING(Network, "(STUBBED) called");
     ASSERT(message.size() < static_cast<size_t>(std::numeric_limits<int>::max()));
     ASSERT(flags == 0);
@@ -200,7 +200,7 @@ void ProxySocket::SendPacket(ProxyPacket& packet) {
     }
 }
 
-std::pair<s32, Errno> ProxySocket::SendTo(u32 flags, const std::vector<u8>& message,
+std::pair<s32, Errno> ProxySocket::SendTo(u32 flags, std::span<const u8> message,
                                           const SockAddrIn* addr) {
     ASSERT(flags == 0);
 

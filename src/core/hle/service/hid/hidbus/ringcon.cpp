@@ -116,7 +116,7 @@ std::vector<u8> RingController::GetReply() const {
     }
 }
 
-bool RingController::SetCommand(const std::vector<u8>& data) {
+bool RingController::SetCommand(std::span<const u8> data) {
     if (data.size() < 4) {
         LOG_ERROR(Service_HID, "Command size not supported {}", data.size());
         command = RingConCommands::Error;

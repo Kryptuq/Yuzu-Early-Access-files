@@ -62,7 +62,7 @@ public:
         const auto parameters{rp.PopRaw<InputParameters>()};
 
         // Optional input/output buffers
-        std::vector<u8> input_buffer{ctx.CanReadBuffer() ? ctx.ReadBuffer() : std::vector<u8>()};
+        const auto input_buffer{ctx.CanReadBuffer() ? ctx.ReadBuffer() : std::span<const u8>()};
         std::vector<u8> output_buffer(ctx.CanWriteBuffer() ? ctx.GetWriteBufferSize() : 0);
 
         // Function call prototype:
@@ -132,7 +132,7 @@ public:
         const auto command{rp.PopRaw<u64>()};
 
         // Optional input/output buffers
-        std::vector<u8> input_buffer{ctx.CanReadBuffer() ? ctx.ReadBuffer() : std::vector<u8>()};
+        const auto input_buffer{ctx.CanReadBuffer() ? ctx.ReadBuffer() : std::span<const u8>()};
         std::vector<u8> output_buffer(ctx.CanWriteBuffer() ? ctx.GetWriteBufferSize() : 0);
 
         // Function call prototype:

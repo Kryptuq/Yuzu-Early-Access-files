@@ -42,7 +42,7 @@ std::vector<u8> Starlink::GetReply() const {
     return {};
 }
 
-bool Starlink::SetCommand(const std::vector<u8>& data) {
+bool Starlink::SetCommand(std::span<const u8> data) {
     LOG_ERROR(Service_HID, "Command not implemented");
     return false;
 }

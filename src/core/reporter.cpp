@@ -312,7 +312,7 @@ void Reporter::SaveUnimplementedAppletReport(
 }
 
 void Reporter::SavePlayReport(PlayReportType type, u64 title_id,
-                              const std::vector<std::vector<u8>>& data,
+                              const std::vector<std::span<const u8>>& data,
                               std::optional<u64> process_id, std::optional<u128> user_id) const {
     if (!IsReportingEnabled()) {
         return;

@@ -190,7 +190,7 @@ private:
             return;
         }
 
-        const std::vector<u8> data = ctx.ReadBuffer();
+        const auto data = ctx.ReadBuffer();
 
         ASSERT_MSG(
             static_cast<s64>(data.size()) <= length,
@@ -401,11 +401,8 @@ public:
     }
 
     void RenameFile(Kernel::HLERequestContext& ctx) {
-        std::vector<u8> buffer = ctx.ReadBuffer(0);
-        const std::string src_name = Common::StringFromBuffer(buffer);
-
-        buffer = ctx.ReadBuffer(1);
-        const std::string dst_name = Common::StringFromBuffer(buffer);
+        const std::string src_name = Common::StringFromBuffer(ctx.ReadBuffer(0));
+        const std::string dst_name = Common::StringFromBuffer(ctx.ReadBuffer(1));
 
         LOG_DEBUG(Service_FS, "called. file '{}' to file '{}'", src_name, dst_name);
 
@@ -1086,7 +1083,7 @@ void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
-    const auto raw = ctx.ReadBuffer();
+    const auto raw = ctx.ReadBufferCopy();
     auto log = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(raw.data()), raw.size());
 
