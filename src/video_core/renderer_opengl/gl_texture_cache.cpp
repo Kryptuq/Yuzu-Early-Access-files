@@ -557,6 +557,14 @@ void TextureCacheRuntime::CopyImage(Image& dst_image, Image& src_image,
     }
 }
 
+void TextureCacheRuntime::CopyImageMSAA(Image& dst_image, Image& src_image,
+                                        std::span<const VideoCommon::ImageCopy> copies) {
+    LOG_DEBUG(Render_OpenGL, "Copying from {} samples to {} samples", src_image.info.num_samples,
+              dst_image.info.num_samples);
+    // TODO: Leverage the format conversion pass if possible/accurate.
+    util_shaders.CopyMSAA(dst_image, src_image, copies);
+}
+
 void TextureCacheRuntime::ReinterpretImage(Image& dst, Image& src,
                                            std::span<const VideoCommon::ImageCopy> copies) {
     LOG_DEBUG(Render_OpenGL, "Converting {} to {}", src.info.format, dst.info.format);

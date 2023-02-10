@@ -176,6 +176,9 @@ void Config::ReadValues() {
             Settings::values.debug_pad_analogs[i] = default_param;
     }
 
+    ReadSetting("ControlsGeneral", Settings::values.enable_raw_input);
+    ReadSetting("ControlsGeneral", Settings::values.enable_joycon_driver);
+    ReadSetting("ControlsGeneral", Settings::values.emulate_analog_keyboard);
     ReadSetting("ControlsGeneral", Settings::values.vibration_enabled);
     ReadSetting("ControlsGeneral", Settings::values.enable_accurate_vibrations);
     ReadSetting("ControlsGeneral", Settings::values.motion_enabled);

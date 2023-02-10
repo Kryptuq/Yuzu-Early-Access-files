@@ -18,6 +18,7 @@ constexpr Result NpadIsDualJoycon{ErrorModule::HID, 601};
 constexpr Result NpadIsSameType{ErrorModule::HID, 602};
 constexpr Result InvalidNpadId{ErrorModule::HID, 709};
 constexpr Result NpadNotConnected{ErrorModule::HID, 710};
+constexpr Result InvalidArraySize{ErrorModule::HID, 715};
 constexpr Result InvalidPalmaHandle{ErrorModule::HID, 3302};
 
 } // namespace Service::HID

@@ -353,7 +353,7 @@ if (USE_DISCORD_PRESENCE)
         discord_impl.cpp
         discord_impl.h
     )
-    target_link_libraries(yuzu PRIVATE DiscordRPC::discord-rpc)
+    target_link_libraries(yuzu PRIVATE DiscordRPC::discord-rpc httplib::httplib)
     target_compile_definitions(yuzu PRIVATE -DUSE_DISCORD_PRESENCE)
 endif()
 

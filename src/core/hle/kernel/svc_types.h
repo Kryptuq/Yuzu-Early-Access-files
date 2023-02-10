@@ -168,6 +168,7 @@ enum class BreakReason : u32 {
 
     NotificationOnlyFlag = 0x80000000,
 };
+DECLARE_ENUM_FLAG_OPERATORS(BreakReason);
 
 enum class DebugEvent : u32 {
     CreateProcess = 0,
@@ -596,6 +597,11 @@ enum class ProcessInfoType : u32 {
     ProcessState = 0,
 };
 
+enum class ProcessActivity : u32 {
+    Runnable,
+    Paused,
+};
+
 struct CreateProcessParameter {
     std::array<char, 12> name;
     u32 version;
@@ -610,5 +616,10 @@ static_assert(sizeof(CreateProcessParameter) == 0x30);
 
 constexpr size_t NumSupervisorCalls = 0xC0;
 using SvcAccessFlagSet = std::bitset<NumSupervisorCalls>;
+
+enum class InitialProcessIdRangeInfo : u64 {
+    Minimum = 0,
+    Maximum = 1,
+};
 
 } // namespace Kernel::Svc

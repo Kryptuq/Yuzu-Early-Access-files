@@ -12,6 +12,8 @@
 #include "video_core/host_shaders/astc_decoder_comp.h"
 #include "video_core/host_shaders/block_linear_unswizzle_2d_comp.h"
 #include "video_core/host_shaders/block_linear_unswizzle_3d_comp.h"
+#include "video_core/host_shaders/convert_msaa_to_non_msaa_comp.h"
+#include "video_core/host_shaders/convert_non_msaa_to_msaa_comp.h"
 #include "video_core/host_shaders/opengl_convert_s8d24_comp.h"
 #include "video_core/host_shaders/opengl_copy_bc4_comp.h"
 #include "video_core/host_shaders/pitch_unswizzle_comp.h"
@@ -51,7 +53,9 @@ UtilShaders::UtilShaders(ProgramManager& program_manager_)
       block_linear_unswizzle_3d_program(MakeProgram(BLOCK_LINEAR_UNSWIZZLE_3D_COMP)),
       pitch_unswizzle_program(MakeProgram(PITCH_UNSWIZZLE_COMP)),
       copy_bc4_program(MakeProgram(OPENGL_COPY_BC4_COMP)),
-      convert_s8d24_program(MakeProgram(OPENGL_CONVERT_S8D24_COMP)) {
+      convert_s8d24_program(MakeProgram(OPENGL_CONVERT_S8D24_COMP)),
+      convert_ms_to_nonms_program(MakeProgram(CONVERT_MSAA_TO_NON_MSAA_COMP)),
+      convert_nonms_to_ms_program(MakeProgram(CONVERT_NON_MSAA_TO_MSAA_COMP)) {
     const auto swizzle_table = Tegra::Texture::MakeSwizzleTable();
     swizzle_table_buffer.Create();
     glNamedBufferStorage(swizzle_table_buffer.handle, sizeof(swizzle_table), &swizzle_table, 0);
@@ -265,6 +269,33 @@ void UtilShaders::ConvertS8D24(Image& dst_image, std::span<const ImageCopy> copi
                            copy.dst_subresource.base_level, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
         glDispatchCompute(Common::DivCeil(copy.extent.width, 16u),
                           Common::DivCeil(copy.extent.height, 8u), copy.extent.depth);
+    }
+    program_manager.RestoreGuestCompute();
+}
+
+void UtilShaders::CopyMSAA(Image& dst_image, Image& src_image,
+                           std::span<const VideoCommon::ImageCopy> copies) {
+    const bool is_ms_to_non_ms = src_image.info.num_samples > 1 && dst_image.info.num_samples == 1;
+    const auto program_handle =
+        is_ms_to_non_ms ? convert_ms_to_nonms_program.handle : convert_nonms_to_ms_program.handle;
+    program_manager.BindComputeProgram(program_handle);
+
+    for (const ImageCopy& copy : copies) {
+        ASSERT(copy.src_subresource.base_layer == 0);
+        ASSERT(copy.src_subresource.num_layers == 1);
+        ASSERT(copy.dst_subresource.base_layer == 0);
+        ASSERT(copy.dst_subresource.num_layers == 1);
+
+        glBindImageTexture(0, src_image.StorageHandle(), copy.src_subresource.base_level, GL_TRUE,
+                           0, GL_READ_ONLY, GL_RGBA8);
+        glBindImageTexture(1, dst_image.StorageHandle(), copy.dst_subresource.base_level, GL_TRUE,
+                           0, GL_WRITE_ONLY, GL_RGBA8);
+
+        const u32 num_dispatches_x = Common::DivCeil(copy.extent.width, 8U);
+        const u32 num_dispatches_y = Common::DivCeil(copy.extent.height, 8U);
+        const u32 num_dispatches_z = copy.extent.depth;
+
+        glDispatchCompute(num_dispatches_x, num_dispatches_y, num_dispatches_z);
     }
     program_manager.RestoreGuestCompute();
 }

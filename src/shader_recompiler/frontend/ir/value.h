@@ -43,7 +43,6 @@ public:
     explicit Value(u8 value) noexcept;
     explicit Value(u16 value) noexcept;
     explicit Value(u32 value) noexcept;
-    explicit Value(s32 value) noexcept;
     explicit Value(f32 value) noexcept;
     explicit Value(u64 value) noexcept;
     explicit Value(f64 value) noexcept;
@@ -66,7 +65,6 @@ public:
     [[nodiscard]] u8 U8() const;
     [[nodiscard]] u16 U16() const;
     [[nodiscard]] u32 U32() const;
-    [[nodiscard]] s32 S32() const;
     [[nodiscard]] f32 F32() const;
     [[nodiscard]] u64 U64() const;
     [[nodiscard]] f64 F64() const;
@@ -86,7 +84,6 @@ private:
         u8 imm_u8;
         u16 imm_u16;
         u32 imm_u32;
-        s32 imm_s32;
         f32 imm_f32;
         u64 imm_u64;
         f64 imm_f64;
@@ -376,14 +373,6 @@ inline u32 Value::U32() const {
     }
     DEBUG_ASSERT(type == Type::U32);
     return imm_u32;
-}
-
-inline s32 Value::S32() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).S32();
-    }
-    DEBUG_ASSERT(type == Type::S32);
-    return imm_s32;
 }
 
 inline f32 Value::F32() const {

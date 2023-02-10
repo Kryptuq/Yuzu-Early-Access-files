@@ -11,6 +11,7 @@ namespace Kernel {
 
 constexpr Result ResultOutOfSessions{ErrorModule::Kernel, 7};
 constexpr Result ResultInvalidArgument{ErrorModule::Kernel, 14};
+constexpr Result ResultNotImplemented{ErrorModule::Kernel, 33};
 constexpr Result ResultNoSynchronizationObject{ErrorModule::Kernel, 57};
 constexpr Result ResultTerminationRequested{ErrorModule::Kernel, 59};
 constexpr Result ResultInvalidSize{ErrorModule::Kernel, 101};

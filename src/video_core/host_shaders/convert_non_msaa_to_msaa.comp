@@ -1,0 +1,29 @@
+// SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#version 450 core
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout (binding = 0, rgba8) uniform readonly restrict image2DArray img_in;
+layout (binding = 1, rgba8) uniform writeonly restrict image2DMSArray output_msaa;
+
+void main() {
+    const ivec3 coords = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(coords, imageSize(output_msaa)))) {
+        return;
+    }
+
+    // TODO: Specialization constants for num_samples?
+    const int num_samples = imageSamples(output_msaa);
+    for (int curr_sample = 0; curr_sample < num_samples; ++curr_sample) {
+        const int single_sample_x = 2 * coords.x + (curr_sample & 1);
+        const int single_sample_y = 2 * coords.y + ((curr_sample / 2) & 1);
+        const ivec3 single_coords = ivec3(single_sample_x, single_sample_y, coords.z);
+
+        if (any(greaterThanEqual(single_coords, imageSize(img_in)))) {
+            continue;
+        }
+        const vec4 pixel = imageLoad(img_in, single_coords);
+        imageStore(output_msaa, coords, curr_sample, pixel);
+    }
+}

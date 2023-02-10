@@ -548,31 +548,7 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     static_vector<VkVertexInputBindingDescription, 32> vertex_bindings;
     static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
     static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
-    if (key.state.dynamic_vertex_input) {
-        const size_t num_vertex_arrays = std::min(
-            key.state.attributes.size(), static_cast<size_t>(device.GetMaxVertexInputBindings()));
-        for (size_t index = 0; index < num_vertex_arrays; ++index) {
-            const u32 type = key.state.DynamicAttributeType(index);
-            if (!stage_infos[0].loads.Generic(index) || type == 0) {
-                continue;
-            }
-            vertex_attributes.push_back({
-                .location = static_cast<u32>(index),
-                .binding = 0,
-                .format = type == 1   ? VK_FORMAT_R32_SFLOAT
-                          : type == 2 ? VK_FORMAT_R32_SINT
-                                      : VK_FORMAT_R32_UINT,
-                .offset = 0,
-            });
-        }
-        if (!vertex_attributes.empty()) {
-            vertex_bindings.push_back({
-                .binding = 0,
-                .stride = 4,
-                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-            });
-        }
-    } else {
+    if (!key.state.dynamic_vertex_input) {
         const size_t num_vertex_arrays = std::min(
             Maxwell::NumVertexArrays, static_cast<size_t>(device.GetMaxVertexInputBindings()));
         for (size_t index = 0; index < num_vertex_arrays; ++index) {

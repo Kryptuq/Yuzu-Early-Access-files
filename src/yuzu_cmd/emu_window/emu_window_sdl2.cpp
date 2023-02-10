@@ -18,11 +18,11 @@
 
 EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_, Core::System& system_)
     : input_subsystem{input_subsystem_}, system{system_} {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
+    input_subsystem->Initialize();
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0) {
         LOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
         exit(1);
     }
-    input_subsystem->Initialize();
     SDL_SetMainReady();
 }
 
@@ -30,10 +30,6 @@ EmuWindow_SDL2::~EmuWindow_SDL2() {
     system.HIDCore().UnloadInputDevices();
     input_subsystem->Shutdown();
     SDL_Quit();
-}
-
-void EmuWindow_SDL2::OnMouseMotion(s32 x, s32 y) {
-    input_subsystem->GetMouse()->MouseMove(x, y, 0, 0, 0, 0);
 }
 
 InputCommon::MouseButton EmuWindow_SDL2::SDLButtonToMouseButton(u32 button) const {
@@ -53,44 +49,36 @@ InputCommon::MouseButton EmuWindow_SDL2::SDLButtonToMouseButton(u32 button) cons
     }
 }
 
+std::pair<float, float> EmuWindow_SDL2::MouseToTouchPos(s32 touch_x, s32 touch_y) const {
+    int w, h;
+    SDL_GetWindowSize(render_window, &w, &h);
+    const float fx = static_cast<float>(touch_x) / w;
+    const float fy = static_cast<float>(touch_y) / h;
+
+    return {std::clamp<float>(fx, 0.0f, 1.0f), std::clamp<float>(fy, 0.0f, 1.0f)};
+}
+
 void EmuWindow_SDL2::OnMouseButton(u32 button, u8 state, s32 x, s32 y) {
     const auto mouse_button = SDLButtonToMouseButton(button);
     if (state == SDL_PRESSED) {
-        input_subsystem->GetMouse()->PressButton(x, y, 0, 0, mouse_button);
+        const auto [touch_x, touch_y] = MouseToTouchPos(x, y);
+        input_subsystem->GetMouse()->PressButton(x, y, touch_x, touch_y, mouse_button);
     } else {
         input_subsystem->GetMouse()->ReleaseButton(mouse_button);
     }
 }
 
-std::pair<unsigned, unsigned> EmuWindow_SDL2::TouchToPixelPos(float touch_x, float touch_y) const {
-    int w, h;
-    SDL_GetWindowSize(render_window, &w, &h);
-
-    touch_x *= w;
-    touch_y *= h;
-
-    return {static_cast<unsigned>(std::max(std::round(touch_x), 0.0f)),
-            static_cast<unsigned>(std::max(std::round(touch_y), 0.0f))};
+void EmuWindow_SDL2::OnMouseMotion(s32 x, s32 y) {
+    const auto [touch_x, touch_y] = MouseToTouchPos(x, y);
+    input_subsystem->GetMouse()->MouseMove(x, y, touch_x, touch_y, 0, 0);
 }
 
 void EmuWindow_SDL2::OnFingerDown(float x, float y, std::size_t id) {
-    int width, height;
-    SDL_GetWindowSize(render_window, &width, &height);
-    const auto [px, py] = TouchToPixelPos(x, y);
-    const float fx = px * 1.0f / width;
-    const float fy = py * 1.0f / height;
-
-    input_subsystem->GetTouchScreen()->TouchPressed(fx, fy, id);
+    input_subsystem->GetTouchScreen()->TouchPressed(x, y, id);
 }
 
 void EmuWindow_SDL2::OnFingerMotion(float x, float y, std::size_t id) {
-    int width, height;
-    SDL_GetWindowSize(render_window, &width, &height);
-    const auto [px, py] = TouchToPixelPos(x, y);
-    const float fx = px * 1.0f / width;
-    const float fy = py * 1.0f / height;
-
-    input_subsystem->GetTouchScreen()->TouchMoved(fx, fy, id);
+    input_subsystem->GetTouchScreen()->TouchMoved(x, y, id);
 }
 
 void EmuWindow_SDL2::OnFingerUp() {

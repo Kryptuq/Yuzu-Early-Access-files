@@ -93,11 +93,18 @@ public:
         return device.CanReportMemoryUsage();
     }
 
-    bool ShouldReinterpret([[maybe_unused]] Image& dst, [[maybe_unused]] Image& src) {
+    bool ShouldReinterpret([[maybe_unused]] Image& dst,
+                           [[maybe_unused]] Image& src) const noexcept {
+        return true;
+    }
+
+    bool CanUploadMSAA() const noexcept {
         return true;
     }
 
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
+
+    void CopyImageMSAA(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
     void ReinterpretImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 

@@ -573,10 +573,6 @@ u32 CalculateUnswizzledSizeBytes(const ImageInfo& info) noexcept {
     if (info.type == ImageType::Buffer) {
         return info.size.width * BytesPerBlock(info.format);
     }
-    if (info.num_samples > 1) {
-        // Multisample images can't be uploaded or downloaded to the host
-        return 0;
-    }
     if (info.type == ImageType::Linear) {
         return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
     }
@@ -703,7 +699,7 @@ ImageViewType RenderTargetImageViewType(const ImageInfo& info) noexcept {
 std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageInfo& src,
                                              SubresourceBase base, u32 up_scale, u32 down_shift) {
     ASSERT(dst.resources.levels >= src.resources.levels);
-    ASSERT(dst.num_samples == src.num_samples);
+    // ASSERT(dst.num_samples == src.num_samples);
 
     const bool is_dst_3d = dst.type == ImageType::e3D;
     if (is_dst_3d) {

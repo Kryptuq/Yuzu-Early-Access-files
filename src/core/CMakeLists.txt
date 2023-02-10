@@ -298,7 +298,43 @@ add_library(core STATIC
     hle/kernel/svc.h
     hle/kernel/svc_common.h
     hle/kernel/svc_types.h
-    hle/kernel/svc_wrap.h
+    hle/kernel/svc/svc_activity.cpp
+    hle/kernel/svc/svc_address_arbiter.cpp
+    hle/kernel/svc/svc_address_translation.cpp
+    hle/kernel/svc/svc_cache.cpp
+    hle/kernel/svc/svc_code_memory.cpp
+    hle/kernel/svc/svc_condition_variable.cpp
+    hle/kernel/svc/svc_debug.cpp
+    hle/kernel/svc/svc_debug_string.cpp
+    hle/kernel/svc/svc_device_address_space.cpp
+    hle/kernel/svc/svc_event.cpp
+    hle/kernel/svc/svc_exception.cpp
+    hle/kernel/svc/svc_info.cpp
+    hle/kernel/svc/svc_insecure_memory.cpp
+    hle/kernel/svc/svc_interrupt_event.cpp
+    hle/kernel/svc/svc_io_pool.cpp
+    hle/kernel/svc/svc_ipc.cpp
+    hle/kernel/svc/svc_kernel_debug.cpp
+    hle/kernel/svc/svc_light_ipc.cpp
+    hle/kernel/svc/svc_lock.cpp
+    hle/kernel/svc/svc_memory.cpp
+    hle/kernel/svc/svc_physical_memory.cpp
+    hle/kernel/svc/svc_port.cpp
+    hle/kernel/svc/svc_power_management.cpp
+    hle/kernel/svc/svc_process.cpp
+    hle/kernel/svc/svc_process_memory.cpp
+    hle/kernel/svc/svc_processor.cpp
+    hle/kernel/svc/svc_query_memory.cpp
+    hle/kernel/svc/svc_register.cpp
+    hle/kernel/svc/svc_resource_limit.cpp
+    hle/kernel/svc/svc_secure_monitor_call.cpp
+    hle/kernel/svc/svc_session.cpp
+    hle/kernel/svc/svc_shared_memory.cpp
+    hle/kernel/svc/svc_synchronization.cpp
+    hle/kernel/svc/svc_thread.cpp
+    hle/kernel/svc/svc_thread_profiler.cpp
+    hle/kernel/svc/svc_tick.cpp
+    hle/kernel/svc/svc_transfer_memory.cpp
     hle/result.h
     hle/service/acc/acc.cpp
     hle/service/acc/acc.h

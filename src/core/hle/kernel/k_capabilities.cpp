@@ -203,23 +203,23 @@ Result KCapabilities::ProcessMapRegionCapability(const u32 cap, F f) {
 
 Result KCapabilities::MapRegion_(const u32 cap, KPageTable* page_table) {
     // Map each region into the process's page table.
-    R_RETURN(ProcessMapRegionCapability(
+    return ProcessMapRegionCapability(
         cap, [](KMemoryRegionType region_type, KMemoryPermission perm) -> Result {
             // R_RETURN(page_table->MapRegion(region_type, perm));
             UNIMPLEMENTED();
             R_SUCCEED();
-        }));
+        });
 }
 
 Result KCapabilities::CheckMapRegion(KernelCore& kernel, const u32 cap) {
     // Check that each region has a physical backing store.
-    R_RETURN(ProcessMapRegionCapability(
+    return ProcessMapRegionCapability(
         cap, [&](KMemoryRegionType region_type, KMemoryPermission perm) -> Result {
             R_UNLESS(kernel.MemoryLayout().GetPhysicalMemoryRegionTree().FindFirstDerived(
                          region_type) != nullptr,
                      ResultOutOfRange);
             R_SUCCEED();
-        }));
+        });
 }
 
 Result KCapabilities::SetInterruptPairCapability(const u32 cap) {

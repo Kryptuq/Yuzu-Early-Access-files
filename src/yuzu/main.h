@@ -37,6 +37,8 @@ class QLabel;
 class MultiplayerState;
 class QPushButton;
 class QProgressDialog;
+class QSlider;
+class QHBoxLayout;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 enum class GameListRemoveTarget;
@@ -312,6 +314,9 @@ private slots:
     void OnMenuRecentFile();
     void OnConfigure();
     void OnConfigureTas();
+    void OnDecreaseVolume();
+    void OnIncreaseVolume();
+    void OnMute();
     void OnTasStartStop();
     void OnTasRecord();
     void OnTasReset();
@@ -364,6 +369,7 @@ private:
     void UpdateAPIText();
     void UpdateFilterText();
     void UpdateAAText();
+    void UpdateVolumeUI();
     void UpdateStatusBar();
     void UpdateGPUAccuracyButton();
     void UpdateStatusButtons();
@@ -412,6 +418,9 @@ private:
     QPushButton* dock_status_button = nullptr;
     QPushButton* filter_status_button = nullptr;
     QPushButton* aa_status_button = nullptr;
+    QPushButton* volume_button = nullptr;
+    QWidget* volume_popup = nullptr;
+    QSlider* volume_slider = nullptr;
     QTimer status_bar_update_timer;
 
     std::unique_ptr<Config> config;

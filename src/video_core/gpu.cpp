@@ -99,7 +99,7 @@ struct GPU::Impl {
 
     /// Signal the ending of command list.
     void OnCommandListEnd() {
-        gpu_thread.OnCommandListEnd();
+        rasterizer->ReleaseFences();
     }
 
     /// Request a host GPU memory flush from the CPU.

@@ -40,6 +40,9 @@ public:
 
     void ConvertS8D24(Image& dst_image, std::span<const VideoCommon::ImageCopy> copies);
 
+    void CopyMSAA(Image& dst_image, Image& src_image,
+                  std::span<const VideoCommon::ImageCopy> copies);
+
 private:
     ProgramManager& program_manager;
 
@@ -51,6 +54,8 @@ private:
     OGLProgram pitch_unswizzle_program;
     OGLProgram copy_bc4_program;
     OGLProgram convert_s8d24_program;
+    OGLProgram convert_ms_to_nonms_program;
+    OGLProgram convert_nonms_to_ms_program;
 };
 
 GLenum StoreFormat(u32 bytes_per_block);

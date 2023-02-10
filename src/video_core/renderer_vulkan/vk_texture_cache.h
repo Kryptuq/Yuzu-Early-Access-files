@@ -70,6 +70,8 @@ public:
 
     void CopyImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
 
+    void CopyImageMSAA(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
+
     bool ShouldReinterpret(Image& dst, Image& src);
 
     void ReinterpretImage(Image& dst, Image& src, std::span<const VideoCommon::ImageCopy> copies);
@@ -77,6 +79,11 @@ public:
     void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view);
 
     bool CanAccelerateImageUpload(Image&) const noexcept {
+        return false;
+    }
+
+    bool CanUploadMSAA() const noexcept {
+        // TODO: Implement buffer to MSAA uploads
         return false;
     }
 

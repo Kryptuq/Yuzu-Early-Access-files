@@ -1025,13 +1025,13 @@ void Hid::SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetSupportedNpadIdTypes(ctx.ReadBuffer());
+    const auto result = applet_resource->GetController<Controller_NPad>(HidController::NPad)
+                            .SetSupportedNpadIdTypes(ctx.ReadBuffer());
 
     LOG_DEBUG(Service_HID, "called, applet_resource_user_id={}", applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ResultSuccess);
+    rb.Push(result);
 }
 
 void Hid::ActivateNpad(Kernel::HLERequestContext& ctx) {

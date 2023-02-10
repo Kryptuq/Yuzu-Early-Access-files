@@ -758,12 +758,20 @@ Core::HID::NpadStyleTag Controller_NPad::GetSupportedStyleSet() const {
     return hid_core.GetSupportedStyleTag();
 }
 
-void Controller_NPad::SetSupportedNpadIdTypes(std::span<const u8> data) {
+Result Controller_NPad::SetSupportedNpadIdTypes(std::span<const u8> data) {
+    constexpr std::size_t max_number_npad_ids = 0xa;
     const auto length = data.size();
     ASSERT(length > 0 && (length % sizeof(u32)) == 0);
+    const std::size_t elements = length / sizeof(u32);
+
+    if (elements > max_number_npad_ids) {
+        return InvalidArraySize;
+    }
+
     supported_npad_id_types.clear();
-    supported_npad_id_types.resize(length / sizeof(u32));
+    supported_npad_id_types.resize(elements);
     std::memcpy(supported_npad_id_types.data(), data.data(), length);
+    return ResultSuccess;
 }
 
 void Controller_NPad::GetSupportedNpadIdTypes(u32* data, std::size_t max_length) {

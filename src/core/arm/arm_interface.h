@@ -5,6 +5,7 @@
 
 #include <array>
 #include <span>
+#include <string>
 #include <vector>
 
 #include <dynarmic/interface/halt_reason.h>

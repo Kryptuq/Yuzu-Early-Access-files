@@ -1230,6 +1230,11 @@ void TextureCacheRuntime::CopyImage(Image& dst, Image& src,
     });
 }
 
+void TextureCacheRuntime::CopyImageMSAA(Image& dst, Image& src,
+                                        std::span<const VideoCommon::ImageCopy> copies) {
+    UNIMPLEMENTED_MSG("Copying images with different samples is not implemented in Vulkan.");
+}
+
 u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
     return device.GetDeviceLocalMemory();
 }

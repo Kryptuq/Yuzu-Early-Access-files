@@ -773,7 +773,7 @@ void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
     image.flags &= ~ImageFlagBits::CpuModified;
     TrackImage(image, image_id);
 
-    if (image.info.num_samples > 1) {
+    if (image.info.num_samples > 1 && !runtime.CanUploadMSAA()) {
         LOG_WARNING(HW_GPU, "MSAA image uploads are not implemented");
         return;
     }
@@ -1167,14 +1167,14 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         if (True(overlap.flags & ImageFlagBits::GpuModified)) {
             new_image.flags |= ImageFlagBits::GpuModified;
         }
+        const auto& resolution = Settings::values.resolution_info;
+        const SubresourceBase base = new_image.TryFindBase(overlap.gpu_addr).value();
+        const u32 up_scale = can_rescale ? resolution.up_scale : 1;
+        const u32 down_shift = can_rescale ? resolution.down_shift : 0;
+        auto copies = MakeShrinkImageCopies(new_info, overlap.info, base, up_scale, down_shift);
         if (overlap.info.num_samples != new_image.info.num_samples) {
-            LOG_WARNING(HW_GPU, "Copying between images with different samples is not implemented");
+            runtime.CopyImageMSAA(new_image, overlap, std::move(copies));
         } else {
-            const auto& resolution = Settings::values.resolution_info;
-            const SubresourceBase base = new_image.TryFindBase(overlap.gpu_addr).value();
-            const u32 up_scale = can_rescale ? resolution.up_scale : 1;
-            const u32 down_shift = can_rescale ? resolution.down_shift : 0;
-            auto copies = MakeShrinkImageCopies(new_info, overlap.info, base, up_scale, down_shift);
             runtime.CopyImage(new_image, overlap, std::move(copies));
         }
         if (True(overlap.flags & ImageFlagBits::Tracked)) {

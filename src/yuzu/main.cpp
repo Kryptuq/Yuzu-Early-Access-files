@@ -961,6 +961,38 @@ void GMainWindow::InitializeWidgets() {
     tas_label->setFocusPolicy(Qt::NoFocus);
     statusBar()->insertPermanentWidget(0, tas_label);
 
+    volume_popup = new QWidget(this);
+    volume_popup->setWindowFlags(Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::Popup);
+    volume_popup->setLayout(new QVBoxLayout());
+    volume_popup->setMinimumWidth(200);
+
+    volume_slider = new QSlider(Qt::Horizontal);
+    volume_slider->setObjectName(QStringLiteral("volume_slider"));
+    volume_slider->setMaximum(200);
+    volume_slider->setPageStep(5);
+    connect(volume_slider, &QSlider::valueChanged, this, [this](int percentage) {
+        Settings::values.audio_muted = false;
+        const auto volume = static_cast<u8>(percentage);
+        Settings::values.volume.SetValue(volume);
+        UpdateVolumeUI();
+    });
+    volume_popup->layout()->addWidget(volume_slider);
+
+    volume_button = new QPushButton();
+    volume_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    volume_button->setFocusPolicy(Qt::NoFocus);
+    volume_button->setCheckable(true);
+    UpdateVolumeUI();
+    connect(volume_button, &QPushButton::clicked, this, [&] {
+        UpdateVolumeUI();
+        volume_popup->setVisible(!volume_popup->isVisible());
+        QRect rect = volume_button->geometry();
+        QPoint bottomLeft = statusBar()->mapToGlobal(rect.topLeft());
+        bottomLeft.setY(bottomLeft.y() - volume_popup->geometry().height());
+        volume_popup->setGeometry(QRect(bottomLeft, QSize(rect.width(), rect.height())));
+    });
+    statusBar()->insertPermanentWidget(0, volume_button);
+
     // setup AA button
     aa_status_button = new QPushButton();
     aa_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
@@ -1123,30 +1155,9 @@ void GMainWindow::InitializeHotkeys() {
                      &GMainWindow::OnToggleAdaptingFilter);
     connect_shortcut(QStringLiteral("Change Docked Mode"), &GMainWindow::OnToggleDockedMode);
     connect_shortcut(QStringLiteral("Change GPU Accuracy"), &GMainWindow::OnToggleGpuAccuracy);
-    connect_shortcut(QStringLiteral("Audio Mute/Unmute"),
-                     [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
-    connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
-        const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
-        int step = 5;
-        if (current_volume <= 30) {
-            step = 2;
-        }
-        if (current_volume <= 6) {
-            step = 1;
-        }
-        Settings::values.volume.SetValue(std::max(current_volume - step, 0));
-    });
-    connect_shortcut(QStringLiteral("Audio Volume Up"), [] {
-        const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
-        int step = 5;
-        if (current_volume < 30) {
-            step = 2;
-        }
-        if (current_volume < 6) {
-            step = 1;
-        }
-        Settings::values.volume.SetValue(current_volume + step);
-    });
+    connect_shortcut(QStringLiteral("Audio Mute/Unmute"), &GMainWindow::OnMute);
+    connect_shortcut(QStringLiteral("Audio Volume Down"), &GMainWindow::OnDecreaseVolume);
+    connect_shortcut(QStringLiteral("Audio Volume Up"), &GMainWindow::OnIncreaseVolume);
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
         Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
@@ -3460,6 +3471,39 @@ void GMainWindow::OnToggleGpuAccuracy() {
     UpdateGPUAccuracyButton();
 }
 
+void GMainWindow::OnMute() {
+    Settings::values.audio_muted = !Settings::values.audio_muted;
+    UpdateVolumeUI();
+}
+
+void GMainWindow::OnDecreaseVolume() {
+    Settings::values.audio_muted = false;
+    const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
+    int step = 5;
+    if (current_volume <= 30) {
+        step = 2;
+    }
+    if (current_volume <= 6) {
+        step = 1;
+    }
+    Settings::values.volume.SetValue(std::max(current_volume - step, 0));
+    UpdateVolumeUI();
+}
+
+void GMainWindow::OnIncreaseVolume() {
+    Settings::values.audio_muted = false;
+    const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
+    int step = 5;
+    if (current_volume < 30) {
+        step = 2;
+    }
+    if (current_volume < 6) {
+        step = 1;
+    }
+    Settings::values.volume.SetValue(current_volume + step);
+    UpdateVolumeUI();
+}
+
 void GMainWindow::OnToggleAdaptingFilter() {
     auto filter = Settings::values.scaling_filter.GetValue();
     if (filter == Settings::ScalingFilter::LastFilter) {
@@ -3918,6 +3962,18 @@ void GMainWindow::UpdateAAText() {
     }
 }
 
+void GMainWindow::UpdateVolumeUI() {
+    const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
+    volume_slider->setValue(volume_value);
+    if (Settings::values.audio_muted) {
+        volume_button->setChecked(false);
+        volume_button->setText(tr("VOLUME: MUTE"));
+    } else {
+        volume_button->setChecked(true);
+        volume_button->setText(tr("VOLUME: %1%", "Volume percentage (e.g. 50%)").arg(volume_value));
+    }
+}
+
 void GMainWindow::UpdateStatusButtons() {
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
@@ -3926,6 +3982,7 @@ void GMainWindow::UpdateStatusButtons() {
     UpdateDockedButton();
     UpdateFilterText();
     UpdateAAText();
+    UpdateVolumeUI();
 }
 
 void GMainWindow::UpdateUISettings() {

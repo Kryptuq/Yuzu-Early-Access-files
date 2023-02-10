@@ -77,16 +77,12 @@ struct FlushAndInvalidateRegionCommand final {
     u64 size;
 };
 
-/// Command called within the gpu, to schedule actions after a command list end
-struct OnCommandListEndCommand final {};
-
 /// Command to make the gpu look into pending requests
 struct GPUTickCommand final {};
 
 using CommandData =
     std::variant<std::monostate, SubmitListCommand, SwapBuffersCommand, FlushRegionCommand,
-                 InvalidateRegionCommand, FlushAndInvalidateRegionCommand, OnCommandListEndCommand,
-                 GPUTickCommand>;
+                 InvalidateRegionCommand, FlushAndInvalidateRegionCommand, GPUTickCommand>;
 
 struct CommandDataContainer {
     CommandDataContainer() = default;
@@ -133,8 +129,6 @@ public:
 
     /// Notify rasterizer that any caches of the specified region should be flushed and invalidated
     void FlushAndInvalidateRegion(VAddr addr, u64 size);
-
-    void OnCommandListEnd();
 
     void TickGPU();
 

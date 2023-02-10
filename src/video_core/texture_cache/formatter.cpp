@@ -22,6 +22,9 @@ std::string Name(const ImageBase& image) {
     const u32 num_layers = image.info.resources.layers;
     const u32 num_levels = image.info.resources.levels;
     std::string resource;
+    if (image.info.num_samples > 1) {
+        resource += fmt::format(":{}xMSAA", image.info.num_samples);
+    }
     if (num_layers > 1) {
         resource += fmt::format(":L{}", num_layers);
     }

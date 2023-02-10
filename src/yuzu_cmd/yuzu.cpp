@@ -62,13 +62,15 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"
+                 "-c, --config          Load the specified configuration file\n"
+                 "-f, --fullscreen      Start in fullscreen mode\n"
+                 "-g, --game            File path of the game to load\n"
+                 "-h, --help            Display this help and exit\n"
                  "-m, --multiplayer=nick:password@address:port"
                  " Nickname, password, address and port for multiplayer\n"
-                 "-f, --fullscreen      Start in fullscreen mode\n"
-                 "-h, --help            Display this help and exit\n"
-                 "-v, --version         Output version information and exit\n"
                  "-p, --program         Pass following string as arguments to executable\n"
-                 "-c, --config          Load the specified configuration file\n";
+                 "-u, --user            Select a specific user profile from 0 to 7\n"
+                 "-v, --version         Output version information and exit\n";
 }
 
 static void PrintVersion() {
@@ -199,6 +201,7 @@ int main(int argc, char** argv) {
     std::string filepath;
     std::optional<std::string> config_path;
     std::string program_args;
+    std::optional<int> selected_user;
 
     bool use_multiplayer = false;
     bool fullscreen = false;
@@ -209,12 +212,14 @@ int main(int argc, char** argv) {
 
     static struct option long_options[] = {
         // clang-format off
-        {"multiplayer", required_argument, 0, 'm'},
+        {"config", required_argument, 0, 'c'},
         {"fullscreen", no_argument, 0, 'f'},
         {"help", no_argument, 0, 'h'},
-        {"version", no_argument, 0, 'v'},
+        {"game", required_argument, 0, 'g'},
+        {"multiplayer", required_argument, 0, 'm'},
         {"program", optional_argument, 0, 'p'},
-        {"config", required_argument, 0, 'c'},
+        {"user", required_argument, 0, 'u'},
+        {"version", no_argument, 0, 'v'},
         {0, 0, 0, 0},
         // clang-format on
     };
@@ -223,6 +228,21 @@ int main(int argc, char** argv) {
         int arg = getopt_long(argc, argv, "g:fhvp::c:", long_options, &option_index);
         if (arg != -1) {
             switch (static_cast<char>(arg)) {
+            case 'c':
+                config_path = optarg;
+                break;
+            case 'f':
+                fullscreen = true;
+                LOG_INFO(Frontend, "Starting in fullscreen mode...");
+                break;
+            case 'h':
+                PrintHelp(argv[0]);
+                return 0;
+            case 'g': {
+                const std::string str_arg(optarg);
+                filepath = str_arg;
+                break;
+            }
             case 'm': {
                 use_multiplayer = true;
                 const std::string str_arg(optarg);
@@ -255,23 +275,16 @@ int main(int argc, char** argv) {
                 }
                 break;
             }
-            case 'f':
-                fullscreen = true;
-                LOG_INFO(Frontend, "Starting in fullscreen mode...");
-                break;
-            case 'h':
-                PrintHelp(argv[0]);
-                return 0;
-            case 'v':
-                PrintVersion();
-                return 0;
             case 'p':
                 program_args = argv[optind];
                 ++optind;
                 break;
-            case 'c':
-                config_path = optarg;
-                break;
+            case 'u':
+                selected_user = atoi(optarg);
+                return 0;
+            case 'v':
+                PrintVersion();
+                return 0;
             }
         } else {
 #ifdef _WIN32
@@ -293,6 +306,10 @@ int main(int argc, char** argv) {
 
     if (!program_args.empty()) {
         Settings::values.program_args = program_args;
+    }
+
+    if (selected_user.has_value()) {
+        Settings::values.current_user = std::clamp(*selected_user, 0, 7);
     }
 
 #ifdef _WIN32

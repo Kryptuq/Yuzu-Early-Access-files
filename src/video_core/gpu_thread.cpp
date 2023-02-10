@@ -40,8 +40,6 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
             scheduler.Push(submit_list->channel, std::move(submit_list->entries));
         } else if (const auto* data = std::get_if<SwapBuffersCommand>(&next.data)) {
             renderer.SwapBuffers(data->framebuffer ? &*data->framebuffer : nullptr);
-        } else if (std::holds_alternative<OnCommandListEndCommand>(next.data)) {
-            rasterizer->ReleaseFences();
         } else if (std::holds_alternative<GPUTickCommand>(next.data)) {
             system.GPU().TickWork();
         } else if (const auto* flush = std::get_if<FlushRegionCommand>(&next.data)) {
@@ -108,10 +106,6 @@ void ThreadManager::InvalidateRegion(VAddr addr, u64 size) {
 void ThreadManager::FlushAndInvalidateRegion(VAddr addr, u64 size) {
     // Skip flush on asynch mode, as FlushAndInvalidateRegion is not used for anything too important
     rasterizer->OnCPUWrite(addr, size);
-}
-
-void ThreadManager::OnCommandListEnd() {
-    PushCommand(OnCommandListEndCommand());
 }
 
 u64 ThreadManager::PushCommand(CommandData&& command_data, bool block) {
