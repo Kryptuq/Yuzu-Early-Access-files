@@ -1146,6 +1146,14 @@ const KMemoryManager& KernelCore::MemoryManager() const {
     return *impl->memory_manager;
 }
 
+KSystemResource& KernelCore::GetAppSystemResource() {
+    return *impl->app_system_resource;
+}
+
+const KSystemResource& KernelCore::GetAppSystemResource() const {
+    return *impl->app_system_resource;
+}
+
 KSystemResource& KernelCore::GetSystemSystemResource() {
     return *impl->sys_system_resource;
 }

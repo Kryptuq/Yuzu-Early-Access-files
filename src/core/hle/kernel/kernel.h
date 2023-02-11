@@ -246,6 +246,12 @@ public:
     /// Gets the virtual memory manager for the kernel.
     const KMemoryManager& MemoryManager() const;
 
+    /// Gets the application resource manager.
+    KSystemResource& GetAppSystemResource();
+
+    /// Gets the application resource manager.
+    const KSystemResource& GetAppSystemResource() const;
+
     /// Gets the system resource manager.
     KSystemResource& GetSystemSystemResource();
 
