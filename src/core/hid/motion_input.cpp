@@ -9,7 +9,7 @@ namespace Core::HID {
 MotionInput::MotionInput() {
     // Initialize PID constants with default values
     SetPID(0.3f, 0.005f, 0.0f);
-    SetGyroThreshold(0.007f);
+    SetGyroThreshold(ThresholdStandard);
 }
 
 void MotionInput::SetPID(f32 new_kp, f32 new_ki, f32 new_kd) {
@@ -26,11 +26,11 @@ void MotionInput::SetGyroscope(const Common::Vec3f& gyroscope) {
     gyro = gyroscope - gyro_bias;
 
     // Auto adjust drift to minimize drift
-    if (!IsMoving(0.1f)) {
+    if (!IsMoving(IsAtRestRelaxed)) {
         gyro_bias = (gyro_bias * 0.9999f) + (gyroscope * 0.0001f);
     }
 
-    if (gyro.Length() < gyro_threshold) {
+    if (gyro.Length() < gyro_threshold * user_gyro_threshold) {
         gyro = {};
     } else {
         only_accelerometer = false;
@@ -47,6 +47,10 @@ void MotionInput::SetGyroBias(const Common::Vec3f& bias) {
 
 void MotionInput::SetGyroThreshold(f32 threshold) {
     gyro_threshold = threshold;
+}
+
+void MotionInput::SetUserGyroThreshold(f32 threshold) {
+    user_gyro_threshold = threshold / ThresholdStandard;
 }
 
 void MotionInput::EnableReset(bool reset) {
@@ -208,7 +212,7 @@ void MotionInput::ResetOrientation() {
     if (!reset_enabled || only_accelerometer) {
         return;
     }
-    if (!IsMoving(0.5f) && accel.z <= -0.9f) {
+    if (!IsMoving(IsAtRestRelaxed) && accel.z <= -0.9f) {
         ++reset_counter;
         if (reset_counter > 900) {
             quat.w = 0;

@@ -48,7 +48,7 @@ public:
      *
      * @param out_buffers - The buffers which were registered.
      */
-    void RegisterBuffers(std::vector<AudioBuffer>& out_buffers) {
+    void RegisterBuffers(std::span<AudioBuffer> out_buffers, u32& out_size) {
         std::scoped_lock l{lock};
         const s32 to_register{std::min(std::min(appended_count, BufferAppendLimit),
                                        BufferAppendLimit - registered_count)};
@@ -59,7 +59,7 @@ public:
                 index += N;
             }
 
-            out_buffers.push_back(buffers[index]);
+            out_buffers[out_size++] = buffers[index];
             registered_count++;
             registered_index = (registered_index + 1) % append_limit;
 
@@ -162,7 +162,7 @@ public:
      * @param max_buffers     - Maximum number of buffers to released.
      * @return The number of buffers released.
      */
-    u32 GetRegisteredAppendedBuffers(std::vector<AudioBuffer>& buffers_flushed, u32 max_buffers) {
+    u32 GetRegisteredAppendedBuffers(std::span<AudioBuffer> out_buffers, u32 max_buffers) {
         std::scoped_lock l{lock};
         if (registered_count + appended_count == 0) {
             return 0;
@@ -174,19 +174,20 @@ public:
             return 0;
         }
 
+        u32 buffers_flushed{0};
         while (registered_count > 0) {
             auto index{registered_index - registered_count};
             if (index < 0) {
                 index += N;
             }
 
-            buffers_flushed.push_back(buffers[index]);
+            out_buffers[buffers_flushed++] = buffers[index];
 
             registered_count--;
             released_count++;
             released_index = (released_index + 1) % append_limit;
 
-            if (buffers_flushed.size() >= buffers_to_flush) {
+            if (buffers_flushed >= buffers_to_flush) {
                 break;
             }
         }
@@ -197,18 +198,18 @@ public:
                 index += N;
             }
 
-            buffers_flushed.push_back(buffers[index]);
+            out_buffers[buffers_flushed++] = buffers[index];
 
             appended_count--;
             released_count++;
             released_index = (released_index + 1) % append_limit;
 
-            if (buffers_flushed.size() >= buffers_to_flush) {
+            if (buffers_flushed >= buffers_to_flush) {
                 break;
             }
         }
 
-        return static_cast<u32>(buffers_flushed.size());
+        return buffers_flushed;
     }
 
     /**
@@ -270,8 +271,9 @@ public:
      */
     bool FlushBuffers(u32& buffers_released) {
         std::scoped_lock l{lock};
-        std::vector<AudioBuffer> buffers_flushed{};
 
+        static Common::ScratchBuffer<AudioBuffer> buffers_flushed{};
+        buffers_flushed.resize_destructive(append_limit);
         buffers_released = GetRegisteredAppendedBuffers(buffers_flushed, append_limit);
 
         if (registered_count > 0) {

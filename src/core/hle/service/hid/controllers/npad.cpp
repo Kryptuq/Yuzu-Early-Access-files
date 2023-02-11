@@ -1132,7 +1132,8 @@ Result Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
     return ResultSuccess;
 }
 Result Controller_NPad::SetGyroscopeZeroDriftMode(
-    const Core::HID::SixAxisSensorHandle& sixaxis_handle, GyroscopeZeroDriftMode drift_mode) {
+    const Core::HID::SixAxisSensorHandle& sixaxis_handle,
+    Core::HID::GyroscopeZeroDriftMode drift_mode) {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
         LOG_ERROR(Service_HID, "Invalid handle, error_code={}", is_valid.raw);
@@ -1140,14 +1141,16 @@ Result Controller_NPad::SetGyroscopeZeroDriftMode(
     }
 
     auto& sixaxis = GetSixaxisState(sixaxis_handle);
+    auto& controller = GetControllerFromHandle(sixaxis_handle);
     sixaxis.gyroscope_zero_drift_mode = drift_mode;
+    controller.device->SetGyroscopeZeroDriftMode(drift_mode);
 
     return ResultSuccess;
 }
 
 Result Controller_NPad::GetGyroscopeZeroDriftMode(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
-    GyroscopeZeroDriftMode& drift_mode) const {
+    Core::HID::GyroscopeZeroDriftMode& drift_mode) const {
     const auto is_valid = VerifyValidSixAxisSensorHandle(sixaxis_handle);
     if (is_valid.IsError()) {
         LOG_ERROR(Service_HID, "Invalid handle, error_code={}", is_valid.raw);

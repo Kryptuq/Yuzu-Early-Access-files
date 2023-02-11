@@ -19,10 +19,10 @@ struct VoiceState {
      * State of the voice's biquad filter.
      */
     struct BiquadFilterState {
-        Common::FixedPoint<50, 14> s0;
-        Common::FixedPoint<50, 14> s1;
-        Common::FixedPoint<50, 14> s2;
-        Common::FixedPoint<50, 14> s3;
+        s64 s0;
+        s64 s1;
+        s64 s2;
+        s64 s3;
     };
 
     /**

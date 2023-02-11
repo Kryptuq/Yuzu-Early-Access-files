@@ -343,6 +343,14 @@ void SDLDriver::InitJoystick(int joystick_index) {
         }
     }
 
+    if (Settings::values.enable_procon_driver) {
+        if (guid.uuid[5] == 0x05 && guid.uuid[4] == 0x7e && guid.uuid[8] == 0x09) {
+            LOG_WARNING(Input, "Preferring joycon driver for device index {}", joystick_index);
+            SDL_JoystickClose(sdl_joystick);
+            return;
+        }
+    }
+
     std::scoped_lock lock{joystick_map_mutex};
     if (joystick_map.find(guid) == joystick_map.end()) {
         auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_gamecontroller);
@@ -465,13 +473,19 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
-    // Disable hidapi drivers for switch controllers when the custom joycon driver is enabled
+    // Disable hidapi drivers for joycon controllers when the custom joycon driver is enabled
     if (Settings::values.enable_joycon_driver) {
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "0");
     } else {
         SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
     }
-    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
+
+    // Disable hidapi drivers for pro controllers when the custom joycon driver is enabled
+    if (Settings::values.enable_procon_driver) {
+        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "0");
+    } else {
+        SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
+    }
 
     // Disable hidapi driver for xbox. Already default on Windows, this causes conflict with native
     // driver on Linux.

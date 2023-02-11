@@ -957,7 +957,7 @@ void EmulatedController::SetMotion(const Common::Input::CallbackStatus& callback
         raw_status.gyro.y.value,
         raw_status.gyro.z.value,
     });
-    emulated.SetGyroThreshold(raw_status.gyro.x.properties.threshold);
+    emulated.SetUserGyroThreshold(raw_status.gyro.x.properties.threshold);
     emulated.UpdateRotation(raw_status.delta_timestamp);
     emulated.UpdateOrientation(raw_status.delta_timestamp);
     force_update_motion = raw_status.force_update;
@@ -1281,6 +1281,26 @@ void EmulatedController::SetLedPattern() {
             .led_4 = pattern.position4 != 0,
         };
         device->SetLED(status);
+    }
+}
+
+void EmulatedController::SetGyroscopeZeroDriftMode(GyroscopeZeroDriftMode mode) {
+    for (auto& motion : controller.motion_values) {
+        switch (mode) {
+        case GyroscopeZeroDriftMode::Loose:
+            motion_sensitivity = motion.emulated.IsAtRestLoose;
+            motion.emulated.SetGyroThreshold(motion.emulated.ThresholdLoose);
+            break;
+        case GyroscopeZeroDriftMode::Tight:
+            motion_sensitivity = motion.emulated.IsAtRestThight;
+            motion.emulated.SetGyroThreshold(motion.emulated.ThresholdThight);
+            break;
+        case GyroscopeZeroDriftMode::Standard:
+        default:
+            motion_sensitivity = motion.emulated.IsAtRestStandard;
+            motion.emulated.SetGyroThreshold(motion.emulated.ThresholdStandard);
+            break;
+        }
     }
 }
 

@@ -52,13 +52,6 @@ public:
     // When the controller is requesting a motion update for the shared memory
     void OnMotionUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
-    // This is nn::hid::GyroscopeZeroDriftMode
-    enum class GyroscopeZeroDriftMode : u32 {
-        Loose = 0,
-        Standard = 1,
-        Tight = 2,
-    };
-
     // This is nn::hid::NpadJoyHoldType
     enum class NpadJoyHoldType : u64 {
         Vertical = 0,
@@ -146,9 +139,9 @@ public:
     Result DisconnectNpad(Core::HID::NpadIdType npad_id);
 
     Result SetGyroscopeZeroDriftMode(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
-                                     GyroscopeZeroDriftMode drift_mode);
+                                     Core::HID::GyroscopeZeroDriftMode drift_mode);
     Result GetGyroscopeZeroDriftMode(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
-                                     GyroscopeZeroDriftMode& drift_mode) const;
+                                     Core::HID::GyroscopeZeroDriftMode& drift_mode) const;
     Result IsSixAxisSensorAtRest(const Core::HID::SixAxisSensorHandle& sixaxis_handle,
                                  bool& is_at_rest) const;
     Result IsFirmwareUpdateAvailableForSixAxisSensor(
@@ -489,7 +482,8 @@ private:
         Core::HID::SixAxisSensorFusionParameters fusion{};
         Core::HID::SixAxisSensorCalibrationParameter calibration{};
         Core::HID::SixAxisSensorIcInformation ic_information{};
-        GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
+        Core::HID::GyroscopeZeroDriftMode gyroscope_zero_drift_mode{
+            Core::HID::GyroscopeZeroDriftMode::Standard};
     };
 
     struct NpadControllerData {

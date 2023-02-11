@@ -11,6 +11,15 @@ namespace Core::HID {
 
 class MotionInput {
 public:
+    static constexpr float ThresholdLoose = 0.01f;
+    static constexpr float ThresholdStandard = 0.007f;
+    static constexpr float ThresholdThight = 0.002f;
+
+    static constexpr float IsAtRestRelaxed = 0.05f;
+    static constexpr float IsAtRestLoose = 0.02f;
+    static constexpr float IsAtRestStandard = 0.01f;
+    static constexpr float IsAtRestThight = 0.005f;
+
     explicit MotionInput();
 
     MotionInput(const MotionInput&) = default;
@@ -25,6 +34,9 @@ public:
     void SetQuaternion(const Common::Quaternion<f32>& quaternion);
     void SetGyroBias(const Common::Vec3f& bias);
     void SetGyroThreshold(f32 threshold);
+
+    /// Applies a modifier on top of the normal gyro threshold
+    void SetUserGyroThreshold(f32 threshold);
 
     void EnableReset(bool reset);
     void ResetRotations();
@@ -73,6 +85,9 @@ private:
 
     // Minimum gyro amplitude to detect if the device is moving
     f32 gyro_threshold = 0.0f;
+
+    // Multiplies gyro_threshold by this value
+    f32 user_gyro_threshold = 0.0f;
 
     // Number of invalid sequential data
     u32 reset_counter = 0;

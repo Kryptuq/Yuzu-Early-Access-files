@@ -712,7 +712,7 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
 void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sixaxis_handle{rp.PopRaw<Core::HID::SixAxisSensorHandle>()};
-    const auto drift_mode{rp.PopEnum<Controller_NPad::GyroscopeZeroDriftMode>()};
+    const auto drift_mode{rp.PopEnum<Core::HID::GyroscopeZeroDriftMode>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
@@ -739,7 +739,7 @@ void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
+    auto drift_mode{Core::HID::GyroscopeZeroDriftMode::Standard};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
     const auto result = controller.GetGyroscopeZeroDriftMode(parameters.sixaxis_handle, drift_mode);
 
@@ -764,7 +764,7 @@ void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    const auto drift_mode{Controller_NPad::GyroscopeZeroDriftMode::Standard};
+    const auto drift_mode{Core::HID::GyroscopeZeroDriftMode::Standard};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
     const auto result = controller.SetGyroscopeZeroDriftMode(parameters.sixaxis_handle, drift_mode);
 

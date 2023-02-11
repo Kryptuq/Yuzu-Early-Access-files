@@ -282,6 +282,13 @@ enum class VibrationGcErmCommand : u64 {
     StopHard = 2,
 };
 
+// This is nn::hid::GyroscopeZeroDriftMode
+enum class GyroscopeZeroDriftMode : u32 {
+    Loose = 0,
+    Standard = 1,
+    Tight = 2,
+};
+
 // This is nn::hid::NpadStyleTag
 struct NpadStyleTag {
     union {

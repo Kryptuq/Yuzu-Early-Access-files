@@ -139,6 +139,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.enable_ring_controller = ui->enable_ring_controller->isChecked();
     Settings::values.enable_ir_sensor = ui->enable_ir_sensor->isChecked();
     Settings::values.enable_joycon_driver = ui->enable_joycon_driver->isChecked();
+    Settings::values.enable_procon_driver = ui->enable_procon_driver->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -174,6 +175,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->enable_ring_controller->setChecked(Settings::values.enable_ring_controller.GetValue());
     ui->enable_ir_sensor->setChecked(Settings::values.enable_ir_sensor.GetValue());
     ui->enable_joycon_driver->setChecked(Settings::values.enable_joycon_driver.GetValue());
+    ui->enable_procon_driver->setChecked(Settings::values.enable_procon_driver.GetValue());
 
     UpdateUIEnabled();
 }

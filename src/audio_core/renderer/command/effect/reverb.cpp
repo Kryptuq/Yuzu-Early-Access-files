@@ -7,6 +7,7 @@
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/reverb.h"
 #include "common/polyfill_ranges.h"
+#include "common/scratch_buffer.h"
 
 namespace AudioCore::AudioRenderer {
 
@@ -250,8 +251,8 @@ static Common::FixedPoint<50, 14> Axfx2AllPassTick(ReverbInfo::ReverbDelayLine& 
  */
 template <size_t NumChannels>
 static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, ReverbInfo::State& state,
-                              std::vector<std::span<const s32>>& inputs,
-                              std::vector<std::span<s32>>& outputs, const u32 sample_count) {
+                              std::span<std::span<const s32>> inputs,
+                              std::span<std::span<s32>> outputs, const u32 sample_count) {
     constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes1Ch{
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
@@ -368,8 +369,8 @@ static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, Rever
  * @param sample_count - Number of samples to process.
  */
 static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, ReverbInfo::State& state,
-                              const bool enabled, std::vector<std::span<const s32>>& inputs,
-                              std::vector<std::span<s32>>& outputs, const u32 sample_count) {
+                              const bool enabled, std::span<std::span<const s32>> inputs,
+                              std::span<std::span<s32>> outputs, const u32 sample_count) {
     if (enabled) {
         switch (params.channel_count) {
         case 0:
@@ -411,8 +412,10 @@ void ReverbCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor& proc
 }
 
 void ReverbCommand::Process(const ADSP::CommandListProcessor& processor) {
-    std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
-    std::vector<std::span<s32>> output_buffers(parameter.channel_count);
+    static Common::ScratchBuffer<std::span<const s32>> input_buffers{};
+    static Common::ScratchBuffer<std::span<s32>> output_buffers{};
+    input_buffers.resize_destructive(parameter.channel_count);
+    output_buffers.resize_destructive(parameter.channel_count);
 
     for (u32 i = 0; i < parameter.channel_count; i++) {
         input_buffers[i] = processor.mix_buffers.subspan(inputs[i] * processor.sample_count,

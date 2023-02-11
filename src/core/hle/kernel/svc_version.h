@@ -35,11 +35,11 @@ constexpr inline u32 EncodeKernelVersion(u32 major, u32 minor) {
 }
 
 constexpr inline u32 GetKernelMajorVersion(u32 encoded) {
-    return std::bit_cast<decltype(KernelVersion::major_version)>(encoded).Value();
+    return decltype(KernelVersion::major_version)::ExtractValue(encoded);
 }
 
 constexpr inline u32 GetKernelMinorVersion(u32 encoded) {
-    return std::bit_cast<decltype(KernelVersion::minor_version)>(encoded).Value();
+    return decltype(KernelVersion::minor_version)::ExtractValue(encoded);
 }
 
 // Nintendo doesn't support programs targeting SVC versions < 3.0.

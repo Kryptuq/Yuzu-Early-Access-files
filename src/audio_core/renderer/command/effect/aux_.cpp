@@ -4,6 +4,7 @@
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/aux_.h"
 #include "audio_core/renderer/effect/aux_.h"
+#include "core/core.h"
 #include "core/memory.h"
 
 namespace AudioCore::AudioRenderer {
@@ -174,6 +175,19 @@ void AuxCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor& process
 }
 
 void AuxCommand::Process(const ADSP::CommandListProcessor& processor) {
+    // HACK!
+    // Ignore aux for Super Mario Odyssey and Metroid Prime Remastered.
+    // For some reason these games receive output samples, and then send them back in as input
+    // again. Problem is the data being sent back in is slightly offset from the current output by
+    // 240 or 480 samples, leading to a very fast echoing effect, which should not be there.
+    // Timing issue or some bug in the code?
+    // We can't disable this unconditionally as some games rely on it for synchronisation and will
+    // softlock without it (Age of Calamity).
+    const auto program_id = processor.system->GetCurrentProcessProgramID();
+    if (program_id == 0x0100000000010000ull || program_id == 0x010012101468C000ull) {
+        return;
+    }
+
     auto input_buffer{
         processor.mix_buffers.subspan(input * processor.sample_count, processor.sample_count)};
     auto output_buffer{

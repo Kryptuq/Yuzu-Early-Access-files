@@ -398,6 +398,9 @@ public:
     /// Asks the output device to change the player led pattern
     void SetLedPattern();
 
+    /// Changes sensitivity of the motion sensor
+    void SetGyroscopeZeroDriftMode(GyroscopeZeroDriftMode mode);
+
     /**
      * Adds a callback to the list of events
      * @param update_callback A ConsoleUpdateCallback that will be triggered
@@ -523,7 +526,7 @@ private:
     bool is_connected{false};
     bool is_configuring{false};
     bool system_buttons_enabled{true};
-    f32 motion_sensitivity{0.01f};
+    f32 motion_sensitivity{Core::HID::MotionInput::IsAtRestStandard};
     bool force_update_motion{false};
     u32 turbo_button_state{0};
 

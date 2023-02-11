@@ -805,6 +805,8 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
                                 layout.screen.GetHeight() / scale_ratio);
         web_browser_view.move(layout.screen.left / scale_ratio,
                               (layout.screen.top / scale_ratio) + menuBar()->height());
+        web_browser_view.setZoomFactor(static_cast<qreal>(layout.screen.GetWidth() / scale_ratio) /
+                                       static_cast<qreal>(Layout::ScreenUndocked::Width));
 
         web_browser_view.setFocus();
         web_browser_view.show();

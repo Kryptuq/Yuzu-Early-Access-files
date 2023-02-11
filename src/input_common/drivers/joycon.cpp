@@ -16,7 +16,7 @@ namespace InputCommon {
 
 Joycons::Joycons(const std::string& input_engine_) : InputEngine(input_engine_) {
     // Avoid conflicting with SDL driver
-    if (!Settings::values.enable_joycon_driver) {
+    if (!Settings::values.enable_joycon_driver && !Settings::values.enable_procon_driver) {
         return;
     }
     LOG_INFO(Input, "Joycon driver Initialization started");
@@ -46,6 +46,12 @@ void Joycons::Reset() {
         }
         device->Stop();
     }
+    for (const auto& device : pro_controller) {
+        if (!device) {
+            continue;
+        }
+        device->Stop();
+    }
     SDL_hid_exit();
 }
 
@@ -59,6 +65,11 @@ void Joycons::Setup() {
     port = 0;
     for (auto& device : right_joycons) {
         PreSetController(GetIdentifier(port, Joycon::ControllerType::Right));
+        device = std::make_shared<Joycon::JoyconDriver>(port++);
+    }
+    port = 0;
+    for (auto& device : pro_controller) {
+        PreSetController(GetIdentifier(port, Joycon::ControllerType::Pro));
         device = std::make_shared<Joycon::JoyconDriver>(port++);
     }
 
@@ -116,6 +127,9 @@ bool Joycons::IsDeviceNew(SDL_hid_device_info* device_info) const {
     // Check if device already exist
     switch (type) {
     case Joycon::ControllerType::Left:
+        if (!Settings::values.enable_joycon_driver) {
+            return false;
+        }
         for (const auto& device : left_joycons) {
             if (is_handle_identical(device)) {
                 return false;
@@ -123,7 +137,20 @@ bool Joycons::IsDeviceNew(SDL_hid_device_info* device_info) const {
         }
         break;
     case Joycon::ControllerType::Right:
+        if (!Settings::values.enable_joycon_driver) {
+            return false;
+        }
         for (const auto& device : right_joycons) {
+            if (is_handle_identical(device)) {
+                return false;
+            }
+        }
+        break;
+    case Joycon::ControllerType::Pro:
+        if (!Settings::values.enable_procon_driver) {
+            return false;
+        }
+        for (const auto& device : pro_controller) {
             if (is_handle_identical(device)) {
                 return false;
             }
@@ -196,6 +223,14 @@ std::shared_ptr<Joycon::JoyconDriver> Joycons::GetNextFreeHandle(
             right_joycons, [](auto& device) { return !device->IsConnected(); });
 
         if (unconnected_device != right_joycons.end()) {
+            return *unconnected_device;
+        }
+    }
+    if (type == Joycon::ControllerType::Pro) {
+        const auto unconnected_device = std::ranges::find_if(
+            pro_controller, [](auto& device) { return !device->IsConnected(); });
+
+        if (unconnected_device != pro_controller.end()) {
             return *unconnected_device;
         }
     }
@@ -409,6 +444,15 @@ std::shared_ptr<Joycon::JoyconDriver> Joycons::GetHandle(PadIdentifier identifie
         }
     }
 
+    if (type == Joycon::ControllerType::Pro) {
+        const auto matching_device = std::ranges::find_if(
+            pro_controller, [is_handle_active](auto& device) { return is_handle_active(device); });
+
+        if (matching_device != pro_controller.end()) {
+            return *matching_device;
+        }
+    }
+
     return nullptr;
 }
 
@@ -453,6 +497,9 @@ std::vector<Common::ParamPackage> Joycons::GetInputDevices() const {
         add_entry(controller);
     }
     for (const auto& controller : right_joycons) {
+        add_entry(controller);
+    }
+    for (const auto& controller : pro_controller) {
         add_entry(controller);
     }
 
