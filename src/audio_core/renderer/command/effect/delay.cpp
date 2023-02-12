@@ -3,7 +3,6 @@
 
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/delay.h"
-#include "common/scratch_buffer.h"
 
 namespace AudioCore::AudioRenderer {
 /**
@@ -75,8 +74,8 @@ static void InitializeDelayEffect(const DelayInfo::ParameterVersion1& params,
  */
 template <size_t NumChannels>
 static void ApplyDelay(const DelayInfo::ParameterVersion1& params, DelayInfo::State& state,
-                       std::span<std::span<const s32>> inputs, std::span<std::span<s32>> outputs,
-                       const u32 sample_count) {
+                       std::vector<std::span<const s32>>& inputs,
+                       std::vector<std::span<s32>>& outputs, const u32 sample_count) {
     for (u32 sample_index = 0; sample_index < sample_count; sample_index++) {
         std::array<Common::FixedPoint<50, 14>, NumChannels> input_samples{};
         for (u32 channel = 0; channel < NumChannels; channel++) {
@@ -154,8 +153,8 @@ static void ApplyDelay(const DelayInfo::ParameterVersion1& params, DelayInfo::St
  * @param sample_count - Number of samples to process.
  */
 static void ApplyDelayEffect(const DelayInfo::ParameterVersion1& params, DelayInfo::State& state,
-                             const bool enabled, std::span<std::span<const s32>> inputs,
-                             std::span<std::span<s32>> outputs, const u32 sample_count) {
+                             const bool enabled, std::vector<std::span<const s32>>& inputs,
+                             std::vector<std::span<s32>>& outputs, const u32 sample_count) {
 
     if (!IsChannelCountValid(params.channel_count)) {
         LOG_ERROR(Service_Audio, "Invalid delay channels {}", params.channel_count);
@@ -209,10 +208,8 @@ void DelayCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor& proce
 }
 
 void DelayCommand::Process(const ADSP::CommandListProcessor& processor) {
-    static Common::ScratchBuffer<std::span<const s32>> input_buffers{};
-    static Common::ScratchBuffer<std::span<s32>> output_buffers{};
-    input_buffers.resize_destructive(parameter.channel_count);
-    output_buffers.resize_destructive(parameter.channel_count);
+    std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
+    std::vector<std::span<s32>> output_buffers(parameter.channel_count);
 
     for (s16 i = 0; i < parameter.channel_count; i++) {
         input_buffers[i] = processor.mix_buffers.subspan(inputs[i] * processor.sample_count,

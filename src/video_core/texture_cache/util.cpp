@@ -699,7 +699,6 @@ ImageViewType RenderTargetImageViewType(const ImageInfo& info) noexcept {
 std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageInfo& src,
                                              SubresourceBase base, u32 up_scale, u32 down_shift) {
     ASSERT(dst.resources.levels >= src.resources.levels);
-    // ASSERT(dst.num_samples == src.num_samples);
 
     const bool is_dst_3d = dst.type == ImageType::e3D;
     if (is_dst_3d) {

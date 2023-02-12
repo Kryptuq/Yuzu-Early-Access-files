@@ -12,8 +12,8 @@ namespace Kernel::Svc {
 /// Gets system/memory information for the current process
 Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle handle,
                u64 info_sub_id) {
-    LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
-              info_sub_id, handle);
+    LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}",
+              info_id_type, info_sub_id, handle);
 
     u32 info_id = static_cast<u32>(info_id_type);
 

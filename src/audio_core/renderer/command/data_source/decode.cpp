@@ -8,7 +8,6 @@
 #include "audio_core/renderer/command/resample/resample.h"
 #include "common/fixed_point.h"
 #include "common/logging/log.h"
-#include "common/scratch_buffer.h"
 #include "core/memory.h"
 
 namespace AudioCore::AudioRenderer {
@@ -30,7 +29,6 @@ static u32 DecodePcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
                      const DecodeArg& req) {
     constexpr s32 min{std::numeric_limits<s16>::min()};
     constexpr s32 max{std::numeric_limits<s16>::max()};
-    static Common::ScratchBuffer<T> samples;
 
     if (req.buffer == 0 || req.buffer_size == 0) {
         return 0;
@@ -51,7 +49,7 @@ static u32 DecodePcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
         const u64 size{channel_count * samples_to_decode};
         const u64 size_bytes{size * sizeof(T)};
 
-        samples.resize_destructive(size);
+        std::vector<T> samples(size);
         memory.ReadBlockUnsafe(source, samples.data(), size_bytes);
 
         if constexpr (std::is_floating_point_v<T>) {
@@ -75,7 +73,7 @@ static u32 DecodePcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
         }
 
         const VAddr source{req.buffer + ((req.start_offset + req.offset) * sizeof(T))};
-        samples.resize_destructive(samples_to_decode);
+        std::vector<T> samples(samples_to_decode);
         memory.ReadBlockUnsafe(source, samples.data(), samples_to_decode * sizeof(T));
 
         if constexpr (std::is_floating_point_v<T>) {
@@ -105,7 +103,6 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
                        const DecodeArg& req) {
     constexpr u32 SamplesPerFrame{14};
     constexpr u32 NibblesPerFrame{16};
-    static Common::ScratchBuffer<u8> wavebuffer;
 
     if (req.buffer == 0 || req.buffer_size == 0) {
         return 0;
@@ -141,7 +138,7 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
     }
 
     const auto size{std::max((samples_to_process / 8U) * SamplesPerFrame, 8U)};
-    wavebuffer.resize_destructive(size);
+    std::vector<u8> wavebuffer(size);
     memory.ReadBlockUnsafe(req.buffer + position_in_frame / 2, wavebuffer.data(),
                            wavebuffer.size());
 
@@ -230,8 +227,6 @@ static u32 DecodeAdpcm(Core::Memory::Memory& memory, std::span<s16> out_buffer,
  * @param args   - The wavebuffer data, and information for how to decode it.
  */
 void DecodeFromWaveBuffers(Core::Memory::Memory& memory, const DecodeFromWaveBuffersArgs& args) {
-    Common::ScratchBuffer<s16> temp_buffer(TempBufferSize);
-
     auto& voice_state{*args.voice_state};
     auto remaining_sample_count{args.sample_count};
     auto fraction{voice_state.fraction};
@@ -261,8 +256,9 @@ void DecodeFromWaveBuffers(Core::Memory::Memory& memory, const DecodeFromWaveBuf
 
     bool is_buffer_starved{false};
     u32 offset{voice_state.offset};
-    std::memset(temp_buffer.data(), 0, temp_buffer.size() * sizeof(s16));
+
     auto output_buffer{args.output};
+    std::vector<s16> temp_buffer(TempBufferSize, 0);
 
     while (remaining_sample_count > 0) {
         const auto samples_to_write{std::min(remaining_sample_count, max_remaining_sample_count)};

@@ -62,7 +62,7 @@ public:
      *
      * @param buffers - The buffers to play.
      */
-    void AppendBuffers(std::span<const AudioBuffer> buffers, u32 out_size) const;
+    void AppendBuffers(std::span<const AudioBuffer> buffers) const;
 
     /**
      * (Audio In only) Pop samples from the backend, and write them back to this buffer's address.

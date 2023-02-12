@@ -46,7 +46,7 @@ void CommandGenerator::GenerateDataSourceCommand(VoiceInfo& voice_info,
             while (destination != nullptr) {
                 if (destination->IsConfigured()) {
                     auto mix_id{destination->GetMixId()};
-                    if (mix_id < mix_context.GetCount() && mix_id != -1) {
+                    if (mix_id < mix_context.GetCount() && mix_id != UnusedSplitterId) {
                         auto mix_info{mix_context.GetInfo(mix_id)};
                         command_buffer.GenerateDepopPrepareCommand(
                             voice_info.node_id, voice_state, render_context.depop_buffer,

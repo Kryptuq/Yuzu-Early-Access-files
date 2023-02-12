@@ -14,7 +14,6 @@
 #include "common/common_types.h"
 #include "common/reader_writer_queue.h"
 #include "common/ring_buffer.h"
-#include "common/scratch_buffer.h"
 
 namespace Core {
 class System;
@@ -170,7 +169,7 @@ public:
      * @param buffer  - Audio buffer information to be queued.
      * @param samples - The s16 samples to be queue for playback.
      */
-    virtual void AppendBuffer(SinkBuffer& buffer, Common::ScratchBuffer<s16>& samples);
+    virtual void AppendBuffer(SinkBuffer& buffer, std::vector<s16>& samples);
 
     /**
      * Release a buffer. Audio In only, will fill a buffer with recorded samples.

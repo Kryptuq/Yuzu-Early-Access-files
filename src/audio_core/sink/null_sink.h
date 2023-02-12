@@ -9,7 +9,6 @@
 
 #include "audio_core/sink/sink.h"
 #include "audio_core/sink/sink_stream.h"
-#include "common/scratch_buffer.h"
 
 namespace Core {
 class System;
@@ -21,7 +20,7 @@ public:
     explicit NullSinkStreamImpl(Core::System& system_, StreamType type_)
         : SinkStream{system_, type_} {}
     ~NullSinkStreamImpl() override {}
-    void AppendBuffer(SinkBuffer&, Common::ScratchBuffer<s16>&) override {}
+    void AppendBuffer(SinkBuffer&, std::vector<s16>&) override {}
     std::vector<s16> ReleaseBuffer(u64) override {
         return {};
     }

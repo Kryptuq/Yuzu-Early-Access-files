@@ -3,7 +3,6 @@
 
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/light_limiter.h"
-#include "common/scratch_buffer.h"
 
 namespace AudioCore::AudioRenderer {
 /**
@@ -48,8 +47,8 @@ static void InitializeLightLimiterEffect(const LightLimiterInfo::ParameterVersio
  */
 static void ApplyLightLimiterEffect(const LightLimiterInfo::ParameterVersion2& params,
                                     LightLimiterInfo::State& state, const bool enabled,
-                                    std::span<std::span<const s32>> inputs,
-                                    std::span<std::span<s32>> outputs, const u32 sample_count,
+                                    std::vector<std::span<const s32>>& inputs,
+                                    std::vector<std::span<s32>>& outputs, const u32 sample_count,
                                     LightLimiterInfo::StatisticsInternal* statistics) {
     constexpr s64 min{std::numeric_limits<s32>::min()};
     constexpr s64 max{std::numeric_limits<s32>::max()};
@@ -148,10 +147,8 @@ void LightLimiterVersion1Command::Dump([[maybe_unused]] const ADSP::CommandListP
 }
 
 void LightLimiterVersion1Command::Process(const ADSP::CommandListProcessor& processor) {
-    static Common::ScratchBuffer<std::span<const s32>> input_buffers{};
-    static Common::ScratchBuffer<std::span<s32>> output_buffers{};
-    input_buffers.resize_destructive(parameter.channel_count);
-    output_buffers.resize_destructive(parameter.channel_count);
+    std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
+    std::vector<std::span<s32>> output_buffers(parameter.channel_count);
 
     for (u32 i = 0; i < parameter.channel_count; i++) {
         input_buffers[i] = processor.mix_buffers.subspan(inputs[i] * processor.sample_count,
@@ -193,10 +190,8 @@ void LightLimiterVersion2Command::Dump([[maybe_unused]] const ADSP::CommandListP
 }
 
 void LightLimiterVersion2Command::Process(const ADSP::CommandListProcessor& processor) {
-    static Common::ScratchBuffer<std::span<const s32>> input_buffers{};
-    static Common::ScratchBuffer<std::span<s32>> output_buffers{};
-    input_buffers.resize_destructive(parameter.channel_count);
-    output_buffers.resize_destructive(parameter.channel_count);
+    std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
+    std::vector<std::span<s32>> output_buffers(parameter.channel_count);
 
     for (u32 i = 0; i < parameter.channel_count; i++) {
         input_buffers[i] = processor.mix_buffers.subspan(inputs[i] * processor.sample_count,

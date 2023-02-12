@@ -17,7 +17,7 @@
 
 namespace AudioCore::Sink {
 
-void SinkStream::AppendBuffer(SinkBuffer& buffer, Common::ScratchBuffer<s16>& samples) {
+void SinkStream::AppendBuffer(SinkBuffer& buffer, std::vector<s16>& samples) {
     if (type == StreamType::In) {
         queue.enqueue(buffer);
         queued_buffers++;
@@ -71,9 +71,7 @@ void SinkStream::AppendBuffer(SinkBuffer& buffer, Common::ScratchBuffer<s16>& sa
         // We need moar samples! Not all games will provide 6 channel audio.
         // TODO: Implement some upmixing here. Currently just passthrough, with other
         // channels left as silence.
-        static Common::ScratchBuffer<s16> new_samples{};
-        new_samples.resize_destructive(samples.size() / system_channels * device_channels);
-        std::memset(new_samples.data(), 0, new_samples.size() * sizeof(s16));
+        std::vector<s16> new_samples(samples.size() / system_channels * device_channels, 0);
 
         for (u32 read_index = 0, write_index = 0; read_index < samples.size();
              read_index += system_channels, write_index += device_channels) {
@@ -102,7 +100,7 @@ void SinkStream::AppendBuffer(SinkBuffer& buffer, Common::ScratchBuffer<s16>& sa
         }
     }
 
-    samples_buffer.Push(samples.data(), samples.size());
+    samples_buffer.Push(samples);
     queue.enqueue(buffer);
     queued_buffers++;
 }

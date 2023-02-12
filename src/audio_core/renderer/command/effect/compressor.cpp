@@ -8,7 +8,6 @@
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/effect/compressor.h"
 #include "audio_core/renderer/effect/compressor.h"
-#include "common/scratch_buffer.h"
 
 namespace AudioCore::AudioRenderer {
 
@@ -45,8 +44,8 @@ static void InitializeCompressorEffect(const CompressorInfo::ParameterVersion2& 
 
 static void ApplyCompressorEffect(const CompressorInfo::ParameterVersion2& params,
                                   CompressorInfo::State& state, bool enabled,
-                                  std::span<std::span<const s32>> input_buffers,
-                                  std::span<std::span<s32>> output_buffers, u32 sample_count) {
+                                  std::vector<std::span<const s32>> input_buffers,
+                                  std::vector<std::span<s32>> output_buffers, u32 sample_count) {
     if (enabled) {
         auto state_00{state.unk_00};
         auto state_04{state.unk_04};
@@ -125,10 +124,8 @@ void CompressorCommand::Dump([[maybe_unused]] const ADSP::CommandListProcessor& 
 }
 
 void CompressorCommand::Process(const ADSP::CommandListProcessor& processor) {
-    static Common::ScratchBuffer<std::span<const s32>> input_buffers{};
-    static Common::ScratchBuffer<std::span<s32>> output_buffers{};
-    input_buffers.resize_destructive(parameter.channel_count);
-    output_buffers.resize_destructive(parameter.channel_count);
+    std::vector<std::span<const s32>> input_buffers(parameter.channel_count);
+    std::vector<std::span<s32>> output_buffers(parameter.channel_count);
 
     for (s16 i = 0; i < parameter.channel_count; i++) {
         input_buffers[i] = processor.mix_buffers.subspan(inputs[i] * processor.sample_count,

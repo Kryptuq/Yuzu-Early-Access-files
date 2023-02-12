@@ -5,7 +5,6 @@
 
 #include "audio_core/renderer/adsp/command_list_processor.h"
 #include "audio_core/renderer/command/sink/circular_buffer.h"
-#include "common/scratch_buffer.h"
 #include "core/memory.h"
 
 namespace AudioCore::AudioRenderer {
@@ -25,9 +24,7 @@ void CircularBufferSinkCommand::Process(const ADSP::CommandListProcessor& proces
     constexpr s32 min{std::numeric_limits<s16>::min()};
     constexpr s32 max{std::numeric_limits<s16>::max()};
 
-    static Common::ScratchBuffer<s16> output{};
-    output.resize_destructive(processor.sample_count);
-
+    std::vector<s16> output(processor.sample_count);
     for (u32 channel = 0; channel < input_count; channel++) {
         auto input{processor.mix_buffers.subspan(inputs[channel] * processor.sample_count,
                                                  processor.sample_count)};

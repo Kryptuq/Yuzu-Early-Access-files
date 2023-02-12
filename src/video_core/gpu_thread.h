@@ -10,8 +10,8 @@
 #include <thread>
 #include <variant>
 
+#include "common/bounded_threadsafe_queue.h"
 #include "common/polyfill_thread.h"
-#include "common/threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 
 namespace Tegra {
@@ -97,7 +97,7 @@ struct CommandDataContainer {
 
 /// Struct used to synchronize the GPU thread
 struct SynchState final {
-    using CommandQueue = Common::MPSCQueue<CommandDataContainer, true>;
+    using CommandQueue = Common::MPSCQueue<CommandDataContainer>;
     std::mutex write_lock;
     CommandQueue queue;
     u64 last_fence{};

@@ -24,24 +24,6 @@ public:
 
     ~ScratchBuffer() = default;
 
-    ScratchBuffer(ScratchBuffer&& rhs) {
-        last_requested_size = rhs.last_requested_size;
-        buffer_capacity = rhs.buffer_capacity;
-        buffer = std::move(rhs.buffer);
-
-        rhs.last_requested_size = 0;
-        rhs.buffer_capacity = 0;
-    }
-
-    void operator=(ScratchBuffer&& rhs) {
-        last_requested_size = rhs.last_requested_size;
-        buffer_capacity = rhs.buffer_capacity;
-        buffer = std::move(rhs.buffer);
-
-        rhs.last_requested_size = 0;
-        rhs.buffer_capacity = 0;
-    }
-
     /// This will only grow the buffer's capacity if size is greater than the current capacity.
     /// The previously held data will remain intact.
     void resize(size_t size) {

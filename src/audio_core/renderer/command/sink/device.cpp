@@ -33,8 +33,7 @@ void DeviceSinkCommand::Process(const ADSP::CommandListProcessor& processor) {
         .consumed{false},
     };
 
-    static Common::ScratchBuffer<s16> samples{};
-    samples.resize_destructive(out_buffer.frames * input_count);
+    std::vector<s16> samples(out_buffer.frames * input_count);
 
     for (u32 channel = 0; channel < input_count; channel++) {
         const auto offset{inputs[channel] * out_buffer.frames};

@@ -6,7 +6,6 @@
 #include "audio_core/device/audio_buffer.h"
 #include "audio_core/device/device_session.h"
 #include "audio_core/sink/sink_stream.h"
-#include "common/scratch_buffer.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/memory.h"
@@ -80,22 +79,21 @@ void DeviceSession::ClearBuffers() {
     }
 }
 
-void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers, u32 out_size) const {
-    static Common::ScratchBuffer<s16> samples{};
-
-    for (u32 i = 0; i < out_size; i++) {
+void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers) const {
+    for (const auto& buffer : buffers) {
         Sink::SinkBuffer new_buffer{
-            .frames = buffers[i].size / (channel_count * sizeof(s16)),
+            .frames = buffer.size / (channel_count * sizeof(s16)),
             .frames_played = 0,
-            .tag = buffers[i].tag,
+            .tag = buffer.tag,
             .consumed = false,
         };
 
         if (type == Sink::StreamType::In) {
+            std::vector<s16> samples{};
             stream->AppendBuffer(new_buffer, samples);
         } else {
-            samples.resize_destructive(buffers[i].size / sizeof(s16));
-            system.Memory().ReadBlockUnsafe(buffers[i].samples, samples.data(), buffers[i].size);
+            std::vector<s16> samples(buffer.size / sizeof(s16));
+            system.Memory().ReadBlockUnsafe(buffer.samples, samples.data(), buffer.size);
             stream->AppendBuffer(new_buffer, samples);
         }
     }

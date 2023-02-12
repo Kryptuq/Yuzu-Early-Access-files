@@ -189,9 +189,7 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
     for (std::size_t y = 0; y < frame_height; ++y) {
         const std::size_t src = y * stride;
         const std::size_t dst = y * aligned_width;
-        for (std::size_t x = 0; x < frame_width; ++x) {
-            luma_buffer[dst + x] = luma_src[src + x];
-        }
+        std::memcpy(luma_buffer.data() + dst, luma_src + src, frame_width);
     }
     host1x.MemoryManager().WriteBlock(output_surface_luma_address, luma_buffer.data(),
                                       luma_buffer.size());
@@ -205,15 +203,15 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
         // Frame from FFmpeg software
         // Populate chroma buffer from both channels with interleaving.
         const std::size_t half_width = frame_width / 2;
+        u8* chroma_buffer_data = chroma_buffer.data();
         const u8* chroma_b_src = frame->data[1];
         const u8* chroma_r_src = frame->data[2];
         for (std::size_t y = 0; y < half_height; ++y) {
             const std::size_t src = y * half_stride;
             const std::size_t dst = y * aligned_width;
-
             for (std::size_t x = 0; x < half_width; ++x) {
-                chroma_buffer[dst + x * 2] = chroma_b_src[src + x];
-                chroma_buffer[dst + x * 2 + 1] = chroma_r_src[src + x];
+                chroma_buffer_data[dst + x * 2] = chroma_b_src[src + x];
+                chroma_buffer_data[dst + x * 2 + 1] = chroma_r_src[src + x];
             }
         }
         break;
@@ -225,9 +223,7 @@ void Vic::WriteYUVFrame(const AVFrame* frame, const VicConfig& config) {
         for (std::size_t y = 0; y < half_height; ++y) {
             const std::size_t src = y * stride;
             const std::size_t dst = y * aligned_width;
-            for (std::size_t x = 0; x < frame_width; ++x) {
-                chroma_buffer[dst + x] = chroma_src[src + x];
-            }
+            std::memcpy(chroma_buffer.data() + dst, chroma_src + src, frame_width);
         }
         break;
     }
