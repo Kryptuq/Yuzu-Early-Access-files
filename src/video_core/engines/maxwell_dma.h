@@ -24,6 +24,54 @@ namespace VideoCore {
 class RasterizerInterface;
 }
 
+namespace Tegra {
+namespace DMA {
+
+union Origin {
+    BitField<0, 16, u32> x;
+    BitField<16, 16, u32> y;
+};
+static_assert(sizeof(Origin) == 4);
+
+struct ImageCopy {
+    u32 length_x{};
+    u32 length_y{};
+};
+
+union BlockSize {
+    BitField<0, 4, u32> width;
+    BitField<4, 4, u32> height;
+    BitField<8, 4, u32> depth;
+    BitField<12, 4, u32> gob_height;
+};
+static_assert(sizeof(BlockSize) == 4);
+
+struct Parameters {
+    BlockSize block_size;
+    u32 width;
+    u32 height;
+    u32 depth;
+    u32 layer;
+    Origin origin;
+};
+static_assert(sizeof(Parameters) == 24);
+
+struct ImageOperand {
+    u32 bytes_per_pixel;
+    Parameters params;
+    GPUVAddr address;
+};
+
+struct BufferOperand {
+    u32 pitch;
+    u32 width;
+    u32 height;
+    GPUVAddr address;
+};
+
+} // namespace DMA
+} // namespace Tegra
+
 namespace Tegra::Engines {
 
 class AccelerateDMAInterface {
@@ -32,6 +80,12 @@ public:
     virtual bool BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) = 0;
 
     virtual bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) = 0;
+
+    virtual bool ImageToBuffer(const DMA::ImageCopy& copy_info, const DMA::ImageOperand& src,
+                               const DMA::BufferOperand& dst) = 0;
+
+    virtual bool BufferToImage(const DMA::ImageCopy& copy_info, const DMA::BufferOperand& src,
+                               const DMA::ImageOperand& dst) = 0;
 };
 
 /**
@@ -50,30 +104,6 @@ public:
             return (static_cast<GPUVAddr>(upper & 0xff) << 32) | lower;
         }
     };
-
-    union BlockSize {
-        BitField<0, 4, u32> width;
-        BitField<4, 4, u32> height;
-        BitField<8, 4, u32> depth;
-        BitField<12, 4, u32> gob_height;
-    };
-    static_assert(sizeof(BlockSize) == 4);
-
-    union Origin {
-        BitField<0, 16, u32> x;
-        BitField<16, 16, u32> y;
-    };
-    static_assert(sizeof(Origin) == 4);
-
-    struct Parameters {
-        BlockSize block_size;
-        u32 width;
-        u32 height;
-        u32 depth;
-        u32 layer;
-        Origin origin;
-    };
-    static_assert(sizeof(Parameters) == 24);
 
     struct Semaphore {
         PackedGPUVAddr address;
@@ -227,8 +257,6 @@ private:
 
     void CopyBlockLinearToBlockLinear();
 
-    void FastCopyBlockLinearToPitch();
-
     void ReleaseSemaphore();
 
     void ConsumeSinkImpl() override;
@@ -261,17 +289,17 @@ private:
                 u32 reserved05[0x3f];
                 PackedGPUVAddr offset_in;
                 PackedGPUVAddr offset_out;
-                u32 pitch_in;
-                u32 pitch_out;
+                s32 pitch_in;
+                s32 pitch_out;
                 u32 line_length_in;
                 u32 line_count;
                 u32 reserved06[0xb6];
                 u32 remap_consta_value;
                 u32 remap_constb_value;
                 RemapConst remap_const;
-                Parameters dst_params;
+                DMA::Parameters dst_params;
                 u32 reserved07[0x1];
-                Parameters src_params;
+                DMA::Parameters src_params;
                 u32 reserved08[0x275];
                 u32 pm_trigger_end;
                 u32 reserved09[0x3ba];

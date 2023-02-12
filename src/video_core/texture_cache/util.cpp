@@ -743,6 +743,44 @@ std::vector<ImageCopy> MakeShrinkImageCopies(const ImageInfo& dst, const ImageIn
     return copies;
 }
 
+std::vector<ImageCopy> MakeReinterpretImageCopies(const ImageInfo& src, u32 up_scale,
+                                                  u32 down_shift) {
+    std::vector<ImageCopy> copies;
+    copies.reserve(src.resources.levels);
+    const bool is_3d = src.type == ImageType::e3D;
+    for (s32 level = 0; level < src.resources.levels; ++level) {
+        ImageCopy& copy = copies.emplace_back();
+        copy.src_subresource = SubresourceLayers{
+            .base_level = level,
+            .base_layer = 0,
+            .num_layers = src.resources.layers,
+        };
+        copy.dst_subresource = SubresourceLayers{
+            .base_level = level,
+            .base_layer = 0,
+            .num_layers = src.resources.layers,
+        };
+        copy.src_offset = Offset3D{
+            .x = 0,
+            .y = 0,
+            .z = 0,
+        };
+        copy.dst_offset = Offset3D{
+            .x = 0,
+            .y = 0,
+            .z = 0,
+        };
+        const Extent3D mip_size = AdjustMipSize(src.size, level);
+        copy.extent = AdjustSamplesSize(mip_size, src.num_samples);
+        if (is_3d) {
+            copy.extent.depth = src.size.depth;
+        }
+        copy.extent.width = std::max<u32>((copy.extent.width * up_scale) >> down_shift, 1);
+        copy.extent.height = std::max<u32>((copy.extent.height * up_scale) >> down_shift, 1);
+    }
+    return copies;
+}
+
 bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config) {
     const GPUVAddr address = config.Address();
     if (address == 0) {
@@ -999,6 +1037,20 @@ bool IsBlockLinearSizeCompatible(const ImageInfo& lhs, const ImageInfo& rhs, u32
     }
 }
 
+bool IsBlockLinearSizeCompatibleBPPRelaxed(const ImageInfo& lhs, const ImageInfo& rhs,
+                                           u32 lhs_level, u32 rhs_level) noexcept {
+    ASSERT(lhs.type != ImageType::Linear);
+    ASSERT(rhs.type != ImageType::Linear);
+    const auto lhs_bpp = BytesPerBlock(lhs.format);
+    const auto rhs_bpp = BytesPerBlock(rhs.format);
+    const Extent3D lhs_size = AdjustMipSize(lhs.size, lhs_level);
+    const Extent3D rhs_size = AdjustMipSize(rhs.size, rhs_level);
+    return Common::AlignUpLog2(lhs_size.width * lhs_bpp, GOB_SIZE_X_SHIFT) ==
+               Common::AlignUpLog2(rhs_size.width * rhs_bpp, GOB_SIZE_X_SHIFT) &&
+           Common::AlignUpLog2(lhs_size.height, GOB_SIZE_Y_SHIFT) ==
+               Common::AlignUpLog2(rhs_size.height, GOB_SIZE_Y_SHIFT);
+}
+
 bool IsPitchLinearSameSize(const ImageInfo& lhs, const ImageInfo& rhs, bool strict_size) noexcept {
     ASSERT(lhs.type == ImageType::Linear);
     ASSERT(rhs.type == ImageType::Linear);
@@ -1074,7 +1126,9 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
         // This avoids creating a view for blits on UE4 titles where formats with different bytes
         // per block are aliased.
         if (BytesPerBlock(existing.format) != BytesPerBlock(candidate.format)) {
-            return std::nullopt;
+            if (False(options & RelaxedOptions::FormatBpp)) {
+                return std::nullopt;
+            }
         }
     } else {
         // Format comaptibility is not relaxed, ensure we are creating a view on a compatible format
@@ -1108,7 +1162,11 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
     }
     const bool strict_size = False(options & RelaxedOptions::Size);
     if (!IsBlockLinearSizeCompatible(existing, candidate, base->level, 0, strict_size)) {
-        return std::nullopt;
+        if (False(options & RelaxedOptions::FormatBpp)) {
+            return std::nullopt;
+        } else if (!IsBlockLinearSizeCompatibleBPPRelaxed(existing, candidate, base->level, 0)) {
+            return std::nullopt;
+        }
     }
     // TODO: compare block sizes
     return base;
@@ -1118,6 +1176,31 @@ bool IsSubresource(const ImageInfo& candidate, const ImageBase& image, GPUVAddr 
                    RelaxedOptions options, bool broken_views, bool native_bgr) {
     return FindSubresource(candidate, image, candidate_addr, options, broken_views, native_bgr)
         .has_value();
+}
+
+bool IsSubCopy(const ImageInfo& candidate, const ImageBase& image, GPUVAddr candidate_addr) {
+    const std::optional<SubresourceBase> base = image.TryFindBase(candidate_addr);
+    if (!base) {
+        return false;
+    }
+    const ImageInfo& existing = image.info;
+    if (existing.resources.levels < candidate.resources.levels + base->level) {
+        return false;
+    }
+    if (existing.type == ImageType::e3D) {
+        const u32 mip_depth = std::max(1U, existing.size.depth << base->level);
+        if (mip_depth < candidate.size.depth + base->layer) {
+            return false;
+        }
+    } else {
+        if (existing.resources.layers < candidate.resources.layers + base->layer) {
+            return false;
+        }
+    }
+    if (!IsBlockLinearSizeCompatibleBPPRelaxed(existing, candidate, base->level, 0)) {
+        return false;
+    }
+    return true;
 }
 
 void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase* dst,

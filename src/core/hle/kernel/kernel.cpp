@@ -367,23 +367,21 @@ struct KernelCore::Impl {
         current_process = process;
     }
 
-    static inline thread_local u32 host_thread_id = UINT32_MAX;
+    static inline thread_local u8 host_thread_id = UINT8_MAX;
 
-    /// Gets the host thread ID for the caller, allocating a new one if this is the first time
-    u32 GetHostThreadId(std::size_t core_id) {
-        if (host_thread_id == UINT32_MAX) {
-            // The first four slots are reserved for CPU core threads
-            ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
-            host_thread_id = static_cast<u32>(core_id);
-        }
+    /// Sets the host thread ID for the caller.
+    u32 SetHostThreadId(std::size_t core_id) {
+        // This should only be called during core init.
+        ASSERT(host_thread_id == UINT8_MAX);
+
+        // The first four slots are reserved for CPU core threads
+        ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
+        host_thread_id = static_cast<u8>(core_id);
         return host_thread_id;
     }
 
-    /// Gets the host thread ID for the caller, allocating a new one if this is the first time
-    u32 GetHostThreadId() {
-        if (host_thread_id == UINT32_MAX) {
-            host_thread_id = next_host_thread_id++;
-        }
+    /// Gets the host thread ID for the caller
+    u32 GetHostThreadId() const {
         return host_thread_id;
     }
 
@@ -391,23 +389,19 @@ struct KernelCore::Impl {
     KThread* GetHostDummyThread(KThread* existing_thread) {
         auto initialize = [this](KThread* thread) {
             ASSERT(KThread::InitializeDummyThread(thread, nullptr).IsSuccess());
-            thread->SetName(fmt::format("DummyThread:{}", GetHostThreadId()));
+            thread->SetName(fmt::format("DummyThread:{}", next_host_thread_id++));
             return thread;
         };
 
         thread_local KThread raw_thread{system.Kernel()};
-        thread_local KThread* thread = nullptr;
-        if (thread == nullptr) {
-            thread = (existing_thread == nullptr) ? initialize(&raw_thread) : existing_thread;
-        }
-
+        thread_local KThread* thread = existing_thread ? existing_thread : initialize(&raw_thread);
         return thread;
     }
 
     /// Registers a CPU core thread by allocating a host thread ID for it
     void RegisterCoreThread(std::size_t core_id) {
         ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
-        const auto this_id = GetHostThreadId(core_id);
+        const auto this_id = SetHostThreadId(core_id);
         if (!is_multicore) {
             single_core_thread_id = this_id;
         }
@@ -415,7 +409,6 @@ struct KernelCore::Impl {
 
     /// Registers a new host thread by allocating a host thread ID for it
     void RegisterHostThread(KThread* existing_thread) {
-        [[maybe_unused]] const auto this_id = GetHostThreadId();
         [[maybe_unused]] const auto dummy_thread = GetHostDummyThread(existing_thread);
     }
 
@@ -445,11 +438,9 @@ struct KernelCore::Impl {
     static inline thread_local KThread* current_thread{nullptr};
 
     KThread* GetCurrentEmuThread() {
-        const auto thread_id = GetCurrentHostThreadID();
-        if (thread_id >= Core::Hardware::NUM_CPU_CORES) {
-            return GetHostDummyThread(nullptr);
+        if (!current_thread) {
+            current_thread = GetHostDummyThread(nullptr);
         }
-
         return current_thread;
     }
 
@@ -1002,7 +993,7 @@ const Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() const {
 }
 
 Kernel::KScheduler* KernelCore::CurrentScheduler() {
-    u32 core_id = impl->GetCurrentHostThreadID();
+    const u32 core_id = impl->GetCurrentHostThreadID();
     if (core_id >= Core::Hardware::NUM_CPU_CORES) {
         // This is expected when called from not a guest thread
         return {};

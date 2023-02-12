@@ -14,7 +14,13 @@
 #include "video_core/textures/decoders.h"
 
 MICROPROFILE_DECLARE(GPU_DMAEngine);
+MICROPROFILE_DECLARE(GPU_DMAEngineBL);
+MICROPROFILE_DECLARE(GPU_DMAEngineLB);
+MICROPROFILE_DECLARE(GPU_DMAEngineBB);
 MICROPROFILE_DEFINE(GPU_DMAEngine, "GPU", "DMA Engine", MP_RGB(224, 224, 128));
+MICROPROFILE_DEFINE(GPU_DMAEngineBL, "GPU", "DMA Engine Block - Linear", MP_RGB(224, 224, 128));
+MICROPROFILE_DEFINE(GPU_DMAEngineLB, "GPU", "DMA Engine Linear - Block", MP_RGB(224, 224, 128));
+MICROPROFILE_DEFINE(GPU_DMAEngineBB, "GPU", "DMA Engine Block - Block", MP_RGB(224, 224, 128));
 
 namespace Tegra::Engines {
 
@@ -72,6 +78,7 @@ void MaxwellDMA::Launch() {
         memory_manager.FlushCaching();
         if (!is_src_pitch && !is_dst_pitch) {
             // If both the source and the destination are in block layout, assert.
+            MICROPROFILE_SCOPE(GPU_DMAEngineBB);
             CopyBlockLinearToBlockLinear();
             ReleaseSemaphore();
             return;
@@ -87,8 +94,10 @@ void MaxwellDMA::Launch() {
             }
         } else {
             if (!is_src_pitch && is_dst_pitch) {
+                MICROPROFILE_SCOPE(GPU_DMAEngineBL);
                 CopyBlockLinearToPitch();
             } else {
+                MICROPROFILE_SCOPE(GPU_DMAEngineLB);
                 CopyPitchToBlockLinear();
             }
         }
@@ -153,21 +162,35 @@ void MaxwellDMA::Launch() {
 }
 
 void MaxwellDMA::CopyBlockLinearToPitch() {
-    UNIMPLEMENTED_IF(regs.src_params.block_size.width != 0);
-    UNIMPLEMENTED_IF(regs.src_params.layer != 0);
+    UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
 
-    const bool is_remapping = regs.launch_dma.remap_enable != 0;
+    u32 bytes_per_pixel = 1;
+    DMA::ImageOperand src_operand;
+    src_operand.bytes_per_pixel = bytes_per_pixel;
+    src_operand.params = regs.src_params;
+    src_operand.address = regs.offset_in;
 
-    // Optimized path for micro copies.
-    const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
-    if (!is_remapping && dst_size < GOB_SIZE && regs.pitch_out <= GOB_SIZE_X &&
-        regs.src_params.height > GOB_SIZE_Y) {
-        FastCopyBlockLinearToPitch();
+    DMA::BufferOperand dst_operand;
+    dst_operand.pitch = regs.pitch_out;
+    dst_operand.width = regs.line_length_in;
+    dst_operand.height = regs.line_count;
+    dst_operand.address = regs.offset_out;
+    DMA::ImageCopy copy_info{};
+    copy_info.length_x = regs.line_length_in;
+    copy_info.length_y = regs.line_count;
+    auto& accelerate = rasterizer->AccessAccelerateDMA();
+    if (accelerate.ImageToBuffer(copy_info, src_operand, dst_operand)) {
         return;
     }
 
+    UNIMPLEMENTED_IF(regs.src_params.block_size.width != 0);
+    UNIMPLEMENTED_IF(regs.src_params.block_size.depth != 0);
+    UNIMPLEMENTED_IF(regs.src_params.block_size.depth == 0 && regs.src_params.depth != 1);
+
     // Deswizzle the input and copy it over.
-    const Parameters& src_params = regs.src_params;
+    const DMA::Parameters& src_params = regs.src_params;
+
+    const bool is_remapping = regs.launch_dma.remap_enable != 0;
 
     const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
     const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;
@@ -187,7 +210,7 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
         x_offset >>= bpp_shift;
     }
 
-    const u32 bytes_per_pixel = base_bpp << bpp_shift;
+    bytes_per_pixel = base_bpp << bpp_shift;
     const u32 height = src_params.height;
     const u32 depth = src_params.depth;
     const u32 block_height = src_params.block_size.height;
@@ -195,11 +218,12 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
     const size_t src_size =
         CalculateSize(true, bytes_per_pixel, width, height, depth, block_height, block_depth);
 
+    const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
     read_buffer.resize_destructive(src_size);
     write_buffer.resize_destructive(dst_size);
 
-    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
-    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+    memory_manager.ReadBlock(src_operand.address, read_buffer.data(), src_size);
+    memory_manager.ReadBlockUnsafe(dst_operand.address, write_buffer.data(), dst_size);
 
     UnswizzleSubrect(write_buffer, read_buffer, bytes_per_pixel, width, height, depth, x_offset,
                      src_params.origin.y, x_elements, regs.line_count, block_height, block_depth,
@@ -215,6 +239,24 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
     const bool is_remapping = regs.launch_dma.remap_enable != 0;
     const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
     const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;
+
+    u32 bytes_per_pixel = 1;
+    DMA::ImageOperand dst_operand;
+    dst_operand.bytes_per_pixel = bytes_per_pixel;
+    dst_operand.params = regs.dst_params;
+    dst_operand.address = regs.offset_out;
+    DMA::BufferOperand src_operand;
+    src_operand.pitch = regs.pitch_in;
+    src_operand.width = regs.line_length_in;
+    src_operand.height = regs.line_count;
+    src_operand.address = regs.offset_in;
+    DMA::ImageCopy copy_info{};
+    copy_info.length_x = regs.line_length_in;
+    copy_info.length_y = regs.line_count;
+    auto& accelerate = rasterizer->AccessAccelerateDMA();
+    if (accelerate.BufferToImage(copy_info, src_operand, dst_operand)) {
+        return;
+    }
 
     const auto& dst_params = regs.dst_params;
 
@@ -233,7 +275,7 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
         x_offset >>= bpp_shift;
     }
 
-    const u32 bytes_per_pixel = base_bpp << bpp_shift;
+    bytes_per_pixel = base_bpp << bpp_shift;
     const u32 height = dst_params.height;
     const u32 depth = dst_params.depth;
     const u32 block_height = dst_params.block_size.height;
@@ -260,45 +302,14 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
     memory_manager.WriteBlockCached(regs.offset_out, write_buffer.data(), dst_size);
 }
 
-void MaxwellDMA::FastCopyBlockLinearToPitch() {
-    const u32 bytes_per_pixel = 1U;
-    const size_t src_size = GOB_SIZE;
-    const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
-    u32 pos_x = regs.src_params.origin.x;
-    u32 pos_y = regs.src_params.origin.y;
-    const u64 offset = GetGOBOffset(regs.src_params.width, regs.src_params.height, pos_x, pos_y,
-                                    regs.src_params.block_size.height, bytes_per_pixel);
-    const u32 x_in_gob = 64 / bytes_per_pixel;
-    pos_x = pos_x % x_in_gob;
-    pos_y = pos_y % 8;
-
-    read_buffer.resize_destructive(src_size);
-    write_buffer.resize_destructive(dst_size);
-
-    if (Settings::IsGPULevelExtreme()) {
-        memory_manager.ReadBlock(regs.offset_in + offset, read_buffer.data(), src_size);
-        memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
-    } else {
-        memory_manager.ReadBlockUnsafe(regs.offset_in + offset, read_buffer.data(), src_size);
-        memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
-    }
-
-    UnswizzleSubrect(write_buffer, read_buffer, bytes_per_pixel, regs.src_params.width,
-                     regs.src_params.height, 1, pos_x, pos_y, regs.line_length_in, regs.line_count,
-                     regs.src_params.block_size.height, regs.src_params.block_size.depth,
-                     regs.pitch_out);
-
-    memory_manager.WriteBlockCached(regs.offset_out, write_buffer.data(), dst_size);
-}
-
 void MaxwellDMA::CopyBlockLinearToBlockLinear() {
     UNIMPLEMENTED_IF(regs.src_params.block_size.width != 0);
 
     const bool is_remapping = regs.launch_dma.remap_enable != 0;
 
     // Deswizzle the input and copy it over.
-    const Parameters& src = regs.src_params;
-    const Parameters& dst = regs.dst_params;
+    const DMA::Parameters& src = regs.src_params;
+    const DMA::Parameters& dst = regs.dst_params;
 
     const u32 num_remap_components = regs.remap_const.num_dst_components_minus_one + 1;
     const u32 remap_components_size = regs.remap_const.component_size_minus_one + 1;

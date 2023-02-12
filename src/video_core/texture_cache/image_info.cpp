@@ -222,4 +222,51 @@ ImageInfo::ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept {
     }
 }
 
+static PixelFormat ByteSizeToFormat(u32 bytes_per_pixel) {
+    switch (bytes_per_pixel) {
+    case 1:
+        return PixelFormat::R8_UINT;
+    case 2:
+        return PixelFormat::R8G8_UINT;
+    case 4:
+        return PixelFormat::A8B8G8R8_UINT;
+    case 8:
+        return PixelFormat::R16G16_UINT;
+    case 16:
+        return PixelFormat::R16G16B16A16_UINT;
+    case 24:
+        return PixelFormat::R32G32B32_FLOAT;
+    case 32:
+        return PixelFormat::R32G32B32A32_UINT;
+    default:
+        UNIMPLEMENTED();
+        return PixelFormat::Invalid;
+    }
+}
+
+ImageInfo::ImageInfo(const Tegra::DMA::ImageOperand& config) noexcept {
+    const u32 bytes_per_pixel = config.bytes_per_pixel;
+    format = ByteSizeToFormat(bytes_per_pixel);
+    type = config.params.block_size.depth > 0 ? ImageType::e3D : ImageType::e2D;
+    num_samples = 1;
+    block = Extent3D{
+        .width = config.params.block_size.width,
+        .height = config.params.block_size.height,
+        .depth = config.params.block_size.depth,
+    };
+    size = Extent3D{
+        .width = config.params.width,
+        .height = config.params.height,
+        .depth = config.params.depth,
+    };
+    tile_width_spacing = 0;
+    resources.levels = 1;
+    resources.layers = 1;
+    layer_stride = CalculateLayerStride(*this);
+    maybe_unaligned_layer_stride = CalculateLayerSize(*this);
+    rescaleable = block.depth == 0;
+    rescaleable &= size.height > 256;
+    downscaleable = size.height > 512;
+}
+
 } // namespace VideoCommon

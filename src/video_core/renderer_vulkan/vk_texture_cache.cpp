@@ -864,13 +864,19 @@ void TextureCacheRuntime::ReinterpretImage(Image& dst, Image& src,
     const VkImageAspectFlags src_aspect_mask = src.AspectMask();
     const VkImageAspectFlags dst_aspect_mask = dst.AspectMask();
 
-    std::ranges::transform(copies, vk_in_copies.begin(), [src_aspect_mask](const auto& copy) {
-        return MakeBufferImageCopy(copy, true, src_aspect_mask);
-    });
+    const auto bpp_in = BytesPerBlock(src.info.format) / DefaultBlockWidth(src.info.format);
+    const auto bpp_out = BytesPerBlock(dst.info.format) / DefaultBlockWidth(dst.info.format);
+    std::ranges::transform(copies, vk_in_copies.begin(),
+                           [src_aspect_mask, bpp_in, bpp_out](const auto& copy) {
+                               auto copy2 = copy;
+                               copy2.src_offset.x = (bpp_out * copy.src_offset.x) / bpp_in;
+                               copy2.extent.width = (bpp_out * copy.extent.width) / bpp_in;
+                               return MakeBufferImageCopy(copy2, true, src_aspect_mask);
+                           });
     std::ranges::transform(copies, vk_out_copies.begin(), [dst_aspect_mask](const auto& copy) {
         return MakeBufferImageCopy(copy, false, dst_aspect_mask);
     });
-    const u32 img_bpp = BytesPerBlock(src.info.format);
+    const u32 img_bpp = BytesPerBlock(dst.info.format);
     size_t total_size = 0;
     for (const auto& copy : copies) {
         total_size += copy.extent.width * copy.extent.height * copy.extent.depth * img_bpp;

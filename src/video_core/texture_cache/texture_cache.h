@@ -1289,6 +1289,75 @@ std::optional<typename TextureCache<P>::BlitImages> TextureCache<P>::GetBlitImag
 }
 
 template <class P>
+ImageId TextureCache<P>::FindDMAImage(const ImageInfo& info, GPUVAddr gpu_addr) {
+    std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
+    if (!cpu_addr) {
+        cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr, CalculateGuestSizeInBytes(info));
+        if (!cpu_addr) {
+            return ImageId{};
+        }
+    }
+    ImageId image_id{};
+    boost::container::small_vector<ImageId, 1> image_ids;
+    const auto lambda = [&](ImageId existing_image_id, ImageBase& existing_image) {
+        if (True(existing_image.flags & ImageFlagBits::Remapped)) {
+            return false;
+        }
+        if (info.type == ImageType::Linear || existing_image.info.type == ImageType::Linear)
+            [[unlikely]] {
+            const bool strict_size = True(existing_image.flags & ImageFlagBits::Strong);
+            const ImageInfo& existing = existing_image.info;
+            if (existing_image.gpu_addr == gpu_addr && existing.type == info.type &&
+                existing.pitch == info.pitch &&
+                IsPitchLinearSameSize(existing, info, strict_size) &&
+                IsViewCompatible(existing.format, info.format, false, true)) {
+                image_id = existing_image_id;
+                image_ids.push_back(existing_image_id);
+                return true;
+            }
+        } else if (IsSubCopy(info, existing_image, gpu_addr)) {
+            image_id = existing_image_id;
+            image_ids.push_back(existing_image_id);
+            return true;
+        }
+        return false;
+    };
+    ForEachImageInRegion(*cpu_addr, CalculateGuestSizeInBytes(info), lambda);
+    if (image_ids.size() <= 1) [[likely]] {
+        return image_id;
+    }
+    auto image_ids_compare = [this](ImageId a, ImageId b) {
+        auto& image_a = slot_images[a];
+        auto& image_b = slot_images[b];
+        return image_a.modification_tick < image_b.modification_tick;
+    };
+    return *std::ranges::max_element(image_ids, image_ids_compare);
+}
+
+template <class P>
+std::optional<std::pair<typename TextureCache<P>::Image*, std::pair<u32, u32>>>
+TextureCache<P>::ObtainImage(const Tegra::DMA::ImageOperand& operand, bool mark_as_modified) {
+    ImageInfo dst_info(operand);
+    ImageId dst_id = FindDMAImage(dst_info, operand.address);
+    if (!dst_id) {
+        return std::nullopt;
+    }
+    auto& image = slot_images[dst_id];
+    auto base = image.TryFindBase(operand.address);
+    if (!base) {
+        return std::nullopt;
+    }
+    if (False(image.flags & ImageFlagBits::GpuModified)) {
+        // No need to waste time on an image that's synced with guest
+        return std::nullopt;
+    }
+    PrepareImage(dst_id, mark_as_modified, false);
+    auto& new_image = slot_images[dst_id];
+    lru_cache.Touch(new_image.lru_index, frame_tick);
+    return std::make_pair(&new_image, std::make_pair(base->level, base->layer));
+}
+
+template <class P>
 SamplerId TextureCache<P>::FindSampler(const TSCEntry& config) {
     if (std::ranges::all_of(config.raw, [](u64 value) { return value == 0; })) {
         return NULL_SAMPLER_ID;

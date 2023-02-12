@@ -56,6 +56,16 @@ public:
 
     bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) override;
 
+    bool ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::ImageOperand& src,
+                       const Tegra::DMA::BufferOperand& dst) override {
+        return false;
+    }
+
+    bool BufferToImage(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::BufferOperand& src,
+                       const Tegra::DMA::ImageOperand& dst) override {
+        return false;
+    }
+
 private:
     BufferCache& buffer_cache;
 };

@@ -54,6 +54,7 @@ enum class RelaxedOptions : u32 {
     Format = 1 << 1,
     Samples = 1 << 2,
     ForceBrokenViews = 1 << 3,
+    FormatBpp = 1 << 4,
 };
 DECLARE_ENUM_FLAG_OPERATORS(RelaxedOptions)
 

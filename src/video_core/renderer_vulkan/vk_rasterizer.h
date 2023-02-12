@@ -45,14 +45,23 @@ class StateTracker;
 
 class AccelerateDMA : public Tegra::Engines::AccelerateDMAInterface {
 public:
-    explicit AccelerateDMA(BufferCache& buffer_cache);
+    explicit AccelerateDMA(BufferCache& buffer_cache, TextureCache& texture_cache,
+                           Scheduler& scheduler);
 
     bool BufferCopy(GPUVAddr start_address, GPUVAddr end_address, u64 amount) override;
 
     bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) override;
 
+    bool ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::ImageOperand& src,
+                       const Tegra::DMA::BufferOperand& dst) override;
+
+    bool BufferToImage(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::BufferOperand& src,
+                       const Tegra::DMA::ImageOperand& dst) override;
+
 private:
     BufferCache& buffer_cache;
+    TextureCache& texture_cache;
+    Scheduler& scheduler;
 };
 
 class RasterizerVulkan final : public VideoCore::RasterizerAccelerated,

@@ -199,6 +199,9 @@ public:
     /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
+    [[nodiscard]] std::optional<std::pair<Image*, std::pair<u32, u32>>> ObtainImage(
+        const Tegra::DMA::ImageOperand& operand, bool mark_as_modified);
+
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
 
@@ -289,6 +292,8 @@ private:
     /// Create a new image and join perfectly matching existing images
     /// Remove joined images from the cache
     [[nodiscard]] ImageId JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr);
+
+    [[nodiscard]] ImageId FindDMAImage(const ImageInfo& info, GPUVAddr gpu_addr);
 
     /// Return a blit image pair from the given guest blit parameters
     [[nodiscard]] std::optional<BlitImages> GetBlitImages(

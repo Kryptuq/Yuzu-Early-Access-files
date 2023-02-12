@@ -172,7 +172,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache(*this, cpu_memory_, buffer_cache_runtime),
       pipeline_cache(*this, device, scheduler, descriptor_pool, update_descriptor_queue,
                      render_pass_cache, buffer_cache, texture_cache, gpu.ShaderNotify()),
-      query_cache{*this, device, scheduler}, accelerate_dma{buffer_cache},
+      query_cache{*this, device, scheduler}, accelerate_dma(buffer_cache, texture_cache, scheduler),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {
     scheduler.SetQueryCache(query_cache);
@@ -756,7 +756,9 @@ void RasterizerVulkan::FlushWork() {
     draw_counter = 0;
 }
 
-AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}
+AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_, TextureCache& texture_cache_,
+                             Scheduler& scheduler_)
+    : buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, scheduler{scheduler_} {}
 
 bool AccelerateDMA::BufferClear(GPUVAddr src_address, u64 amount, u32 value) {
     std::scoped_lock lock{buffer_cache.mutex};
@@ -766,6 +768,228 @@ bool AccelerateDMA::BufferClear(GPUVAddr src_address, u64 amount, u32 value) {
 bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
     std::scoped_lock lock{buffer_cache.mutex};
     return buffer_cache.DMACopy(src_address, dest_address, amount);
+}
+
+bool AccelerateDMA::ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info,
+                                  const Tegra::DMA::ImageOperand& src,
+                                  const Tegra::DMA::BufferOperand& dst) {
+    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    auto query_image = texture_cache.ObtainImage(src, false);
+    if (!query_image) {
+        return false;
+    }
+    auto* image = query_image->first;
+    auto [level, base] = query_image->second;
+    const u32 buffer_size = static_cast<u32>(dst.pitch * dst.height);
+    const auto [buffer, offset] = buffer_cache.ObtainBuffer(
+        dst.address, buffer_size, VideoCommon::ObtainBufferSynchronize::FullSynchronize,
+        VideoCommon::ObtainBufferOperation::MarkAsWritten);
+
+    const bool is_rescaled = image->IsRescaled();
+    if (is_rescaled) {
+        image->ScaleDown(true);
+    }
+    VkImageSubresourceLayers subresources{
+        .aspectMask = image->AspectMask(),
+        .mipLevel = level,
+        .baseArrayLayer = base,
+        .layerCount = 1,
+    };
+    const u32 bpp = VideoCore::Surface::BytesPerBlock(image->info.format);
+    const auto convert = [old_bpp = src.bytes_per_pixel, bpp](u32 value) {
+        return (old_bpp * value) / bpp;
+    };
+    const u32 base_x = convert(src.params.origin.x.Value());
+    const u32 base_y = src.params.origin.y.Value();
+    const u32 length_x = convert(copy_info.length_x);
+    const u32 length_y = copy_info.length_y;
+    VkOffset3D image_offset{
+        .x = static_cast<s32>(base_x),
+        .y = static_cast<s32>(base_y),
+        .z = 0,
+    };
+    VkExtent3D image_extent{
+        .width = length_x,
+        .height = length_y,
+        .depth = 1,
+    };
+    auto buff_info(dst);
+    buff_info.pitch = convert(dst.pitch);
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([src_image = image->Handle(), dst_buffer = buffer->Handle(),
+                      buffer_offset = offset, subresources, image_offset, image_extent,
+                      buff_info](vk::CommandBuffer cmdbuf) {
+        const std::array buffer_copy_info{
+            VkBufferImageCopy{
+                .bufferOffset = buffer_offset,
+                .bufferRowLength = buff_info.pitch,
+                .bufferImageHeight = buff_info.height,
+                .imageSubresource = subresources,
+                .imageOffset = image_offset,
+                .imageExtent = image_extent,
+            },
+        };
+        const VkImageSubresourceRange range{
+            .aspectMask = subresources.aspectMask,
+            .baseMipLevel = subresources.mipLevel,
+            .levelCount = 1,
+            .baseArrayLayer = subresources.baseArrayLayer,
+            .layerCount = 1,
+        };
+        static constexpr VkMemoryBarrier WRITE_BARRIER{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+        };
+        const std::array pre_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = src_image,
+                .subresourceRange = range,
+            },
+        };
+        const std::array post_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = 0,
+                .dstAccessMask = 0,
+                .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = src_image,
+                .subresourceRange = range,
+            },
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, {}, {}, pre_barriers);
+        cmdbuf.CopyImageToBuffer(src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_buffer,
+                                 buffer_copy_info);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, WRITE_BARRIER, nullptr, post_barriers);
+    });
+    return true;
+}
+
+bool AccelerateDMA::BufferToImage(const Tegra::DMA::ImageCopy& copy_info,
+                                  const Tegra::DMA::BufferOperand& src,
+                                  const Tegra::DMA::ImageOperand& dst) {
+    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    auto query_image = texture_cache.ObtainImage(dst, true);
+    if (!query_image) {
+        return false;
+    }
+    auto* image = query_image->first;
+    auto [level, base] = query_image->second;
+    const u32 buffer_size = static_cast<u32>(src.pitch * src.height);
+    const auto [buffer, offset] = buffer_cache.ObtainBuffer(
+        src.address, buffer_size, VideoCommon::ObtainBufferSynchronize::FullSynchronize,
+        VideoCommon::ObtainBufferOperation::DoNothing);
+    const bool is_rescaled = image->IsRescaled();
+    if (is_rescaled) {
+        image->ScaleDown(true);
+    }
+    VkImageSubresourceLayers subresources{
+        .aspectMask = image->AspectMask(),
+        .mipLevel = level,
+        .baseArrayLayer = base,
+        .layerCount = 1,
+    };
+    const u32 bpp = VideoCore::Surface::BytesPerBlock(image->info.format);
+    const auto convert = [old_bpp = dst.bytes_per_pixel, bpp](u32 value) {
+        return (old_bpp * value) / bpp;
+    };
+    const u32 base_x = convert(dst.params.origin.x.Value());
+    const u32 base_y = dst.params.origin.y.Value();
+    const u32 length_x = convert(copy_info.length_x);
+    const u32 length_y = copy_info.length_y;
+    VkOffset3D image_offset{
+        .x = static_cast<s32>(base_x),
+        .y = static_cast<s32>(base_y),
+        .z = 0,
+    };
+    VkExtent3D image_extent{
+        .width = length_x,
+        .height = length_y,
+        .depth = 1,
+    };
+    auto buff_info(src);
+    buff_info.pitch = convert(src.pitch);
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([dst_image = image->Handle(), src_buffer = buffer->Handle(),
+                      buffer_offset = offset, subresources, image_offset, image_extent,
+                      buff_info](vk::CommandBuffer cmdbuf) {
+        const std::array buffer_copy_info{
+            VkBufferImageCopy{
+                .bufferOffset = buffer_offset,
+                .bufferRowLength = buff_info.pitch,
+                .bufferImageHeight = buff_info.height,
+                .imageSubresource = subresources,
+                .imageOffset = image_offset,
+                .imageExtent = image_extent,
+            },
+        };
+        const VkImageSubresourceRange range{
+            .aspectMask = subresources.aspectMask,
+            .baseMipLevel = subresources.mipLevel,
+            .levelCount = 1,
+            .baseArrayLayer = subresources.baseArrayLayer,
+            .layerCount = 1,
+        };
+        static constexpr VkMemoryBarrier READ_BARRIER{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+        };
+        const std::array pre_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                 VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = dst_image,
+                .subresourceRange = range,
+            },
+        };
+        const std::array post_barriers{
+            VkImageMemoryBarrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = 0,
+                .dstAccessMask = 0,
+                .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = dst_image,
+                .subresourceRange = range,
+            },
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, READ_BARRIER, {}, pre_barriers);
+        cmdbuf.CopyBufferToImage(src_buffer, dst_image, VK_IMAGE_LAYOUT_GENERAL, buffer_copy_info);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, nullptr, nullptr, post_barriers);
+    });
+    return true;
 }
 
 void RasterizerVulkan::UpdateDynamicStates() {

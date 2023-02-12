@@ -5,6 +5,7 @@
 
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/engines/maxwell_dma.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/types.h"
 
@@ -19,6 +20,7 @@ struct ImageInfo {
     explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) noexcept;
     explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept;
     explicit ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept;
+    explicit ImageInfo(const Tegra::DMA::ImageOperand& config) noexcept;
 
     PixelFormat format = PixelFormat::Invalid;
     ImageType type = ImageType::e1D;

@@ -55,6 +55,19 @@ constexpr u32 NUM_STORAGE_BUFFERS = 16;
 constexpr u32 NUM_TEXTURE_BUFFERS = 16;
 constexpr u32 NUM_STAGES = 5;
 
+enum class ObtainBufferSynchronize : u32 {
+    NoSynchronize = 0,
+    FullSynchronize = 1,
+    SynchronizeNoDirty = 2,
+};
+
+enum class ObtainBufferOperation : u32 {
+    DoNothing = 0,
+    MarkAsWritten = 1,
+    DiscardWrite = 2,
+    MarkQuery = 3,
+};
+
 using UniformBufferSizes = std::array<std::array<u32, NUM_GRAPHICS_UNIFORM_BUFFERS>, NUM_STAGES>;
 using ComputeUniformBufferSizes = std::array<u32, NUM_COMPUTE_UNIFORM_BUFFERS>;
 
@@ -190,6 +203,10 @@ public:
     bool DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount);
 
     bool DMAClear(GPUVAddr src_address, u64 amount, u32 value);
+
+    [[nodiscard]] std::pair<Buffer*, u32> ObtainBuffer(GPUVAddr gpu_addr, u32 size,
+                                                       ObtainBufferSynchronize sync_info,
+                                                       ObtainBufferOperation post_op);
 
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
@@ -639,6 +656,42 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
     const u32 offset = dest_buffer.Offset(*cpu_dst_address);
     runtime.ClearBuffer(dest_buffer, offset, size, value);
     return true;
+}
+
+template <class P>
+std::pair<typename P::Buffer*, u32> BufferCache<P>::ObtainBuffer(GPUVAddr gpu_addr, u32 size,
+                                                                 ObtainBufferSynchronize sync_info,
+                                                                 ObtainBufferOperation post_op) {
+    const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
+    if (!cpu_addr) {
+        return {&slot_buffers[NULL_BUFFER_ID], 0};
+    }
+    const BufferId buffer_id = FindBuffer(*cpu_addr, size);
+    Buffer& buffer = slot_buffers[buffer_id];
+
+    // synchronize op
+    switch (sync_info) {
+    case ObtainBufferSynchronize::FullSynchronize:
+        SynchronizeBuffer(buffer, *cpu_addr, size);
+        break;
+    default:
+        break;
+    }
+
+    switch (post_op) {
+    case ObtainBufferOperation::MarkAsWritten:
+        MarkWrittenBuffer(buffer_id, *cpu_addr, size);
+        break;
+    case ObtainBufferOperation::DiscardWrite: {
+        IntervalType interval{*cpu_addr, size};
+        ClearDownload(interval);
+        break;
+    }
+    default:
+        break;
+    }
+
+    return {&buffer, buffer.Offset(*cpu_addr)};
 }
 
 template <class P>
