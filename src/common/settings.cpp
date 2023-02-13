@@ -199,7 +199,11 @@ void RestoreGlobalState(bool is_powered_on) {
     values.renderer_backend.SetGlobal(true);
     values.renderer_force_max_clock.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
+    values.fullscreen_mode.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);
+    values.resolution_setup.SetGlobal(true);
+    values.scaling_filter.SetGlobal(true);
+    values.anti_aliasing.SetGlobal(true);
     values.max_anisotropy.SetGlobal(true);
     values.use_speed_limit.SetGlobal(true);
     values.speed_limit.SetGlobal(true);

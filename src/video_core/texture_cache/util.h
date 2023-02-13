@@ -89,11 +89,11 @@ void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const Ima
                                                const ImageInfo& overlap_info, u32 new_level,
                                                u32 overlap_level, bool strict_size) noexcept;
 
-[[nodiscard]] bool IsBlockLinearSizeCompatibleBPPRelaxed(const ImageInfo& lhs, const ImageInfo& rhs,
-                                                         u32 lhs_level, u32 rhs_level) noexcept;
-
 [[nodiscard]] bool IsPitchLinearSameSize(const ImageInfo& lhs, const ImageInfo& rhs,
                                          bool strict_size) noexcept;
+
+[[nodiscard]] bool IsBlockLinearSizeCompatibleBPPRelaxed(const ImageInfo& lhs, const ImageInfo& rhs,
+                                                         u32 lhs_level, u32 rhs_level) noexcept;
 
 [[nodiscard]] std::optional<OverlapResult> ResolveOverlap(const ImageInfo& new_info,
                                                           GPUVAddr gpu_addr, VAddr cpu_addr,

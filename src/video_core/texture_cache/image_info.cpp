@@ -231,12 +231,8 @@ static PixelFormat ByteSizeToFormat(u32 bytes_per_pixel) {
     case 4:
         return PixelFormat::A8B8G8R8_UINT;
     case 8:
-        return PixelFormat::R16G16_UINT;
-    case 16:
         return PixelFormat::R16G16B16A16_UINT;
-    case 24:
-        return PixelFormat::R32G32B32_FLOAT;
-    case 32:
+    case 16:
         return PixelFormat::R32G32B32A32_UINT;
     default:
         UNIMPLEMENTED();
