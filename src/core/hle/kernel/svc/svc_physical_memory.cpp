@@ -16,7 +16,7 @@ Result SetHeapSize(Core::System& system, VAddr* out_address, u64 size) {
     R_UNLESS(size < MainMemorySizeMax, ResultInvalidSize);
 
     // Set the heap size.
-    R_TRY(system.Kernel().CurrentProcess()->PageTable().SetHeapSize(out_address, size));
+    R_TRY(GetCurrentProcess(system.Kernel()).PageTable().SetHeapSize(out_address, size));
 
     return ResultSuccess;
 }
@@ -45,7 +45,7 @@ Result MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
         return ResultInvalidMemoryRegion;
     }
 
-    KProcess* const current_process{system.Kernel().CurrentProcess()};
+    KProcess* const current_process{GetCurrentProcessPointer(system.Kernel())};
     auto& page_table{current_process->PageTable()};
 
     if (current_process->GetSystemResourceSize() == 0) {
@@ -94,7 +94,7 @@ Result UnmapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
         return ResultInvalidMemoryRegion;
     }
 
-    KProcess* const current_process{system.Kernel().CurrentProcess()};
+    KProcess* const current_process{GetCurrentProcessPointer(system.Kernel())};
     auto& page_table{current_process->PageTable()};
 
     if (current_process->GetSystemResourceSize() == 0) {

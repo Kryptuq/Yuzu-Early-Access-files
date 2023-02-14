@@ -4426,7 +4426,7 @@ void Call(Core::System& system, u32 imm) {
     auto& kernel = system.Kernel();
     kernel.EnterSVCProfile();
 
-    if (system.CurrentProcess()->Is64BitProcess()) {
+    if (GetCurrentProcess(system.Kernel()).Is64BitProcess()) {
         Call64(system, imm);
     } else {
         Call32(system, imm);

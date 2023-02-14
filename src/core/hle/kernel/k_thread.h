@@ -110,6 +110,8 @@ enum class StepState : u32 {
 void SetCurrentThread(KernelCore& kernel, KThread* thread);
 [[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
+[[nodiscard]] KProcess* GetCurrentProcessPointer(KernelCore& kernel);
+[[nodiscard]] KProcess& GetCurrentProcess(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
 
 class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,

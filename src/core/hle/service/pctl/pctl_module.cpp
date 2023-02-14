@@ -187,7 +187,7 @@ private:
 
         // TODO(ogniK): Recovery flag initialization for pctl:r
 
-        const auto tid = system.GetCurrentProcessProgramID();
+        const auto tid = system.GetApplicationProcessProgramID();
         if (tid != 0) {
             const FileSys::PatchManager pm{tid, system.GetFileSystemController(),
                                            system.GetContentProvider()};

@@ -96,7 +96,7 @@ static std::string EscapeXML(std::string_view data) {
 
 GDBStub::GDBStub(DebuggerBackend& backend_, Core::System& system_)
     : DebuggerFrontend(backend_), system{system_} {
-    if (system.CurrentProcess()->Is64BitProcess()) {
+    if (system.ApplicationProcess()->Is64BitProcess()) {
         arch = std::make_unique<GDBStubA64>();
     } else {
         arch = std::make_unique<GDBStubA32>();
@@ -340,15 +340,15 @@ void GDBStub::HandleBreakpointInsert(std::string_view command) {
         success = true;
         break;
     case BreakpointType::WriteWatch:
-        success = system.CurrentProcess()->InsertWatchpoint(system, addr, size,
-                                                            Kernel::DebugWatchpointType::Write);
+        success = system.ApplicationProcess()->InsertWatchpoint(system, addr, size,
+                                                                Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = system.CurrentProcess()->InsertWatchpoint(system, addr, size,
-                                                            Kernel::DebugWatchpointType::Read);
+        success = system.ApplicationProcess()->InsertWatchpoint(system, addr, size,
+                                                                Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
-        success = system.CurrentProcess()->InsertWatchpoint(
+        success = system.ApplicationProcess()->InsertWatchpoint(
             system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
@@ -391,15 +391,15 @@ void GDBStub::HandleBreakpointRemove(std::string_view command) {
         break;
     }
     case BreakpointType::WriteWatch:
-        success = system.CurrentProcess()->RemoveWatchpoint(system, addr, size,
-                                                            Kernel::DebugWatchpointType::Write);
+        success = system.ApplicationProcess()->RemoveWatchpoint(system, addr, size,
+                                                                Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = system.CurrentProcess()->RemoveWatchpoint(system, addr, size,
-                                                            Kernel::DebugWatchpointType::Read);
+        success = system.ApplicationProcess()->RemoveWatchpoint(system, addr, size,
+                                                                Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
-        success = system.CurrentProcess()->RemoveWatchpoint(
+        success = system.ApplicationProcess()->RemoveWatchpoint(
             system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
@@ -482,7 +482,7 @@ static std::optional<std::string> GetNameFromThreadType64(Core::Memory::Memory& 
 
 static std::optional<std::string> GetThreadName(Core::System& system,
                                                 const Kernel::KThread* thread) {
-    if (system.CurrentProcess()->Is64BitProcess()) {
+    if (system.ApplicationProcess()->Is64BitProcess()) {
         return GetNameFromThreadType64(system.Memory(), thread);
     } else {
         return GetNameFromThreadType32(system.Memory(), thread);
@@ -555,7 +555,7 @@ void GDBStub::HandleQuery(std::string_view command) {
             SendReply(fmt::format("TextSeg={:x}", main->first));
         } else {
             SendReply(fmt::format("TextSeg={:x}",
-                                  system.CurrentProcess()->PageTable().GetCodeRegionStart()));
+                                  system.ApplicationProcess()->PageTable().GetCodeRegionStart()));
         }
     } else if (command.starts_with("Xfer:libraries:read::")) {
         Loader::AppLoader::Modules modules;
@@ -729,7 +729,7 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
     std::string_view command_str{reinterpret_cast<const char*>(&command[0]), command.size()};
     std::string reply;
 
-    auto* process = system.CurrentProcess();
+    auto* process = system.ApplicationProcess();
     auto& page_table = process->PageTable();
 
     const char* commands = "Commands:\n"

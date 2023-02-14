@@ -15,7 +15,7 @@ Result SignalEvent(Core::System& system, Handle event_handle) {
     LOG_DEBUG(Kernel_SVC, "called, event_handle=0x{:08X}", event_handle);
 
     // Get the current handle table.
-    const KHandleTable& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const KHandleTable& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
 
     // Get the event.
     KScopedAutoObject event = handle_table.GetObject<KEvent>(event_handle);
@@ -28,7 +28,7 @@ Result ClearEvent(Core::System& system, Handle event_handle) {
     LOG_TRACE(Kernel_SVC, "called, event_handle=0x{:08X}", event_handle);
 
     // Get the current handle table.
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
 
     // Try to clear the writable event.
     {
@@ -56,10 +56,10 @@ Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
 
     // Get the kernel reference and handle table.
     auto& kernel = system.Kernel();
-    auto& handle_table = kernel.CurrentProcess()->GetHandleTable();
+    auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
 
     // Reserve a new event from the process resource limit
-    KScopedResourceReservation event_reservation(kernel.CurrentProcess(),
+    KScopedResourceReservation event_reservation(GetCurrentProcessPointer(kernel),
                                                  LimitableResource::EventCountMax);
     R_UNLESS(event_reservation.Succeeded(), ResultLimitReached);
 
@@ -68,7 +68,7 @@ Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
     R_UNLESS(event != nullptr, ResultOutOfResource);
 
     // Initialize the event.
-    event->Initialize(kernel.CurrentProcess());
+    event->Initialize(GetCurrentProcessPointer(kernel));
 
     // Commit the thread reservation.
     event_reservation.Commit();

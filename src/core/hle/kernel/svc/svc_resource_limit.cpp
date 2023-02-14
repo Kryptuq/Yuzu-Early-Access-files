@@ -27,7 +27,7 @@ Result CreateResourceLimit(Core::System& system, Handle* out_handle) {
     KResourceLimit::Register(kernel, resource_limit);
 
     // Add the limit to the handle table.
-    R_TRY(kernel.CurrentProcess()->GetHandleTable().Add(out_handle, resource_limit));
+    R_TRY(GetCurrentProcess(kernel).GetHandleTable().Add(out_handle, resource_limit));
 
     return ResultSuccess;
 }
@@ -41,9 +41,9 @@ Result GetResourceLimitLimitValue(Core::System& system, s64* out_limit_value,
     R_UNLESS(IsValidResourceType(which), ResultInvalidEnumValue);
 
     // Get the resource limit.
-    auto& kernel = system.Kernel();
-    KScopedAutoObject resource_limit =
-        kernel.CurrentProcess()->GetHandleTable().GetObject<KResourceLimit>(resource_limit_handle);
+    KScopedAutoObject resource_limit = GetCurrentProcess(system.Kernel())
+                                           .GetHandleTable()
+                                           .GetObject<KResourceLimit>(resource_limit_handle);
     R_UNLESS(resource_limit.IsNotNull(), ResultInvalidHandle);
 
     // Get the limit value.
@@ -61,9 +61,9 @@ Result GetResourceLimitCurrentValue(Core::System& system, s64* out_current_value
     R_UNLESS(IsValidResourceType(which), ResultInvalidEnumValue);
 
     // Get the resource limit.
-    auto& kernel = system.Kernel();
-    KScopedAutoObject resource_limit =
-        kernel.CurrentProcess()->GetHandleTable().GetObject<KResourceLimit>(resource_limit_handle);
+    KScopedAutoObject resource_limit = GetCurrentProcess(system.Kernel())
+                                           .GetHandleTable()
+                                           .GetObject<KResourceLimit>(resource_limit_handle);
     R_UNLESS(resource_limit.IsNotNull(), ResultInvalidHandle);
 
     // Get the current value.
@@ -81,9 +81,9 @@ Result SetResourceLimitLimitValue(Core::System& system, Handle resource_limit_ha
     R_UNLESS(IsValidResourceType(which), ResultInvalidEnumValue);
 
     // Get the resource limit.
-    auto& kernel = system.Kernel();
-    KScopedAutoObject resource_limit =
-        kernel.CurrentProcess()->GetHandleTable().GetObject<KResourceLimit>(resource_limit_handle);
+    KScopedAutoObject resource_limit = GetCurrentProcess(system.Kernel())
+                                           .GetHandleTable()
+                                           .GetObject<KResourceLimit>(resource_limit_handle);
     R_UNLESS(resource_limit.IsNotNull(), ResultInvalidHandle);
 
     // Set the limit value.

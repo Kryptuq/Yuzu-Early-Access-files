@@ -247,11 +247,11 @@ struct Memory::Impl {
     }
 
     void ReadBlock(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
-        ReadBlockImpl<false>(*system.CurrentProcess(), src_addr, dest_buffer, size);
+        ReadBlockImpl<false>(*system.ApplicationProcess(), src_addr, dest_buffer, size);
     }
 
     void ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
-        ReadBlockImpl<true>(*system.CurrentProcess(), src_addr, dest_buffer, size);
+        ReadBlockImpl<true>(*system.ApplicationProcess(), src_addr, dest_buffer, size);
     }
 
     template <bool UNSAFE>
@@ -279,11 +279,11 @@ struct Memory::Impl {
     }
 
     void WriteBlock(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
-        WriteBlockImpl<false>(*system.CurrentProcess(), dest_addr, src_buffer, size);
+        WriteBlockImpl<false>(*system.ApplicationProcess(), dest_addr, src_buffer, size);
     }
 
     void WriteBlockUnsafe(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
-        WriteBlockImpl<true>(*system.CurrentProcess(), dest_addr, src_buffer, size);
+        WriteBlockImpl<true>(*system.ApplicationProcess(), dest_addr, src_buffer, size);
     }
 
     void ZeroBlock(const Kernel::KProcess& process, const VAddr dest_addr, const std::size_t size) {
@@ -711,7 +711,7 @@ void Memory::UnmapRegion(Common::PageTable& page_table, VAddr base, u64 size) {
 }
 
 bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
-    const Kernel::KProcess& process = *system.CurrentProcess();
+    const Kernel::KProcess& process = *system.ApplicationProcess();
     const auto& page_table = process.PageTable().PageTableImpl();
     const size_t page = vaddr >> YUZU_PAGEBITS;
     if (page >= page_table.pointers.size()) {

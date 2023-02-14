@@ -184,8 +184,8 @@ public:
     /// Forcibly detach the debugger if it is running.
     void DetachDebugger();
 
-    std::unique_lock<std::mutex> StallProcesses();
-    void UnstallProcesses();
+    std::unique_lock<std::mutex> StallApplication();
+    void UnstallApplication();
 
     /**
      * Initialize the debugger.
@@ -295,11 +295,11 @@ public:
     /// Gets the manager for the guest device memory
     [[nodiscard]] const Core::DeviceMemory& DeviceMemory() const;
 
-    /// Provides a pointer to the current process
-    [[nodiscard]] Kernel::KProcess* CurrentProcess();
+    /// Provides a pointer to the application process
+    [[nodiscard]] Kernel::KProcess* ApplicationProcess();
 
-    /// Provides a constant pointer to the current process.
-    [[nodiscard]] const Kernel::KProcess* CurrentProcess() const;
+    /// Provides a constant pointer to the application process.
+    [[nodiscard]] const Kernel::KProcess* ApplicationProcess() const;
 
     /// Provides a reference to the core timing instance.
     [[nodiscard]] Timing::CoreTiming& CoreTiming();
@@ -331,7 +331,7 @@ public:
     /// Provides a constant reference to the speed limiter
     [[nodiscard]] const Core::SpeedLimiter& SpeedLimiter() const;
 
-    [[nodiscard]] u64 GetCurrentProcessProgramID() const;
+    [[nodiscard]] u64 GetApplicationProcessProgramID() const;
 
     /// Gets the name of the current game
     [[nodiscard]] Loader::ResultStatus GetGameName(std::string& out) const;
@@ -396,8 +396,8 @@ public:
     void SetExitLock(bool locked);
     [[nodiscard]] bool GetExitLock() const;
 
-    void SetCurrentProcessBuildID(const CurrentBuildProcessID& id);
-    [[nodiscard]] const CurrentBuildProcessID& GetCurrentProcessBuildID() const;
+    void SetApplicationProcessBuildID(const CurrentBuildProcessID& id);
+    [[nodiscard]] const CurrentBuildProcessID& GetApplicationProcessBuildID() const;
 
     /// Register a host thread as an emulated CPU Core.
     void RegisterCoreThread(std::size_t id);

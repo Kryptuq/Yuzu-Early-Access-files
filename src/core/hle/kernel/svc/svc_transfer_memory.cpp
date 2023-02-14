@@ -39,11 +39,11 @@ Result CreateTransferMemory(Core::System& system, Handle* out, VAddr address, u6
     R_UNLESS(IsValidTransferMemoryPermission(map_perm), ResultInvalidNewMemoryPermission);
 
     // Get the current process and handle table.
-    auto& process = *kernel.CurrentProcess();
+    auto& process = GetCurrentProcess(kernel);
     auto& handle_table = process.GetHandleTable();
 
     // Reserve a new transfer memory from the process resource limit.
-    KScopedResourceReservation trmem_reservation(kernel.CurrentProcess(),
+    KScopedResourceReservation trmem_reservation(&process,
                                                  LimitableResource::TransferMemoryCountMax);
     R_UNLESS(trmem_reservation.Succeeded(), ResultLimitReached);
 

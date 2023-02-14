@@ -12,11 +12,9 @@ namespace Kernel::Svc {
 
 /// Makes a blocking IPC call to a service.
 Result SendSyncRequest(Core::System& system, Handle handle) {
-    auto& kernel = system.Kernel();
-
     // Get the client session from its handle.
     KScopedAutoObject session =
-        kernel.CurrentProcess()->GetHandleTable().GetObject<KClientSession>(handle);
+        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KClientSession>(handle);
     R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
 
     LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
@@ -40,7 +38,7 @@ Result SendAsyncRequestWithUserBuffer(Core::System& system, Handle* out_event_ha
 Result ReplyAndReceive(Core::System& system, s32* out_index, uint64_t handles_addr, s32 num_handles,
                        Handle reply_target, s64 timeout_ns) {
     auto& kernel = system.Kernel();
-    auto& handle_table = GetCurrentThread(kernel).GetOwnerProcess()->GetHandleTable();
+    auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
 
     R_UNLESS(0 <= num_handles && num_handles <= ArgumentHandleCountMax, ResultOutOfRange);
     R_UNLESS(system.Memory().IsValidVirtualAddressRange(

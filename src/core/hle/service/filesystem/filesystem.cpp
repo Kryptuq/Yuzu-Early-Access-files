@@ -317,7 +317,7 @@ ResultVal<FileSys::VirtualFile> FileSystemController::OpenRomFSCurrentProcess() 
         return ResultUnknown;
     }
 
-    return romfs_factory->OpenCurrentProcess(system.GetCurrentProcessProgramID());
+    return romfs_factory->OpenCurrentProcess(system.GetApplicationProcessProgramID());
 }
 
 ResultVal<FileSys::VirtualFile> FileSystemController::OpenPatchedRomFS(
@@ -502,7 +502,7 @@ FileSys::SaveDataSize FileSystemController::ReadSaveDataSize(FileSys::SaveDataTy
         const auto res = system.GetAppLoader().ReadControlData(nacp);
 
         if (res != Loader::ResultStatus::Success) {
-            const FileSys::PatchManager pm{system.GetCurrentProcessProgramID(),
+            const FileSys::PatchManager pm{system.GetApplicationProcessProgramID(),
                                            system.GetFileSystemController(),
                                            system.GetContentProvider()};
             const auto metadata = pm.GetControlMetadata();

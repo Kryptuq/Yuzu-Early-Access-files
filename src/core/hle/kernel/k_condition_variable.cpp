@@ -164,8 +164,8 @@ Result KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) 
         R_SUCCEED_IF(test_tag != (handle | Svc::HandleWaitMask));
 
         // Get the lock owner thread.
-        owner_thread = kernel.CurrentProcess()
-                           ->GetHandleTable()
+        owner_thread = GetCurrentProcess(kernel)
+                           .GetHandleTable()
                            .GetObjectWithoutPseudoHandle<KThread>(handle)
                            .ReleasePointerUnsafe();
         R_UNLESS(owner_thread != nullptr, ResultInvalidHandle);
@@ -213,8 +213,8 @@ void KConditionVariable::SignalImpl(KThread* thread) {
             thread->EndWait(ResultSuccess);
         } else {
             // Get the previous owner.
-            KThread* owner_thread = kernel.CurrentProcess()
-                                        ->GetHandleTable()
+            KThread* owner_thread = GetCurrentProcess(kernel)
+                                        .GetHandleTable()
                                         .GetObjectWithoutPseudoHandle<KThread>(
                                             static_cast<Handle>(prev_tag & ~Svc::HandleWaitMask))
                                         .ReleasePointerUnsafe();

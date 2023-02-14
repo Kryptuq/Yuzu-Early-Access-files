@@ -42,7 +42,7 @@ Result MapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address,
     R_UNLESS(IsValidSharedMemoryPermission(map_perm), ResultInvalidNewMemoryPermission);
 
     // Get the current process.
-    auto& process = *system.Kernel().CurrentProcess();
+    auto& process = GetCurrentProcess(system.Kernel());
     auto& page_table = process.PageTable();
 
     // Get the shared memory.
@@ -75,7 +75,7 @@ Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, VAddr addres
     R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
 
     // Get the current process.
-    auto& process = *system.Kernel().CurrentProcess();
+    auto& process = GetCurrentProcess(system.Kernel());
     auto& page_table = process.PageTable();
 
     // Get the shared memory.

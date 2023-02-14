@@ -67,7 +67,7 @@ void EmuThread::run() {
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
     if (Settings::values.use_disk_shader_cache.GetValue()) {
         m_system.Renderer().ReadRasterizer()->LoadDiskResources(
-            m_system.GetCurrentProcessProgramID(), stop_token,
+            m_system.GetApplicationProcessProgramID(), stop_token,
             [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
                 emit LoadProgress(stage, value, total);
             });

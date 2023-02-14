@@ -405,7 +405,7 @@ int main(int argc, char** argv) {
 
     if (Settings::values.use_disk_shader_cache.GetValue()) {
         system.Renderer().ReadRasterizer()->LoadDiskResources(
-            system.GetCurrentProcessProgramID(), std::stop_token{},
+            system.GetApplicationProcessProgramID(), std::stop_token{},
             [](VideoCore::LoadCallbackStage, size_t value, size_t total) {});
     }
 

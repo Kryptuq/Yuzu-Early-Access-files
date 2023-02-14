@@ -34,7 +34,7 @@ Result ConnectToNamedPort(Core::System& system, Handle* out, VAddr port_name_add
 
     // Get the current handle table.
     auto& kernel = system.Kernel();
-    auto& handle_table = kernel.CurrentProcess()->GetHandleTable();
+    auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
 
     // Find the client port.
     auto port = kernel.CreateNamedServicePort(port_name);

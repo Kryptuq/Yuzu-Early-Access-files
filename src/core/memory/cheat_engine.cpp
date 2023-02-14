@@ -191,10 +191,10 @@ void CheatEngine::Initialize() {
         });
     core_timing.ScheduleLoopingEvent(CHEAT_ENGINE_NS, CHEAT_ENGINE_NS, event);
 
-    metadata.process_id = system.CurrentProcess()->GetProcessID();
-    metadata.title_id = system.GetCurrentProcessProgramID();
+    metadata.process_id = system.ApplicationProcess()->GetProcessID();
+    metadata.title_id = system.GetApplicationProcessProgramID();
 
-    const auto& page_table = system.CurrentProcess()->PageTable();
+    const auto& page_table = system.ApplicationProcess()->PageTable();
     metadata.heap_extents = {
         .base = page_table.GetHeapRegionStart(),
         .size = page_table.GetHeapRegionSize(),

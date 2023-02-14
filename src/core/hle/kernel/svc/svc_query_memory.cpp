@@ -22,7 +22,7 @@ Result QueryMemory(Core::System& system, uint64_t out_memory_info, PageInfo* out
 Result QueryProcessMemory(Core::System& system, uint64_t out_memory_info, PageInfo* out_page_info,
                           Handle process_handle, uint64_t address) {
     LOG_TRACE(Kernel_SVC, "called process=0x{:08X} address={:X}", process_handle, address);
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Process handle does not exist, process_handle=0x{:08X}",

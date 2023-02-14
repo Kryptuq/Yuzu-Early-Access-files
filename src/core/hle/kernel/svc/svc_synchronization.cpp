@@ -14,7 +14,7 @@ Result CloseHandle(Core::System& system, Handle handle) {
     LOG_TRACE(Kernel_SVC, "Closing handle 0x{:08X}", handle);
 
     // Remove the handle.
-    R_UNLESS(system.Kernel().CurrentProcess()->GetHandleTable().Remove(handle),
+    R_UNLESS(GetCurrentProcess(system.Kernel()).GetHandleTable().Remove(handle),
              ResultInvalidHandle);
 
     return ResultSuccess;
@@ -25,7 +25,7 @@ Result ResetSignal(Core::System& system, Handle handle) {
     LOG_DEBUG(Kernel_SVC, "called handle 0x{:08X}", handle);
 
     // Get the current handle table.
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
 
     // Try to reset as readable event.
     {
@@ -59,7 +59,7 @@ Result WaitSynchronization(Core::System& system, s32* index, VAddr handles_addre
 
     auto& kernel = system.Kernel();
     std::vector<KSynchronizationObject*> objs(num_handles);
-    const auto& handle_table = kernel.CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
     Handle* handles = system.Memory().GetPointer<Handle>(handles_address);
 
     // Copy user handles.
@@ -91,7 +91,7 @@ Result CancelSynchronization(Core::System& system, Handle handle) {
 
     // Get the thread from its handle.
     KScopedAutoObject thread =
-        system.Kernel().CurrentProcess()->GetHandleTable().GetObject<KThread>(handle);
+        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Cancel the thread's wait.
@@ -106,7 +106,7 @@ void SynchronizePreemptionState(Core::System& system) {
     KScopedSchedulerLock sl{kernel};
 
     // If the current thread is pinned, unpin it.
-    KProcess* cur_process = system.Kernel().CurrentProcess();
+    KProcess* cur_process = GetCurrentProcessPointer(kernel);
     const auto core_id = GetCurrentCoreId(kernel);
 
     if (cur_process->GetPinnedThread(core_id) == GetCurrentThreadPointer(kernel)) {

@@ -449,8 +449,8 @@ void HidBus::EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
 
     ASSERT_MSG(t_mem_size == 0x1000, "t_mem_size is not 0x1000 bytes");
 
-    auto t_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(t_mem_handle);
+    auto t_mem = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+        t_mem_handle);
 
     if (t_mem.IsNull()) {
         LOG_ERROR(Service_HID, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);

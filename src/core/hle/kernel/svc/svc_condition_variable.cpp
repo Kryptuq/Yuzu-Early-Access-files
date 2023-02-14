@@ -43,8 +43,8 @@ Result WaitProcessWideKeyAtomic(Core::System& system, VAddr address, VAddr cv_ke
     }
 
     // Wait on the condition variable.
-    return system.Kernel().CurrentProcess()->WaitConditionVariable(
-        address, Common::AlignDown(cv_key, sizeof(u32)), tag, timeout);
+    return GetCurrentProcess(system.Kernel())
+        .WaitConditionVariable(address, Common::AlignDown(cv_key, sizeof(u32)), tag, timeout);
 }
 
 /// Signal process wide key
@@ -52,8 +52,8 @@ void SignalProcessWideKey(Core::System& system, VAddr cv_key, s32 count) {
     LOG_TRACE(Kernel_SVC, "called, cv_key=0x{:X}, count=0x{:08X}", cv_key, count);
 
     // Signal the condition variable.
-    return system.Kernel().CurrentProcess()->SignalConditionVariable(
-        Common::AlignDown(cv_key, sizeof(u32)), count);
+    return GetCurrentProcess(system.Kernel())
+        .SignalConditionVariable(Common::AlignDown(cv_key, sizeof(u32)), count);
 }
 
 Result WaitProcessWideKeyAtomic64(Core::System& system, uint64_t address, uint64_t cv_key,

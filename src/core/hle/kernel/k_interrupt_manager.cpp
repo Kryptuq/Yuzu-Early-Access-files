@@ -16,7 +16,7 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
 
     auto& current_thread = GetCurrentThread(kernel);
 
-    if (auto* process = kernel.CurrentProcess(); process) {
+    if (auto* process = GetCurrentProcessPointer(kernel); process) {
         // If the user disable count is set, we may need to pin the current thread.
         if (current_thread.GetUserDisableCount() && !process->GetPinnedThread(core_id)) {
             KScopedSchedulerLock sl{kernel};

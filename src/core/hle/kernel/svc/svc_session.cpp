@@ -13,7 +13,7 @@ namespace {
 
 template <typename T>
 Result CreateSession(Core::System& system, Handle* out_server, Handle* out_client, u64 name) {
-    auto& process = *system.CurrentProcess();
+    auto& process = GetCurrentProcess(system.Kernel());
     auto& handle_table = process.GetHandleTable();
 
     // Declare the session we're going to allocate.

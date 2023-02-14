@@ -618,7 +618,7 @@ Result NfpDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
                             sizeof(ApplicationArea) - data.size());
 
     // TODO: Investigate why the title id needs to be moddified
-    tag_data.title_id = system.GetCurrentProcessProgramID();
+    tag_data.title_id = system.GetApplicationProcessProgramID();
     tag_data.title_id = tag_data.title_id | 0x30000000ULL;
     tag_data.settings.settings.appdata_initialized.Assign(1);
     tag_data.application_area_id = access_id;

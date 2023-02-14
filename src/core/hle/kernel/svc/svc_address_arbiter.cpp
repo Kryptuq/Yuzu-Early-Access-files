@@ -72,7 +72,7 @@ Result WaitForAddress(Core::System& system, VAddr address, ArbitrationType arb_t
         timeout = timeout_ns;
     }
 
-    return system.Kernel().CurrentProcess()->WaitAddressArbiter(address, arb_type, value, timeout);
+    return GetCurrentProcess(system.Kernel()).WaitAddressArbiter(address, arb_type, value, timeout);
 }
 
 // Signals to an address (via Address Arbiter)
@@ -95,8 +95,8 @@ Result SignalToAddress(Core::System& system, VAddr address, SignalType signal_ty
         return ResultInvalidEnumValue;
     }
 
-    return system.Kernel().CurrentProcess()->SignalAddressArbiter(address, signal_type, value,
-                                                                  count);
+    return GetCurrentProcess(system.Kernel())
+        .SignalAddressArbiter(address, signal_type, value, count);
 }
 
 Result WaitForAddress64(Core::System& system, VAddr address, ArbitrationType arb_type, s32 value,

@@ -79,7 +79,7 @@ IWindowController::IWindowController(Core::System& system_)
 IWindowController::~IWindowController() = default;
 
 void IWindowController::GetAppletResourceUserId(Kernel::HLERequestContext& ctx) {
-    const u64 process_id = system.CurrentProcess()->GetProcessID();
+    const u64 process_id = system.ApplicationProcess()->GetProcessID();
 
     LOG_DEBUG(Service_AM, "called. Process ID=0x{:016X}", process_id);
 
@@ -1252,7 +1252,7 @@ void ILibraryAppletCreator::CreateTransferMemoryStorage(Kernel::HLERequestContex
     }
 
     auto transfer_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(handle);
+        system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(handle);
 
     if (transfer_mem.IsNull()) {
         LOG_ERROR(Service_AM, "transfer_mem is a nullptr for handle={:08X}", handle);
@@ -1286,7 +1286,7 @@ void ILibraryAppletCreator::CreateHandleStorage(Kernel::HLERequestContext& ctx) 
     }
 
     auto transfer_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(handle);
+        system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(handle);
 
     if (transfer_mem.IsNull()) {
         LOG_ERROR(Service_AM, "transfer_mem is a nullptr for handle={:08X}", handle);
@@ -1465,11 +1465,12 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
         const auto backend = BCAT::CreateBackendFromSettings(system, [this](u64 tid) {
             return system.GetFileSystemController().GetBCATDirectory(tid);
         });
-        const auto build_id_full = system.GetCurrentProcessBuildID();
+        const auto build_id_full = system.GetApplicationProcessBuildID();
         u64 build_id{};
         std::memcpy(&build_id, build_id_full.data(), sizeof(u64));
 
-        auto data = backend->GetLaunchParameter({system.GetCurrentProcessProgramID(), build_id});
+        auto data =
+            backend->GetLaunchParameter({system.GetApplicationProcessProgramID(), build_id});
         if (data.has_value()) {
             IPC::ResponseBuilder rb{ctx, 2, 0, 1};
             rb.Push(ResultSuccess);
@@ -1521,7 +1522,7 @@ void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_AM, "called, uid={:016X}{:016X}", user_id[1], user_id[0]);
 
     FileSys::SaveDataAttribute attribute{};
-    attribute.title_id = system.GetCurrentProcessProgramID();
+    attribute.title_id = system.GetApplicationProcessProgramID();
     attribute.user_id = user_id;
     attribute.type = FileSys::SaveDataType::SaveData;
     const auto res = system.GetFileSystemController().CreateSaveData(
@@ -1551,7 +1552,7 @@ void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
     std::array<u8, 0x10> version_string{};
 
     const auto res = [this] {
-        const auto title_id = system.GetCurrentProcessProgramID();
+        const auto title_id = system.GetApplicationProcessProgramID();
 
         const FileSys::PatchManager pm{title_id, system.GetFileSystemController(),
                                        system.GetContentProvider()};
@@ -1588,7 +1589,7 @@ void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
     u32 supported_languages = 0;
 
     const auto res = [this] {
-        const auto title_id = system.GetCurrentProcessProgramID();
+        const auto title_id = system.GetApplicationProcessProgramID();
 
         const FileSys::PatchManager pm{title_id, system.GetFileSystemController(),
                                        system.GetContentProvider()};
@@ -1696,7 +1697,8 @@ void IApplicationFunctions::ExtendSaveData(Kernel::HLERequestContext& ctx) {
               static_cast<u8>(type), user_id[1], user_id[0], new_normal_size, new_journal_size);
 
     system.GetFileSystemController().WriteSaveDataSize(
-        type, system.GetCurrentProcessProgramID(), user_id, {new_normal_size, new_journal_size});
+        type, system.GetApplicationProcessProgramID(), user_id,
+        {new_normal_size, new_journal_size});
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
@@ -1720,7 +1722,7 @@ void IApplicationFunctions::GetSaveDataSize(Kernel::HLERequestContext& ctx) {
               user_id[0]);
 
     const auto size = system.GetFileSystemController().ReadSaveDataSize(
-        type, system.GetCurrentProcessProgramID(), user_id);
+        type, system.GetApplicationProcessProgramID(), user_id);
 
     IPC::ResponseBuilder rb{ctx, 6};
     rb.Push(ResultSuccess);

@@ -1830,7 +1830,7 @@ void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     ASSERT_MSG(t_mem_1_size == 0x1000, "t_mem_1_size is not 0x1000 bytes");
     ASSERT_MSG(t_mem_2_size == 0x7F000, "t_mem_2_size is not 0x7F000 bytes");
 
-    auto t_mem_1 = system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+    auto t_mem_1 = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
         t_mem_1_handle);
 
     if (t_mem_1.IsNull()) {
@@ -1840,7 +1840,7 @@ void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    auto t_mem_2 = system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+    auto t_mem_2 = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
         t_mem_2_handle);
 
     if (t_mem_2.IsNull()) {
@@ -2127,8 +2127,8 @@ void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
 
     ASSERT_MSG(t_mem_size == 0x3000, "t_mem_size is not 0x3000 bytes");
 
-    auto t_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(t_mem_handle);
+    auto t_mem = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+        t_mem_handle);
 
     if (t_mem.IsNull()) {
         LOG_ERROR(Service_HID, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);

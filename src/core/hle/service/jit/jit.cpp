@@ -353,9 +353,9 @@ public:
             return;
         }
 
-        // Fetch using the handle table for the current process here,
+        // Fetch using the handle table for the application process here,
         // since we are not multiprocess yet.
-        const auto& handle_table{system.CurrentProcess()->GetHandleTable()};
+        const auto& handle_table{system.ApplicationProcess()->GetHandleTable()};
 
         auto process{handle_table.GetObject<Kernel::KProcess>(process_handle)};
         if (process.IsNull()) {

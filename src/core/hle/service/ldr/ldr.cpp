@@ -246,7 +246,7 @@ public:
             return;
         }
 
-        if (system.GetCurrentProcessProgramID() != header.application_id) {
+        if (system.GetApplicationProcessProgramID() != header.application_id) {
             LOG_ERROR(Service_LDR,
                       "Attempting to load NRR with title ID other than current process. (actual "
                       "{:016X})!",
@@ -542,15 +542,16 @@ public:
         }
 
         // Map memory for the NRO
-        const auto map_result{MapNro(system.CurrentProcess(), nro_address, nro_size, bss_address,
-                                     bss_size, nro_size + bss_size)};
+        const auto map_result{MapNro(system.ApplicationProcess(), nro_address, nro_size,
+                                     bss_address, bss_size, nro_size + bss_size)};
         if (map_result.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(map_result.Code());
         }
 
         // Load the NRO into the mapped memory
-        if (const auto result{LoadNro(system.CurrentProcess(), header, nro_address, *map_result)};
+        if (const auto result{
+                LoadNro(system.ApplicationProcess(), header, nro_address, *map_result)};
             result.IsError()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(map_result.Code());
@@ -570,7 +571,7 @@ public:
 
     Result UnmapNro(const NROInfo& info) {
         // Each region must be unmapped separately to validate memory state
-        auto& page_table{system.CurrentProcess()->PageTable()};
+        auto& page_table{system.ApplicationProcess()->PageTable()};
 
         if (info.bss_size != 0) {
             CASCADE_CODE(page_table.UnmapCodeMemory(
@@ -641,7 +642,7 @@ public:
         LOG_WARNING(Service_LDR, "(STUBBED) called");
 
         initialized = true;
-        current_map_addr = system.CurrentProcess()->PageTable().GetAliasCodeRegionStart();
+        current_map_addr = system.ApplicationProcess()->PageTable().GetAliasCodeRegionStart();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);

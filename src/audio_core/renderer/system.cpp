@@ -127,7 +127,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     render_device = params.rendering_device;
     execution_mode = params.execution_mode;
 
-    core.Memory().ZeroBlock(*core.Kernel().CurrentProcess(), transfer_memory->GetSourceAddress(),
+    core.Memory().ZeroBlock(*core.ApplicationProcess(), transfer_memory->GetSourceAddress(),
                             transfer_memory_size);
 
     // Note: We're not actually using the transfer memory because it's a pain to code for.

@@ -45,7 +45,7 @@ Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, V
 
     // Get the process from its handle.
     KScopedAutoObject process =
-        system.CurrentProcess()->GetHandleTable().GetObject<KProcess>(process_handle);
+        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KProcess>(process_handle);
     R_UNLESS(process.IsNotNull(), ResultInvalidHandle);
 
     // Validate that the address is in range.
@@ -71,7 +71,7 @@ Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_
     R_UNLESS((src_address < src_address + size), ResultInvalidCurrentMemory);
 
     // Get the processes.
-    KProcess* dst_process = system.CurrentProcess();
+    KProcess* dst_process = GetCurrentProcessPointer(system.Kernel());
     KScopedAutoObject src_process =
         dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(process_handle);
     R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
@@ -114,7 +114,7 @@ Result UnmapProcessMemory(Core::System& system, VAddr dst_address, Handle proces
     R_UNLESS((src_address < src_address + size), ResultInvalidCurrentMemory);
 
     // Get the processes.
-    KProcess* dst_process = system.CurrentProcess();
+    KProcess* dst_process = GetCurrentProcessPointer(system.Kernel());
     KScopedAutoObject src_process =
         dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(process_handle);
     R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
@@ -174,7 +174,7 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
         return ResultInvalidCurrentMemory;
     }
 
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Invalid process handle specified (handle=0x{:08X}).",
@@ -242,7 +242,7 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
         return ResultInvalidCurrentMemory;
     }
 
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Invalid process handle specified (handle=0x{:08X}).",

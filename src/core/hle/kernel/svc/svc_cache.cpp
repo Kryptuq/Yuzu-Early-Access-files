@@ -38,7 +38,7 @@ Result FlushProcessDataCache(Core::System& system, Handle process_handle, u64 ad
 
     // Get the process from its handle.
     KScopedAutoObject process =
-        system.Kernel().CurrentProcess()->GetHandleTable().GetObject<KProcess>(process_handle);
+        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KProcess>(process_handle);
     R_UNLESS(process.IsNotNull(), ResultInvalidHandle);
 
     // Verify the region is within range.

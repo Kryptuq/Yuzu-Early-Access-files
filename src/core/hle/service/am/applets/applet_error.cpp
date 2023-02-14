@@ -166,7 +166,7 @@ void Error::Execute() {
     }
 
     const auto callback = [this] { DisplayCompleted(); };
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     const auto& reporter{system.GetReporter()};
 
     switch (mode) {

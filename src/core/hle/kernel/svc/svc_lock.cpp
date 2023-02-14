@@ -24,7 +24,7 @@ Result ArbitrateLock(Core::System& system, Handle thread_handle, VAddr address, 
         return ResultInvalidAddress;
     }
 
-    return system.Kernel().CurrentProcess()->WaitForAddress(thread_handle, address, tag);
+    return GetCurrentProcess(system.Kernel()).WaitForAddress(thread_handle, address, tag);
 }
 
 /// Unlock a mutex
@@ -43,7 +43,7 @@ Result ArbitrateUnlock(Core::System& system, VAddr address) {
         return ResultInvalidAddress;
     }
 
-    return system.Kernel().CurrentProcess()->SignalToAddress(address);
+    return GetCurrentProcess(system.Kernel()).SignalToAddress(address);
 }
 
 Result ArbitrateLock64(Core::System& system, Handle thread_handle, uint64_t address, uint32_t tag) {

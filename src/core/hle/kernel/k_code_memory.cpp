@@ -21,7 +21,7 @@ KCodeMemory::KCodeMemory(KernelCore& kernel_)
 
 Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
     // Set members.
-    m_owner = kernel.CurrentProcess();
+    m_owner = GetCurrentProcessPointer(kernel);
 
     // Get the owner page table.
     auto& page_table = m_owner->PageTable();
@@ -74,7 +74,7 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
     R_UNLESS(!m_is_mapped, ResultInvalidState);
 
     // Map the memory.
-    R_TRY(kernel.CurrentProcess()->PageTable().MapPageGroup(
+    R_TRY(GetCurrentProcess(kernel).PageTable().MapPageGroup(
         address, *m_page_group, KMemoryState::CodeOut, KMemoryPermission::UserReadWrite));
 
     // Mark ourselves as mapped.
@@ -91,8 +91,8 @@ Result KCodeMemory::Unmap(VAddr address, size_t size) {
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(kernel.CurrentProcess()->PageTable().UnmapPageGroup(address, *m_page_group,
-                                                              KMemoryState::CodeOut));
+    R_TRY(GetCurrentProcess(kernel).PageTable().UnmapPageGroup(address, *m_page_group,
+                                                               KMemoryState::CodeOut));
 
     // Mark ourselves as unmapped.
     m_is_mapped = false;

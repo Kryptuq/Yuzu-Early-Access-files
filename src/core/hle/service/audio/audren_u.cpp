@@ -455,7 +455,7 @@ void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    const auto& handle_table{system.CurrentProcess()->GetHandleTable()};
+    const auto& handle_table{system.ApplicationProcess()->GetHandleTable()};
     auto process{handle_table.GetObject<Kernel::KProcess>(process_handle)};
     auto transfer_memory{
         process->GetHandleTable().GetObject<Kernel::KTransferMemory>(transfer_memory_handle)};

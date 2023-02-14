@@ -955,6 +955,7 @@ void GMainWindow::InitializeWidgets() {
         statusBar()->addPermanentWidget(label);
     }
 
+    // TODO (flTobi): Add the widget when multiplayer is fully implemented
     statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
     statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
 
@@ -1778,7 +1779,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
             std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
                 .filename());
     }
-    const bool is_64bit = system->Kernel().CurrentProcess()->Is64BitProcess();
+    const bool is_64bit = system->Kernel().ApplicationProcess()->Is64BitProcess();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")
                      .arg(QString::fromStdString(title_name), instruction_set_suffix)
@@ -3166,8 +3167,20 @@ void GMainWindow::ShowFullscreen() {
         window->hide();
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
         const auto screen_geometry = GuessCurrentScreen(window)->geometry();
+        // NB: On Windows, a borderless window will be treated the same as exclusive fullscreen
+        //     when the window geometry matches the physical dimensions of the screen.
+        //     However, with High DPI scaling, when the devicePixelRatioF() is > 1, the borderless
+        //     window apparently is not treated as exclusive fullscreen and functions correctly.
+        //     One can verify and replicate this behavior by using a high resolution (4K) display,
+        //     and switching between 100% and 200% scaling in Windows' display settings.
+        //     At 100%, without the addition of 1, it is treated as exclusive fullscreen.
+        //     At 200%, with or without the addition of 1, it is treated as borderless windowed.
+        //     Therefore, we can use (read: abuse) this difference in behavior to fix this issue for
+        //     those with higher resolution displays when the Qt scaling ratio is > 1.
+        //     Should this behavior be changed in the future, please revisit this workaround.
+        const bool must_add_one = devicePixelRatioF() == 1.0f;
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
-                            screen_geometry.height() + 1);
+                            screen_geometry.height() + (must_add_one ? 1 : 0));
         window->raise();
         window->showNormal();
     };
@@ -3531,7 +3544,7 @@ void GMainWindow::OnToggleGraphicsAPI() {
 }
 
 void GMainWindow::OnConfigurePerGame() {
-    const u64 title_id = system->GetCurrentProcessProgramID();
+    const u64 title_id = system->GetApplicationProcessProgramID();
     OpenPerGameConfiguration(title_id, current_game_path.toStdString());
 }
 
@@ -3690,7 +3703,7 @@ void GMainWindow::OnCaptureScreenshot() {
         return;
     }
 
-    const u64 title_id = system->GetCurrentProcessProgramID();
+    const u64 title_id = system->GetApplicationProcessProgramID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
     const auto date =

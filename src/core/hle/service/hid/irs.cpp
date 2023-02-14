@@ -196,8 +196,8 @@ void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
     const auto t_mem_handle{ctx.GetCopyHandle(0)};
 
-    auto t_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(t_mem_handle);
+    auto t_mem = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+        t_mem_handle);
 
     if (t_mem.IsNull()) {
         LOG_ERROR(Service_IRS, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);
@@ -445,8 +445,8 @@ void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
     const auto parameters{rp.PopRaw<Parameters>()};
     const auto t_mem_handle{ctx.GetCopyHandle(0)};
 
-    auto t_mem =
-        system.CurrentProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(t_mem_handle);
+    auto t_mem = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
+        t_mem_handle);
 
     u8* transfer_memory = system.Memory().GetPointer(t_mem->GetSourceAddress());
 

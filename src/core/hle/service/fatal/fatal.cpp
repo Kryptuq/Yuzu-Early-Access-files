@@ -63,7 +63,7 @@ enum class FatalType : u32 {
 };
 
 static void GenerateErrorReport(Core::System& system, Result error_code, const FatalInfo& info) {
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     std::string crash_report = fmt::format(
         "Yuzu {}-{} crash report\n"
         "Title ID:                        {:016x}\n"

@@ -1266,6 +1266,14 @@ KThread& GetCurrentThread(KernelCore& kernel) {
     return *GetCurrentThreadPointer(kernel);
 }
 
+KProcess* GetCurrentProcessPointer(KernelCore& kernel) {
+    return GetCurrentThread(kernel).GetOwnerProcess();
+}
+
+KProcess& GetCurrentProcess(KernelCore& kernel) {
+    return *GetCurrentProcessPointer(kernel);
+}
+
 s32 GetCurrentCoreId(KernelCore& kernel) {
     return GetCurrentThread(kernel).GetCurrentCore();
 }

@@ -44,7 +44,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
             return ResultInvalidEnumValue;
         }
 
-        const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+        const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
         KScopedAutoObject process = handle_table.GetObject<KProcess>(handle);
         if (process.IsNull()) {
             LOG_ERROR(Kernel_SVC, "Process is not valid! info_id={}, info_sub_id={}, handle={:08X}",
@@ -154,7 +154,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
             return ResultInvalidCombination;
         }
 
-        KProcess* const current_process = system.Kernel().CurrentProcess();
+        KProcess* const current_process = GetCurrentProcessPointer(system.Kernel());
         KHandleTable& handle_table = current_process->GetHandleTable();
         const auto resource_limit = current_process->GetResourceLimit();
         if (!resource_limit) {
@@ -183,7 +183,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
             return ResultInvalidCombination;
         }
 
-        *result = system.Kernel().CurrentProcess()->GetRandomEntropy(info_sub_id);
+        *result = GetCurrentProcess(system.Kernel()).GetRandomEntropy(info_sub_id);
         return ResultSuccess;
 
     case InfoType::InitialProcessIdRange:
@@ -200,9 +200,9 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
             return ResultInvalidCombination;
         }
 
-        KScopedAutoObject thread =
-            system.Kernel().CurrentProcess()->GetHandleTable().GetObject<KThread>(
-                static_cast<Handle>(handle));
+        KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                       .GetHandleTable()
+                                       .GetObject<KThread>(static_cast<Handle>(handle));
         if (thread.IsNull()) {
             LOG_ERROR(Kernel_SVC, "Thread handle does not exist, handle=0x{:08X}",
                       static_cast<Handle>(handle));
@@ -249,7 +249,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
         R_UNLESS(info_sub_id == 0, ResultInvalidCombination);
 
         // Get the handle table.
-        KProcess* current_process = system.Kernel().CurrentProcess();
+        KProcess* current_process = GetCurrentProcessPointer(system.Kernel());
         KHandleTable& handle_table = current_process->GetHandleTable();
 
         // Get a new handle for the current process.

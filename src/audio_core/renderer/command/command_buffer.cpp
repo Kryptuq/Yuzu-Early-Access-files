@@ -251,8 +251,8 @@ void CommandBuffer::GenerateBiquadFilterCommand(const s32 node_id, EffectInfoBas
 
     const auto& parameter{
         *reinterpret_cast<BiquadFilterInfo::ParameterVersion1*>(effect_info.GetParameter())};
-    const auto state{
-        reinterpret_cast<VoiceState::BiquadFilterState*>(effect_info.GetStateBuffer())};
+    const auto state{reinterpret_cast<VoiceState::BiquadFilterState*>(
+        effect_info.GetStateBuffer() + channel * sizeof(VoiceState::BiquadFilterState))};
 
     cmd.input = buffer_offset + parameter.inputs[channel];
     cmd.output = buffer_offset + parameter.outputs[channel];

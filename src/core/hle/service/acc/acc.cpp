@@ -762,7 +762,7 @@ Result Module::Interface::InitializeApplicationInfoBase() {
     // processes emulated. As we don't actually have pid support we should assume we're just using
     // our own process
     const auto launch_property =
-        system.GetARPManager().GetLaunchProperty(system.GetCurrentProcessProgramID());
+        system.GetARPManager().GetLaunchProperty(system.GetApplicationProcessProgramID());
 
     if (launch_property.Failed()) {
         LOG_ERROR(Service_ACC, "Failed to get launch property");
@@ -806,7 +806,7 @@ void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx
     bool is_locked = false;
 
     if (res != Loader::ResultStatus::Success) {
-        const FileSys::PatchManager pm{system.GetCurrentProcessProgramID(),
+        const FileSys::PatchManager pm{system.GetApplicationProcessProgramID(),
                                        system.GetFileSystemController(),
                                        system.GetContentProvider()};
         const auto nacp_unique = pm.GetControlMetadata().first;

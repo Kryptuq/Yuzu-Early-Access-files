@@ -155,7 +155,7 @@ void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
 
-    const auto current = system.GetCurrentProcessProgramID();
+    const auto current = system.GetApplicationProcessProgramID();
 
     const auto& disabled = Settings::values.disabled_addons[current];
     if (std::find(disabled.begin(), disabled.end(), "DLC") != disabled.end()) {
@@ -182,7 +182,7 @@ void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_AOC, "called with offset={}, count={}, process_id={}", offset, count,
               process_id);
 
-    const auto current = system.GetCurrentProcessProgramID();
+    const auto current = system.GetApplicationProcessProgramID();
 
     std::vector<u32> out;
     const auto& disabled = Settings::values.disabled_addons[current];
@@ -228,7 +228,7 @@ void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
 
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     const FileSys::PatchManager pm{title_id, system.GetFileSystemController(),
                                    system.GetContentProvider()};
 

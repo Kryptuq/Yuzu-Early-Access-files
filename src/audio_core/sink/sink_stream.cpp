@@ -270,7 +270,7 @@ void SinkStream::Stall() {
     if (stalled_lock) {
         return;
     }
-    stalled_lock = system.StallProcesses();
+    stalled_lock = system.StallApplication();
 }
 
 void SinkStream::Unstall() {
@@ -278,7 +278,7 @@ void SinkStream::Unstall() {
     if (!stalled_lock) {
         return;
     }
-    system.UnstallProcesses();
+    system.UnstallApplication();
     stalled_lock.unlock();
 }
 

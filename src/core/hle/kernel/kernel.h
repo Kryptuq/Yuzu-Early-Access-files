@@ -131,17 +131,17 @@ public:
     /// Adds the given shared pointer to an internal list of active processes.
     void AppendNewProcess(KProcess* process);
 
-    /// Makes the given process the new current process.
-    void MakeCurrentProcess(KProcess* process);
+    /// Makes the given process the new application process.
+    void MakeApplicationProcess(KProcess* process);
 
-    /// Retrieves a pointer to the current process.
-    KProcess* CurrentProcess();
+    /// Retrieves a pointer to the application process.
+    KProcess* ApplicationProcess();
 
-    /// Retrieves a const pointer to the current process.
-    const KProcess* CurrentProcess() const;
+    /// Retrieves a const pointer to the application process.
+    const KProcess* ApplicationProcess() const;
 
-    /// Closes the current process.
-    void CloseCurrentProcess();
+    /// Closes the application process.
+    void CloseApplicationProcess();
 
     /// Retrieves the list of processes.
     const std::vector<KProcess*>& GetProcessList() const;
@@ -288,11 +288,11 @@ public:
     /// Gets the shared memory object for HIDBus services.
     const Kernel::KSharedMemory& GetHidBusSharedMem() const;
 
-    /// Suspend/unsuspend all processes.
-    void Suspend(bool suspend);
+    /// Suspend/unsuspend application process.
+    void SuspendApplication(bool suspend);
 
-    /// Exceptional exit all processes.
-    void ExceptionalExit();
+    /// Exceptional exit application process.
+    void ExceptionalExitApplication();
 
     /// Notify emulated CPU cores to shut down.
     void ShutdownCores();

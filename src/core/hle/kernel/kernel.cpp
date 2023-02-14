@@ -102,13 +102,13 @@ struct KernelCore::Impl {
 
     void InitializeCores() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            cores[core_id]->Initialize((*current_process).Is64BitProcess());
-            system.Memory().SetCurrentPageTable(*current_process, core_id);
+            cores[core_id]->Initialize((*application_process).Is64BitProcess());
+            system.Memory().SetCurrentPageTable(*application_process, core_id);
         }
     }
 
-    void CloseCurrentProcess() {
-        KProcess* old_process = current_process.exchange(nullptr);
+    void CloseApplicationProcess() {
+        KProcess* old_process = application_process.exchange(nullptr);
         if (old_process == nullptr) {
             return;
         }
@@ -182,7 +182,7 @@ struct KernelCore::Impl {
             }
         }
 
-        CloseCurrentProcess();
+        CloseApplicationProcess();
 
         // Track kernel objects that were not freed on shutdown
         {
@@ -363,8 +363,8 @@ struct KernelCore::Impl {
         }
     }
 
-    void MakeCurrentProcess(KProcess* process) {
-        current_process = process;
+    void MakeApplicationProcess(KProcess* process) {
+        application_process = process;
     }
 
     static inline thread_local u8 host_thread_id = UINT8_MAX;
@@ -812,7 +812,7 @@ struct KernelCore::Impl {
 
     // Lists all processes that exist in the current session.
     std::vector<KProcess*> process_list;
-    std::atomic<KProcess*> current_process{};
+    std::atomic<KProcess*> application_process{};
     std::unique_ptr<Kernel::GlobalSchedulerContext> global_scheduler_context;
     std::unique_ptr<Kernel::KHardwareTimer> hardware_timer;
 
@@ -932,20 +932,20 @@ void KernelCore::AppendNewProcess(KProcess* process) {
     impl->process_list.push_back(process);
 }
 
-void KernelCore::MakeCurrentProcess(KProcess* process) {
-    impl->MakeCurrentProcess(process);
+void KernelCore::MakeApplicationProcess(KProcess* process) {
+    impl->MakeApplicationProcess(process);
 }
 
-KProcess* KernelCore::CurrentProcess() {
-    return impl->current_process;
+KProcess* KernelCore::ApplicationProcess() {
+    return impl->application_process;
 }
 
-const KProcess* KernelCore::CurrentProcess() const {
-    return impl->current_process;
+const KProcess* KernelCore::ApplicationProcess() const {
+    return impl->application_process;
 }
 
-void KernelCore::CloseCurrentProcess() {
-    impl->CloseCurrentProcess();
+void KernelCore::CloseApplicationProcess() {
+    impl->CloseApplicationProcess();
 }
 
 const std::vector<KProcess*>& KernelCore::GetProcessList() const {
@@ -1193,12 +1193,12 @@ const Kernel::KSharedMemory& KernelCore::GetHidBusSharedMem() const {
     return *impl->hidbus_shared_mem;
 }
 
-void KernelCore::Suspend(bool suspended) {
+void KernelCore::SuspendApplication(bool suspended) {
     const bool should_suspend{exception_exited || suspended};
     const auto activity = should_suspend ? ProcessActivity::Paused : ProcessActivity::Runnable;
 
-    //! This refers to the application process, not the current process.
-    KScopedAutoObject<KProcess> process = CurrentProcess();
+    // Get the application process.
+    KScopedAutoObject<KProcess> process = ApplicationProcess();
     if (process.IsNull()) {
         return;
     }
@@ -1209,8 +1209,8 @@ void KernelCore::Suspend(bool suspended) {
     // Wait for process execution to stop.
     bool must_wait{should_suspend};
 
-    // KernelCore::Suspend must be called from locked context, or we
-    // could race another call to SetActivity, interfering with waiting.
+    // KernelCore::SuspendApplication must be called from locked context,
+    // or we could race another call to SetActivity, interfering with waiting.
     while (must_wait) {
         KScopedSchedulerLock sl{*this};
 
@@ -1244,9 +1244,9 @@ bool KernelCore::IsShuttingDown() const {
     return impl->IsShuttingDown();
 }
 
-void KernelCore::ExceptionalExit() {
+void KernelCore::ExceptionalExitApplication() {
     exception_exited = true;
-    Suspend(true);
+    SuspendApplication(true);
 }
 
 void KernelCore::EnterSVCProfile() {

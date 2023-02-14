@@ -110,7 +110,7 @@ json GetProcessorStateData(const std::string& architecture, u64 entry_point, u64
 }
 
 json GetProcessorStateDataAuto(Core::System& system) {
-    const auto* process{system.CurrentProcess()};
+    const auto* process{system.ApplicationProcess()};
     auto& arm{system.CurrentArmInterface()};
 
     Core::ARM_Interface::ThreadContext64 context{};
@@ -234,7 +234,7 @@ void Reporter::SaveSvcBreakReport(u32 type, bool signal_debugger, u64 info1, u64
     }
 
     const auto timestamp = GetTimestamp();
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     auto out = GetFullDataAuto(timestamp, title_id, system);
 
     auto break_out = json{
@@ -261,7 +261,7 @@ void Reporter::SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u
     }
 
     const auto timestamp = GetTimestamp();
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     auto out = GetFullDataAuto(timestamp, title_id, system);
 
     auto function_out = GetHLERequestContextData(ctx, system.Memory());
@@ -283,7 +283,7 @@ void Reporter::SaveUnimplementedAppletReport(
     }
 
     const auto timestamp = GetTimestamp();
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
     auto out = GetFullDataAuto(timestamp, title_id, system);
 
     out["applet_common_args"] = {
@@ -376,7 +376,7 @@ void Reporter::SaveUserReport() const {
     }
 
     const auto timestamp = GetTimestamp();
-    const auto title_id = system.GetCurrentProcessProgramID();
+    const auto title_id = system.GetApplicationProcessProgramID();
 
     SaveToFile(GetFullDataAuto(timestamp, title_id, system),
                GetPath("user_report", title_id, timestamp));

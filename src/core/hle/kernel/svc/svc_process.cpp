@@ -9,7 +9,7 @@ namespace Kernel::Svc {
 
 /// Exits the current process
 void ExitProcess(Core::System& system) {
-    auto* current_process = system.Kernel().CurrentProcess();
+    auto* current_process = GetCurrentProcessPointer(system.Kernel());
 
     LOG_INFO(Kernel_SVC, "Process {} exiting", current_process->GetProcessID());
     ASSERT_MSG(current_process->GetState() == KProcess::State::Running,
@@ -23,9 +23,9 @@ Result GetProcessId(Core::System& system, u64* out_process_id, Handle handle) {
     LOG_DEBUG(Kernel_SVC, "called handle=0x{:08X}", handle);
 
     // Get the object from the handle table.
-    KScopedAutoObject obj =
-        system.Kernel().CurrentProcess()->GetHandleTable().GetObject<KAutoObject>(
-            static_cast<Handle>(handle));
+    KScopedAutoObject obj = GetCurrentProcess(system.Kernel())
+                                .GetHandleTable()
+                                .GetObject<KAutoObject>(static_cast<Handle>(handle));
     R_UNLESS(obj.IsNotNull(), ResultInvalidHandle);
 
     // Get the process from the object.
@@ -63,10 +63,10 @@ Result GetProcessList(Core::System& system, s32* out_num_processes, VAddr out_pr
         return ResultOutOfRange;
     }
 
-    const auto& kernel = system.Kernel();
+    auto& kernel = system.Kernel();
     const auto total_copy_size = out_process_ids_size * sizeof(u64);
 
-    if (out_process_ids_size > 0 && !kernel.CurrentProcess()->PageTable().IsInsideAddressSpace(
+    if (out_process_ids_size > 0 && !GetCurrentProcess(kernel).PageTable().IsInsideAddressSpace(
                                         out_process_ids, total_copy_size)) {
         LOG_ERROR(Kernel_SVC, "Address range outside address space. begin=0x{:016X}, end=0x{:016X}",
                   out_process_ids, out_process_ids + total_copy_size);
@@ -92,7 +92,7 @@ Result GetProcessInfo(Core::System& system, s64* out, Handle process_handle,
                       ProcessInfoType info_type) {
     LOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, type=0x{:X}", process_handle, info_type);
 
-    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
     KScopedAutoObject process = handle_table.GetObject<KProcess>(process_handle);
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Process handle does not exist, process_handle=0x{:08X}",
