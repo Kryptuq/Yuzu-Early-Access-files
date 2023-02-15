@@ -2734,25 +2734,11 @@ private:
     }
 };
 
-class HidTmp final : public ServiceFramework<HidTmp> {
-public:
-    explicit HidTmp(Core::System& system_) : ServiceFramework{system_, "hid:tmp"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "GetConsoleSixAxisSensorCalibrationValues"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
     std::make_shared<Hid>(system)->InstallAsService(service_manager);
     std::make_shared<HidBus>(system)->InstallAsService(service_manager);
     std::make_shared<HidDbg>(system)->InstallAsService(service_manager);
     std::make_shared<HidSys>(system)->InstallAsService(service_manager);
-    std::make_shared<HidTmp>(system)->InstallAsService(service_manager);
 
     std::make_shared<Service::IRS::IRS>(system)->InstallAsService(service_manager);
     std::make_shared<Service::IRS::IRS_SYS>(system)->InstallAsService(service_manager);

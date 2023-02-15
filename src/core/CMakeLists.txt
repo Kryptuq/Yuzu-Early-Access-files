@@ -384,8 +384,6 @@ add_library(core STATIC
     hle/service/am/omm.h
     hle/service/am/spsm.cpp
     hle/service/am/spsm.h
-    hle/service/am/tcap.cpp
-    hle/service/am/tcap.h
     hle/service/aoc/aoc_u.cpp
     hle/service/aoc/aoc_u.h
     hle/service/apm/apm.cpp
@@ -396,28 +394,18 @@ add_library(core STATIC
     hle/service/apm/apm_interface.h
     hle/service/audio/audctl.cpp
     hle/service/audio/audctl.h
-    hle/service/audio/auddbg.cpp
-    hle/service/audio/auddbg.h
-    hle/service/audio/audin_a.cpp
-    hle/service/audio/audin_a.h
     hle/service/audio/audin_u.cpp
     hle/service/audio/audin_u.h
     hle/service/audio/audio.cpp
     hle/service/audio/audio.h
-    hle/service/audio/audout_a.cpp
-    hle/service/audio/audout_a.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
     hle/service/audio/audrec_a.cpp
     hle/service/audio/audrec_a.h
     hle/service/audio/audrec_u.cpp
     hle/service/audio/audrec_u.h
-    hle/service/audio/audren_a.cpp
-    hle/service/audio/audren_a.h
     hle/service/audio/audren_u.cpp
     hle/service/audio/audren_u.h
-    hle/service/audio/codecctl.cpp
-    hle/service/audio/codecctl.h
     hle/service/audio/errors.h
     hle/service/audio/hwopus.cpp
     hle/service/audio/hwopus.h
@@ -712,8 +700,6 @@ add_library(core STATIC
     hle/service/sm/sm_controller.h
     hle/service/sockets/bsd.cpp
     hle/service/sockets/bsd.h
-    hle/service/sockets/ethc.cpp
-    hle/service/sockets/ethc.h
     hle/service/sockets/nsd.cpp
     hle/service/sockets/nsd.h
     hle/service/sockets/sfdnsres.cpp
@@ -780,8 +766,6 @@ add_library(core STATIC
     hle/service/vi/vi_s.h
     hle/service/vi/vi_u.cpp
     hle/service/vi/vi_u.h
-    hle/service/wlan/wlan.cpp
-    hle/service/wlan/wlan.h
     internal_network/network.cpp
     internal_network/network.h
     internal_network/network_interface.cpp

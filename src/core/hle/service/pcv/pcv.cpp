@@ -52,32 +52,6 @@ public:
     }
 };
 
-class PCV_ARB final : public ServiceFramework<PCV_ARB> {
-public:
-    explicit PCV_ARB(Core::System& system_) : ServiceFramework{system_, "pcv:arb"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "ReleaseControl"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
-class PCV_IMM final : public ServiceFramework<PCV_IMM> {
-public:
-    explicit PCV_IMM(Core::System& system_) : ServiceFramework{system_, "pcv:imm"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "SetClockRate"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
 class IClkrstSession final : public ServiceFramework<IClkrstSession> {
 public:
     explicit IClkrstSession(Core::System& system_, DeviceCode deivce_code_)
@@ -169,8 +143,6 @@ public:
 
 void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
     std::make_shared<PCV>(system)->InstallAsService(sm);
-    std::make_shared<PCV_ARB>(system)->InstallAsService(sm);
-    std::make_shared<PCV_IMM>(system)->InstallAsService(sm);
     std::make_shared<CLKRST>(system, "clkrst")->InstallAsService(sm);
     std::make_shared<CLKRST>(system, "clkrst:i")->InstallAsService(sm);
     std::make_shared<CLKRST_A>(system)->InstallAsService(sm);

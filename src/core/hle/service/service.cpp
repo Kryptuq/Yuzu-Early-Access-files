@@ -68,7 +68,6 @@
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/usb/usb.h"
 #include "core/hle/service/vi/vi.h"
-#include "core/hle/service/wlan/wlan.h"
 #include "core/reporter.h"
 
 namespace Service {
@@ -306,7 +305,6 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     Time::InstallInterfaces(system);
     USB::InstallInterfaces(*sm, system);
     VI::InstallInterfaces(*sm, system, *nv_flinger, *hos_binder_driver_server);
-    WLAN::InstallInterfaces(*sm, system);
 }
 
 Services::~Services() = default;

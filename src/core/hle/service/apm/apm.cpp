@@ -14,8 +14,6 @@ void InstallInterfaces(Core::System& system) {
     auto module_ = std::make_shared<Module>();
     std::make_shared<APM>(system, module_, system.GetAPMController(), "apm")
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<APM>(system, module_, system.GetAPMController(), "apm:p")
-        ->InstallAsService(system.ServiceManager());
     std::make_shared<APM>(system, module_, system.GetAPMController(), "apm:am")
         ->InstallAsService(system.ServiceManager());
     std::make_shared<APM_Sys>(system, system.GetAPMController())
