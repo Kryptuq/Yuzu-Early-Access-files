@@ -152,6 +152,8 @@ bool Codec::CreateGpuAvDevice() {
 void Codec::InitializeAvCodecContext() {
     av_codec_ctx = avcodec_alloc_context3(av_codec);
     av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
+    av_codec_ctx->thread_count = 0;
+    av_codec_ctx->thread_type &= ~FF_THREAD_FRAME;
 }
 
 void Codec::InitializeGpuDecoder() {

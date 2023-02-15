@@ -3167,20 +3167,8 @@ void GMainWindow::ShowFullscreen() {
         window->hide();
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
         const auto screen_geometry = GuessCurrentScreen(window)->geometry();
-        // NB: On Windows, a borderless window will be treated the same as exclusive fullscreen
-        //     when the window geometry matches the physical dimensions of the screen.
-        //     However, with High DPI scaling, when the devicePixelRatioF() is > 1, the borderless
-        //     window apparently is not treated as exclusive fullscreen and functions correctly.
-        //     One can verify and replicate this behavior by using a high resolution (4K) display,
-        //     and switching between 100% and 200% scaling in Windows' display settings.
-        //     At 100%, without the addition of 1, it is treated as exclusive fullscreen.
-        //     At 200%, with or without the addition of 1, it is treated as borderless windowed.
-        //     Therefore, we can use (read: abuse) this difference in behavior to fix this issue for
-        //     those with higher resolution displays when the Qt scaling ratio is > 1.
-        //     Should this behavior be changed in the future, please revisit this workaround.
-        const bool must_add_one = devicePixelRatioF() == 1.0f;
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
-                            screen_geometry.height() + (must_add_one ? 1 : 0));
+                            screen_geometry.height() + 1);
         window->raise();
         window->showNormal();
     };
