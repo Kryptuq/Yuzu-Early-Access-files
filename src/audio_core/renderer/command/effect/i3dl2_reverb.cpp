@@ -244,16 +244,16 @@ template <size_t NumChannels>
 static void ApplyI3dl2ReverbEffect(I3dl2ReverbInfo::State& state,
                                    std::span<std::span<const s32>> inputs,
                                    std::span<std::span<s32>> outputs, const u32 sample_count) {
-    constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes1Ch{
+    static constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes1Ch{
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
-    constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes2Ch{
+    static constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes2Ch{
         0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1,
     };
-    constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes4Ch{
+    static constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes4Ch{
         0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 3, 3, 3,
     };
-    constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes6Ch{
+    static constexpr std::array<u8, I3dl2ReverbInfo::MaxDelayTaps> OutTapIndexes6Ch{
         2, 0, 0, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 0, 0, 0, 0, 5, 5, 5,
     };
 

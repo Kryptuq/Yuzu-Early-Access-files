@@ -48,7 +48,7 @@ void TurboMode::Run(std::stop_token stop_token) {
     auto commit = m_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
 
     // Create the descriptor pool to contain our descriptor.
-    constexpr VkDescriptorPoolSize pool_size{
+    static constexpr VkDescriptorPoolSize pool_size{
         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         .descriptorCount = 1,
     };
@@ -63,7 +63,7 @@ void TurboMode::Run(std::stop_token stop_token) {
     });
 
     // Create the descriptor set layout from the pool.
-    constexpr VkDescriptorSetLayoutBinding layout_binding{
+    static constexpr VkDescriptorSetLayoutBinding layout_binding{
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         .descriptorCount = 1,

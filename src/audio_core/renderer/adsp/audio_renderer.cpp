@@ -132,7 +132,7 @@ void AudioRenderer::CreateSinkStreams() {
 }
 
 void AudioRenderer::ThreadFunc() {
-    constexpr char name[]{"AudioRenderer"};
+    static constexpr char name[]{"AudioRenderer"};
     MicroProfileOnThreadCreate(name);
     Common::SetCurrentThreadName(name);
     Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);

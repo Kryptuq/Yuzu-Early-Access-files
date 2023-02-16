@@ -35,7 +35,7 @@ void SinkStream::AppendBuffer(SinkBuffer& buffer, std::vector<s16>& samples) {
 
     if (system_channels == 6 && device_channels == 2) {
         // We're given 6 channels, but our device only outputs 2, so downmix.
-        constexpr std::array<f32, 4> down_mix_coeff{1.0f, 0.707f, 0.251f, 0.707f};
+        static constexpr std::array<f32, 4> down_mix_coeff{1.0f, 0.707f, 0.251f, 0.707f};
 
         for (u32 read_index = 0, write_index = 0; read_index < samples.size();
              read_index += system_channels, write_index += device_channels) {
@@ -202,7 +202,7 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     // If we're paused or going to shut down, we don't want to consume buffers as coretiming is
     // paused and we'll desync, so just play silence.
     if (system.IsPaused() || system.IsShuttingDown()) {
-        constexpr std::array<s16, 6> silence{};
+        static constexpr std::array<s16, 6> silence{};
         for (size_t i = frames_written; i < num_frames; i++) {
             std::memcpy(&output_buffer[i * frame_size], &silence[0], frame_size_bytes);
         }

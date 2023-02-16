@@ -16,7 +16,7 @@ namespace Core {
 class GDBStubArch {
 public:
     virtual ~GDBStubArch() = default;
-    virtual std::string GetTargetXML() const = 0;
+    virtual std::string_view GetTargetXML() const = 0;
     virtual std::string RegRead(const Kernel::KThread* thread, size_t id) const = 0;
     virtual void RegWrite(Kernel::KThread* thread, size_t id, std::string_view value) const = 0;
     virtual std::string ReadRegisters(const Kernel::KThread* thread) const = 0;
@@ -27,7 +27,7 @@ public:
 
 class GDBStubA64 final : public GDBStubArch {
 public:
-    std::string GetTargetXML() const override;
+    std::string_view GetTargetXML() const override;
     std::string RegRead(const Kernel::KThread* thread, size_t id) const override;
     void RegWrite(Kernel::KThread* thread, size_t id, std::string_view value) const override;
     std::string ReadRegisters(const Kernel::KThread* thread) const override;
@@ -47,7 +47,7 @@ private:
 
 class GDBStubA32 final : public GDBStubArch {
 public:
-    std::string GetTargetXML() const override;
+    std::string_view GetTargetXML() const override;
     std::string RegRead(const Kernel::KThread* thread, size_t id) const override;
     void RegWrite(Kernel::KThread* thread, size_t id, std::string_view value) const override;
     std::string ReadRegisters(const Kernel::KThread* thread) const override;

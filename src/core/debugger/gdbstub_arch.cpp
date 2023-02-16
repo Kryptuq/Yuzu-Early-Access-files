@@ -41,9 +41,8 @@ static void PutSIMDRegister(std::array<u32, 64>& simd_regs, size_t offset, const
 
 // For sample XML files see the GDB source /gdb/features
 // This XML defines what the registers are for this specific ARM device
-std::string GDBStubA64::GetTargetXML() const {
-    constexpr const char* target_xml =
-        R"(<?xml version="1.0"?>
+std::string_view GDBStubA64::GetTargetXML() const {
+    return R"(<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
   <architecture>aarch64</architecture>
@@ -178,8 +177,6 @@ std::string GDBStubA64::GetTargetXML() const {
     <reg name="fpcr" bitsize="32"/>
   </feature>
 </target>)";
-
-    return target_xml;
 }
 
 std::string GDBStubA64::RegRead(const Kernel::KThread* thread, size_t id) const {
@@ -270,9 +267,8 @@ u32 GDBStubA64::BreakpointInstruction() const {
     return 0xd4200000;
 }
 
-std::string GDBStubA32::GetTargetXML() const {
-    constexpr const char* target_xml =
-        R"(<?xml version="1.0"?>
+std::string_view GDBStubA32::GetTargetXML() const {
+    return R"(<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
   <architecture>arm</architecture>
@@ -378,8 +374,6 @@ std::string GDBStubA32::GetTargetXML() const {
     <reg name="fpscr" bitsize="32" type="int" group="float" regnum="80"/>
   </feature>
 </target>)";
-
-    return target_xml;
 }
 
 std::string GDBStubA32::RegRead(const Kernel::KThread* thread, size_t id) const {

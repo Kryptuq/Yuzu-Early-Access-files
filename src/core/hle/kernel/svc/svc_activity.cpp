@@ -16,7 +16,7 @@ Result SetThreadActivity(Core::System& system, Handle thread_handle,
               thread_activity);
 
     // Validate the activity.
-    constexpr auto IsValidThreadActivity = [](ThreadActivity activity) {
+    static constexpr auto IsValidThreadActivity = [](ThreadActivity activity) {
         return activity == ThreadActivity::Runnable || activity == ThreadActivity::Paused;
     };
     R_UNLESS(IsValidThreadActivity(thread_activity), ResultInvalidEnumValue);

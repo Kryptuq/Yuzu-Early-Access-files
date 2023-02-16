@@ -71,7 +71,7 @@ static std::string GetRelativePathFromNcaID(const std::array<u8, 16>& nca_id, bo
 }
 
 static std::string GetCNMTName(TitleType type, u64 title_id) {
-    constexpr std::array<const char*, 9> TITLE_TYPE_NAMES{
+    static constexpr std::array<const char*, 9> TITLE_TYPE_NAMES{
         "SystemProgram",
         "SystemData",
         "SystemUpdate",

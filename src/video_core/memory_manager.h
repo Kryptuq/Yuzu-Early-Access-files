@@ -216,7 +216,7 @@ private:
     std::vector<u64> big_page_continous;
     std::vector<std::pair<VAddr, std::size_t>> page_stash{};
 
-    constexpr static size_t continous_bits = 64;
+    static constexpr size_t continous_bits = 64;
 
     const size_t unique_identifier;
     std::unique_ptr<VideoCommon::InvalidationAccumulator> accumulator;

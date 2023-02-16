@@ -390,7 +390,7 @@ void Joycons::OnMotionUpdate(std::size_t port, Joycon::ControllerType type, int 
 void Joycons::OnRingConUpdate(f32 ring_data) {
     // To simplify ring detection it will always be mapped to an empty identifier for all
     // controllers
-    constexpr PadIdentifier identifier = {
+    static constexpr PadIdentifier identifier = {
         .guid = Common::UUID{},
         .port = 0,
         .pad = 0,

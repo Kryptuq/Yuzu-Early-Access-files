@@ -259,7 +259,7 @@ u32 Maxwell3D::GetMaxCurrentVertices() {
 size_t Maxwell3D::EstimateIndexBufferSize() {
     GPUVAddr start_address = regs.index_buffer.StartAddress();
     GPUVAddr end_address = regs.index_buffer.EndAddress();
-    constexpr std::array<size_t, 4> max_sizes = {
+    static constexpr std::array<size_t, 4> max_sizes = {
         std::numeric_limits<u8>::max(), std::numeric_limits<u16>::max(),
         std::numeric_limits<u32>::max(), std::numeric_limits<u32>::max()};
     const size_t byte_size = regs.index_buffer.FormatSizeInBytes();

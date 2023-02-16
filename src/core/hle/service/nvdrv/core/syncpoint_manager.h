@@ -124,7 +124,7 @@ private:
                        //!< value
     };
 
-    constexpr static std::size_t SyncpointCount{192};
+    static constexpr std::size_t SyncpointCount{192};
     std::array<SyncpointInfo, SyncpointCount> syncpoints{};
     std::mutex reservation_lock;
 

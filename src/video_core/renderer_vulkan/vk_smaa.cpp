@@ -468,7 +468,7 @@ VkWriteDescriptorSet CreateWriteDescriptorSet(std::vector<VkDescriptorImageInfo>
 }
 
 void ClearColorImage(vk::CommandBuffer& cmdbuf, VkImage image) {
-    constexpr std::array<VkImageSubresourceRange, 1> subresources{{{
+    static constexpr std::array<VkImageSubresourceRange, 1> subresources{{{
         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
         .baseMipLevel = 0,
         .levelCount = 1,
@@ -528,8 +528,8 @@ SMAA::SMAA(const Device& device, MemoryAllocator& allocator, size_t image_count,
 }
 
 void SMAA::CreateImages() {
-    constexpr VkExtent2D area_extent{AREATEX_WIDTH, AREATEX_HEIGHT};
-    constexpr VkExtent2D search_extent{SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT};
+    static constexpr VkExtent2D area_extent{AREATEX_WIDTH, AREATEX_HEIGHT};
+    static constexpr VkExtent2D search_extent{SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT};
 
     std::tie(m_static_images[Area], m_static_buffer_commits[Area]) =
         CreateWrappedImage(m_device, m_allocator, area_extent, VK_FORMAT_R8G8_UNORM);
@@ -586,12 +586,12 @@ void SMAA::CreateSampler() {
 
 void SMAA::CreateShaders() {
     // These match the order of the SMAAStage enum
-    constexpr std::array vert_shader_sources{
+    static constexpr std::array vert_shader_sources{
         ARRAY_TO_SPAN(SMAA_EDGE_DETECTION_VERT_SPV),
         ARRAY_TO_SPAN(SMAA_BLENDING_WEIGHT_CALCULATION_VERT_SPV),
         ARRAY_TO_SPAN(SMAA_NEIGHBORHOOD_BLENDING_VERT_SPV),
     };
-    constexpr std::array frag_shader_sources{
+    static constexpr std::array frag_shader_sources{
         ARRAY_TO_SPAN(SMAA_EDGE_DETECTION_FRAG_SPV),
         ARRAY_TO_SPAN(SMAA_BLENDING_WEIGHT_CALCULATION_FRAG_SPV),
         ARRAY_TO_SPAN(SMAA_NEIGHBORHOOD_BLENDING_FRAG_SPV),
@@ -675,8 +675,8 @@ void SMAA::UploadImages(Scheduler& scheduler) {
         return;
     }
 
-    constexpr VkExtent2D area_extent{AREATEX_WIDTH, AREATEX_HEIGHT};
-    constexpr VkExtent2D search_extent{SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT};
+    static constexpr VkExtent2D area_extent{AREATEX_WIDTH, AREATEX_HEIGHT};
+    static constexpr VkExtent2D search_extent{SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT};
 
     UploadImage(m_device, m_allocator, scheduler, m_static_images[Area], area_extent,
                 VK_FORMAT_R8G8_UNORM, ARRAY_TO_SPAN(areaTexBytes));

@@ -29,7 +29,7 @@ constexpr u32 pdep(u32 value) {
 
 template <u32 mask, u32 incr_amount>
 void incrpdep(u32& value) {
-    constexpr u32 swizzled_incr = pdep<mask>(incr_amount);
+    static constexpr u32 swizzled_incr = pdep<mask>(incr_amount);
     value = ((value | ~mask) + swizzled_incr) & mask;
 }
 

@@ -19,24 +19,24 @@ namespace AudioCore::AudioRenderer {
 static void SrcProcessFrame(std::span<s32> output, std::span<const s32> input,
                             const u32 target_sample_count, const u32 source_sample_count,
                             UpsamplerState* state) {
-    constexpr u32 WindowSize = 10;
-    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc1{
+    static constexpr u32 WindowSize = 10;
+    static constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc1{
         0.95376587f,   -0.12872314f, 0.060028076f,  -0.032470703f, 0.017669678f,
         -0.009124756f, 0.004272461f, -0.001739502f, 0.000579834f,  -0.000091552734f,
     };
-    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc2{
+    static constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc2{
         0.8230896f,    -0.19161987f,  0.093444824f,  -0.05090332f,   0.027557373f,
         -0.014038086f, 0.0064697266f, -0.002532959f, 0.00079345703f, -0.00012207031f,
     };
-    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc3{
+    static constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc3{
         0.6298828f,    -0.19274902f, 0.09725952f,    -0.05319214f,  0.028625488f,
         -0.014373779f, 0.006500244f, -0.0024719238f, 0.0007324219f, -0.000091552734f,
     };
-    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc4{
+    static constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc4{
         0.4057312f,    -0.1468811f,  0.07601929f,    -0.041656494f,  0.022216797f,
         -0.011016846f, 0.004852295f, -0.0017700195f, 0.00048828125f, -0.000030517578f,
     };
-    constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc5{
+    static constexpr std::array<Common::FixedPoint<17, 15>, WindowSize> WindowedSinc5{
         0.1854248f,    -0.075164795f, 0.03967285f,    -0.021728516f,  0.011474609f,
         -0.005584717f, 0.0024108887f, -0.0008239746f, 0.00021362305f, 0.0f,
     };

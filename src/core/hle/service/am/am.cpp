@@ -1570,7 +1570,7 @@ void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
         const auto& version = res.first->GetVersionString();
         std::copy(version.begin(), version.end(), version_string.begin());
     } else {
-        constexpr char default_version[]{"1.0.0"};
+        static constexpr char default_version[]{"1.0.0"};
         std::memcpy(version_string.data(), default_version, sizeof(default_version));
     }
 

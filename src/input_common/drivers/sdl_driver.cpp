@@ -616,7 +616,7 @@ bool SDLDriver::IsVibrationEnabled(const PadIdentifier& identifier) {
     const auto joystick =
         GetSDLJoystickByGUID(identifier.guid.RawString(), static_cast<int>(identifier.port));
 
-    constexpr Common::Input::VibrationStatus test_vibration{
+    static constexpr Common::Input::VibrationStatus test_vibration{
         .low_amplitude = 1,
         .low_frequency = 160.0f,
         .high_amplitude = 1,
@@ -624,7 +624,7 @@ bool SDLDriver::IsVibrationEnabled(const PadIdentifier& identifier) {
         .type = Common::Input::VibrationAmplificationType::Exponential,
     };
 
-    constexpr Common::Input::VibrationStatus zero_vibration{
+    static constexpr Common::Input::VibrationStatus zero_vibration{
         .low_amplitude = 0,
         .low_frequency = 160.0f,
         .high_amplitude = 0,

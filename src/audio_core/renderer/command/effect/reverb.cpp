@@ -252,16 +252,16 @@ template <size_t NumChannels>
 static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, ReverbInfo::State& state,
                               std::vector<std::span<const s32>>& inputs,
                               std::vector<std::span<s32>>& outputs, const u32 sample_count) {
-    constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes1Ch{
+    static constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes1Ch{
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
-    constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes2Ch{
+    static constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes2Ch{
         0, 0, 1, 1, 0, 1, 0, 0, 1, 1,
     };
-    constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes4Ch{
+    static constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes4Ch{
         0, 0, 1, 1, 0, 1, 2, 2, 3, 3,
     };
-    constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes6Ch{
+    static constexpr std::array<u8, ReverbInfo::MaxDelayTaps> OutTapIndexes6Ch{
         0, 0, 1, 1, 2, 2, 4, 4, 5, 5,
     };
 

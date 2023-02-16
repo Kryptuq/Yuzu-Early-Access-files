@@ -219,7 +219,7 @@ static void LogRuntimes() {
 #ifdef _MSC_VER
     // It is possible that the name of the dll will change.
     // vcruntime140.dll is for 2015 and onwards
-    constexpr char runtime_dll_name[] = "vcruntime140.dll";
+    static constexpr char runtime_dll_name[] = "vcruntime140.dll";
     UINT sz = GetFileVersionInfoSizeA(runtime_dll_name, nullptr);
     bool runtime_version_inspection_worked = false;
     if (sz > 0) {

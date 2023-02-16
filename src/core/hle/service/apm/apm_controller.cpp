@@ -56,7 +56,7 @@ void Controller::SetPerformanceConfiguration(PerformanceMode mode,
 }
 
 void Controller::SetFromCpuBoostMode(CpuBoostMode mode) {
-    constexpr std::array<PerformanceConfiguration, 3> BOOST_MODE_TO_CONFIG_MAP{{
+    static constexpr std::array<PerformanceConfiguration, 3> BOOST_MODE_TO_CONFIG_MAP{{
         PerformanceConfiguration::Config7,
         PerformanceConfiguration::Config13,
         PerformanceConfiguration::Config15,

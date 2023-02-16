@@ -286,7 +286,7 @@ static constexpr int TransitionTime(int year, Rule rule, int offset) {
 }
 
 static bool ParsePosixName(const char* name, TimeZoneRule& rule) {
-    constexpr char default_rule[]{",M4.1.0,M10.5.0"};
+    static constexpr char default_rule[]{",M4.1.0,M10.5.0"};
     const char* std_name{name};
     int std_len{};
     int offset{};

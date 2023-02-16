@@ -41,12 +41,12 @@ static IPSFileType IdentifyMagic(const std::vector<u8>& magic) {
         return IPSFileType::Error;
     }
 
-    constexpr std::array<u8, 5> patch_magic{{'P', 'A', 'T', 'C', 'H'}};
+    static constexpr std::array<u8, 5> patch_magic{{'P', 'A', 'T', 'C', 'H'}};
     if (std::equal(magic.begin(), magic.end(), patch_magic.begin())) {
         return IPSFileType::IPS;
     }
 
-    constexpr std::array<u8, 5> ips32_magic{{'I', 'P', 'S', '3', '2'}};
+    static constexpr std::array<u8, 5> ips32_magic{{'I', 'P', 'S', '3', '2'}};
     if (std::equal(magic.begin(), magic.end(), ips32_magic.begin())) {
         return IPSFileType::IPS32;
     }
@@ -55,12 +55,12 @@ static IPSFileType IdentifyMagic(const std::vector<u8>& magic) {
 }
 
 static bool IsEOF(IPSFileType type, const std::vector<u8>& data) {
-    constexpr std::array<u8, 3> eof{{'E', 'O', 'F'}};
+    static constexpr std::array<u8, 3> eof{{'E', 'O', 'F'}};
     if (type == IPSFileType::IPS && std::equal(data.begin(), data.end(), eof.begin())) {
         return true;
     }
 
-    constexpr std::array<u8, 4> eeof{{'E', 'E', 'O', 'F'}};
+    static constexpr std::array<u8, 4> eeof{{'E', 'E', 'O', 'F'}};
     return type == IPSFileType::IPS32 && std::equal(data.begin(), data.end(), eeof.begin());
 }
 
