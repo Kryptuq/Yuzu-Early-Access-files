@@ -15,23 +15,39 @@ constexpr int mouse_axis_y = 1;
 constexpr int wheel_axis_x = 2;
 constexpr int wheel_axis_y = 3;
 constexpr int motion_wheel_y = 4;
-constexpr int touch_axis_x = 10;
-constexpr int touch_axis_y = 11;
 constexpr PadIdentifier identifier = {
     .guid = Common::UUID{},
     .port = 0,
     .pad = 0,
 };
 
+constexpr PadIdentifier real_mouse_identifier = {
+    .guid = Common::UUID{},
+    .port = 1,
+    .pad = 0,
+};
+
+constexpr PadIdentifier touch_identifier = {
+    .guid = Common::UUID{},
+    .port = 2,
+    .pad = 0,
+};
+
 Mouse::Mouse(std::string input_engine_) : InputEngine(std::move(input_engine_)) {
     PreSetController(identifier);
+    PreSetController(real_mouse_identifier);
+    PreSetController(touch_identifier);
+
+    // Initialize all mouse axis
     PreSetAxis(identifier, mouse_axis_x);
     PreSetAxis(identifier, mouse_axis_y);
     PreSetAxis(identifier, wheel_axis_x);
     PreSetAxis(identifier, wheel_axis_y);
     PreSetAxis(identifier, motion_wheel_y);
-    PreSetAxis(identifier, touch_axis_x);
-    PreSetAxis(identifier, touch_axis_y);
+    PreSetAxis(real_mouse_identifier, mouse_axis_x);
+    PreSetAxis(real_mouse_identifier, mouse_axis_y);
+    PreSetAxis(touch_identifier, mouse_axis_x);
+    PreSetAxis(touch_identifier, mouse_axis_y);
     update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
 }
 
@@ -39,7 +55,7 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("Mouse");
     constexpr int update_time = 10;
     while (!stop_token.stop_requested()) {
-        if (Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
+        if (Settings::values.mouse_panning) {
             // Slow movement by 4%
             last_mouse_change *= 0.96f;
             const float sensitivity =
@@ -57,17 +73,7 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
     }
 }
 
-void Mouse::MouseMove(int x, int y, f32 touch_x, f32 touch_y, int center_x, int center_y) {
-    // If native mouse is enabled just set the screen coordinates
-    if (Settings::values.mouse_enabled) {
-        SetAxis(identifier, mouse_axis_x, touch_x);
-        SetAxis(identifier, mouse_axis_y, touch_y);
-        return;
-    }
-
-    SetAxis(identifier, touch_axis_x, touch_x);
-    SetAxis(identifier, touch_axis_y, touch_y);
-
+void Mouse::Move(int x, int y, int center_x, int center_y) {
     if (Settings::values.mouse_panning) {
         auto mouse_change =
             (Common::MakeVec(x, y) - Common::MakeVec(center_x, center_y)).Cast<float>();
@@ -113,20 +119,41 @@ void Mouse::MouseMove(int x, int y, f32 touch_x, f32 touch_y, int center_x, int 
     }
 }
 
-void Mouse::PressButton(int x, int y, f32 touch_x, f32 touch_y, MouseButton button) {
-    SetAxis(identifier, touch_axis_x, touch_x);
-    SetAxis(identifier, touch_axis_y, touch_y);
+void Mouse::MouseMove(f32 touch_x, f32 touch_y) {
+    SetAxis(real_mouse_identifier, mouse_axis_x, touch_x);
+    SetAxis(real_mouse_identifier, mouse_axis_y, touch_y);
+}
+
+void Mouse::TouchMove(f32 touch_x, f32 touch_y) {
+    SetAxis(touch_identifier, mouse_axis_x, touch_x);
+    SetAxis(touch_identifier, mouse_axis_y, touch_y);
+}
+
+void Mouse::PressButton(int x, int y, MouseButton button) {
     SetButton(identifier, static_cast<int>(button), true);
+
     // Set initial analog parameters
     mouse_origin = {x, y};
     last_mouse_position = {x, y};
     button_pressed = true;
 }
 
+void Mouse::PressMouseButton(MouseButton button) {
+    SetButton(real_mouse_identifier, static_cast<int>(button), true);
+}
+
+void Mouse::PressTouchButton(f32 touch_x, f32 touch_y, MouseButton button) {
+    SetAxis(touch_identifier, mouse_axis_x, touch_x);
+    SetAxis(touch_identifier, mouse_axis_y, touch_y);
+    SetButton(touch_identifier, static_cast<int>(button), true);
+}
+
 void Mouse::ReleaseButton(MouseButton button) {
     SetButton(identifier, static_cast<int>(button), false);
+    SetButton(real_mouse_identifier, static_cast<int>(button), false);
+    SetButton(touch_identifier, static_cast<int>(button), false);
 
-    if (!Settings::values.mouse_panning && !Settings::values.mouse_enabled) {
+    if (!Settings::values.mouse_panning) {
         SetAxis(identifier, mouse_axis_x, 0);
         SetAxis(identifier, mouse_axis_y, 0);
     }

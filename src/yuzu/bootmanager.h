@@ -184,8 +184,6 @@ public:
 
     void CaptureScreenshot(const QString& screenshot_path);
 
-    std::pair<u32, u32> ScaleTouch(const QPointF& pos) const;
-
     /**
      * Instructs the window to re-launch the application using the specified program_index.
      * @param program_index Specifies the index within the application of the program to launch.

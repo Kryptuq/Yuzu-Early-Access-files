@@ -62,7 +62,9 @@ void EmuWindow_SDL2::OnMouseButton(u32 button, u8 state, s32 x, s32 y) {
     const auto mouse_button = SDLButtonToMouseButton(button);
     if (state == SDL_PRESSED) {
         const auto [touch_x, touch_y] = MouseToTouchPos(x, y);
-        input_subsystem->GetMouse()->PressButton(x, y, touch_x, touch_y, mouse_button);
+        input_subsystem->GetMouse()->PressButton(x, y, mouse_button);
+        input_subsystem->GetMouse()->PressMouseButton(mouse_button);
+        input_subsystem->GetMouse()->PressTouchButton(touch_x, touch_y, mouse_button);
     } else {
         input_subsystem->GetMouse()->ReleaseButton(mouse_button);
     }
@@ -70,7 +72,9 @@ void EmuWindow_SDL2::OnMouseButton(u32 button, u8 state, s32 x, s32 y) {
 
 void EmuWindow_SDL2::OnMouseMotion(s32 x, s32 y) {
     const auto [touch_x, touch_y] = MouseToTouchPos(x, y);
-    input_subsystem->GetMouse()->MouseMove(x, y, touch_x, touch_y, 0, 0);
+    input_subsystem->GetMouse()->Move(x, y, 0, 0);
+    input_subsystem->GetMouse()->MouseMove(touch_x, touch_y);
+    input_subsystem->GetMouse()->TouchMove(touch_x, touch_y);
 }
 
 void EmuWindow_SDL2::OnFingerDown(float x, float y, std::size_t id) {

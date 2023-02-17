@@ -1165,6 +1165,14 @@ void GMainWindow::InitializeHotkeys() {
         Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
     connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
+        if (Settings::values.mouse_enabled) {
+            Settings::values.mouse_panning = false;
+            QMessageBox::warning(
+                this, tr("Emulated mouse is enabled"),
+                tr("Real mouse input and mouse panning are incompatible. Please disable the "
+                   "emulated mouse in input advanced settings to allow mouse panning."));
+            return;
+        }
         Settings::values.mouse_panning = !Settings::values.mouse_panning;
         if (Settings::values.mouse_panning) {
             render_window->installEventFilter(render_window);
@@ -1271,6 +1279,7 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::ShowList, this, &GMainWindow::OnGameListShowList);
     connect(game_list, &GameList::PopulatingCompleted,
             [this] { multiplayer_state->UpdateGameList(game_list->GetModel()); });
+    connect(game_list, &GameList::SaveConfig, this, &GMainWindow::OnSaveConfig);
 
     connect(game_list, &GameList::OpenPerGameGeneralRequested, this,
             &GMainWindow::OnGameListOpenPerGameProperties);
@@ -2654,6 +2663,8 @@ void GMainWindow::OnGameListAddDirectory() {
     } else {
         LOG_WARNING(Frontend, "Selected directory is already in the game list");
     }
+
+    OnSaveConfig();
 }
 
 void GMainWindow::OnGameListShowList(bool show) {
@@ -3015,8 +3026,10 @@ void GMainWindow::OnRestartGame() {
     if (!system->IsPoweredOn()) {
         return;
     }
-    // Make a copy since BootGame edits game_path
-    BootGame(QString(current_game_path));
+    // Make a copy since ShutdownGame edits game_path
+    const auto current_game = QString(current_game_path);
+    ShutdownGame();
+    BootGame(current_game);
 }
 
 void GMainWindow::OnPauseGame() {
@@ -3380,6 +3393,7 @@ void GMainWindow::OnConfigureTas() {
         return;
     } else if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();
+        OnSaveConfig();
     }
 }
 

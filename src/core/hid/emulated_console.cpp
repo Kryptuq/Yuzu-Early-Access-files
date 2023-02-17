@@ -23,7 +23,8 @@ void EmulatedConsole::SetTouchParams() {
 
     // We can't use mouse as touch if native mouse is enabled
     if (!Settings::values.mouse_enabled) {
-        touch_params[index++] = Common::ParamPackage{"engine:mouse,axis_x:10,axis_y:11,button:0"};
+        touch_params[index++] =
+            Common::ParamPackage{"engine:mouse,axis_x:0,axis_y:1,button:0,port:2"};
     }
 
     touch_params[index++] =

@@ -870,6 +870,7 @@ void GameList::ToggleFavorite(u64 program_id) {
             tree_view->setRowHidden(0, item_model->invisibleRootItem()->index(), true);
         }
     }
+    SaveConfig();
 }
 
 void GameList::AddFavorite(u64 program_id) {

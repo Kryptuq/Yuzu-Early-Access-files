@@ -34,9 +34,12 @@ void EmulatedDevices::ReloadInput() {
     // First two axis are reserved for mouse position
     key_index = 2;
     for (auto& mouse_device : mouse_analog_devices) {
+        // Mouse axis are only mapped on port 1, pad 0
         Common::ParamPackage mouse_params;
         mouse_params.Set("engine", "mouse");
         mouse_params.Set("axis", static_cast<int>(key_index));
+        mouse_params.Set("port", 1);
+        mouse_params.Set("pad", 0);
         mouse_device = Common::Input::CreateInputDevice(mouse_params);
         key_index++;
     }

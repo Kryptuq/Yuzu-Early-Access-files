@@ -37,13 +37,43 @@ public:
      * @param center_x the x-coordinate of the middle of the screen
      * @param center_y the y-coordinate of the middle of the screen
      */
-    void MouseMove(int x, int y, f32 touch_x, f32 touch_y, int center_x, int center_y);
+    void Move(int x, int y, int center_x, int center_y);
 
     /**
-     * Sets the status of all buttons bound with the key to pressed
-     * @param key_code the code of the key to press
+     * Signals that real mouse has moved.
+     * @param x the absolute position on the touchscreen of the cursor
+     * @param y the absolute position on the touchscreen of the cursor
      */
-    void PressButton(int x, int y, f32 touch_x, f32 touch_y, MouseButton button);
+    void MouseMove(f32 touch_x, f32 touch_y);
+
+    /**
+     * Signals that touch finger has moved.
+     * @param x the absolute position on the touchscreen of the cursor
+     * @param y the absolute position on the touchscreen of the cursor
+     */
+    void TouchMove(f32 touch_x, f32 touch_y);
+
+    /**
+     * Sets the status of a button to pressed
+     * @param x the x-coordinate of the cursor
+     * @param y the y-coordinate of the cursor
+     * @param button the id of the button to press
+     */
+    void PressButton(int x, int y, MouseButton button);
+
+    /**
+     * Sets the status of a mouse button to pressed
+     * @param button the id of the button to press
+     */
+    void PressMouseButton(MouseButton button);
+
+    /**
+     * Sets the status of touch finger to pressed
+     * @param x the absolute position on the touchscreen of the cursor
+     * @param y the absolute position on the touchscreen of the cursor
+     * @param button the id of the button to press
+     */
+    void PressTouchButton(f32 touch_x, f32 touch_y, MouseButton button);
 
     /**
      * Sets the status of all buttons bound with the key to released

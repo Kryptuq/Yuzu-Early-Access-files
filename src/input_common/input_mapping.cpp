@@ -194,6 +194,10 @@ bool MappingFactory::IsDriverValid(const MappingData& data) const {
     if (data.engine == "keyboard" && data.pad.port != 0) {
         return false;
     }
+    // Only port 0 can be mapped on the mouse
+    if (data.engine == "mouse" && data.pad.port != 0) {
+        return false;
+    }
     // To prevent mapping with two devices we disable any UDP except motion
     if (!Settings::values.enable_udp_controller && data.engine == "cemuhookudp" &&
         data.type != EngineInputType::Motion) {

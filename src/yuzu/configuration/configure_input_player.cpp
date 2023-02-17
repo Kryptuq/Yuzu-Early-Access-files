@@ -1490,7 +1490,7 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
     }
 
     const auto button = GRenderWindow::QtButtonToMouseButton(event->button());
-    input_subsystem->GetMouse()->PressButton(0, 0, 0, 0, button);
+    input_subsystem->GetMouse()->PressButton(0, 0, button);
 }
 
 void ConfigureInputPlayer::wheelEvent(QWheelEvent* event) {

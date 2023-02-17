@@ -1103,6 +1103,7 @@ void Config::SaveValues() {
     SaveRendererValues();
     SaveAudioValues();
     SaveSystemValues();
+    qt_config->sync();
 }
 
 void Config::SaveAudioValues() {

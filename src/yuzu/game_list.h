@@ -122,6 +122,7 @@ signals:
     void AddDirectory();
     void ShowList(bool show);
     void PopulatingCompleted();
+    void SaveConfig();
 
 private slots:
     void OnItemExpanded(const QModelIndex& item);
