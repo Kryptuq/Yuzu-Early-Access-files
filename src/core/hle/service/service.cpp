@@ -90,44 +90,13 @@ namespace Service {
 }
 
 ServiceFrameworkBase::ServiceFrameworkBase(Core::System& system_, const char* service_name_,
-                                           ServiceThreadType thread_type, u32 max_sessions_,
-                                           InvokerFn* handler_invoker_)
-    : SessionRequestHandler(system_.Kernel(), service_name_, thread_type), system{system_},
+                                           u32 max_sessions_, InvokerFn* handler_invoker_)
+    : SessionRequestHandler(system_.Kernel(), service_name_), system{system_},
       service_name{service_name_}, max_sessions{max_sessions_}, handler_invoker{handler_invoker_} {}
 
 ServiceFrameworkBase::~ServiceFrameworkBase() {
     // Wait for other threads to release access before destroying
     const auto guard = LockService();
-
-    if (named_port != nullptr) {
-        named_port->GetClientPort().Close();
-        named_port->GetServerPort().Close();
-        named_port = nullptr;
-    }
-}
-
-void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager) {
-    const auto guard = LockService();
-
-    ASSERT(!service_registered);
-
-    service_manager.RegisterService(service_name, max_sessions, shared_from_this());
-    service_registered = true;
-}
-
-Kernel::KClientPort& ServiceFrameworkBase::CreatePort() {
-    const auto guard = LockService();
-
-    if (named_port == nullptr) {
-        ASSERT(!service_registered);
-
-        named_port = Kernel::KPort::Create(kernel);
-        named_port->Initialize(max_sessions, false, service_name);
-
-        service_registered = true;
-    }
-
-    return named_port->GetClientPort();
 }
 
 void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n) {
@@ -244,67 +213,69 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     : hos_binder_driver_server{std::make_unique<NVFlinger::HosBinderDriverServer>(system)},
       nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system, *hos_binder_driver_server)} {
 
+    auto& kernel = system.Kernel();
+
     // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
-
     system.GetFileSystemController().CreateFactories(*system.GetFilesystem(), false);
 
-    system.Kernel().RegisterNamedService("sm:", SM::ServiceManager::InterfaceFactory);
-    system.Kernel().RegisterInterfaceForNamedService("sm:", SM::ServiceManager::SessionHandler);
+    // clang-format off
+    kernel.RunOnHostCoreProcess("audio",      [&] { Audio::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("FS",         [&] { FileSystem::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("jit",        [&] { JIT::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("ldn",        [&] { LDN::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("Loader",     [&] { LDR::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("nvservices", [&] { Nvidia::LoopProcess(*nv_flinger, system); }).detach();
+    kernel.RunOnHostCoreProcess("bsdsocket",  [&] { Sockets::LoopProcess(system); }).detach();
+    kernel.RunOnHostCoreProcess("vi",         [&] { VI::LoopProcess(system, *nv_flinger, *hos_binder_driver_server); }).detach();
 
-    Account::InstallInterfaces(system);
-    AM::InstallInterfaces(*sm, *nv_flinger, system);
-    AOC::InstallInterfaces(*sm, system);
-    APM::InstallInterfaces(system);
-    Audio::InstallInterfaces(*sm, system);
-    BCAT::InstallInterfaces(system);
-    BPC::InstallInterfaces(*sm, system);
-    BtDrv::InstallInterfaces(*sm, system);
-    BTM::InstallInterfaces(*sm, system);
-    Capture::InstallInterfaces(*sm, system);
-    ERPT::InstallInterfaces(*sm, system);
-    ES::InstallInterfaces(*sm, system);
-    EUPLD::InstallInterfaces(*sm, system);
-    Fatal::InstallInterfaces(*sm, system);
-    FGM::InstallInterfaces(*sm, system);
-    FileSystem::InstallInterfaces(system);
-    Friend::InstallInterfaces(*sm, system);
-    Glue::InstallInterfaces(system);
-    GRC::InstallInterfaces(*sm, system);
-    HID::InstallInterfaces(*sm, system);
-    JIT::InstallInterfaces(*sm, system);
-    LBL::InstallInterfaces(*sm, system);
-    LDN::InstallInterfaces(*sm, system);
-    LDR::InstallInterfaces(*sm, system);
-    LM::InstallInterfaces(system);
-    Migration::InstallInterfaces(*sm, system);
-    Mii::InstallInterfaces(*sm, system);
-    MM::InstallInterfaces(*sm, system);
-    MNPP::InstallInterfaces(*sm, system);
-    NCM::InstallInterfaces(*sm, system);
-    NFC::InstallInterfaces(*sm, system);
-    NFP::InstallInterfaces(*sm, system);
-    NGCT::InstallInterfaces(*sm, system);
-    NIFM::InstallInterfaces(*sm, system);
-    NIM::InstallInterfaces(*sm, system);
-    NPNS::InstallInterfaces(*sm, system);
-    NS::InstallInterfaces(*sm, system);
-    Nvidia::InstallInterfaces(*sm, *nv_flinger, system);
-    OLSC::InstallInterfaces(*sm, system);
-    PCIe::InstallInterfaces(*sm, system);
-    PCTL::InstallInterfaces(*sm, system);
-    PCV::InstallInterfaces(*sm, system);
-    PlayReport::InstallInterfaces(*sm, system);
-    PM::InstallInterfaces(system);
-    PSC::InstallInterfaces(*sm, system);
-    PTM::InstallInterfaces(*sm, system);
-    Set::InstallInterfaces(*sm, system);
-    Sockets::InstallInterfaces(*sm, system);
-    SPL::InstallInterfaces(*sm, system);
-    SSL::InstallInterfaces(*sm, system);
-    Time::InstallInterfaces(system);
-    USB::InstallInterfaces(*sm, system);
-    VI::InstallInterfaces(*sm, system, *nv_flinger, *hos_binder_driver_server);
+    kernel.RunOnGuestCoreProcess("sm",         [&] { SM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("account",    [&] { Account::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("am",         [&] { AM::LoopProcess(*nv_flinger, system); });
+    kernel.RunOnGuestCoreProcess("aoc",        [&] { AOC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("apm",        [&] { APM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("bcat",       [&] { BCAT::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("bpc",        [&] { BPC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("btdrv",      [&] { BtDrv::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("btm",        [&] { BTM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("capsrv",     [&] { Capture::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("erpt",       [&] { ERPT::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("es",         [&] { ES::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("eupld",      [&] { EUPLD::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("fatal",      [&] { Fatal::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("fgm",        [&] { FGM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("friends",    [&] { Friend::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("glue",       [&] { Glue::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("grc",        [&] { GRC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("hid",        [&] { HID::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("lbl",        [&] { LBL::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("LogManager.Prod", [&] { LM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("mig",        [&] { Migration::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("mii",        [&] { Mii::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("mm",         [&] { MM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("mnpp",       [&] { MNPP::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("NCM",        [&] { NCM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("nfc",        [&] { NFC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("nfp",        [&] { NFP::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("ngct",       [&] { NGCT::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("nifm",       [&] { NIFM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("nim",        [&] { NIM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("npns",       [&] { NPNS::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("ns",         [&] { NS::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("olsc",       [&] { OLSC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("pcie",       [&] { PCIe::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("pctl",       [&] { PCTL::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("pcv",        [&] { PCV::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("prepo",      [&] { PlayReport::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("ProcessManager", [&] { PM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("psc",        [&] { PSC::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("ptm",        [&] { PTM::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("settings",   [&] { Set::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("spl",        [&] { SPL::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("ssl",        [&] { SSL::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("time",       [&] { Time::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("usb",        [&] { USB::LoopProcess(system); });
+    // clang-format on
 }
 
 Services::~Services() = default;

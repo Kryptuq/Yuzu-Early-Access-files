@@ -9,6 +9,7 @@
 #include "core/hle/result.h"
 #include "core/hle/service/jit/jit.h"
 #include "core/hle/service/jit/jit_context.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/memory.h"
 
@@ -23,8 +24,8 @@ class IJitEnvironment final : public ServiceFramework<IJitEnvironment> {
 public:
     explicit IJitEnvironment(Core::System& system_, Kernel::KProcess& process_, CodeRange user_rx,
                              CodeRange user_ro)
-        : ServiceFramework{system_, "IJitEnvironment", ServiceThreadType::CreateNew},
-          process{&process_}, context{system_.Memory()} {
+        : ServiceFramework{system_, "IJitEnvironment"}, process{&process_}, context{
+                                                                                system_.Memory()} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IJitEnvironment::GenerateCode, "GenerateCode"},
@@ -397,8 +398,11 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<JITU>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("jit:u", std::make_shared<JITU>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::JIT

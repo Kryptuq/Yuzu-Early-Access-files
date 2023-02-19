@@ -7,6 +7,7 @@
 #include "core/hardware_properties.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/time/time_interface.h"
 #include "core/hle/service/time/time_manager.h"
@@ -397,11 +398,17 @@ Module::Interface::Interface(std::shared_ptr<Module> module_, Core::System& syst
 
 Module::Interface::~Interface() = default;
 
-void InstallInterfaces(Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
     auto module{std::make_shared<Module>()};
-    std::make_shared<Time>(module, system, "time:a")->InstallAsService(system.ServiceManager());
-    std::make_shared<Time>(module, system, "time:s")->InstallAsService(system.ServiceManager());
-    std::make_shared<Time>(module, system, "time:u")->InstallAsService(system.ServiceManager());
+
+    server_manager->RegisterNamedService("time:a",
+                                         std::make_shared<Time>(module, system, "time:a"));
+    server_manager->RegisterNamedService("time:s",
+                                         std::make_shared<Time>(module, system, "time:s"));
+    server_manager->RegisterNamedService("time:u",
+                                         std::make_shared<Time>(module, system, "time:u"));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::Time

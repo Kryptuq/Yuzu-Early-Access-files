@@ -24,6 +24,7 @@
 #include "core/hle/service/nvdrv/nvdrv_interface.h"
 #include "core/hle/service/nvdrv/nvmemp.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/server_manager.h"
 #include "video_core/gpu.h"
 
 namespace Service::Nvidia {
@@ -41,15 +42,19 @@ void EventInterface::FreeEvent(Kernel::KEvent* event) {
     module.service_context.CloseEvent(event);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,
-                       Core::System& system) {
-    auto module_ = std::make_shared<Module>(system);
-    std::make_shared<NVDRV>(system, module_, "nvdrv")->InstallAsService(service_manager);
-    std::make_shared<NVDRV>(system, module_, "nvdrv:a")->InstallAsService(service_manager);
-    std::make_shared<NVDRV>(system, module_, "nvdrv:s")->InstallAsService(service_manager);
-    std::make_shared<NVDRV>(system, module_, "nvdrv:t")->InstallAsService(service_manager);
-    std::make_shared<NVMEMP>(system)->InstallAsService(service_manager);
-    nvflinger.SetNVDrvInstance(module_);
+void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+    auto module = std::make_shared<Module>(system);
+    server_manager->RegisterNamedService("nvdrv", std::make_shared<NVDRV>(system, module, "nvdrv"));
+    server_manager->RegisterNamedService("nvdrv:a",
+                                         std::make_shared<NVDRV>(system, module, "nvdrv:a"));
+    server_manager->RegisterNamedService("nvdrv:s",
+                                         std::make_shared<NVDRV>(system, module, "nvdrv:s"));
+    server_manager->RegisterNamedService("nvdrv:t",
+                                         std::make_shared<NVDRV>(system, module, "nvdrv:t"));
+    server_manager->RegisterNamedService("nvmemp", std::make_shared<NVMEMP>(system));
+    nvflinger.SetNVDrvInstance(module);
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 Module::Module(Core::System& system)

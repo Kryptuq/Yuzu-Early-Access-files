@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "core/hle/service/erpt/erpt.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -52,9 +53,13 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<ErrorReportContext>(system)->InstallAsService(sm);
-    std::make_shared<ErrorReportSession>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("erpt:c", std::make_shared<ErrorReportContext>(system));
+    server_manager->RegisterNamedService("erpt:r", std::make_shared<ErrorReportSession>(system));
+
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::ERPT

@@ -13,6 +13,6 @@ class System;
 
 namespace Service::BTM {
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::BTM

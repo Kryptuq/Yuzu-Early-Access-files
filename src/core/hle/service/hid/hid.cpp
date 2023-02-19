@@ -18,6 +18,7 @@
 #include "core/hle/service/hid/hidbus.h"
 #include "core/hle/service/hid/irs.h"
 #include "core/hle/service/hid/xcd.h"
+#include "core/hle/service/server_manager.h"
 #include "core/memory.h"
 
 #include "core/hle/service/hid/controllers/console_sixaxis.h"
@@ -2734,16 +2735,20 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<Hid>(system)->InstallAsService(service_manager);
-    std::make_shared<HidBus>(system)->InstallAsService(service_manager);
-    std::make_shared<HidDbg>(system)->InstallAsService(service_manager);
-    std::make_shared<HidSys>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
 
-    std::make_shared<Service::IRS::IRS>(system)->InstallAsService(service_manager);
-    std::make_shared<Service::IRS::IRS_SYS>(system)->InstallAsService(service_manager);
+    server_manager->RegisterNamedService("hid", std::make_shared<Hid>(system));
+    server_manager->RegisterNamedService("hidbus", std::make_shared<HidBus>(system));
+    server_manager->RegisterNamedService("hid:dbg", std::make_shared<HidDbg>(system));
+    server_manager->RegisterNamedService("hid:sys", std::make_shared<HidSys>(system));
 
-    std::make_shared<XCD_SYS>(system)->InstallAsService(service_manager);
+    server_manager->RegisterNamedService("irs", std::make_shared<Service::IRS::IRS>(system));
+    server_manager->RegisterNamedService("irs:sys",
+                                         std::make_shared<Service::IRS::IRS_SYS>(system));
+
+    server_manager->RegisterNamedService("xcd:sys", std::make_shared<XCD_SYS>(system));
+    system.RunServer(std::move(server_manager));
 }
 
 } // namespace Service::HID

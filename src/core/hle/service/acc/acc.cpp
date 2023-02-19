@@ -25,6 +25,7 @@
 #include "core/hle/service/acc/errors.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/glue/glue_manager.h"
+#include "core/hle/service/server_manager.h"
 #include "core/loader/loader.h"
 
 namespace Service::Account {
@@ -942,18 +943,20 @@ Module::Interface::Interface(std::shared_ptr<Module> module_,
 
 Module::Interface::~Interface() = default;
 
-void InstallInterfaces(Core::System& system) {
+void LoopProcess(Core::System& system) {
     auto module = std::make_shared<Module>();
     auto profile_manager = std::make_shared<ProfileManager>();
+    auto server_manager = std::make_unique<ServerManager>(system);
 
-    std::make_shared<ACC_AA>(module, profile_manager, system)
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_SU>(module, profile_manager, system)
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_U0>(module, profile_manager, system)
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_U1>(module, profile_manager, system)
-        ->InstallAsService(system.ServiceManager());
+    server_manager->RegisterNamedService("acc:aa",
+                                         std::make_shared<ACC_AA>(module, profile_manager, system));
+    server_manager->RegisterNamedService("acc:su",
+                                         std::make_shared<ACC_SU>(module, profile_manager, system));
+    server_manager->RegisterNamedService("acc:u0",
+                                         std::make_shared<ACC_U0>(module, profile_manager, system));
+    server_manager->RegisterNamedService("acc:u1",
+                                         std::make_shared<ACC_U1>(module, profile_manager, system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::Account

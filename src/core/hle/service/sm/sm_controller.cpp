@@ -10,6 +10,7 @@
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_session.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm_controller.h"
 
 namespace Service::SM {
@@ -48,9 +49,9 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
     // Commit the session reservation.
     session_reservation.Commit();
 
-    // Register with manager.
-    session_manager->SessionHandler().RegisterSession(&session->GetServerSession(),
-                                                      session_manager);
+    // Register with server manager.
+    session_manager->GetServerManager().RegisterSession(&session->GetServerSession(),
+                                                        session_manager);
 
     // We succeeded.
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};

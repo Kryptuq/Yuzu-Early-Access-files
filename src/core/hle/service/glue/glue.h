@@ -9,7 +9,6 @@ class System;
 
 namespace Service::Glue {
 
-/// Registers all Glue services with the specified service manager.
-void InstallInterfaces(Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::Glue

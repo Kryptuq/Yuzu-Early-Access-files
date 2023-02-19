@@ -573,7 +573,7 @@ void GDBStub::HandleQuery(std::string_view command) {
         SendReply(PaginateBuffer(buffer, command.substr(21)));
     } else if (command.starts_with("fThreadInfo")) {
         // beginning of list
-        const auto& threads = system.GlobalSchedulerContext().GetThreadList();
+        const auto& threads = system.ApplicationProcess()->GetThreadList();
         std::vector<std::string> thread_ids;
         for (const auto& thread : threads) {
             thread_ids.push_back(fmt::format("{:x}", thread->GetThreadID()));
@@ -587,7 +587,7 @@ void GDBStub::HandleQuery(std::string_view command) {
         buffer += R"(<?xml version="1.0"?>)";
         buffer += "<threads>";
 
-        const auto& threads = system.GlobalSchedulerContext().GetThreadList();
+        const auto& threads = system.ApplicationProcess()->GetThreadList();
         for (const auto* thread : threads) {
             auto thread_name{GetThreadName(system, thread)};
             if (!thread_name) {
@@ -817,7 +817,7 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
 }
 
 Kernel::KThread* GDBStub::GetThreadByID(u64 thread_id) {
-    const auto& threads{system.GlobalSchedulerContext().GetThreadList()};
+    const auto& threads{system.ApplicationProcess()->GetThreadList()};
     for (auto* thread : threads) {
         if (thread->GetThreadID() == thread_id) {
             return thread;

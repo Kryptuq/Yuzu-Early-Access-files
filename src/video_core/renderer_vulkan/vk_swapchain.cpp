@@ -36,17 +36,22 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
 VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
     // Mailbox (triple buffering) doesn't lock the application like fifo (vsync),
     // prefer it if vsync option is not selected
+    // AMD proprietary drivers can't render past the screen's refresh rate
     const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
-    if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Borderless &&
-        found_mailbox != modes.end() && !Settings::values.use_vsync.GetValue()) {
-        return VK_PRESENT_MODE_MAILBOX_KHR;
+    const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
+    if (!Settings::values.use_speed_limit.GetValue() && found_imm != modes.end()) {
+        return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
-    if (!Settings::values.use_speed_limit.GetValue()) {
-        // FIFO present mode locks the framerate to the monitor's refresh rate,
-        // Find an alternative to surpass this limitation if FPS is unlocked.
-        const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
+    if (Settings::values.use_vsync.GetValue()) {
+        if (found_mailbox != modes.end()) {
+            return VK_PRESENT_MODE_MAILBOX_KHR;
+        }
+    } else {
         if (found_imm != modes.end()) {
             return VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }
+        if (found_mailbox != modes.end()) {
+            return VK_PRESENT_MODE_MAILBOX_KHR;
         }
     }
     return VK_PRESENT_MODE_FIFO_KHR;

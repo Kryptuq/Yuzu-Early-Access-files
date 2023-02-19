@@ -23,6 +23,7 @@
 #include "core/hle/service/filesystem/fsp_ldr.h"
 #include "core/hle/service/filesystem/fsp_pr.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
+#include "core/hle/service/server_manager.h"
 #include "core/loader/loader.h"
 
 namespace Service::FileSystem {
@@ -796,10 +797,13 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     }
 }
 
-void InstallInterfaces(Core::System& system) {
-    std::make_shared<FSP_LDR>(system)->InstallAsService(system.ServiceManager());
-    std::make_shared<FSP_PR>(system)->InstallAsService(system.ServiceManager());
-    std::make_shared<FSP_SRV>(system)->InstallAsService(system.ServiceManager());
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("fsp-ldr", std::make_shared<FSP_LDR>(system));
+    server_manager->RegisterNamedService("fsp:pr", std::make_shared<FSP_PR>(system));
+    server_manager->RegisterNamedService("fsp-srv", std::make_shared<FSP_SRV>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::FileSystem

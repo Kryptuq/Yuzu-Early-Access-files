@@ -9,8 +9,8 @@
 #include "core/hle/service/nfc/mifare_user.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfc/nfc_user.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::NFC {
 
@@ -154,11 +154,14 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<NFC_AM>(system)->InstallAsService(sm);
-    std::make_shared<NFC_MF_U>(system)->InstallAsService(sm);
-    std::make_shared<NFC_U>(system)->InstallAsService(sm);
-    std::make_shared<NFC_SYS>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("nfc:am", std::make_shared<NFC_AM>(system));
+    server_manager->RegisterNamedService("nfc:mf:u", std::make_shared<NFC_MF_U>(system));
+    server_manager->RegisterNamedService("nfc:user", std::make_shared<NFC_U>(system));
+    server_manager->RegisterNamedService("nfc:sys", std::make_shared<NFC_SYS>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NFC

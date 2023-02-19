@@ -29,6 +29,7 @@
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/svc.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/result.h"
@@ -296,6 +297,25 @@ Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThr
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     R_RETURN(InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
                               ThreadType::User, system.GetCpuManager().GetGuestThreadFunc()));
+}
+
+Result KThread::InitializeServiceThread(Core::System& system, KThread* thread,
+                                        std::function<void()>&& func, s32 prio, s32 virt_core,
+                                        KProcess* owner) {
+    system.Kernel().GlobalSchedulerContext().AddThread(thread);
+    std::function<void()> func2{[&system, func{std::move(func)}] {
+        // Similar to UserModeThreadStarter.
+        system.Kernel().CurrentScheduler()->OnThreadStart();
+
+        // Run the guest function.
+        func();
+
+        // Exit.
+        Svc::ExitThread(system);
+    }};
+
+    R_RETURN(InitializeThread(thread, {}, {}, {}, prio, virt_core, owner, ThreadType::HighPriority,
+                              std::move(func2)));
 }
 
 void KThread::PostDestroy(uintptr_t arg) {

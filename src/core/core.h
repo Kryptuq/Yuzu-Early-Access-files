@@ -61,6 +61,8 @@ namespace Glue {
 class ARPManager;
 }
 
+class ServerManager;
+
 namespace SM {
 class ServiceManager;
 } // namespace SM
@@ -416,6 +418,9 @@ public:
 
     /// Tells if the system debugger is enabled.
     [[nodiscard]] bool DebuggerEnabled() const;
+
+    /// Runs a server instance until shutdown.
+    void RunServer(std::unique_ptr<Service::ServerManager>&& server_manager);
 
     /// Type used for the frontend to designate a callback for System to re-launch the application
     /// using a specified program index.

@@ -32,6 +32,7 @@
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/pm/pm.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/memory.h"
@@ -1828,17 +1829,21 @@ void IApplicationFunctions::PrepareForJit(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,
-                       Core::System& system) {
+void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system) {
     auto message_queue = std::make_shared<AppletMessageQueue>(system);
     // Needed on game boot
     message_queue->PushMessage(AppletMessageQueue::AppletMessage::FocusStateChanged);
 
-    std::make_shared<AppletAE>(nvflinger, message_queue, system)->InstallAsService(service_manager);
-    std::make_shared<AppletOE>(nvflinger, message_queue, system)->InstallAsService(service_manager);
-    std::make_shared<IdleSys>(system)->InstallAsService(service_manager);
-    std::make_shared<OMM>(system)->InstallAsService(service_manager);
-    std::make_shared<SPSM>(system)->InstallAsService(service_manager);
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService(
+        "appletAE", std::make_shared<AppletAE>(nvflinger, message_queue, system));
+    server_manager->RegisterNamedService(
+        "appletOE", std::make_shared<AppletOE>(nvflinger, message_queue, system));
+    server_manager->RegisterNamedService("idle:sys", std::make_shared<IdleSys>(system));
+    server_manager->RegisterNamedService("omm", std::make_shared<OMM>(system));
+    server_manager->RegisterNamedService("spsm", std::make_shared<SPSM>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_)

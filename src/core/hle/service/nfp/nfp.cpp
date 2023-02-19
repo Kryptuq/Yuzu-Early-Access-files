@@ -5,6 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
+#include "core/hle/service/server_manager.h"
 
 namespace Service::NFP {
 
@@ -36,8 +37,11 @@ private:
     std::shared_ptr<IUser> user_interface;
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<IUserManager>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("nfp:user", std::make_shared<IUserManager>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NFP

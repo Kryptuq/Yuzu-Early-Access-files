@@ -16,6 +16,7 @@
 #include "core/hle/kernel/k_event_info.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
+#include "core/hle/kernel/k_object_name.h"
 #include "core/hle/kernel/k_page_buffer.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_process.h"
@@ -49,6 +50,7 @@ namespace Kernel::Init {
     HANDLER(KThreadLocalPage,                                                                      \
             (SLAB_COUNT(KProcess) + (SLAB_COUNT(KProcess) + SLAB_COUNT(KThread)) / 8),             \
             ##__VA_ARGS__)                                                                         \
+    HANDLER(KObjectName, (SLAB_COUNT(KObjectName)), ##__VA_ARGS__)                                 \
     HANDLER(KResourceLimit, (SLAB_COUNT(KResourceLimit)), ##__VA_ARGS__)                           \
     HANDLER(KEventInfo, (SLAB_COUNT(KThread) + SLAB_COUNT(KDebug)), ##__VA_ARGS__)                 \
     HANDLER(KDebug, (SLAB_COUNT(KDebug)), ##__VA_ARGS__)                                           \

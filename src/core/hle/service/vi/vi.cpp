@@ -26,6 +26,7 @@
 #include "core/hle/service/nvflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/nvflinger/parcel.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
@@ -73,8 +74,7 @@ static_assert(sizeof(NativeWindow) == 0x28, "NativeWindow has wrong size");
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
     explicit IHOSBinderDriver(Core::System& system_, NVFlinger::HosBinderDriverServer& server_)
-        : ServiceFramework{system_, "IHOSBinderDriver", ServiceThreadType::CreateNew},
-          server(server_) {
+        : ServiceFramework{system_, "IHOSBinderDriver"}, server(server_) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
@@ -804,15 +804,17 @@ void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System&
     rb.PushIpcInterface<IApplicationDisplayService>(system, nv_flinger, hos_binder_driver_server);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system,
-                       NVFlinger::NVFlinger& nv_flinger,
-                       NVFlinger::HosBinderDriverServer& hos_binder_driver_server) {
-    std::make_shared<VI_M>(system, nv_flinger, hos_binder_driver_server)
-        ->InstallAsService(service_manager);
-    std::make_shared<VI_S>(system, nv_flinger, hos_binder_driver_server)
-        ->InstallAsService(service_manager);
-    std::make_shared<VI_U>(system, nv_flinger, hos_binder_driver_server)
-        ->InstallAsService(service_manager);
+void LoopProcess(Core::System& system, NVFlinger::NVFlinger& nv_flinger,
+                 NVFlinger::HosBinderDriverServer& hos_binder_driver_server) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService(
+        "vi:m", std::make_shared<VI_M>(system, nv_flinger, hos_binder_driver_server));
+    server_manager->RegisterNamedService(
+        "vi:s", std::make_shared<VI_S>(system, nv_flinger, hos_binder_driver_server));
+    server_manager->RegisterNamedService(
+        "vi:u", std::make_shared<VI_U>(system, nv_flinger, hos_binder_driver_server));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::VI

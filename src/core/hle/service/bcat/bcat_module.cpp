@@ -15,6 +15,7 @@
 #include "core/hle/service/bcat/bcat.h"
 #include "core/hle/service/bcat/bcat_module.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/server_manager.h"
 
 namespace Service::BCAT {
 
@@ -585,16 +586,23 @@ Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> modu
 
 Module::Interface::~Interface() = default;
 
-void InstallInterfaces(Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
     auto module = std::make_shared<Module>();
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:a")
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:m")
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:u")
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:s")
-        ->InstallAsService(system.ServiceManager());
+
+    server_manager->RegisterNamedService(
+        "bcat:a",
+        std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:a"));
+    server_manager->RegisterNamedService(
+        "bcat:m",
+        std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:m"));
+    server_manager->RegisterNamedService(
+        "bcat:u",
+        std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:u"));
+    server_manager->RegisterNamedService(
+        "bcat:s",
+        std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:s"));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::BCAT

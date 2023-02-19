@@ -5,6 +5,7 @@
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ngct/ngct.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 
 namespace Service::NGCT {
@@ -51,8 +52,11 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<IService>(system)->InstallAsService(system.ServiceManager());
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("ngct:u", std::make_shared<IService>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NGCT

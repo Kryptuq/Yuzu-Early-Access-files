@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
+#include "core/hle/service/server_manager.h"
 
 namespace {
 
@@ -626,10 +627,16 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<NetworkInterface>("nifm:a", system)->InstallAsService(service_manager);
-    std::make_shared<NetworkInterface>("nifm:s", system)->InstallAsService(service_manager);
-    std::make_shared<NetworkInterface>("nifm:u", system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("nifm:a",
+                                         std::make_shared<NetworkInterface>("nifm:a", system));
+    server_manager->RegisterNamedService("nifm:s",
+                                         std::make_shared<NetworkInterface>("nifm:s", system));
+    server_manager->RegisterNamedService("nifm:u",
+                                         std::make_shared<NetworkInterface>("nifm:u", system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NIFM

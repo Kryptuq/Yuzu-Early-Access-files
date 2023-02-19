@@ -126,6 +126,11 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
             *result = process->GetTotalPhysicalMemoryUsedWithoutSystemResource();
             return ResultSuccess;
 
+        case InfoType::IsApplication:
+            LOG_WARNING(Kernel_SVC, "(STUBBED) Assuming process is application");
+            *result = true;
+            return ResultSuccess;
+
         case InfoType::FreeThreadCount:
             *result = process->GetFreeThreadCount();
             return ResultSuccess;

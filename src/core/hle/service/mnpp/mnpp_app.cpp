@@ -4,7 +4,8 @@
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/mnpp/mnpp_app.h"
-#include "core/hle/service/sm/sm.h"
+#include "core/hle/service/server_manager.h"
+#include "core/hle/service/service.h"
 
 namespace Service::MNPP {
 
@@ -37,8 +38,11 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<MNPP_APP>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("mnpp:app", std::make_shared<MNPP_APP>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::MNPP

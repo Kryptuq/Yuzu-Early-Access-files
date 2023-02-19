@@ -5,8 +5,8 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 #include "core/hle/service/usb/usb.h"
 
 namespace Service::USB {
@@ -218,12 +218,15 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<USB_DS>(system)->InstallAsService(sm);
-    std::make_shared<USB_HS>(system)->InstallAsService(sm);
-    std::make_shared<USB_PD>(system)->InstallAsService(sm);
-    std::make_shared<USB_PD_C>(system)->InstallAsService(sm);
-    std::make_shared<USB_PM>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("usb:ds", std::make_shared<USB_DS>(system));
+    server_manager->RegisterNamedService("usb:hs", std::make_shared<USB_HS>(system));
+    server_manager->RegisterNamedService("usb:pd", std::make_shared<USB_PD>(system));
+    server_manager->RegisterNamedService("usb:pd:c", std::make_shared<USB_PD_C>(system));
+    server_manager->RegisterNamedService("usb:pm", std::make_shared<USB_PM>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::USB

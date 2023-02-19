@@ -139,7 +139,7 @@ private:
     Core::System& system;
 };
 
-void InstallInterfaces(Core::System& system);
+void LoopProcess(Core::System& system);
 
 // A class that wraps a VfsDirectory with methods that return ResultVal and Result instead of
 // pointers and booleans. This makes using a VfsDirectory with switch services much easier and

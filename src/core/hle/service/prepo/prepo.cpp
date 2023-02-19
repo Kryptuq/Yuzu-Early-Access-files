@@ -7,6 +7,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/prepo/prepo.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/reporter.h"
 
@@ -183,12 +184,20 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<PlayReport>("prepo:a", system)->InstallAsService(service_manager);
-    std::make_shared<PlayReport>("prepo:a2", system)->InstallAsService(service_manager);
-    std::make_shared<PlayReport>("prepo:m", system)->InstallAsService(service_manager);
-    std::make_shared<PlayReport>("prepo:s", system)->InstallAsService(service_manager);
-    std::make_shared<PlayReport>("prepo:u", system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("prepo:a",
+                                         std::make_shared<PlayReport>("prepo:a", system));
+    server_manager->RegisterNamedService("prepo:a2",
+                                         std::make_shared<PlayReport>("prepo:a2", system));
+    server_manager->RegisterNamedService("prepo:m",
+                                         std::make_shared<PlayReport>("prepo:m", system));
+    server_manager->RegisterNamedService("prepo:s",
+                                         std::make_shared<PlayReport>("prepo:s", system));
+    server_manager->RegisterNamedService("prepo:u",
+                                         std::make_shared<PlayReport>("prepo:u", system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::PlayReport

@@ -40,7 +40,6 @@ private:
     Kernel::KEvent* aoc_change_event;
 };
 
-/// Registers all AOC services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::AOC

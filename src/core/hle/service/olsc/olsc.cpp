@@ -3,8 +3,8 @@
 
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/olsc/olsc.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::OLSC {
 
@@ -72,8 +72,11 @@ private:
     bool initialized{};
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<OLSC>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("olsc:u", std::make_shared<OLSC>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::OLSC

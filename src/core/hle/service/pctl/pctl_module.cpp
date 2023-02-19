@@ -8,6 +8,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/pctl/pctl_module.h"
+#include "core/hle/service/server_manager.h"
 
 namespace Service::PCTL {
 
@@ -393,19 +394,22 @@ Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> modu
 
 Module::Interface::~Interface() = default;
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
     auto module = std::make_shared<Module>();
-    std::make_shared<PCTL>(system, module, "pctl",
-                           Capability::Application | Capability::SnsPost | Capability::Status |
-                               Capability::StereoVision)
-        ->InstallAsService(service_manager);
+    server_manager->RegisterNamedService(
+        "pctl", std::make_shared<PCTL>(system, module, "pctl",
+                                       Capability::Application | Capability::SnsPost |
+                                           Capability::Status | Capability::StereoVision));
     // TODO(ogniK): Implement remaining capabilities
-    std::make_shared<PCTL>(system, module, "pctl:a", Capability::None)
-        ->InstallAsService(service_manager);
-    std::make_shared<PCTL>(system, module, "pctl:r", Capability::None)
-        ->InstallAsService(service_manager);
-    std::make_shared<PCTL>(system, module, "pctl:s", Capability::None)
-        ->InstallAsService(service_manager);
+    server_manager->RegisterNamedService(
+        "pctl:a", std::make_shared<PCTL>(system, module, "pctl:a", Capability::None));
+    server_manager->RegisterNamedService(
+        "pctl:r", std::make_shared<PCTL>(system, module, "pctl:r", Capability::None));
+    server_manager->RegisterNamedService(
+        "pctl:s", std::make_shared<PCTL>(system, module, "pctl:s", Capability::None));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::PCTL

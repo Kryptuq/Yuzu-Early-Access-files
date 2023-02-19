@@ -15,17 +15,24 @@ namespace Service::KernelHelpers {
 
 ServiceContext::ServiceContext(Core::System& system_, std::string name_)
     : kernel(system_.Kernel()) {
+    if (process = Kernel::GetCurrentProcessPointer(kernel); process != nullptr) {
+        return;
+    }
+
     // Create the process.
     process = Kernel::KProcess::Create(kernel);
     ASSERT(Kernel::KProcess::Initialize(process, system_, std::move(name_),
                                         Kernel::KProcess::ProcessType::KernelInternal,
                                         kernel.GetSystemResourceLimit())
                .IsSuccess());
+    process_created = true;
 }
 
 ServiceContext::~ServiceContext() {
-    process->Close();
-    process = nullptr;
+    if (process_created) {
+        process->Close();
+        process = nullptr;
+    }
 }
 
 Kernel::KEvent* ServiceContext::CreateEvent(std::string&& name) {

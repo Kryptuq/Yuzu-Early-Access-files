@@ -15,6 +15,7 @@
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_session.h"
 #include "core/hle/result.h"
+#include "core/hle/service/server_manager.h"
 
 namespace IPC {
 
@@ -145,7 +146,9 @@ public:
 
     template <class T>
     void PushIpcInterface(std::shared_ptr<T> iface) {
-        if (context->GetManager()->IsDomain()) {
+        auto manager{context->GetManager()};
+
+        if (manager->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
             kernel.ApplicationProcess()->GetResourceLimit()->Reserve(
@@ -153,8 +156,11 @@ public:
 
             auto* session = Kernel::KSession::Create(kernel);
             session->Initialize(nullptr, iface->GetServiceName());
-            iface->RegisterSession(&session->GetServerSession(),
-                                   std::make_shared<Kernel::SessionRequestManager>(kernel));
+
+            auto next_manager = std::make_shared<Kernel::SessionRequestManager>(
+                kernel, manager->GetServerManager());
+            next_manager->SetSessionHandler(iface);
+            manager->GetServerManager().RegisterSession(&session->GetServerSession(), next_manager);
 
             context->AddMoveObject(&session->GetClientSession());
         }

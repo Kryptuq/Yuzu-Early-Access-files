@@ -19,8 +19,6 @@ class System;
 
 namespace Kernel {
 class HLERequestContext;
-class KClientPort;
-class KPort;
 class KServerSession;
 class ServiceThread;
 } // namespace Kernel
@@ -67,17 +65,11 @@ public:
         return max_sessions;
     }
 
-    /// Creates a port pair and registers this service with the given ServiceManager.
-    void InstallAsService(SM::ServiceManager& service_manager);
-
     /// Invokes a service request routine using the HIPC protocol.
     void InvokeRequest(Kernel::HLERequestContext& ctx);
 
     /// Invokes a service request routine using the HIPC protocol.
     void InvokeRequestTipc(Kernel::HLERequestContext& ctx);
-
-    /// Creates a port pair and registers it on the kernel's global port registry.
-    Kernel::KClientPort& CreatePort();
 
     /// Handles a synchronization request for the service.
     Result HandleSyncRequest(Kernel::KServerSession& session,
@@ -99,9 +91,6 @@ protected:
     /// Identifier string used to connect to the service.
     std::string service_name;
 
-    /// Port used by ManageNamedPort.
-    Kernel::KPort* named_port{};
-
 private:
     template <typename T>
     friend class ServiceFramework;
@@ -116,8 +105,7 @@ private:
                            Kernel::HLERequestContext& ctx);
 
     explicit ServiceFrameworkBase(Core::System& system_, const char* service_name_,
-                                  ServiceThreadType thread_type, u32 max_sessions_,
-                                  InvokerFn* handler_invoker_);
+                                  u32 max_sessions_, InvokerFn* handler_invoker_);
     ~ServiceFrameworkBase() override;
 
     void RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n);
@@ -181,15 +169,12 @@ protected:
      *
      * @param system_ The system context to construct this service under.
      * @param service_name_ Name of the service.
-     * @param thread_type Specifies the thread type for this service. If this is set to CreateNew,
-     *                    it creates a new thread for it, otherwise this uses the default thread.
      * @param max_sessions_ Maximum number of sessions that can be connected to this service at the
      * same time.
      */
     explicit ServiceFramework(Core::System& system_, const char* service_name_,
-                              ServiceThreadType thread_type = ServiceThreadType::Default,
                               u32 max_sessions_ = ServerSessionCountMax)
-        : ServiceFrameworkBase(system_, service_name_, thread_type, max_sessions_, Invoker) {}
+        : ServiceFrameworkBase(system_, service_name_, max_sessions_, Invoker) {}
 
     /// Registers handlers in the service.
     template <std::size_t N>

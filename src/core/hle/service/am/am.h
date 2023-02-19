@@ -396,8 +396,6 @@ public:
     ~IProcessWindingController() override;
 };
 
-/// Registers all AM services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,
-                       Core::System& system);
+void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system);
 
 } // namespace Service::AM

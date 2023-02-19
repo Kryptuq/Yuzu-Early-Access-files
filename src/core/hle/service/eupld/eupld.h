@@ -7,13 +7,8 @@ namespace Core {
 class System;
 }
 
-namespace Service::SM {
-class ServiceManager;
-}
-
 namespace Service::EUPLD {
 
-/// Registers all EUPLD services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::EUPLD

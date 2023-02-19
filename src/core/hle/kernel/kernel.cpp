@@ -29,18 +29,20 @@
 #include "core/hle/kernel/k_hardware_timer.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
+#include "core/hle/kernel/k_object_name.h"
 #include "core/hle/kernel/k_page_buffer.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_scheduler.h"
+#include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_system_resource.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_worker_task_manager.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
-#include "core/hle/kernel/service_thread.h"
 #include "core/hle/result.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/memory.h"
 
@@ -54,9 +56,7 @@ struct KernelCore::Impl {
     static constexpr size_t BlockInfoSlabHeapSize = 4000;
     static constexpr size_t ReservedDynamicPageCount = 64;
 
-    explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : service_threads_manager{1, "ServiceThreadsManager"},
-          service_thread_barrier{2}, system{system_} {}
+    explicit Impl(Core::System& system_, KernelCore& kernel_) : system{system_} {}
 
     void SetMulticore(bool is_multi) {
         is_multicore = is_multi;
@@ -84,6 +84,7 @@ struct KernelCore::Impl {
         InitializeShutdownThreads();
         InitializePhysicalCores();
         InitializePreemption(kernel);
+        InitializeGlobalData(kernel);
 
         // Initialize the Dynamic Slab Heaps.
         {
@@ -96,8 +97,6 @@ struct KernelCore::Impl {
 
         InitializeHackSharedMemory();
         RegisterHostThread(nullptr);
-
-        default_service_thread = &CreateServiceThread(kernel, "DefaultServiceThread");
     }
 
     void InitializeCores() {
@@ -137,11 +136,6 @@ struct KernelCore::Impl {
         global_handle_table.reset();
 
         preemption_event = nullptr;
-
-        for (auto& iter : named_ports) {
-            iter.second->Close();
-        }
-        named_ports.clear();
 
         exclusive_monitor.reset();
 
@@ -194,6 +188,8 @@ struct KernelCore::Impl {
             }
         }
 
+        object_name_global_data.reset();
+
         // Ensure that the object list container is finalized and properly shutdown.
         global_object_list_container->Finalize();
         global_object_list_container.reset();
@@ -203,8 +199,9 @@ struct KernelCore::Impl {
     }
 
     void CloseServices() {
-        // Ensures all service threads gracefully shutdown.
-        ClearServiceThreads();
+        // Ensures all servers gracefully shutdown.
+        std::scoped_lock lk{server_lock};
+        server_managers.clear();
     }
 
     void InitializePhysicalCores() {
@@ -361,6 +358,10 @@ struct KernelCore::Impl {
                        .IsSuccess());
             shutdown_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
         }
+    }
+
+    void InitializeGlobalData(KernelCore& kernel) {
+        object_name_global_data = std::make_unique<KObjectNameGlobalData>(kernel);
     }
 
     void MakeApplicationProcess(KProcess* process) {
@@ -753,55 +754,6 @@ struct KernelCore::Impl {
                                       "HidBus:SharedMemory");
     }
 
-    KClientPort* CreateNamedServicePort(std::string name) {
-        auto search = service_interface_factory.find(name);
-        if (search == service_interface_factory.end()) {
-            UNIMPLEMENTED();
-            return {};
-        }
-
-        return &search->second(system.ServiceManager(), system);
-    }
-
-    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-        auto search = service_interface_handlers.find(name);
-        if (search == service_interface_handlers.end()) {
-            return;
-        }
-
-        search->second(system.ServiceManager(), server_port);
-    }
-
-    Kernel::ServiceThread& CreateServiceThread(KernelCore& kernel, const std::string& name) {
-        auto* ptr = new ServiceThread(kernel, name);
-
-        service_threads_manager.QueueWork(
-            [this, ptr]() { service_threads.emplace(ptr, std::unique_ptr<ServiceThread>(ptr)); });
-
-        return *ptr;
-    }
-
-    void ReleaseServiceThread(Kernel::ServiceThread& service_thread) {
-        auto* ptr = &service_thread;
-
-        if (ptr == default_service_thread) {
-            // Nothing to do here, the service is using default_service_thread, which will be
-            // released on shutdown.
-            return;
-        }
-
-        service_threads_manager.QueueWork([this, ptr]() { service_threads.erase(ptr); });
-    }
-
-    void ClearServiceThreads() {
-        service_threads_manager.QueueWork([this] {
-            service_threads.clear();
-            default_service_thread = nullptr;
-            service_thread_barrier.Sync();
-        });
-        service_thread_barrier.Sync();
-    }
-
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
 
@@ -829,13 +781,13 @@ struct KernelCore::Impl {
 
     std::unique_ptr<KAutoObjectWithListContainer> global_object_list_container;
 
-    /// Map of named ports managed by the kernel, which can be retrieved using
-    /// the ConnectToPort SVC.
-    std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
-    std::unordered_map<std::string, ServiceInterfaceHandlerFn> service_interface_handlers;
-    NamedPortTable named_ports;
+    std::unique_ptr<KObjectNameGlobalData> object_name_global_data;
+
     std::unordered_set<KAutoObject*> registered_objects;
     std::unordered_set<KAutoObject*> registered_in_use_objects;
+
+    std::mutex server_lock;
+    std::vector<std::unique_ptr<Service::ServerManager>> server_managers;
 
     std::unique_ptr<Core::ExclusiveMonitor> exclusive_monitor;
     std::array<std::unique_ptr<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
@@ -870,12 +822,6 @@ struct KernelCore::Impl {
 
     // Memory layout
     std::unique_ptr<KMemoryLayout> memory_layout;
-
-    // Threads used for services
-    std::unordered_map<ServiceThread*, std::unique_ptr<ServiceThread>> service_threads;
-    ServiceThread* default_service_thread{};
-    Common::ThreadWorker service_threads_manager;
-    Common::Barrier service_thread_barrier;
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
@@ -1040,23 +986,6 @@ void KernelCore::PrepareReschedule(std::size_t id) {
     // TODO: Reimplement, this
 }
 
-void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&& factory) {
-    impl->service_interface_factory.emplace(std::move(name), factory);
-}
-
-void KernelCore::RegisterInterfaceForNamedService(std::string name,
-                                                  ServiceInterfaceHandlerFn&& handler) {
-    impl->service_interface_handlers.emplace(std::move(name), handler);
-}
-
-KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
-    return impl->CreateNamedServicePort(std::move(name));
-}
-
-void KernelCore::RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
-    impl->RegisterNamedServiceHandler(std::move(name), server_port);
-}
-
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
     std::scoped_lock lk{impl->registered_objects_lock};
     impl->registered_objects.insert(object);
@@ -1077,8 +1006,19 @@ void KernelCore::UnregisterInUseObject(KAutoObject* object) {
     impl->registered_in_use_objects.erase(object);
 }
 
-bool KernelCore::IsValidNamedPort(NamedPortTable::const_iterator port) const {
-    return port != impl->named_ports.cend();
+void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager) {
+    auto* manager = server_manager.get();
+
+    {
+        std::scoped_lock lk{impl->server_lock};
+        if (impl->is_shutting_down) {
+            return;
+        }
+
+        impl->server_managers.emplace_back(std::move(server_manager));
+    }
+
+    manager->LoopProcess();
 }
 
 u32 KernelCore::CreateNewObjectID() {
@@ -1117,6 +1057,87 @@ void KernelCore::RegisterHostThread(KThread* existing_thread) {
     }
 }
 
+static std::jthread RunHostThreadFunc(KernelCore& kernel, KProcess* process,
+                                      std::string&& thread_name, std::function<void()>&& func) {
+    // Reserve a new thread from the process resource limit.
+    KScopedResourceReservation thread_reservation(process, LimitableResource::ThreadCountMax);
+    ASSERT(thread_reservation.Succeeded());
+
+    // Initialize the thread.
+    KThread* thread = KThread::Create(kernel);
+    ASSERT(R_SUCCEEDED(KThread::InitializeDummyThread(thread, process)));
+
+    // Commit the thread reservation.
+    thread_reservation.Commit();
+
+    return std::jthread(
+        [&kernel, thread, thread_name{std::move(thread_name)}, func{std::move(func)}] {
+            // Set the thread name.
+            Common::SetCurrentThreadName(thread_name.c_str());
+
+            // Register the thread.
+            kernel.RegisterHostThread(thread);
+
+            // Run the callback.
+            func();
+
+            // Close the thread.
+            // This will free the process if it is the last reference.
+            thread->Close();
+        });
+}
+
+std::jthread KernelCore::RunOnHostCoreProcess(std::string&& process_name,
+                                              std::function<void()> func) {
+    // Make a new process.
+    KProcess* process = KProcess::Create(*this);
+    ASSERT(R_SUCCEEDED(KProcess::Initialize(process, System(), "", KProcess::ProcessType::Userland,
+                                            GetSystemResourceLimit())));
+
+    // Ensure that we don't hold onto any extra references.
+    SCOPE_EXIT({ process->Close(); });
+
+    // Run the host thread.
+    return RunHostThreadFunc(*this, process, std::move(process_name), std::move(func));
+}
+
+std::jthread KernelCore::RunOnHostCoreThread(std::string&& thread_name,
+                                             std::function<void()> func) {
+    // Get the current process.
+    KProcess* process = GetCurrentProcessPointer(*this);
+
+    // Run the host thread.
+    return RunHostThreadFunc(*this, process, std::move(thread_name), std::move(func));
+}
+
+void KernelCore::RunOnGuestCoreProcess(std::string&& process_name, std::function<void()> func) {
+    constexpr s32 ServiceThreadPriority = 16;
+    constexpr s32 ServiceThreadCore = 3;
+
+    // Make a new process.
+    KProcess* process = KProcess::Create(*this);
+    ASSERT(R_SUCCEEDED(KProcess::Initialize(process, System(), "", KProcess::ProcessType::Userland,
+                                            GetSystemResourceLimit())));
+
+    // Ensure that we don't hold onto any extra references.
+    SCOPE_EXIT({ process->Close(); });
+
+    // Reserve a new thread from the process resource limit.
+    KScopedResourceReservation thread_reservation(process, LimitableResource::ThreadCountMax);
+    ASSERT(thread_reservation.Succeeded());
+
+    // Initialize the thread.
+    KThread* thread = KThread::Create(*this);
+    ASSERT(R_SUCCEEDED(KThread::InitializeServiceThread(
+        System(), thread, std::move(func), ServiceThreadPriority, ServiceThreadCore, process)));
+
+    // Commit the thread reservation.
+    thread_reservation.Commit();
+
+    // Begin running the thread.
+    ASSERT(R_SUCCEEDED(thread->Run()));
+}
+
 u32 KernelCore::GetCurrentHostThreadID() const {
     return impl->GetCurrentHostThreadID();
 }
@@ -1127,6 +1148,10 @@ KThread* KernelCore::GetCurrentEmuThread() const {
 
 void KernelCore::SetCurrentEmuThread(KThread* thread) {
     impl->SetCurrentEmuThread(thread);
+}
+
+KObjectNameGlobalData& KernelCore::ObjectNameGlobalData() {
+    return *impl->object_name_global_data;
 }
 
 KMemoryManager& KernelCore::MemoryManager() {
@@ -1255,18 +1280,6 @@ void KernelCore::EnterSVCProfile() {
 
 void KernelCore::ExitSVCProfile() {
     MicroProfileLeave(MICROPROFILE_TOKEN(Kernel_SVC), impl->svc_ticks[CurrentPhysicalCoreIndex()]);
-}
-
-Kernel::ServiceThread& KernelCore::CreateServiceThread(const std::string& name) {
-    return impl->CreateServiceThread(*this, name);
-}
-
-Kernel::ServiceThread& KernelCore::GetDefaultServiceThread() const {
-    return *impl->default_service_thread;
-}
-
-void KernelCore::ReleaseServiceThread(Kernel::ServiceThread& service_thread) {
-    impl->ReleaseServiceThread(service_thread);
 }
 
 Init::KSlabResourceCounts& KernelCore::SlabResourceCounts() {

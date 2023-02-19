@@ -5,8 +5,8 @@
 
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/pcv/pcv.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::PCV {
 
@@ -141,11 +141,14 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<PCV>(system)->InstallAsService(sm);
-    std::make_shared<CLKRST>(system, "clkrst")->InstallAsService(sm);
-    std::make_shared<CLKRST>(system, "clkrst:i")->InstallAsService(sm);
-    std::make_shared<CLKRST_A>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("pcv", std::make_shared<PCV>(system));
+    server_manager->RegisterNamedService("clkrst", std::make_shared<CLKRST>(system, "clkrst"));
+    server_manager->RegisterNamedService("clkrst:i", std::make_shared<CLKRST>(system, "clkrst:i"));
+    server_manager->RegisterNamedService("clkrst:a", std::make_shared<CLKRST_A>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::PCV

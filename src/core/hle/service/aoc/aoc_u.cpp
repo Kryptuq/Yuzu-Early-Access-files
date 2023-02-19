@@ -17,6 +17,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/aoc/aoc_u.h"
+#include "core/hle/service/server_manager.h"
 #include "core/loader/loader.h"
 
 namespace Service::AOC {
@@ -311,8 +312,10 @@ void AOC_U::CreatePermanentEcPurchasedEventManager(Kernel::HLERequestContext& ct
     rb.PushIpcInterface<IPurchaseEventManager>(system);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<AOC_U>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+    server_manager->RegisterNamedService("aoc:u", std::make_shared<AOC_U>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::AOC

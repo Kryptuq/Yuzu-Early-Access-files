@@ -7,12 +7,8 @@ namespace Core {
 class System;
 }
 
-namespace Service::SM {
-class ServiceManager;
-}
-
 namespace Service::NPNS {
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::NPNS

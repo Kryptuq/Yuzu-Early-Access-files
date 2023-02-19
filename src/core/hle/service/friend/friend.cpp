@@ -11,6 +11,7 @@
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/friend_interface.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/server_manager.h"
 
 namespace Service::Friend {
 
@@ -335,13 +336,22 @@ Module::Interface::Interface(std::shared_ptr<Module> module_, Core::System& syst
 
 Module::Interface::~Interface() = default;
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
     auto module = std::make_shared<Module>();
-    std::make_shared<Friend>(module, system, "friend:a")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:m")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:s")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:u")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:v")->InstallAsService(service_manager);
+
+    server_manager->RegisterNamedService("friend:a",
+                                         std::make_shared<Friend>(module, system, "friend:a"));
+    server_manager->RegisterNamedService("friend:m",
+                                         std::make_shared<Friend>(module, system, "friend:m"));
+    server_manager->RegisterNamedService("friend:s",
+                                         std::make_shared<Friend>(module, system, "friend:s"));
+    server_manager->RegisterNamedService("friend:u",
+                                         std::make_shared<Friend>(module, system, "friend:u"));
+    server_manager->RegisterNamedService("friend:v",
+                                         std::make_shared<Friend>(module, system, "friend:v"));
+
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::Friend

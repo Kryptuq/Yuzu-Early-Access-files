@@ -7,6 +7,7 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/btdrv/btdrv.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -196,9 +197,12 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<BtDrv>(system)->InstallAsService(sm);
-    std::make_shared<Bt>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("btdrv", std::make_shared<BtDrv>(system));
+    server_manager->RegisterNamedService("bt", std::make_shared<Bt>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::BtDrv

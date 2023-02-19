@@ -434,6 +434,10 @@ public:
                                                      VAddr user_stack_top, s32 prio, s32 virt_core,
                                                      KProcess* owner);
 
+    [[nodiscard]] static Result InitializeServiceThread(Core::System& system, KThread* thread,
+                                                        std::function<void()>&& thread_func,
+                                                        s32 prio, s32 virt_core, KProcess* owner);
+
 public:
     struct StackParameters {
         u8 svc_permission[0x10];

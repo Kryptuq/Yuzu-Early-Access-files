@@ -114,8 +114,6 @@ private:
     std::unordered_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
 };
 
-/// Registers all NVDRV services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger& nvflinger,
-                       Core::System& system);
+void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system);
 
 } // namespace Service::Nvidia

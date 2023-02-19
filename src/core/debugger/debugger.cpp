@@ -16,6 +16,7 @@
 #include "core/debugger/debugger_interface.h"
 #include "core/debugger/gdbstub.h"
 #include "core/hle/kernel/global_scheduler_context.h"
+#include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_scheduler.h"
 
 template <typename Readable, typename Buffer, typename Callback>
@@ -284,12 +285,12 @@ private:
     void UpdateActiveThread() {
         const auto& threads{ThreadList()};
         if (std::find(threads.begin(), threads.end(), state->active_thread) == threads.end()) {
-            state->active_thread = threads[0];
+            state->active_thread = threads.front();
         }
     }
 
-    const std::vector<Kernel::KThread*>& ThreadList() {
-        return system.GlobalSchedulerContext().GetThreadList();
+    const std::list<Kernel::KThread*>& ThreadList() {
+        return system.ApplicationProcess()->GetThreadList();
     }
 
 private:

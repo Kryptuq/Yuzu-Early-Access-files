@@ -13,6 +13,7 @@
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/fatal/fatal_p.h"
 #include "core/hle/service/fatal/fatal_u.h"
+#include "core/hle/service/server_manager.h"
 #include "core/reporter.h"
 
 namespace Service::Fatal {
@@ -163,10 +164,13 @@ void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx)
     rb.Push(ResultSuccess);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
     auto module = std::make_shared<Module>();
-    std::make_shared<Fatal_P>(module, system)->InstallAsService(service_manager);
-    std::make_shared<Fatal_U>(module, system)->InstallAsService(service_manager);
+
+    server_manager->RegisterNamedService("fatal:p", std::make_shared<Fatal_P>(module, system));
+    server_manager->RegisterNamedService("fatal:u", std::make_shared<Fatal_U>(module, system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::Fatal

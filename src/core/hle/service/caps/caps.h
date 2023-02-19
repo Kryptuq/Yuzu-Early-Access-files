@@ -90,7 +90,6 @@ struct ApplicationAlbumFileEntry {
 static_assert(sizeof(ApplicationAlbumFileEntry) == 0x30,
               "ApplicationAlbumFileEntry has incorrect size.");
 
-/// Registers all Capture services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::Capture

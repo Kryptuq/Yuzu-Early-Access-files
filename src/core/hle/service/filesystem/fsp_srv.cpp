@@ -57,8 +57,7 @@ enum class FileSystemType : u8 {
 class IStorage final : public ServiceFramework<IStorage> {
 public:
     explicit IStorage(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IStorage", ServiceThreadType::CreateNew},
-          backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IStorage"}, backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"},
             {1, nullptr, "Write"},
@@ -116,8 +115,7 @@ private:
 class IFile final : public ServiceFramework<IFile> {
 public:
     explicit IFile(Core::System& system_, FileSys::VirtualFile backend_)
-        : ServiceFramework{system_, "IFile", ServiceThreadType::CreateNew},
-          backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IFile"}, backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},
             {1, &IFile::Write, "Write"},
@@ -254,8 +252,7 @@ static void BuildEntryIndex(std::vector<FileSys::Entry>& entries, const std::vec
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
     explicit IDirectory(Core::System& system_, FileSys::VirtualDir backend_)
-        : ServiceFramework{system_, "IDirectory", ServiceThreadType::CreateNew},
-          backend(std::move(backend_)) {
+        : ServiceFramework{system_, "IDirectory"}, backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
@@ -311,8 +308,8 @@ private:
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
     explicit IFileSystem(Core::System& system_, FileSys::VirtualDir backend_, SizeGetter size_)
-        : ServiceFramework{system_, "IFileSystem", ServiceThreadType::CreateNew},
-          backend{std::move(backend_)}, size{std::move(size_)} {
+        : ServiceFramework{system_, "IFileSystem"}, backend{std::move(backend_)}, size{std::move(
+                                                                                      size_)} {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
             {1, &IFileSystem::DeleteFile, "DeleteFile"},

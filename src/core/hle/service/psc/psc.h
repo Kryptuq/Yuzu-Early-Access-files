@@ -13,6 +13,6 @@ class ServiceManager;
 
 namespace Service::PSC {
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::PSC

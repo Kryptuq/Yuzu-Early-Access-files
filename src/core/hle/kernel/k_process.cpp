@@ -119,7 +119,6 @@ void KProcess::DecrementRunningThreadCount() {
 
     if (const auto prev = num_running_threads--; prev == 1) {
         // TODO(bunnei): Process termination to be implemented when multiprocess is supported.
-        UNIMPLEMENTED_MSG("KProcess termination is not implemennted!");
     }
 }
 
@@ -356,9 +355,6 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
     is_64bit_process = metadata.Is64BitProgram();
     system_resource_size = metadata.GetSystemResourceSize();
     image_size = code_size;
-
-    // We currently do not support process-specific system resource
-    UNIMPLEMENTED_IF(system_resource_size != 0);
 
     KScopedResourceReservation memory_reservation(
         resource_limit, LimitableResource::PhysicalMemoryMax, code_size + system_resource_size);

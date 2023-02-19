@@ -4,8 +4,8 @@
 #include <memory>
 
 #include "core/hle/service/grc/grc.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::GRC {
 
@@ -26,8 +26,11 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<GRC>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("grc:c", std::make_shared<GRC>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::GRC

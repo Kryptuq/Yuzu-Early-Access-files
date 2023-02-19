@@ -4,6 +4,7 @@
 #include "core/crypto/key_manager.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/es/es.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 
 namespace Service::ES {
@@ -307,8 +308,11 @@ private:
     Core::Crypto::KeyManager& keys = Core::Crypto::KeyManager::Instance();
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<ETicket>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("es", std::make_shared<ETicket>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::ES

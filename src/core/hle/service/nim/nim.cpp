@@ -8,8 +8,8 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nim/nim.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::NIM {
 
@@ -418,11 +418,14 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<NIM>(system)->InstallAsService(sm);
-    std::make_shared<NIM_ECA>(system)->InstallAsService(sm);
-    std::make_shared<NIM_SHP>(system)->InstallAsService(sm);
-    std::make_shared<NTC>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("nim", std::make_shared<NIM>(system));
+    server_manager->RegisterNamedService("nim:eca", std::make_shared<NIM_ECA>(system));
+    server_manager->RegisterNamedService("nim:shp", std::make_shared<NIM_SHP>(system));
+    server_manager->RegisterNamedService("ntc", std::make_shared<NTC>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NIM

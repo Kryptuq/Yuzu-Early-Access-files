@@ -4,6 +4,7 @@
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/mm/mm_u.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 
 namespace Service::MM {
@@ -103,8 +104,11 @@ private:
     u32 id{1};
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    std::make_shared<MM_U>(system)->InstallAsService(service_manager);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("mm:u", std::make_shared<MM_U>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::MM

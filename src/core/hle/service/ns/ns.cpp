@@ -14,6 +14,7 @@
 #include "core/hle/service/ns/language.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/ns/pdm_qry.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/set/set.h"
 
 namespace Service::NS {
@@ -777,23 +778,26 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
 
-    std::make_shared<NS>("ns:am2", system)->InstallAsService(service_manager);
-    std::make_shared<NS>("ns:ec", system)->InstallAsService(service_manager);
-    std::make_shared<NS>("ns:rid", system)->InstallAsService(service_manager);
-    std::make_shared<NS>("ns:rt", system)->InstallAsService(service_manager);
-    std::make_shared<NS>("ns:web", system)->InstallAsService(service_manager);
-    std::make_shared<NS>("ns:ro", system)->InstallAsService(service_manager);
+    server_manager->RegisterNamedService("ns:am2", std::make_shared<NS>("ns:am2", system));
+    server_manager->RegisterNamedService("ns:ec", std::make_shared<NS>("ns:ec", system));
+    server_manager->RegisterNamedService("ns:rid", std::make_shared<NS>("ns:rid", system));
+    server_manager->RegisterNamedService("ns:rt", std::make_shared<NS>("ns:rt", system));
+    server_manager->RegisterNamedService("ns:web", std::make_shared<NS>("ns:web", system));
+    server_manager->RegisterNamedService("ns:ro", std::make_shared<NS>("ns:ro", system));
 
-    std::make_shared<NS_DEV>(system)->InstallAsService(service_manager);
-    std::make_shared<NS_SU>(system)->InstallAsService(service_manager);
-    std::make_shared<NS_VM>(system)->InstallAsService(service_manager);
+    server_manager->RegisterNamedService("ns:dev", std::make_shared<NS_DEV>(system));
+    server_manager->RegisterNamedService("ns:su", std::make_shared<NS_SU>(system));
+    server_manager->RegisterNamedService("ns:vm", std::make_shared<NS_VM>(system));
+    server_manager->RegisterNamedService("pdm:qry", std::make_shared<PDM_QRY>(system));
 
-    std::make_shared<PDM_QRY>(system)->InstallAsService(service_manager);
-
-    std::make_shared<IPlatformServiceManager>(system, "pl:s")->InstallAsService(service_manager);
-    std::make_shared<IPlatformServiceManager>(system, "pl:u")->InstallAsService(service_manager);
+    server_manager->RegisterNamedService("pl:s",
+                                         std::make_shared<IPlatformServiceManager>(system, "pl:s"));
+    server_manager->RegisterNamedService("pl:u",
+                                         std::make_shared<IPlatformServiceManager>(system, "pl:u"));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NS

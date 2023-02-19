@@ -7,10 +7,6 @@ namespace Core {
 class System;
 }
 
-namespace Service::SM {
-class ServiceManager;
-}
-
 namespace Service::PCV {
 
 enum class DeviceCode : u32 {
@@ -104,6 +100,6 @@ enum class DeviceCode : u32 {
     OscClk = 0x40000080
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::PCV

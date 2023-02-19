@@ -8,6 +8,7 @@
 #include "core/hle/service/ldn/ldn.h"
 #include "core/hle/service/ldn/ldn_results.h"
 #include "core/hle/service/ldn/ldn_types.h"
+#include "core/hle/service/server_manager.h"
 #include "core/internal_network/network.h"
 #include "core/internal_network/network_interface.h"
 #include "network/network.h"
@@ -106,7 +107,7 @@ class IUserLocalCommunicationService final
     : public ServiceFramework<IUserLocalCommunicationService> {
 public:
     explicit IUserLocalCommunicationService(Core::System& system_)
-        : ServiceFramework{system_, "IUserLocalCommunicationService", ServiceThreadType::CreateNew},
+        : ServiceFramework{system_, "IUserLocalCommunicationService"},
           service_context{system, "IUserLocalCommunicationService"},
           room_network{system_.GetRoomNetwork()}, lan_discovery{room_network} {
         // clang-format off
@@ -730,12 +731,15 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<LDNM>(system)->InstallAsService(sm);
-    std::make_shared<LDNS>(system)->InstallAsService(sm);
-    std::make_shared<LDNU>(system)->InstallAsService(sm);
-    std::make_shared<LP2PAPP>(system)->InstallAsService(sm);
-    std::make_shared<LP2PSYS>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("ldn:m", std::make_shared<LDNM>(system));
+    server_manager->RegisterNamedService("ldn:s", std::make_shared<LDNS>(system));
+    server_manager->RegisterNamedService("ldn:u", std::make_shared<LDNU>(system));
+    server_manager->RegisterNamedService("lp2p:app", std::make_shared<LP2PAPP>(system));
+    server_manager->RegisterNamedService("lp2p:sys", std::make_shared<LP2PSYS>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::LDN

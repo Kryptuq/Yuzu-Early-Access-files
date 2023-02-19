@@ -9,6 +9,7 @@
 #include "common/settings.h"
 #include "core/hle/api_version.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/spl/csrng.h"
 #include "core/hle/service/spl/spl.h"
 #include "core/hle/service/spl/spl_module.h"
@@ -158,15 +159,18 @@ ResultVal<u64> Module::Interface::GetConfigImpl(ConfigItem config_item) const {
     }
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
     auto module = std::make_shared<Module>();
-    std::make_shared<CSRNG>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL_MIG>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL_FS>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL_SSL>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL_ES>(system, module)->InstallAsService(service_manager);
-    std::make_shared<SPL_MANU>(system, module)->InstallAsService(service_manager);
+
+    server_manager->RegisterNamedService("csrng", std::make_shared<CSRNG>(system, module));
+    server_manager->RegisterNamedService("spl", std::make_shared<SPL>(system, module));
+    server_manager->RegisterNamedService("spl:mig", std::make_shared<SPL_MIG>(system, module));
+    server_manager->RegisterNamedService("spl:fs", std::make_shared<SPL_FS>(system, module));
+    server_manager->RegisterNamedService("spl:ssl", std::make_shared<SPL_SSL>(system, module));
+    server_manager->RegisterNamedService("spl:es", std::make_shared<SPL_ES>(system, module));
+    server_manager->RegisterNamedService("spl:manu", std::make_shared<SPL_MANU>(system, module));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::SPL

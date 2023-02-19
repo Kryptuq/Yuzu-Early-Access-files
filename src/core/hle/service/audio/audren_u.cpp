@@ -35,10 +35,9 @@ public:
                             AudioCore::AudioRendererParameterInternal& params,
                             Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size,
                             u32 process_handle, u64 applet_resource_user_id, s32 session_id)
-        : ServiceFramework{system_, "IAudioRenderer", ServiceThreadType::CreateNew},
-          service_context{system_, "IAudioRenderer"}, rendered_event{service_context.CreateEvent(
-                                                          "IAudioRendererEvent")},
-          manager{manager_}, impl{std::make_unique<Renderer>(system_, manager, rendered_event)} {
+        : ServiceFramework{system_, "IAudioRenderer"}, service_context{system_, "IAudioRenderer"},
+          rendered_event{service_context.CreateEvent("IAudioRendererEvent")}, manager{manager_},
+          impl{std::make_unique<Renderer>(system_, manager, rendered_event)} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IAudioRenderer::GetSampleRate, "GetSampleRate"},
@@ -243,10 +242,8 @@ class IAudioDevice final : public ServiceFramework<IAudioDevice> {
 public:
     explicit IAudioDevice(Core::System& system_, u64 applet_resource_user_id, u32 revision,
                           u32 device_num)
-        : ServiceFramework{system_, "IAudioDevice", ServiceThreadType::CreateNew},
-          service_context{system_, "IAudioDevice"}, impl{std::make_unique<AudioDevice>(
-                                                        system_, applet_resource_user_id,
-                                                        revision)},
+        : ServiceFramework{system_, "IAudioDevice"}, service_context{system_, "IAudioDevice"},
+          impl{std::make_unique<AudioDevice>(system_, applet_resource_user_id, revision)},
           event{service_context.CreateEvent(fmt::format("IAudioDeviceEvent-{}", device_num))} {
         static const FunctionInfo functions[] = {
             {0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
@@ -421,7 +418,7 @@ private:
 };
 
 AudRenU::AudRenU(Core::System& system_)
-    : ServiceFramework{system_, "audren:u", ServiceThreadType::CreateNew},
+    : ServiceFramework{system_, "audren:u"},
       service_context{system_, "audren:u"}, impl{std::make_unique<Manager>(system_)} {
     // clang-format off
     static const FunctionInfo functions[] = {

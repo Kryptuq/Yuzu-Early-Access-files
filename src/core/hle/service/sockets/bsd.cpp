@@ -881,8 +881,7 @@ void BSD::OnProxyPacketReceived(const Network::ProxyPacket& packet) {
 }
 
 BSD::BSD(Core::System& system_, const char* name)
-    : ServiceFramework{system_, name, ServiceThreadType::CreateNew}, room_network{
-                                                                         system_.GetRoomNetwork()} {
+    : ServiceFramework{system_, name}, room_network{system_.GetRoomNetwork()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},

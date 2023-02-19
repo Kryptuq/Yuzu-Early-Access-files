@@ -21,36 +21,18 @@
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/service_thread.h"
 #include "core/memory.h"
 
 namespace Kernel {
 
-SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_,
-                                             ServiceThreadType thread_type)
-    : kernel{kernel_}, service_thread{thread_type == ServiceThreadType::CreateNew
-                                          ? kernel.CreateServiceThread(service_name_)
-                                          : kernel.GetDefaultServiceThread()} {}
+SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_)
+    : kernel{kernel_} {}
 
-SessionRequestHandler::~SessionRequestHandler() {
-    kernel.ReleaseServiceThread(service_thread);
-}
+SessionRequestHandler::~SessionRequestHandler() = default;
 
-void SessionRequestHandler::AcceptSession(KServerPort* server_port) {
-    auto* server_session = server_port->AcceptSession();
-    ASSERT(server_session != nullptr);
-
-    RegisterSession(server_session, std::make_shared<SessionRequestManager>(kernel));
-}
-
-void SessionRequestHandler::RegisterSession(KServerSession* server_session,
-                                            std::shared_ptr<SessionRequestManager> manager) {
-    manager->SetSessionHandler(shared_from_this());
-    service_thread.RegisterServerSession(server_session, manager);
-    server_session->Close();
-}
-
-SessionRequestManager::SessionRequestManager(KernelCore& kernel_) : kernel{kernel_} {}
+SessionRequestManager::SessionRequestManager(KernelCore& kernel_,
+                                             Service::ServerManager& server_manager_)
+    : kernel{kernel_}, server_manager{server_manager_} {}
 
 SessionRequestManager::~SessionRequestManager() = default;
 

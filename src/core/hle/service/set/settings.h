@@ -7,13 +7,8 @@ namespace Core {
 class System;
 }
 
-namespace Service::SM {
-class ServiceManager;
-}
-
 namespace Service::Set {
 
-/// Registers all Settings services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::Set

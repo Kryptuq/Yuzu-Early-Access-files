@@ -6,8 +6,8 @@
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/psc/psc.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::PSC {
 
@@ -71,9 +71,12 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<PSC_C>(system)->InstallAsService(sm);
-    std::make_shared<PSC_M>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("psc:c", std::make_shared<PSC_C>(system));
+    server_manager->RegisterNamedService("psc:m", std::make_shared<PSC_M>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::PSC

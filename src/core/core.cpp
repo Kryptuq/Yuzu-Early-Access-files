@@ -380,9 +380,7 @@ struct System::Impl {
             gpu_core->NotifyShutdown();
         }
 
-        kernel.ShutdownCores();
-        cpu_manager.Shutdown();
-        debugger.reset();
+        kernel.SuspendApplication(true);
         if (services) {
             services->KillNVNFlinger();
         }
@@ -398,6 +396,9 @@ struct System::Impl {
         gpu_core.reset();
         host1x_core.reset();
         perf_stats.reset();
+        kernel.ShutdownCores();
+        cpu_manager.Shutdown();
+        debugger.reset();
         kernel.Shutdown();
         memory.Reset();
 
@@ -936,6 +937,10 @@ Network::RoomNetwork& System::GetRoomNetwork() {
 
 const Network::RoomNetwork& System::GetRoomNetwork() const {
     return impl->room_network;
+}
+
+void System::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager) {
+    return impl->kernel.RunServer(std::move(server_manager));
 }
 
 void System::RegisterExecuteProgramCallback(ExecuteProgramCallback&& callback) {

@@ -6,8 +6,8 @@
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ncm/ncm.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/sm/sm.h"
 
 namespace Service::NCM {
 
@@ -131,9 +131,12 @@ public:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<LR>(system)->InstallAsService(sm);
-    std::make_shared<NCM>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("lr", std::make_shared<LR>(system));
+    server_manager->RegisterNamedService("ncm", std::make_shared<NCM>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::NCM

@@ -14,6 +14,7 @@
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/service/ldr/ldr.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/loader/nro.h"
 #include "core/memory.h"
@@ -159,8 +160,7 @@ public:
 
 class RelocatableObject final : public ServiceFramework<RelocatableObject> {
 public:
-    explicit RelocatableObject(Core::System& system_)
-        : ServiceFramework{system_, "ldr:ro", ServiceThreadType::CreateNew} {
+    explicit RelocatableObject(Core::System& system_) : ServiceFramework{system_, "ldr:ro"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &RelocatableObject::LoadModule, "LoadModule"},
@@ -682,11 +682,15 @@ private:
     }
 };
 
-void InstallInterfaces(SM::ServiceManager& sm, Core::System& system) {
-    std::make_shared<DebugMonitor>(system)->InstallAsService(sm);
-    std::make_shared<ProcessManager>(system)->InstallAsService(sm);
-    std::make_shared<Shell>(system)->InstallAsService(sm);
-    std::make_shared<RelocatableObject>(system)->InstallAsService(sm);
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("ldr:dmnt", std::make_shared<DebugMonitor>(system));
+    server_manager->RegisterNamedService("ldr:pm", std::make_shared<ProcessManager>(system));
+    server_manager->RegisterNamedService("ldr:shel", std::make_shared<Shell>(system));
+    server_manager->RegisterNamedService("ldr:ro", std::make_shared<RelocatableObject>(system));
+
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::LDR

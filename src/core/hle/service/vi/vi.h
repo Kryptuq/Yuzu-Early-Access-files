@@ -18,10 +18,6 @@ class HosBinderDriverServer;
 class NVFlinger;
 } // namespace Service::NVFlinger
 
-namespace Service::SM {
-class ServiceManager;
-}
-
 namespace Service::VI {
 
 enum class DisplayResolution : u32 {
@@ -52,9 +48,7 @@ void GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System& system,
                            Permission permission);
 } // namespace detail
 
-/// Registers all VI services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system,
-                       NVFlinger::NVFlinger& nv_flinger,
-                       NVFlinger::HosBinderDriverServer& hos_binder_driver_server);
+void LoopProcess(Core::System& system, NVFlinger::NVFlinger& nv_flinger,
+                 NVFlinger::HosBinderDriverServer& hos_binder_driver_server);
 
 } // namespace Service::VI

@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/pm/pm.h"
+#include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 
 namespace Service::PM {
@@ -262,12 +263,15 @@ private:
     const Kernel::KernelCore& kernel;
 };
 
-void InstallInterfaces(Core::System& system) {
-    std::make_shared<BootMode>(system)->InstallAsService(system.ServiceManager());
-    std::make_shared<DebugMonitor>(system)->InstallAsService(system.ServiceManager());
-    std::make_shared<Info>(system, system.Kernel().GetProcessList())
-        ->InstallAsService(system.ServiceManager());
-    std::make_shared<Shell>(system)->InstallAsService(system.ServiceManager());
+void LoopProcess(Core::System& system) {
+    auto server_manager = std::make_unique<ServerManager>(system);
+
+    server_manager->RegisterNamedService("pm:bm", std::make_shared<BootMode>(system));
+    server_manager->RegisterNamedService("pm:dmnt", std::make_shared<DebugMonitor>(system));
+    server_manager->RegisterNamedService(
+        "pm:info", std::make_shared<Info>(system, system.Kernel().GetProcessList()));
+    server_manager->RegisterNamedService("pm:shell", std::make_shared<Shell>(system));
+    ServerManager::RunServer(std::move(server_manager));
 }
 
 } // namespace Service::PM
