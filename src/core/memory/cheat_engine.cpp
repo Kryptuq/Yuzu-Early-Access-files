@@ -47,8 +47,13 @@ void StandardVmCallbacks::MemoryWrite(VAddr address, const void* data, u64 size)
 }
 
 u64 StandardVmCallbacks::HidKeysDown() {
-    const auto applet_resource =
-        system.ServiceManager().GetService<Service::HID::Hid>("hid")->GetAppletResource();
+    const auto hid = system.ServiceManager().GetService<Service::HID::Hid>("hid");
+    if (hid == nullptr) {
+        LOG_WARNING(CheatEngine, "Attempted to read input state, but hid is not initialized!");
+        return 0;
+    }
+
+    const auto applet_resource = hid->GetAppletResource();
     if (applet_resource == nullptr) {
         LOG_WARNING(CheatEngine,
                     "Attempted to read input state, but applet resource is not initialized!");

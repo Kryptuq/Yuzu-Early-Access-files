@@ -25,6 +25,7 @@ constexpr size_t MaximumWaitObjects = 0x40;
 enum HandleType {
     Port,
     Session,
+    DeferEvent,
     Event,
 };
 
@@ -53,9 +54,18 @@ ServerManager::~ServerManager() {
         session->Close();
     }
 
+    for (const auto& request : m_deferrals) {
+        request.session->Close();
+    }
+
     // Close event.
     m_event->GetReadableEvent().Close();
     m_event->Close();
+
+    if (m_deferral_event) {
+        m_deferral_event->GetReadableEvent().Close();
+        // Write event is owned by ServiceManager
+    }
 }
 
 void ServerManager::RunServer(std::unique_ptr<ServerManager>&& server_manager) {
@@ -142,6 +152,21 @@ Result ServerManager::ManageNamedPort(const std::string& service_name,
     R_SUCCEED();
 }
 
+Result ServerManager::ManageDeferral(Kernel::KEvent** out_event) {
+    // Create a new event.
+    m_deferral_event = Kernel::KEvent::Create(m_system.Kernel());
+    ASSERT(m_deferral_event != nullptr);
+
+    // Initialize the event.
+    m_deferral_event->Initialize(nullptr);
+
+    // Set the output.
+    *out_event = m_deferral_event;
+
+    // We succeeded.
+    R_SUCCEED();
+}
+
 void ServerManager::StartAdditionalHostThreads(const char* name, size_t num_threads) {
     for (size_t i = 0; i < num_threads; i++) {
         auto thread_name = fmt::format("{}:{}", name, i + 1);
@@ -207,6 +232,11 @@ Result ServerManager::WaitAndProcessImpl() {
             }
         }
 
+        // Add the deferral wakeup event.
+        if (m_deferral_event != nullptr) {
+            AddWaiter(std::addressof(m_deferral_event->GetReadableEvent()), HandleType::DeferEvent);
+        }
+
         // Add the wakeup event.
         AddWaiter(std::addressof(m_event->GetReadableEvent()), HandleType::Event);
 
@@ -270,6 +300,23 @@ Result ServerManager::WaitAndProcessImpl() {
             // Finish.
             R_RETURN(this->OnSessionEvent(session, std::move(manager)));
         }
+        case HandleType::DeferEvent: {
+            // Clear event.
+            ASSERT(R_SUCCEEDED(m_deferral_event->Clear()));
+
+            // Drain the list of deferrals while we process.
+            std::list<RequestState> deferrals;
+            {
+                std::scoped_lock ll{m_list_mutex};
+                m_deferrals.swap(deferrals);
+            }
+
+            // Allow other threads to serve.
+            sl.unlock();
+
+            // Finish.
+            R_RETURN(this->OnDeferralEvent(std::move(deferrals)));
+        }
         case HandleType::Event: {
             // Clear event and finish.
             R_RETURN(m_event->Clear());
@@ -308,7 +355,6 @@ Result ServerManager::OnPortEvent(Kernel::KServerPort* port,
 Result ServerManager::OnSessionEvent(Kernel::KServerSession* session,
                                      std::shared_ptr<Kernel::SessionRequestManager>&& manager) {
     Result rc{ResultSuccess};
-    Result service_rc{ResultSuccess};
 
     // Try to receive a message.
     std::shared_ptr<Kernel::HLERequestContext> context;
@@ -324,16 +370,43 @@ Result ServerManager::OnSessionEvent(Kernel::KServerSession* session,
     }
     ASSERT(R_SUCCEEDED(rc));
 
+    RequestState request{
+        .session = session,
+        .context = std::move(context),
+        .manager = std::move(manager),
+    };
+
+    // Complete the sync request with deferral handling.
+    R_RETURN(this->CompleteSyncRequest(std::move(request)));
+}
+
+Result ServerManager::CompleteSyncRequest(RequestState&& request) {
+    Result rc{ResultSuccess};
+    Result service_rc{ResultSuccess};
+
+    // Mark the request as not deferred.
+    request.context->SetIsDeferred(false);
+
     // Complete the request. We have exclusive access to this session.
-    service_rc = manager->CompleteSyncRequest(session, *context);
+    service_rc = request.manager->CompleteSyncRequest(request.session, *request.context);
+
+    // If we've been deferred, we're done.
+    if (request.context->GetIsDeferred()) {
+        // Insert into deferral list.
+        std::scoped_lock ll{m_list_mutex};
+        m_deferrals.emplace_back(std::move(request));
+
+        // Finish.
+        R_SUCCEED();
+    }
 
     // Send the reply.
-    rc = session->SendReplyHLE();
+    rc = request.session->SendReplyHLE();
 
     // If the session has been closed, we're done.
     if (rc == Kernel::ResultSessionClosed || service_rc == IPC::ERR_REMOTE_PROCESS_DEAD) {
         // Close the session.
-        session->Close();
+        request.session->Close();
 
         // Finish.
         R_SUCCEED();
@@ -345,13 +418,30 @@ Result ServerManager::OnSessionEvent(Kernel::KServerSession* session,
     // Reinsert the session.
     {
         std::scoped_lock ll{m_list_mutex};
-        m_sessions.emplace(session, std::move(manager));
+        m_sessions.emplace(request.session, std::move(request.manager));
     }
 
     // Signal the wakeup event.
     m_event->Signal();
 
     // We succeeded.
+    R_SUCCEED();
+}
+
+Result ServerManager::OnDeferralEvent(std::list<RequestState>&& deferrals) {
+    ON_RESULT_FAILURE {
+        std::scoped_lock ll{m_list_mutex};
+        m_deferrals.splice(m_deferrals.end(), deferrals);
+    };
+
+    while (!deferrals.empty()) {
+        RequestState request = deferrals.front();
+        deferrals.pop_front();
+
+        // Try again to complete the request.
+        R_TRY(this->CompleteSyncRequest(std::move(request)));
+    }
+
     R_SUCCEED();
 }
 

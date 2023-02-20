@@ -32,6 +32,10 @@ ServiceManager::~ServiceManager() {
         port->GetClientPort().Close();
         port->GetServerPort().Close();
     }
+
+    if (deferral_event) {
+        deferral_event->Close();
+    }
 }
 
 void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
@@ -62,6 +66,9 @@ Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
 
     service_ports.emplace(name, port);
     registered_services.emplace(name, handler);
+    if (deferral_event) {
+        deferral_event->Signal();
+    }
 
     return ResultSuccess;
 }
@@ -88,7 +95,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
     std::scoped_lock lk{lock};
     auto it = service_ports.find(name);
     if (it == service_ports.end()) {
-        LOG_ERROR(Service_SM, "Server is not registered! service={}", name);
+        LOG_WARNING(Service_SM, "Server is not registered! service={}", name);
         return ERR_SERVICE_NOT_REGISTERED;
     }
 
@@ -113,6 +120,11 @@ void SM::Initialize(Kernel::HLERequestContext& ctx) {
 
 void SM::GetService(Kernel::HLERequestContext& ctx) {
     auto result = GetServiceImpl(ctx);
+    if (ctx.GetIsDeferred()) {
+        // Don't overwrite the command buffer.
+        return;
+    }
+
     if (result.Succeeded()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
         rb.Push(result.Code());
@@ -125,6 +137,11 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
 
 void SM::GetServiceTipc(Kernel::HLERequestContext& ctx) {
     auto result = GetServiceImpl(ctx);
+    if (ctx.GetIsDeferred()) {
+        // Don't overwrite the command buffer.
+        return;
+    }
+
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(result.Code());
     rb.PushMoveObjects(result.Succeeded() ? result.Unwrap() : nullptr);
@@ -152,8 +169,9 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
     // Find the named port.
     auto port_result = service_manager.GetServicePort(name);
     if (port_result.Failed()) {
-        LOG_ERROR(Service_SM, "called service={} -> error 0x{:08X}", name, port_result.Code().raw);
-        return port_result.Code();
+        LOG_INFO(Service_SM, "Waiting for service {} to become available", name);
+        ctx.SetIsDeferred();
+        return ERR_SERVICE_NOT_REGISTERED;
     }
     auto& port = port_result.Unwrap();
 
@@ -228,7 +246,12 @@ SM::SM(ServiceManager& service_manager_, Core::System& system_)
 SM::~SM() = default;
 
 void LoopProcess(Core::System& system) {
+    auto& service_manager = system.ServiceManager();
     auto server_manager = std::make_unique<ServerManager>(system);
+
+    Kernel::KEvent* deferral_event{};
+    server_manager->ManageDeferral(&deferral_event);
+    service_manager.SetDeferralEvent(deferral_event);
 
     server_manager->ManageNamedPort("sm:", std::make_shared<SM>(system.ServiceManager(), system));
     ServerManager::RunServer(std::move(server_manager));

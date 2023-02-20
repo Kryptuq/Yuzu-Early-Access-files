@@ -358,6 +358,14 @@ public:
         return manager.lock();
     }
 
+    bool GetIsDeferred() const {
+        return is_deferred;
+    }
+
+    void SetIsDeferred(bool is_deferred_ = true) {
+        is_deferred = is_deferred_;
+    }
+
 private:
     friend class IPC::ResponseBuilder;
 
@@ -392,6 +400,7 @@ private:
     u32 domain_offset{};
 
     std::weak_ptr<SessionRequestManager> manager{};
+    bool is_deferred{false};
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

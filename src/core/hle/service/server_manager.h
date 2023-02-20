@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <functional>
+#include <list>
 #include <map>
 #include <mutex>
 #include <string_view>
@@ -19,6 +20,7 @@ class System;
 }
 
 namespace Kernel {
+class HLERequestContext;
 class KEvent;
 class KServerPort;
 class KServerSession;
@@ -42,6 +44,7 @@ public:
     Result ManageNamedPort(const std::string& service_name,
                            std::shared_ptr<Kernel::SessionRequestHandler>&& handler,
                            u32 max_sessions = 64);
+    Result ManageDeferral(Kernel::KEvent** out_event);
 
     Result LoopProcess();
     void StartAdditionalHostThreads(const char* name, size_t num_threads);
@@ -49,12 +52,16 @@ public:
     static void RunServer(std::unique_ptr<ServerManager>&& server);
 
 private:
+    struct RequestState;
+
     Result LoopProcessImpl();
     Result WaitAndProcessImpl();
     Result OnPortEvent(Kernel::KServerPort* port,
                        std::shared_ptr<Kernel::SessionRequestHandler>&& handler);
     Result OnSessionEvent(Kernel::KServerSession* session,
                           std::shared_ptr<Kernel::SessionRequestManager>&& manager);
+    Result OnDeferralEvent(std::list<RequestState>&& deferrals);
+    Result CompleteSyncRequest(RequestState&& state);
 
 private:
     Core::System& m_system;
@@ -65,6 +72,15 @@ private:
     std::map<Kernel::KServerPort*, std::shared_ptr<Kernel::SessionRequestHandler>> m_ports{};
     std::map<Kernel::KServerSession*, std::shared_ptr<Kernel::SessionRequestManager>> m_sessions{};
     Kernel::KEvent* m_event{};
+    Kernel::KEvent* m_deferral_event{};
+
+    // Deferral tracking
+    struct RequestState {
+        Kernel::KServerSession* session;
+        std::shared_ptr<Kernel::HLERequestContext> context;
+        std::shared_ptr<Kernel::SessionRequestManager> manager;
+    };
+    std::list<RequestState> m_deferrals{};
 
     // Host state tracking
     std::atomic<bool> m_stopped{};

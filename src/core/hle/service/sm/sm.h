@@ -71,6 +71,10 @@ public:
 
     void InvokeControlRequest(Kernel::HLERequestContext& context);
 
+    void SetDeferralEvent(Kernel::KEvent* deferral_event_) {
+        deferral_event = deferral_event_;
+    }
+
 private:
     std::shared_ptr<SM> sm_interface;
     std::unique_ptr<Controller> controller_interface;
@@ -82,6 +86,7 @@ private:
 
     /// Kernel context
     Kernel::KernelCore& kernel;
+    Kernel::KEvent* deferral_event{};
 };
 
 /// Runs SM services.
