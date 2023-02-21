@@ -401,6 +401,12 @@ qreal GRenderWindow::windowPixelRatio() const {
     return devicePixelRatioF();
 }
 
+std::pair<u32, u32> GRenderWindow::ScaleTouch(const QPointF& pos) const {
+    const qreal pixel_ratio = windowPixelRatio();
+    return {static_cast<u32>(std::max(std::round(pos.x() * pixel_ratio), qreal{0.0})),
+            static_cast<u32>(std::max(std::round(pos.y() * pixel_ratio), qreal{0.0}))};
+}
+
 void GRenderWindow::closeEvent(QCloseEvent* event) {
     emit Closed();
     QWidget::closeEvent(event);
@@ -643,7 +649,8 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
     // Qt sometimes returns the parent coordinates. To avoid this we read the global mouse
     // coordinates and map them to the current render area
     const auto pos = mapFromGlobal(QCursor::pos());
-    const auto [touch_x, touch_y] = MapToTouchScreen(pos.x(), pos.y());
+    const auto [x, y] = ScaleTouch(pos);
+    const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
     const auto button = QtButtonToMouseButton(event->button());
 
     input_subsystem->GetMouse()->PressMouseButton(button);
@@ -661,7 +668,8 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     // Qt sometimes returns the parent coordinates. To avoid this we read the global mouse
     // coordinates and map them to the current render area
     const auto pos = mapFromGlobal(QCursor::pos());
-    const auto [touch_x, touch_y] = MapToTouchScreen(pos.x(), pos.y());
+    const auto [x, y] = ScaleTouch(pos);
+    const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
     const int center_x = width() / 2;
     const int center_y = height() / 2;
 
@@ -695,8 +703,8 @@ void GRenderWindow::wheelEvent(QWheelEvent* event) {
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
     for (const auto& touch_point : touch_points) {
-        const auto pos = touch_point.pos();
-        const auto [touch_x, touch_y] = MapToTouchScreen(pos.x(), pos.y());
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
         input_subsystem->GetTouchScreen()->TouchPressed(touch_x, touch_y, touch_point.id());
     }
 }
@@ -705,8 +713,8 @@ void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
     QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
     input_subsystem->GetTouchScreen()->ClearActiveFlag();
     for (const auto& touch_point : touch_points) {
-        const auto pos = touch_point.pos();
-        const auto [touch_x, touch_y] = MapToTouchScreen(pos.x(), pos.y());
+        const auto [x, y] = ScaleTouch(touch_point.pos());
+        const auto [touch_x, touch_y] = MapToTouchScreen(x, y);
         input_subsystem->GetTouchScreen()->TouchMoved(touch_x, touch_y, touch_point.id());
     }
     input_subsystem->GetTouchScreen()->ReleaseInactiveTouch();

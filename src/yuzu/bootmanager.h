@@ -147,6 +147,8 @@ public:
 
     qreal windowPixelRatio() const;
 
+    std::pair<u32, u32> ScaleTouch(const QPointF& pos) const;
+
     void closeEvent(QCloseEvent* event) override;
 
     void resizeEvent(QResizeEvent* event) override;
