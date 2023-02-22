@@ -443,7 +443,7 @@ def emit_wrapper(wrapped_fn, suffix, register_info, arguments, byte_size):
         lines.append("")
 
     for output_type, var_name, _, is_address in output_writes:
-        output_type = "uintptr_t" if is_address else output_type
+        output_type = "uint64_t" if is_address else output_type
         lines.append(f"{output_type} {var_name}{{}};")
     for input_type, var_name, _ in input_reads:
         lines.append(f"{input_type} {var_name}{{}};")
@@ -630,7 +630,7 @@ def emit_call(bitness, names, suffix):
 def build_fn_declaration(return_type, name, arguments):
     arg_list = ["Core::System& system"]
     for arg in arguments:
-        type_name = "uintptr_t" if arg.is_address else arg.type_name
+        type_name = "uint64_t" if arg.is_address else arg.type_name
         pointer = "*" if arg.is_output and not arg.is_outptr else ""
         arg_list.append(f"{type_name}{pointer} {arg.var_name}")
 

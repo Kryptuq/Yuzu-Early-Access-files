@@ -76,8 +76,8 @@ constexpr bool IsValidDeviceMemoryPermission(MemoryPermission device_perm) {
 }
 
 Result MapDeviceAddressSpaceByForce(Core::System& system, Handle das_handle, Handle process_handle,
-                                    uint64_t process_address, size_t size, uint64_t device_address,
-                                    u32 option) {
+                                    uint64_t process_address, uint64_t size,
+                                    uint64_t device_address, u32 option) {
     // Decode the option.
     const MapDeviceAddressSpaceOption option_pack{option};
     const auto device_perm = option_pack.permission;
@@ -90,7 +90,7 @@ Result MapDeviceAddressSpaceByForce(Core::System& system, Handle das_handle, Han
     R_UNLESS(size > 0, ResultInvalidSize);
     R_UNLESS((process_address < process_address + size), ResultInvalidCurrentMemory);
     R_UNLESS((device_address < device_address + size), ResultInvalidMemoryRegion);
-    R_UNLESS((process_address == static_cast<uintptr_t>(process_address)),
+    R_UNLESS((process_address == static_cast<uint64_t>(process_address)),
              ResultInvalidCurrentMemory);
     R_UNLESS(IsValidDeviceMemoryPermission(device_perm), ResultInvalidNewMemoryPermission);
     R_UNLESS(reserved == 0, ResultInvalidEnumValue);
@@ -116,8 +116,8 @@ Result MapDeviceAddressSpaceByForce(Core::System& system, Handle das_handle, Han
 }
 
 Result MapDeviceAddressSpaceAligned(Core::System& system, Handle das_handle, Handle process_handle,
-                                    uint64_t process_address, size_t size, uint64_t device_address,
-                                    u32 option) {
+                                    uint64_t process_address, uint64_t size,
+                                    uint64_t device_address, u32 option) {
     // Decode the option.
     const MapDeviceAddressSpaceOption option_pack{option};
     const auto device_perm = option_pack.permission;
@@ -131,7 +131,7 @@ Result MapDeviceAddressSpaceAligned(Core::System& system, Handle das_handle, Han
     R_UNLESS(size > 0, ResultInvalidSize);
     R_UNLESS((process_address < process_address + size), ResultInvalidCurrentMemory);
     R_UNLESS((device_address < device_address + size), ResultInvalidMemoryRegion);
-    R_UNLESS((process_address == static_cast<uintptr_t>(process_address)),
+    R_UNLESS((process_address == static_cast<uint64_t>(process_address)),
              ResultInvalidCurrentMemory);
     R_UNLESS(IsValidDeviceMemoryPermission(device_perm), ResultInvalidNewMemoryPermission);
     R_UNLESS(reserved == 0, ResultInvalidEnumValue);
@@ -157,7 +157,7 @@ Result MapDeviceAddressSpaceAligned(Core::System& system, Handle das_handle, Han
 }
 
 Result UnmapDeviceAddressSpace(Core::System& system, Handle das_handle, Handle process_handle,
-                               uint64_t process_address, size_t size, uint64_t device_address) {
+                               uint64_t process_address, uint64_t size, uint64_t device_address) {
     // Validate input.
     R_UNLESS(Common::IsAligned(process_address, PageSize), ResultInvalidAddress);
     R_UNLESS(Common::IsAligned(device_address, PageSize), ResultInvalidAddress);
@@ -165,7 +165,7 @@ Result UnmapDeviceAddressSpace(Core::System& system, Handle das_handle, Handle p
     R_UNLESS(size > 0, ResultInvalidSize);
     R_UNLESS((process_address < process_address + size), ResultInvalidCurrentMemory);
     R_UNLESS((device_address < device_address + size), ResultInvalidMemoryRegion);
-    R_UNLESS((process_address == static_cast<uintptr_t>(process_address)),
+    R_UNLESS((process_address == static_cast<uint64_t>(process_address)),
              ResultInvalidCurrentMemory);
 
     // Get the device address space.

@@ -82,7 +82,7 @@ static_assert(sizeof(uint64_t) == 8);
 static void SvcWrap_SetHeapSize64From32(Core::System& system) {
     Result ret{};
 
-    uintptr_t out_address{};
+    uint64_t out_address{};
     uint32_t size{};
 
     size = Convert<uint32_t>(GetReg32(system, 1));
@@ -729,7 +729,7 @@ static void SvcWrap_GetLastThreadInfo64From32(Core::System& system) {
     Result ret{};
 
     ilp32::LastThreadContext out_context{};
-    uintptr_t out_tls_address{};
+    uint64_t out_tls_address{};
     uint32_t out_flags{};
 
     ret = GetLastThreadInfo64From32(system, &out_context, &out_tls_address, &out_flags);
@@ -1278,8 +1278,8 @@ static void SvcWrap_QueryPhysicalAddress64From32(Core::System& system) {
 static void SvcWrap_QueryIoMapping64From32(Core::System& system) {
     Result ret{};
 
-    uintptr_t out_address{};
-    uintptr_t out_size{};
+    uint64_t out_address{};
+    uint64_t out_size{};
     uint64_t physical_address{};
     uint32_t size{};
 
@@ -2088,7 +2088,7 @@ static void SvcWrap_UnmapInsecureMemory64From32(Core::System& system) {
 static void SvcWrap_SetHeapSize64(Core::System& system) {
     Result ret{};
 
-    uintptr_t out_address{};
+    uint64_t out_address{};
     uint64_t size{};
 
     size = Convert<uint64_t>(GetReg64(system, 1));
@@ -2705,7 +2705,7 @@ static void SvcWrap_GetLastThreadInfo64(Core::System& system) {
     Result ret{};
 
     lp64::LastThreadContext out_context{};
-    uintptr_t out_tls_address{};
+    uint64_t out_tls_address{};
     uint32_t out_flags{};
 
     ret = GetLastThreadInfo64(system, &out_context, &out_tls_address, &out_flags);
@@ -3217,8 +3217,8 @@ static void SvcWrap_QueryPhysicalAddress64(Core::System& system) {
 static void SvcWrap_QueryIoMapping64(Core::System& system) {
     Result ret{};
 
-    uintptr_t out_address{};
-    uintptr_t out_size{};
+    uint64_t out_address{};
+    uint64_t out_size{};
     uint64_t physical_address{};
     uint64_t size{};
 

@@ -13,7 +13,7 @@ void FlushEntireDataCache(Core::System& system) {
     UNIMPLEMENTED();
 }
 
-Result FlushDataCache(Core::System& system, VAddr address, size_t size) {
+Result FlushDataCache(Core::System& system, uint64_t address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
@@ -33,8 +33,8 @@ Result StoreProcessDataCache(Core::System& system, Handle process_handle, uint64
 Result FlushProcessDataCache(Core::System& system, Handle process_handle, u64 address, u64 size) {
     // Validate address/size.
     R_UNLESS(size > 0, ResultInvalidSize);
-    R_UNLESS(address == static_cast<uintptr_t>(address), ResultInvalidCurrentMemory);
-    R_UNLESS(size == static_cast<size_t>(size), ResultInvalidCurrentMemory);
+    R_UNLESS(address == static_cast<uint64_t>(address), ResultInvalidCurrentMemory);
+    R_UNLESS(size == static_cast<uint64_t>(size), ResultInvalidCurrentMemory);
 
     // Get the process from its handle.
     KScopedAutoObject process =
@@ -53,7 +53,7 @@ void FlushEntireDataCache64(Core::System& system) {
     FlushEntireDataCache(system);
 }
 
-Result FlushDataCache64(Core::System& system, VAddr address, size_t size) {
+Result FlushDataCache64(Core::System& system, uint64_t address, uint64_t size) {
     R_RETURN(FlushDataCache(system, address, size));
 }
 

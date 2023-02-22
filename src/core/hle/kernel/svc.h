@@ -16,7 +16,7 @@ class System;
 namespace Kernel::Svc {
 
 // clang-format off
-Result SetHeapSize(Core::System& system, uintptr_t* out_address, uint64_t size);
+Result SetHeapSize(Core::System& system, uint64_t* out_address, uint64_t size);
 Result SetMemoryPermission(Core::System& system, uint64_t address, uint64_t size, MemoryPermission perm);
 Result SetMemoryAttribute(Core::System& system, uint64_t address, uint64_t size, uint32_t mask, uint32_t attr);
 Result MapMemory(Core::System& system, uint64_t dst_address, uint64_t src_address, uint64_t size);
@@ -61,7 +61,7 @@ Result FlushDataCache(Core::System& system, uint64_t address, uint64_t size);
 Result MapPhysicalMemory(Core::System& system, uint64_t address, uint64_t size);
 Result UnmapPhysicalMemory(Core::System& system, uint64_t address, uint64_t size);
 Result GetDebugFutureThreadInfo(Core::System& system, lp64::LastThreadContext* out_context, uint64_t* out_thread_id, Handle debug_handle, int64_t ns);
-Result GetLastThreadInfo(Core::System& system, lp64::LastThreadContext* out_context, uintptr_t* out_tls_address, uint32_t* out_flags);
+Result GetLastThreadInfo(Core::System& system, lp64::LastThreadContext* out_context, uint64_t* out_tls_address, uint32_t* out_flags);
 Result GetResourceLimitLimitValue(Core::System& system, int64_t* out_limit_value, Handle resource_limit_handle, LimitableResource which);
 Result GetResourceLimitCurrentValue(Core::System& system, int64_t* out_current_value, Handle resource_limit_handle, LimitableResource which);
 Result SetThreadActivity(Core::System& system, Handle thread_handle, ThreadActivity thread_activity);
@@ -94,7 +94,7 @@ Result MapTransferMemory(Core::System& system, Handle trmem_handle, uint64_t add
 Result UnmapTransferMemory(Core::System& system, Handle trmem_handle, uint64_t address, uint64_t size);
 Result CreateInterruptEvent(Core::System& system, Handle* out_read_handle, int32_t interrupt_id, InterruptType interrupt_type);
 Result QueryPhysicalAddress(Core::System& system, lp64::PhysicalMemoryInfo* out_info, uint64_t address);
-Result QueryIoMapping(Core::System& system, uintptr_t* out_address, uintptr_t* out_size, uint64_t physical_address, uint64_t size);
+Result QueryIoMapping(Core::System& system, uint64_t* out_address, uint64_t* out_size, uint64_t physical_address, uint64_t size);
 Result CreateDeviceAddressSpace(Core::System& system, Handle* out_handle, uint64_t das_address, uint64_t das_size);
 Result AttachDeviceAddressSpace(Core::System& system, DeviceName device_name, Handle das_handle);
 Result DetachDeviceAddressSpace(Core::System& system, DeviceName device_name, Handle das_handle);
@@ -137,7 +137,7 @@ Result SetResourceLimitLimitValue(Core::System& system, Handle resource_limit_ha
 Result MapInsecureMemory(Core::System& system, uint64_t address, uint64_t size);
 Result UnmapInsecureMemory(Core::System& system, uint64_t address, uint64_t size);
 
-Result SetHeapSize64From32(Core::System& system, uintptr_t* out_address, uint32_t size);
+Result SetHeapSize64From32(Core::System& system, uint64_t* out_address, uint32_t size);
 Result SetMemoryPermission64From32(Core::System& system, uint32_t address, uint32_t size, MemoryPermission perm);
 Result SetMemoryAttribute64From32(Core::System& system, uint32_t address, uint32_t size, uint32_t mask, uint32_t attr);
 Result MapMemory64From32(Core::System& system, uint32_t dst_address, uint32_t src_address, uint32_t size);
@@ -182,7 +182,7 @@ Result FlushDataCache64From32(Core::System& system, uint32_t address, uint32_t s
 Result MapPhysicalMemory64From32(Core::System& system, uint32_t address, uint32_t size);
 Result UnmapPhysicalMemory64From32(Core::System& system, uint32_t address, uint32_t size);
 Result GetDebugFutureThreadInfo64From32(Core::System& system, ilp32::LastThreadContext* out_context, uint64_t* out_thread_id, Handle debug_handle, int64_t ns);
-Result GetLastThreadInfo64From32(Core::System& system, ilp32::LastThreadContext* out_context, uintptr_t* out_tls_address, uint32_t* out_flags);
+Result GetLastThreadInfo64From32(Core::System& system, ilp32::LastThreadContext* out_context, uint64_t* out_tls_address, uint32_t* out_flags);
 Result GetResourceLimitLimitValue64From32(Core::System& system, int64_t* out_limit_value, Handle resource_limit_handle, LimitableResource which);
 Result GetResourceLimitCurrentValue64From32(Core::System& system, int64_t* out_current_value, Handle resource_limit_handle, LimitableResource which);
 Result SetThreadActivity64From32(Core::System& system, Handle thread_handle, ThreadActivity thread_activity);
@@ -215,7 +215,7 @@ Result MapTransferMemory64From32(Core::System& system, Handle trmem_handle, uint
 Result UnmapTransferMemory64From32(Core::System& system, Handle trmem_handle, uint32_t address, uint32_t size);
 Result CreateInterruptEvent64From32(Core::System& system, Handle* out_read_handle, int32_t interrupt_id, InterruptType interrupt_type);
 Result QueryPhysicalAddress64From32(Core::System& system, ilp32::PhysicalMemoryInfo* out_info, uint32_t address);
-Result QueryIoMapping64From32(Core::System& system, uintptr_t* out_address, uintptr_t* out_size, uint64_t physical_address, uint32_t size);
+Result QueryIoMapping64From32(Core::System& system, uint64_t* out_address, uint64_t* out_size, uint64_t physical_address, uint32_t size);
 Result CreateDeviceAddressSpace64From32(Core::System& system, Handle* out_handle, uint64_t das_address, uint64_t das_size);
 Result AttachDeviceAddressSpace64From32(Core::System& system, DeviceName device_name, Handle das_handle);
 Result DetachDeviceAddressSpace64From32(Core::System& system, DeviceName device_name, Handle das_handle);
@@ -258,7 +258,7 @@ Result SetResourceLimitLimitValue64From32(Core::System& system, Handle resource_
 Result MapInsecureMemory64From32(Core::System& system, uint32_t address, uint32_t size);
 Result UnmapInsecureMemory64From32(Core::System& system, uint32_t address, uint32_t size);
 
-Result SetHeapSize64(Core::System& system, uintptr_t* out_address, uint64_t size);
+Result SetHeapSize64(Core::System& system, uint64_t* out_address, uint64_t size);
 Result SetMemoryPermission64(Core::System& system, uint64_t address, uint64_t size, MemoryPermission perm);
 Result SetMemoryAttribute64(Core::System& system, uint64_t address, uint64_t size, uint32_t mask, uint32_t attr);
 Result MapMemory64(Core::System& system, uint64_t dst_address, uint64_t src_address, uint64_t size);
@@ -303,7 +303,7 @@ Result FlushDataCache64(Core::System& system, uint64_t address, uint64_t size);
 Result MapPhysicalMemory64(Core::System& system, uint64_t address, uint64_t size);
 Result UnmapPhysicalMemory64(Core::System& system, uint64_t address, uint64_t size);
 Result GetDebugFutureThreadInfo64(Core::System& system, lp64::LastThreadContext* out_context, uint64_t* out_thread_id, Handle debug_handle, int64_t ns);
-Result GetLastThreadInfo64(Core::System& system, lp64::LastThreadContext* out_context, uintptr_t* out_tls_address, uint32_t* out_flags);
+Result GetLastThreadInfo64(Core::System& system, lp64::LastThreadContext* out_context, uint64_t* out_tls_address, uint32_t* out_flags);
 Result GetResourceLimitLimitValue64(Core::System& system, int64_t* out_limit_value, Handle resource_limit_handle, LimitableResource which);
 Result GetResourceLimitCurrentValue64(Core::System& system, int64_t* out_current_value, Handle resource_limit_handle, LimitableResource which);
 Result SetThreadActivity64(Core::System& system, Handle thread_handle, ThreadActivity thread_activity);
@@ -336,7 +336,7 @@ Result MapTransferMemory64(Core::System& system, Handle trmem_handle, uint64_t a
 Result UnmapTransferMemory64(Core::System& system, Handle trmem_handle, uint64_t address, uint64_t size);
 Result CreateInterruptEvent64(Core::System& system, Handle* out_read_handle, int32_t interrupt_id, InterruptType interrupt_type);
 Result QueryPhysicalAddress64(Core::System& system, lp64::PhysicalMemoryInfo* out_info, uint64_t address);
-Result QueryIoMapping64(Core::System& system, uintptr_t* out_address, uintptr_t* out_size, uint64_t physical_address, uint64_t size);
+Result QueryIoMapping64(Core::System& system, uint64_t* out_address, uint64_t* out_size, uint64_t physical_address, uint64_t size);
 Result CreateDeviceAddressSpace64(Core::System& system, Handle* out_handle, uint64_t das_address, uint64_t das_size);
 Result AttachDeviceAddressSpace64(Core::System& system, DeviceName device_name, Handle das_handle);
 Result DetachDeviceAddressSpace64(Core::System& system, DeviceName device_name, Handle das_handle);

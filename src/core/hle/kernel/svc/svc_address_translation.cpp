@@ -12,7 +12,7 @@ Result QueryPhysicalAddress(Core::System& system, lp64::PhysicalMemoryInfo* out_
     R_THROW(ResultNotImplemented);
 }
 
-Result QueryIoMapping(Core::System& system, uintptr_t* out_address, uintptr_t* out_size,
+Result QueryIoMapping(Core::System& system, uint64_t* out_address, uint64_t* out_size,
                       uint64_t physical_address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
@@ -23,7 +23,7 @@ Result QueryPhysicalAddress64(Core::System& system, lp64::PhysicalMemoryInfo* ou
     R_RETURN(QueryPhysicalAddress(system, out_info, address));
 }
 
-Result QueryIoMapping64(Core::System& system, uintptr_t* out_address, uintptr_t* out_size,
+Result QueryIoMapping64(Core::System& system, uint64_t* out_address, uint64_t* out_size,
                         uint64_t physical_address, uint64_t size) {
     R_RETURN(QueryIoMapping(system, out_address, out_size, physical_address, size));
 }
@@ -41,10 +41,10 @@ Result QueryPhysicalAddress64From32(Core::System& system, ilp32::PhysicalMemoryI
     R_SUCCEED();
 }
 
-Result QueryIoMapping64From32(Core::System& system, uintptr_t* out_address, uintptr_t* out_size,
+Result QueryIoMapping64From32(Core::System& system, uint64_t* out_address, uint64_t* out_size,
                               uint64_t physical_address, uint32_t size) {
-    R_RETURN(QueryIoMapping(system, reinterpret_cast<uintptr_t*>(out_address),
-                            reinterpret_cast<uintptr_t*>(out_size), physical_address, size));
+    R_RETURN(QueryIoMapping(system, reinterpret_cast<uint64_t*>(out_address),
+                            reinterpret_cast<uint64_t*>(out_size), physical_address, size));
 }
 
 } // namespace Kernel::Svc

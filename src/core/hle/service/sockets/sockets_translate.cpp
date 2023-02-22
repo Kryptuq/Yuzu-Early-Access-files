@@ -27,6 +27,8 @@ Errno Translate(Network::Errno value) {
         return Errno::NOTCONN;
     case Network::Errno::TIMEDOUT:
         return Errno::TIMEDOUT;
+    case Network::Errno::CONNRESET:
+        return Errno::CONNRESET;
     default:
         UNIMPLEMENTED_MSG("Unimplemented errno={}", value);
         return Errno::SUCCESS;

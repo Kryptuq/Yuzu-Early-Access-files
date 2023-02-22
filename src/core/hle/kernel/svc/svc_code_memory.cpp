@@ -28,7 +28,7 @@ constexpr bool IsValidUnmapFromOwnerCodeMemoryPermission(MemoryPermission perm) 
 
 } // namespace
 
-Result CreateCodeMemory(Core::System& system, Handle* out, VAddr address, size_t size) {
+Result CreateCodeMemory(Core::System& system, Handle* out, VAddr address, uint64_t size) {
     LOG_TRACE(Kernel_SVC, "called, address=0x{:X}, size=0x{:X}", address, size);
 
     // Get kernel instance.
@@ -64,7 +64,7 @@ Result CreateCodeMemory(Core::System& system, Handle* out, VAddr address, size_t
 }
 
 Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
-                         CodeMemoryOperation operation, VAddr address, size_t size,
+                         CodeMemoryOperation operation, VAddr address, uint64_t size,
                          MemoryPermission perm) {
 
     LOG_TRACE(Kernel_SVC,

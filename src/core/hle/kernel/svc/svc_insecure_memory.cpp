@@ -6,12 +6,12 @@
 
 namespace Kernel::Svc {
 
-Result MapInsecureMemory(Core::System& system, uintptr_t address, size_t size) {
+Result MapInsecureMemory(Core::System& system, uint64_t address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
 
-Result UnmapInsecureMemory(Core::System& system, uintptr_t address, size_t size) {
+Result UnmapInsecureMemory(Core::System& system, uint64_t address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }

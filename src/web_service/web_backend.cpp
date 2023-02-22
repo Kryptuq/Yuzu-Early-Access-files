@@ -71,7 +71,7 @@ struct Client::Impl {
                              const std::string& jwt_ = "", const std::string& username_ = "",
                              const std::string& token_ = "") {
         if (cli == nullptr) {
-            cli = std::make_unique<httplib::Client>(host.c_str());
+            cli = std::make_unique<httplib::Client>(host);
         }
 
         if (!cli->is_valid()) {

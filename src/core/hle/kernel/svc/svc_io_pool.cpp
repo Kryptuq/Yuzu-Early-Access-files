@@ -12,19 +12,19 @@ Result CreateIoPool(Core::System& system, Handle* out, IoPoolType pool_type) {
 }
 
 Result CreateIoRegion(Core::System& system, Handle* out, Handle io_pool_handle, uint64_t phys_addr,
-                      size_t size, MemoryMapping mapping, MemoryPermission perm) {
+                      uint64_t size, MemoryMapping mapping, MemoryPermission perm) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
 
-Result MapIoRegion(Core::System& system, Handle io_region_handle, uintptr_t address, size_t size,
+Result MapIoRegion(Core::System& system, Handle io_region_handle, uint64_t address, uint64_t size,
                    MemoryPermission map_perm) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
 
-Result UnmapIoRegion(Core::System& system, Handle io_region_handle, uintptr_t address,
-                     size_t size) {
+Result UnmapIoRegion(Core::System& system, Handle io_region_handle, uint64_t address,
+                     uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }

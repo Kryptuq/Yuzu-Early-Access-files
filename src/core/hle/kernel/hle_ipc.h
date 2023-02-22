@@ -147,9 +147,21 @@ public:
         return server_manager;
     }
 
+    // TODO: remove this when sm: is implemented with the proper IUserInterface
+    // abstraction, creating a new C++ handler object for each session:
+
+    bool GetIsInitializedForSm() const {
+        return is_initialized_for_sm;
+    }
+
+    void SetIsInitializedForSm() {
+        is_initialized_for_sm = true;
+    }
+
 private:
     bool convert_to_domain{};
     bool is_domain{};
+    bool is_initialized_for_sm{};
     SessionRequestHandlerPtr session_handler;
     std::vector<SessionRequestHandlerPtr> domain_handlers;
 

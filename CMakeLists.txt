@@ -241,7 +241,7 @@ endif()
 
 if (ENABLE_WEB_SERVICE)
     find_package(cpp-jwt 1.4 CONFIG)
-    find_package(httplib 0.11 MODULE)
+    find_package(httplib 0.12 MODULE)
 endif()
 
 if (YUZU_TESTS)

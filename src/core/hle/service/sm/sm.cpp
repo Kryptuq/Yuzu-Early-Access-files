@@ -112,7 +112,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
 void SM::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SM, "called");
 
-    is_initialized = true;
+    ctx.GetManager()->SetIsInitializedForSm();
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -159,7 +159,7 @@ static std::string PopServiceName(IPC::RequestParser& rp) {
 }
 
 ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext& ctx) {
-    if (!is_initialized) {
+    if (!ctx.GetManager()->GetIsInitializedForSm()) {
         return ERR_NOT_INITIALIZED;
     }
 
@@ -168,6 +168,11 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
 
     // Find the named port.
     auto port_result = service_manager.GetServicePort(name);
+    if (port_result.Code() == ERR_INVALID_NAME) {
+        LOG_ERROR(Service_SM, "Invalid service name '{}'", name);
+        return ERR_INVALID_NAME;
+    }
+
     if (port_result.Failed()) {
         LOG_INFO(Service_SM, "Waiting for service {} to become available", name);
         ctx.SetIsDeferred();

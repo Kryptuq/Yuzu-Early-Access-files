@@ -37,8 +37,8 @@ Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, V
     R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);
     R_UNLESS(size > 0, ResultInvalidSize);
     R_UNLESS((address < address + size), ResultInvalidCurrentMemory);
-    R_UNLESS(address == static_cast<uintptr_t>(address), ResultInvalidCurrentMemory);
-    R_UNLESS(size == static_cast<size_t>(size), ResultInvalidCurrentMemory);
+    R_UNLESS(address == static_cast<uint64_t>(address), ResultInvalidCurrentMemory);
+    R_UNLESS(size == static_cast<uint64_t>(size), ResultInvalidCurrentMemory);
 
     // Validate the memory permission.
     R_UNLESS(IsValidProcessMemoryPermission(perm), ResultInvalidNewMemoryPermission);

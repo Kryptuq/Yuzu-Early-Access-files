@@ -109,6 +109,8 @@ Errno TranslateNativeError(int e) {
         return Errno::AGAIN;
     case WSAECONNREFUSED:
         return Errno::CONNREFUSED;
+    case WSAECONNRESET:
+        return Errno::CONNRESET;
     case WSAEHOSTUNREACH:
         return Errno::HOSTUNREACH;
     case WSAENETDOWN:
@@ -205,6 +207,8 @@ Errno TranslateNativeError(int e) {
         return Errno::AGAIN;
     case ECONNREFUSED:
         return Errno::CONNREFUSED;
+    case ECONNRESET:
+        return Errno::CONNRESET;
     case EHOSTUNREACH:
         return Errno::HOSTUNREACH;
     case ENETDOWN:

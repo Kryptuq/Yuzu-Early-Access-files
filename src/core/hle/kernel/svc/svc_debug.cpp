@@ -45,19 +45,19 @@ Result SetDebugThreadContext(Core::System& system, Handle debug_handle, uint64_t
 }
 
 Result QueryDebugProcessMemory(Core::System& system, uint64_t out_memory_info,
-                               PageInfo* out_page_info, Handle debug_handle, uintptr_t address) {
+                               PageInfo* out_page_info, Handle process_handle, uint64_t address) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
 
-Result ReadDebugProcessMemory(Core::System& system, uintptr_t buffer, Handle debug_handle,
-                              uintptr_t address, size_t size) {
+Result ReadDebugProcessMemory(Core::System& system, uint64_t buffer, Handle debug_handle,
+                              uint64_t address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }
 
-Result WriteDebugProcessMemory(Core::System& system, Handle debug_handle, uintptr_t buffer,
-                               uintptr_t address, size_t size) {
+Result WriteDebugProcessMemory(Core::System& system, Handle debug_handle, uint64_t buffer,
+                               uint64_t address, uint64_t size) {
     UNIMPLEMENTED();
     R_THROW(ResultNotImplemented);
 }

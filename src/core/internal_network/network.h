@@ -30,6 +30,7 @@ enum class Errno {
     NOTCONN,
     AGAIN,
     CONNREFUSED,
+    CONNRESET,
     HOSTUNREACH,
     NETDOWN,
     NETUNREACH,

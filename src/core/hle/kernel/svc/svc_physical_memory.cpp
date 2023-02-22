@@ -158,7 +158,7 @@ Result SetUnsafeLimit64(Core::System& system, uint64_t limit) {
     R_RETURN(SetUnsafeLimit(system, limit));
 }
 
-Result SetHeapSize64From32(Core::System& system, uintptr_t* out_address, uint32_t size) {
+Result SetHeapSize64From32(Core::System& system, uint64_t* out_address, uint32_t size) {
     R_RETURN(SetHeapSize(system, out_address, size));
 }
 
