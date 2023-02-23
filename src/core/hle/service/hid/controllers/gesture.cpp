@@ -65,6 +65,11 @@ void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
 }
 
 void Controller_Gesture::ReadTouchInput() {
+    if (!Settings::values.touchscreen.enabled) {
+        fingers = {};
+        return;
+    }
+
     const auto touch_status = console->GetTouch();
     for (std::size_t id = 0; id < fingers.size(); ++id) {
         fingers[id] = touch_status[id];

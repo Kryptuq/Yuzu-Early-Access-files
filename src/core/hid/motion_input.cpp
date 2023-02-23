@@ -10,6 +10,8 @@ MotionInput::MotionInput() {
     // Initialize PID constants with default values
     SetPID(0.3f, 0.005f, 0.0f);
     SetGyroThreshold(ThresholdStandard);
+    ResetQuaternion();
+    ResetRotations();
 }
 
 void MotionInput::SetPID(f32 new_kp, f32 new_ki, f32 new_kd) {
@@ -20,10 +22,18 @@ void MotionInput::SetPID(f32 new_kp, f32 new_ki, f32 new_kd) {
 
 void MotionInput::SetAcceleration(const Common::Vec3f& acceleration) {
     accel = acceleration;
+
+    accel.x = std::clamp(accel.x, -AccelMaxValue, AccelMaxValue);
+    accel.y = std::clamp(accel.y, -AccelMaxValue, AccelMaxValue);
+    accel.z = std::clamp(accel.z, -AccelMaxValue, AccelMaxValue);
 }
 
 void MotionInput::SetGyroscope(const Common::Vec3f& gyroscope) {
     gyro = gyroscope - gyro_bias;
+
+    gyro.x = std::clamp(gyro.x, -GyroMaxValue, GyroMaxValue);
+    gyro.y = std::clamp(gyro.y, -GyroMaxValue, GyroMaxValue);
+    gyro.z = std::clamp(gyro.z, -GyroMaxValue, GyroMaxValue);
 
     // Auto adjust drift to minimize drift
     if (!IsMoving(IsAtRestRelaxed)) {
@@ -59,6 +69,10 @@ void MotionInput::EnableReset(bool reset) {
 
 void MotionInput::ResetRotations() {
     rotations = {};
+}
+
+void MotionInput::ResetQuaternion() {
+    quat = {{0.0f, 0.0f, -1.0f}, 0.0f};
 }
 
 bool MotionInput::IsMoving(f32 sensitivity) const {

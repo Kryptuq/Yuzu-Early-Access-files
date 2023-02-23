@@ -1656,8 +1656,8 @@ void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, 
     const u32 rows = Common::DivideUp(height, block_height);
     const u32 cols = Common::DivideUp(width, block_width);
 
-    Common::ThreadWorker workers{std::max(std::thread::hardware_concurrency(), 2U) / 2,
-                                 "ASTCDecompress"};
+    static Common::ThreadWorker workers{std::max(std::thread::hardware_concurrency(), 2U) / 2,
+                                        "ASTCDecompress"};
 
     for (u32 z = 0; z < depth; ++z) {
         const u32 depth_offset = z * height * width * 4;

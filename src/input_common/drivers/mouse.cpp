@@ -10,15 +10,23 @@
 #include "input_common/drivers/mouse.h"
 
 namespace InputCommon {
+constexpr int update_time = 10;
+constexpr float default_stick_sensitivity = 0.022f;
+constexpr float default_motion_sensitivity = 0.008f;
 constexpr int mouse_axis_x = 0;
 constexpr int mouse_axis_y = 1;
 constexpr int wheel_axis_x = 2;
 constexpr int wheel_axis_y = 3;
-constexpr int motion_wheel_y = 4;
 constexpr PadIdentifier identifier = {
     .guid = Common::UUID{},
     .port = 0,
     .pad = 0,
+};
+
+constexpr PadIdentifier motion_identifier = {
+    .guid = Common::UUID{},
+    .port = 0,
+    .pad = 1,
 };
 
 constexpr PadIdentifier real_mouse_identifier = {
@@ -37,47 +45,87 @@ Mouse::Mouse(std::string input_engine_) : InputEngine(std::move(input_engine_)) 
     PreSetController(identifier);
     PreSetController(real_mouse_identifier);
     PreSetController(touch_identifier);
+    PreSetController(motion_identifier);
 
     // Initialize all mouse axis
     PreSetAxis(identifier, mouse_axis_x);
     PreSetAxis(identifier, mouse_axis_y);
     PreSetAxis(identifier, wheel_axis_x);
     PreSetAxis(identifier, wheel_axis_y);
-    PreSetAxis(identifier, motion_wheel_y);
     PreSetAxis(real_mouse_identifier, mouse_axis_x);
     PreSetAxis(real_mouse_identifier, mouse_axis_y);
     PreSetAxis(touch_identifier, mouse_axis_x);
     PreSetAxis(touch_identifier, mouse_axis_y);
+
+    // Initialize variables
+    mouse_origin = {};
+    last_mouse_position = {};
+    wheel_position = {};
+    last_mouse_change = {};
+    last_motion_change = {};
+
     update_thread = std::jthread([this](std::stop_token stop_token) { UpdateThread(stop_token); });
 }
 
 void Mouse::UpdateThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("Mouse");
-    constexpr int update_time = 10;
+
     while (!stop_token.stop_requested()) {
-        if (Settings::values.mouse_panning) {
-            // Slow movement by 4%
-            last_mouse_change *= 0.96f;
-            const float sensitivity =
-                Settings::values.mouse_panning_sensitivity.GetValue() * 0.022f;
-            SetAxis(identifier, mouse_axis_x, last_mouse_change.x * sensitivity);
-            SetAxis(identifier, mouse_axis_y, -last_mouse_change.y * sensitivity);
-        }
+        UpdateStickInput();
+        UpdateMotionInput();
 
-        SetAxis(identifier, motion_wheel_y, 0.0f);
-
-        if (mouse_panning_timout++ > 20) {
+        if (mouse_panning_timeout++ > 20) {
             StopPanning();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(update_time));
     }
 }
 
+void Mouse::UpdateStickInput() {
+    if (!Settings::values.mouse_panning) {
+        return;
+    }
+
+    const float sensitivity =
+        Settings::values.mouse_panning_sensitivity.GetValue() * default_stick_sensitivity;
+
+    // Slow movement by 4%
+    last_mouse_change *= 0.96f;
+    SetAxis(identifier, mouse_axis_x, last_mouse_change.x * sensitivity);
+    SetAxis(identifier, mouse_axis_y, -last_mouse_change.y * sensitivity);
+}
+
+void Mouse::UpdateMotionInput() {
+    const float sensitivity =
+        Settings::values.mouse_panning_sensitivity.GetValue() * default_motion_sensitivity;
+
+    // Slow movement by 7%
+    if (Settings::values.mouse_panning) {
+        last_motion_change *= 0.93f;
+    } else {
+        last_motion_change.z *= 0.93f;
+    }
+
+    const BasicMotion motion_data{
+        .gyro_x = last_motion_change.x * sensitivity,
+        .gyro_y = last_motion_change.y * sensitivity,
+        .gyro_z = last_motion_change.z * sensitivity,
+        .accel_x = 0,
+        .accel_y = 0,
+        .accel_z = 0,
+        .delta_timestamp = update_time * 1000,
+    };
+
+    SetMotion(motion_identifier, 0, motion_data);
+}
+
 void Mouse::Move(int x, int y, int center_x, int center_y) {
     if (Settings::values.mouse_panning) {
+        mouse_panning_timeout = 0;
+
         auto mouse_change =
             (Common::MakeVec(x, y) - Common::MakeVec(center_x, center_y)).Cast<float>();
-        mouse_panning_timout = 0;
+        Common::Vec3<float> motion_change{-mouse_change.y, -mouse_change.x, last_motion_change.z};
 
         const auto move_distance = mouse_change.Length();
         if (move_distance == 0) {
@@ -93,6 +141,7 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
 
         // Average mouse movements
         last_mouse_change = (last_mouse_change * 0.91f) + (mouse_change * 0.09f);
+        last_motion_change = (last_motion_change * 0.69f) + (motion_change * 0.31f);
 
         const auto last_move_distance = last_mouse_change.Length();
 
@@ -116,6 +165,12 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
         const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue() * 0.0012f;
         SetAxis(identifier, mouse_axis_x, static_cast<float>(mouse_move.x) * sensitivity);
         SetAxis(identifier, mouse_axis_y, static_cast<float>(-mouse_move.y) * sensitivity);
+
+        last_motion_change = {
+            static_cast<float>(-mouse_move.y) / 50.0f,
+            static_cast<float>(-mouse_move.x) / 50.0f,
+            last_motion_change.z,
+        };
     }
 }
 
@@ -157,15 +212,19 @@ void Mouse::ReleaseButton(MouseButton button) {
         SetAxis(identifier, mouse_axis_x, 0);
         SetAxis(identifier, mouse_axis_y, 0);
     }
+
+    last_motion_change.x = 0;
+    last_motion_change.y = 0;
+
     button_pressed = false;
 }
 
 void Mouse::MouseWheelChange(int x, int y) {
     wheel_position.x += x;
     wheel_position.y += y;
+    last_motion_change.z += static_cast<f32>(y) / 100.0f;
     SetAxis(identifier, wheel_axis_x, static_cast<f32>(wheel_position.x));
     SetAxis(identifier, wheel_axis_y, static_cast<f32>(wheel_position.y));
-    SetAxis(identifier, motion_wheel_y, static_cast<f32>(y) / 100.0f);
 }
 
 void Mouse::ReleaseAllButtons() {
@@ -232,6 +291,9 @@ Common::Input::ButtonNames Mouse::GetUIName(const Common::ParamPackage& params) 
         return Common::Input::ButtonNames::Value;
     }
     if (params.Has("axis_x") && params.Has("axis_y") && params.Has("axis_z")) {
+        return Common::Input::ButtonNames::Engine;
+    }
+    if (params.Has("motion")) {
         return Common::Input::ButtonNames::Engine;
     }
 

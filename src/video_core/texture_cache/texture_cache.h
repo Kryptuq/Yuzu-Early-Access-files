@@ -85,6 +85,11 @@ void TextureCache<P>::RunGarbageCollector() {
         }
         --num_iterations;
         auto& image = slot_images[image_id];
+        if (True(image.flags & ImageFlagBits::IsDecoding)) {
+            // This image is still being decoded, deleting it will invalidate the slot
+            // used by the async decoder thread.
+            return false;
+        }
         const bool must_download =
             image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
         if (!high_priority_mode &&
@@ -133,6 +138,8 @@ void TextureCache<P>::TickFrame() {
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
+    TickAsyncDecode();
+
     runtime.TickFrame();
     critical_gc = 0;
     ++frame_tick;
@@ -777,6 +784,10 @@ void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
         LOG_WARNING(HW_GPU, "MSAA image uploads are not implemented");
         return;
     }
+    if (True(image.flags & ImageFlagBits::AsynchronousDecode)) {
+        QueueAsyncDecode(image, image_id);
+        return;
+    }
     auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
     UploadImageContents(image, staging);
     runtime.InsertUploadMemoryBarrier();
@@ -987,6 +998,65 @@ u64 TextureCache<P>::GetScaledImageSizeBytes(const ImageBase& image) {
     const u64 tentative_size = (image_size_bytes * scale_up) >> down_shift;
     const u64 fitted_size = Common::AlignUp(tentative_size, 1024);
     return fitted_size;
+}
+
+template <class P>
+void TextureCache<P>::QueueAsyncDecode(Image& image, ImageId image_id) {
+    UNIMPLEMENTED_IF(False(image.flags & ImageFlagBits::Converted));
+    LOG_INFO(HW_GPU, "Queuing async texture decode");
+
+    image.flags |= ImageFlagBits::IsDecoding;
+    auto decode = std::make_unique<AsyncDecodeContext>();
+    auto* decode_ptr = decode.get();
+    decode->image_id = image_id;
+    async_decodes.push_back(std::move(decode));
+
+    Common::ScratchBuffer<u8> local_unswizzle_data_buffer(image.unswizzled_size_bytes);
+    const size_t guest_size_bytes = image.guest_size_bytes;
+    swizzle_data_buffer.resize_destructive(guest_size_bytes);
+    gpu_memory->ReadBlockUnsafe(image.gpu_addr, swizzle_data_buffer.data(), guest_size_bytes);
+    auto copies = UnswizzleImage(*gpu_memory, image.gpu_addr, image.info, swizzle_data_buffer,
+                                 local_unswizzle_data_buffer);
+    const size_t out_size = MapSizeBytes(image);
+
+    auto func = [out_size, copies, info = image.info,
+                 input = std::move(local_unswizzle_data_buffer),
+                 async_decode = decode_ptr]() mutable {
+        async_decode->decoded_data.resize_destructive(out_size);
+        std::span copies_span{copies.data(), copies.size()};
+        ConvertImage(input, info, async_decode->decoded_data, copies_span);
+
+        // TODO: Do we need this lock?
+        std::unique_lock lock{async_decode->mutex};
+        async_decode->copies = std::move(copies);
+        async_decode->complete = true;
+    };
+    texture_decode_worker.QueueWork(std::move(func));
+}
+
+template <class P>
+void TextureCache<P>::TickAsyncDecode() {
+    bool has_uploads{};
+    auto i = async_decodes.begin();
+    while (i != async_decodes.end()) {
+        auto* async_decode = i->get();
+        std::unique_lock lock{async_decode->mutex};
+        if (!async_decode->complete) {
+            ++i;
+            continue;
+        }
+        Image& image = slot_images[async_decode->image_id];
+        auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
+        std::memcpy(staging.mapped_span.data(), async_decode->decoded_data.data(),
+                    async_decode->decoded_data.size());
+        image.UploadMemory(staging, async_decode->copies);
+        image.flags &= ~ImageFlagBits::IsDecoding;
+        has_uploads = true;
+        i = async_decodes.erase(i);
+    }
+    if (has_uploads) {
+        runtime.InsertUploadMemoryBarrier();
+    }
 }
 
 template <class P>

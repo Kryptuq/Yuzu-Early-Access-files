@@ -90,6 +90,16 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="async_astc">
+          <property name="toolTip">
+           <string>Enables asynchronous ASTC texture decoding, which may reduce load time stutter. This feature is experimental.</string>
+          </property>
+          <property name="text">
+           <string>Decode ASTC textures asynchronously (Hack)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="use_asynchronous_shaders">
           <property name="toolTip">
            <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>

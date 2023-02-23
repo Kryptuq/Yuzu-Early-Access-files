@@ -342,6 +342,10 @@ nvdec_emulation =
 # 0: Off, 1 (default): On
 accelerate_astc =
 
+# Decode ASTC textures asynchronously.
+# 0 (default): Off, 1: On
+async_astc =
+
 # Turns on the speed limiter, which will limit the emulation speed to the desired speed limit value
 # 0: Off, 1: On (default)
 use_speed_limit =

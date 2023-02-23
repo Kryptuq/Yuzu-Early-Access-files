@@ -23,6 +23,7 @@ public:
           buffer{Common::make_unique_for_overwrite<T[]>(initial_capacity)} {}
 
     ~ScratchBuffer() = default;
+    ScratchBuffer(ScratchBuffer&&) = default;
 
     /// This will only grow the buffer's capacity if size is greater than the current capacity.
     /// The previously held data will remain intact.

@@ -1262,11 +1262,12 @@ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu
       commit(runtime_.memory_allocator.Commit(original_image, MemoryUsage::DeviceLocal)),
       aspect_mask(ImageAspectMask(info.format)) {
     if (IsPixelFormatASTC(info.format) && !runtime->device.IsOptimalAstcSupported()) {
-        if (Settings::values.accelerate_astc.GetValue()) {
+        if (Settings::values.async_astc.GetValue()) {
+            flags |= VideoCommon::ImageFlagBits::AsynchronousDecode;
+        } else if (Settings::values.accelerate_astc.GetValue()) {
             flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
-        } else {
-            flags |= VideoCommon::ImageFlagBits::Converted;
         }
+        flags |= VideoCommon::ImageFlagBits::Converted;
         flags |= VideoCommon::ImageFlagBits::CostlyLoad;
     }
     if (runtime->device.HasDebuggingToolAttached()) {

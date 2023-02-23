@@ -96,6 +96,8 @@ public:
 
 private:
     void UpdateThread(std::stop_token stop_token);
+    void UpdateStickInput();
+    void UpdateMotionInput();
     void StopPanning();
 
     Common::Input::ButtonNames GetUIButtonName(const Common::ParamPackage& params) const;
@@ -103,9 +105,10 @@ private:
     Common::Vec2<int> mouse_origin;
     Common::Vec2<int> last_mouse_position;
     Common::Vec2<float> last_mouse_change;
+    Common::Vec3<float> last_motion_change;
     Common::Vec2<int> wheel_position;
     bool button_pressed;
-    int mouse_panning_timout{};
+    int mouse_panning_timeout{};
     std::jthread update_thread;
 };
 

@@ -59,6 +59,7 @@ void LogSettings() {
                 values.use_asynchronous_gpu_emulation.GetValue());
     log_setting("Renderer_NvdecEmulation", values.nvdec_emulation.GetValue());
     log_setting("Renderer_AccelerateASTC", values.accelerate_astc.GetValue());
+    log_setting("Renderer_AsyncASTC", values.async_astc.GetValue());
     log_setting("Renderer_UseVsync", values.use_vsync.GetValue());
     log_setting("Renderer_ShaderBackend", values.shader_backend.GetValue());
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
@@ -76,6 +77,13 @@ void LogSettings() {
     log_setting("Debugging_GDBStub", values.use_gdbstub.GetValue());
     log_setting("Input_EnableMotion", values.motion_enabled.GetValue());
     log_setting("Input_EnableVibration", values.vibration_enabled.GetValue());
+    log_setting("Input_EnableTouch", values.touchscreen.enabled);
+    log_setting("Input_EnableMouse", values.mouse_enabled.GetValue());
+    log_setting("Input_EnableKeyboard", values.keyboard_enabled.GetValue());
+    log_setting("Input_EnableRingController", values.enable_ring_controller.GetValue());
+    log_setting("Input_EnableIrSensor", values.enable_ir_sensor.GetValue());
+    log_setting("Input_EnableCustomJoycon", values.enable_joycon_driver.GetValue());
+    log_setting("Input_EnableCustomProController", values.enable_procon_driver.GetValue());
     log_setting("Input_EnableRawInput", values.enable_raw_input.GetValue());
 }
 
@@ -212,6 +220,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
     values.nvdec_emulation.SetGlobal(true);
     values.accelerate_astc.SetGlobal(true);
+    values.async_astc.SetGlobal(true);
     values.use_vsync.SetGlobal(true);
     values.shader_backend.SetGlobal(true);
     values.use_asynchronous_shaders.SetGlobal(true);

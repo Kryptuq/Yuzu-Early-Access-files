@@ -363,7 +363,17 @@ void EmulatedController::ReloadInput() {
                     SetMotion(callback, index);
                 },
         });
-        motion_devices[index]->ForceUpdate();
+
+        // Restore motion state
+        auto& emulated_motion = controller.motion_values[index].emulated;
+        auto& motion = controller.motion_state[index];
+        emulated_motion.ResetRotations();
+        emulated_motion.ResetQuaternion();
+        motion.accel = emulated_motion.GetAcceleration();
+        motion.gyro = emulated_motion.GetGyroscope();
+        motion.rotation = emulated_motion.GetRotations();
+        motion.orientation = emulated_motion.GetOrientation();
+        motion.is_at_rest = !emulated_motion.IsMoving(motion_sensitivity);
     }
 
     for (std::size_t index = 0; index < camera_devices.size(); ++index) {

@@ -19,52 +19,53 @@ void EmulatedDevices::ReloadFromSettings() {
 
 void EmulatedDevices::ReloadInput() {
     // If you load any device here add the equivalent to the UnloadInput() function
+
+    // Native Mouse is mapped on port 1, pad 0
+    const Common::ParamPackage mouse_params{"engine:mouse,port:1,pad:0"};
+
+    // Keyboard keys is mapped on port 1, pad 0 for normal keys, pad 1 for moddifier keys
+    const Common::ParamPackage keyboard_params{"engine:keyboard,port:1"};
+
     std::size_t key_index = 0;
     for (auto& mouse_device : mouse_button_devices) {
-        Common::ParamPackage mouse_params;
-        mouse_params.Set("engine", "mouse");
-        mouse_params.Set("button", static_cast<int>(key_index));
-        mouse_device = Common::Input::CreateInputDevice(mouse_params);
+        Common::ParamPackage mouse_button_params = mouse_params;
+        mouse_button_params.Set("button", static_cast<int>(key_index));
+        mouse_device = Common::Input::CreateInputDevice(mouse_button_params);
         key_index++;
     }
 
-    mouse_stick_device =
-        Common::Input::CreateInputDeviceFromString("engine:mouse,axis_x:0,axis_y:1");
+    Common::ParamPackage mouse_position_params = mouse_params;
+    mouse_position_params.Set("axis_x", 0);
+    mouse_position_params.Set("axis_y", 1);
+    mouse_position_params.Set("deadzone", 0.0f);
+    mouse_position_params.Set("range", 1.0f);
+    mouse_position_params.Set("threshold", 0.0f);
+    mouse_stick_device = Common::Input::CreateInputDevice(mouse_position_params);
 
     // First two axis are reserved for mouse position
     key_index = 2;
-    for (auto& mouse_device : mouse_analog_devices) {
-        // Mouse axis are only mapped on port 1, pad 0
-        Common::ParamPackage mouse_params;
-        mouse_params.Set("engine", "mouse");
-        mouse_params.Set("axis", static_cast<int>(key_index));
-        mouse_params.Set("port", 1);
-        mouse_params.Set("pad", 0);
-        mouse_device = Common::Input::CreateInputDevice(mouse_params);
+    for (auto& mouse_device : mouse_wheel_devices) {
+        Common::ParamPackage mouse_wheel_params = mouse_params;
+        mouse_wheel_params.Set("axis", static_cast<int>(key_index));
+        mouse_device = Common::Input::CreateInputDevice(mouse_wheel_params);
         key_index++;
     }
 
     key_index = 0;
     for (auto& keyboard_device : keyboard_devices) {
-        // Keyboard keys are only mapped on port 1, pad 0
-        Common::ParamPackage keyboard_params;
-        keyboard_params.Set("engine", "keyboard");
-        keyboard_params.Set("button", static_cast<int>(key_index));
-        keyboard_params.Set("port", 1);
-        keyboard_params.Set("pad", 0);
-        keyboard_device = Common::Input::CreateInputDevice(keyboard_params);
+        Common::ParamPackage keyboard_key_params = keyboard_params;
+        keyboard_key_params.Set("button", static_cast<int>(key_index));
+        keyboard_key_params.Set("pad", 0);
+        keyboard_device = Common::Input::CreateInputDevice(keyboard_key_params);
         key_index++;
     }
 
     key_index = 0;
     for (auto& keyboard_device : keyboard_modifier_devices) {
-        // Keyboard moddifiers are only mapped on port 1, pad 1
-        Common::ParamPackage keyboard_params;
-        keyboard_params.Set("engine", "keyboard");
-        keyboard_params.Set("button", static_cast<int>(key_index));
-        keyboard_params.Set("port", 1);
-        keyboard_params.Set("pad", 1);
-        keyboard_device = Common::Input::CreateInputDevice(keyboard_params);
+        Common::ParamPackage keyboard_moddifier_params = keyboard_params;
+        keyboard_moddifier_params.Set("button", static_cast<int>(key_index));
+        keyboard_moddifier_params.Set("pad", 1);
+        keyboard_device = Common::Input::CreateInputDevice(keyboard_moddifier_params);
         key_index++;
     }
 
@@ -80,14 +81,14 @@ void EmulatedDevices::ReloadInput() {
         });
     }
 
-    for (std::size_t index = 0; index < mouse_analog_devices.size(); ++index) {
-        if (!mouse_analog_devices[index]) {
+    for (std::size_t index = 0; index < mouse_wheel_devices.size(); ++index) {
+        if (!mouse_wheel_devices[index]) {
             continue;
         }
-        mouse_analog_devices[index]->SetCallback({
+        mouse_wheel_devices[index]->SetCallback({
             .on_change =
                 [this, index](const Common::Input::CallbackStatus& callback) {
-                    SetMouseAnalog(callback, index);
+                    SetMouseWheel(callback, index);
                 },
         });
     }
@@ -95,7 +96,9 @@ void EmulatedDevices::ReloadInput() {
     if (mouse_stick_device) {
         mouse_stick_device->SetCallback({
             .on_change =
-                [this](const Common::Input::CallbackStatus& callback) { SetMouseStick(callback); },
+                [this](const Common::Input::CallbackStatus& callback) {
+                    SetMousePosition(callback);
+                },
         });
     }
 
@@ -128,7 +131,7 @@ void EmulatedDevices::UnloadInput() {
     for (auto& button : mouse_button_devices) {
         button.reset();
     }
-    for (auto& analog : mouse_analog_devices) {
+    for (auto& analog : mouse_wheel_devices) {
         analog.reset();
     }
     mouse_stick_device.reset();
@@ -362,18 +365,18 @@ void EmulatedDevices::SetMouseButton(const Common::Input::CallbackStatus& callba
     TriggerOnChange(DeviceTriggerType::Mouse);
 }
 
-void EmulatedDevices::SetMouseAnalog(const Common::Input::CallbackStatus& callback,
-                                     std::size_t index) {
-    if (index >= device_status.mouse_analog_values.size()) {
+void EmulatedDevices::SetMouseWheel(const Common::Input::CallbackStatus& callback,
+                                    std::size_t index) {
+    if (index >= device_status.mouse_wheel_values.size()) {
         return;
     }
     std::unique_lock lock{mutex};
     const auto analog_value = TransformToAnalog(callback);
 
-    device_status.mouse_analog_values[index] = analog_value;
+    device_status.mouse_wheel_values[index] = analog_value;
 
     if (is_configuring) {
-        device_status.mouse_position_state = {};
+        device_status.mouse_wheel_state = {};
         lock.unlock();
         TriggerOnChange(DeviceTriggerType::Mouse);
         return;
@@ -392,7 +395,7 @@ void EmulatedDevices::SetMouseAnalog(const Common::Input::CallbackStatus& callba
     TriggerOnChange(DeviceTriggerType::Mouse);
 }
 
-void EmulatedDevices::SetMouseStick(const Common::Input::CallbackStatus& callback) {
+void EmulatedDevices::SetMousePosition(const Common::Input::CallbackStatus& callback) {
     std::unique_lock lock{mutex};
     const auto touch_value = TransformToTouch(callback);
 

@@ -33,10 +33,11 @@ void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
         return;
     }
 
+    next_state = {};
+
     const auto& last_entry = shared_memory->mouse_lifo.ReadCurrentEntry().state;
     next_state.sampling_number = last_entry.sampling_number + 1;
 
-    next_state.attribute.raw = 0;
     if (Settings::values.mouse_enabled) {
         const auto& mouse_button_state = emulated_devices->GetMouseButtons();
         const auto& mouse_position_state = emulated_devices->GetMousePosition();

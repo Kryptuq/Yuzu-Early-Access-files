@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <deque>
 #include <limits>
 #include <mutex>
@@ -18,6 +19,7 @@
 #include "common/lru_cache.h"
 #include "common/polyfill_ranges.h"
 #include "common/scratch_buffer.h"
+#include "common/thread_worker.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
@@ -52,6 +54,14 @@ struct ImageViewInOut {
     u32 index{};
     bool blacklist{};
     ImageViewId id{};
+};
+
+struct AsyncDecodeContext {
+    ImageId image_id;
+    Common::ScratchBuffer<u8> decoded_data;
+    std::vector<BufferImageCopy> copies;
+    std::mutex mutex;
+    std::atomic_bool complete;
 };
 
 using TextureCacheGPUMap = std::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;
@@ -382,6 +392,9 @@ private:
     bool ScaleDown(Image& image);
     u64 GetScaledImageSizeBytes(const ImageBase& image);
 
+    void QueueAsyncDecode(Image& image, ImageId image_id);
+    void TickAsyncDecode();
+
     Runtime& runtime;
 
     VideoCore::RasterizerInterface& rasterizer;
@@ -435,6 +448,9 @@ private:
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
+
+    Common::ThreadWorker texture_decode_worker{1, "TextureDecoder"};
+    std::vector<std::unique_ptr<AsyncDecodeContext>> async_decodes;
 };
 
 } // namespace VideoCommon

@@ -38,6 +38,9 @@ enum class ImageFlagBits : u32 {
     Rescaled = 1 << 13,
     CheckingRescalable = 1 << 14,
     IsRescalable = 1 << 15,
+
+    AsynchronousDecode = 1 << 16,
+    IsDecoding = 1 << 17, ///< Is currently being decoded asynchornously.
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
 

@@ -58,6 +58,11 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
         }
 
         if (!finger.pressed && current_touch.pressed) {
+            // Ignore all touch fingers if disabled
+            if (!Settings::values.touchscreen.enabled) {
+                continue;
+            }
+
             finger.attribute.start_touch.Assign(1);
             finger.pressed = true;
             finger.position = current_touch.position;

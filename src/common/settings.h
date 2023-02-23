@@ -453,6 +453,7 @@ struct Values {
     SwitchableSetting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
     SwitchableSetting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
     SwitchableSetting<bool> accelerate_astc{true, "accelerate_astc"};
+    SwitchableSetting<bool> async_astc{false, "async_astc"};
     SwitchableSetting<bool> use_vsync{true, "use_vsync"};
     SwitchableSetting<ShaderBackend, true> shader_backend{ShaderBackend::GLSL, ShaderBackend::GLSL,
                                                           ShaderBackend::SPIRV, "shader_backend"};

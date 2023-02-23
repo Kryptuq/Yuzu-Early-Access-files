@@ -20,6 +20,9 @@ public:
     static constexpr float IsAtRestStandard = 0.01f;
     static constexpr float IsAtRestThight = 0.005f;
 
+    static constexpr float GyroMaxValue = 5.0f;
+    static constexpr float AccelMaxValue = 7.0f;
+
     explicit MotionInput();
 
     MotionInput(const MotionInput&) = default;
@@ -40,6 +43,7 @@ public:
 
     void EnableReset(bool reset);
     void ResetRotations();
+    void ResetQuaternion();
 
     void UpdateRotation(u64 elapsed_time);
     void UpdateOrientation(u64 elapsed_time);
@@ -69,7 +73,7 @@ private:
     Common::Vec3f derivative_error;
 
     // Quaternion containing the device orientation
-    Common::Quaternion<f32> quat{{0.0f, 0.0f, -1.0f}, 0.0f};
+    Common::Quaternion<f32> quat;
 
     // Number of full rotations in each axis
     Common::Vec3f rotations;

@@ -228,8 +228,9 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
 
 [[nodiscard]] bool CanBeAccelerated(const TextureCacheRuntime& runtime,
                                     const VideoCommon::ImageInfo& info) {
-    if (IsPixelFormatASTC(info.format)) {
-        return !runtime.HasNativeASTC() && Settings::values.accelerate_astc.GetValue();
+    if (IsPixelFormatASTC(info.format) && !runtime.HasNativeASTC()) {
+        return Settings::values.accelerate_astc.GetValue() &&
+               !Settings::values.async_astc.GetValue();
     }
     // Disable other accelerated uploads for now as they don't implement swizzled uploads
     return false;
@@ -256,6 +257,14 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
     const GLenum store_format = StoreFormat(BytesPerBlock(info.format));
     const GLenum store_class = runtime.FormatInfo(info.type, store_format).compatibility_class;
     return format_info.compatibility_class == store_class;
+}
+
+[[nodiscard]] bool CanBeDecodedAsync(const TextureCacheRuntime& runtime,
+                                     const VideoCommon::ImageInfo& info) {
+    if (IsPixelFormatASTC(info.format) && !runtime.HasNativeASTC()) {
+        return Settings::values.async_astc.GetValue();
+    }
+    return false;
 }
 
 [[nodiscard]] CopyOrigin MakeCopyOrigin(VideoCommon::Offset3D offset,
@@ -721,7 +730,9 @@ std::optional<size_t> TextureCacheRuntime::StagingBuffers::FindBuffer(size_t req
 Image::Image(TextureCacheRuntime& runtime_, const VideoCommon::ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), runtime{&runtime_} {
-    if (CanBeAccelerated(*runtime, info)) {
+    if (CanBeDecodedAsync(*runtime, info)) {
+        flags |= ImageFlagBits::AsynchronousDecode;
+    } else if (CanBeAccelerated(*runtime, info)) {
         flags |= ImageFlagBits::AcceleratedUpload;
     }
     if (IsConverted(runtime->device, info.format, info.type)) {

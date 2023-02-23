@@ -23,8 +23,8 @@ using KeyboardModifierDevices = std::array<std::unique_ptr<Common::Input::InputD
                                            Settings::NativeKeyboard::NumKeyboardMods>;
 using MouseButtonDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
                                       Settings::NativeMouseButton::NumMouseButtons>;
-using MouseAnalogDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
-                                      Settings::NativeMouseWheel::NumMouseWheels>;
+using MouseWheelDevices = std::array<std::unique_ptr<Common::Input::InputDevice>,
+                                     Settings::NativeMouseWheel::NumMouseWheels>;
 using MouseStickDevice = std::unique_ptr<Common::Input::InputDevice>;
 
 using MouseButtonParams =
@@ -36,7 +36,7 @@ using KeyboardModifierValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeKeyboard::NumKeyboardMods>;
 using MouseButtonValues =
     std::array<Common::Input::ButtonStatus, Settings::NativeMouseButton::NumMouseButtons>;
-using MouseAnalogValues =
+using MouseWheelValues =
     std::array<Common::Input::AnalogStatus, Settings::NativeMouseWheel::NumMouseWheels>;
 using MouseStickValue = Common::Input::TouchStatus;
 
@@ -50,7 +50,7 @@ struct DeviceStatus {
     KeyboardValues keyboard_values{};
     KeyboardModifierValues keyboard_moddifier_values{};
     MouseButtonValues mouse_button_values{};
-    MouseAnalogValues mouse_analog_values{};
+    MouseWheelValues mouse_wheel_values{};
     MouseStickValue mouse_stick_value{};
 
     // Data for HID serices
@@ -110,15 +110,6 @@ public:
 
     /// Reverts any mapped changes made that weren't saved
     void RestoreConfig();
-
-    // Returns the current mapped ring device
-    Common::ParamPackage GetRingParam() const;
-
-    /**
-     * Updates the current mapped ring device
-     * @param param ParamPackage with ring sensor data to be mapped
-     */
-    void SetRingParam(Common::ParamPackage param);
 
     /// Returns the latest status of button input from the keyboard with parameters
     KeyboardValues GetKeyboardValues() const;
@@ -187,19 +178,13 @@ private:
      * @param callback A CallbackStatus containing the wheel status
      * @param index wheel ID to be updated
      */
-    void SetMouseAnalog(const Common::Input::CallbackStatus& callback, std::size_t index);
+    void SetMouseWheel(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
      * Updates the mouse position status of the mouse device
      * @param callback A CallbackStatus containing the position status
      */
-    void SetMouseStick(const Common::Input::CallbackStatus& callback);
-
-    /**
-     * Updates the ring analog sensor status of the ring controller
-     * @param callback A CallbackStatus containing the force status
-     */
-    void SetRingAnalog(const Common::Input::CallbackStatus& callback);
+    void SetMousePosition(const Common::Input::CallbackStatus& callback);
 
     /**
      * Triggers a callback that something has changed on the device status
@@ -212,7 +197,7 @@ private:
     KeyboardDevices keyboard_devices;
     KeyboardModifierDevices keyboard_modifier_devices;
     MouseButtonDevices mouse_button_devices;
-    MouseAnalogDevices mouse_analog_devices;
+    MouseWheelDevices mouse_wheel_devices;
     MouseStickDevice mouse_stick_device;
 
     mutable std::mutex mutex;
