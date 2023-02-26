@@ -82,7 +82,12 @@ Settings::ControllerType EmulatedController::MapNPadToSettingsType(NpadStyleInde
 }
 
 void EmulatedController::ReloadFromSettings() {
-    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    if (npad_id_type == NpadIdType::Other) {
+        ReloadDebugPadFromSettings();
+        return;
+    }
+
+    const auto player_index = NpadIdTypeToConfigIndex(npad_id_type);
     const auto& player = Settings::values.players.GetValue()[player_index];
 
     for (std::size_t index = 0; index < player.buttons.size(); ++index) {
@@ -111,17 +116,52 @@ void EmulatedController::ReloadFromSettings() {
 
     ring_params[0] = Common::ParamPackage(Settings::values.ringcon_analogs);
 
-    // Other or debug controller should always be a pro controller
-    if (npad_id_type != NpadIdType::Other) {
-        SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
-        original_npad_type = npad_type;
-    } else {
-        SetNpadStyleIndex(NpadStyleIndex::ProController);
-        original_npad_type = npad_type;
+    SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
+    original_npad_type = npad_type;
+
+    // Player 1 shares config with handheld. Disable controller when handheld is selected
+    if (npad_id_type == NpadIdType::Player1 && npad_type == NpadStyleIndex::Handheld) {
+        Disconnect();
+        ReloadInput();
+        return;
+    }
+
+    // Handheld shares config with player 1. Disable controller when handheld isn't selected
+    if (npad_id_type == NpadIdType::Handheld && npad_type != NpadStyleIndex::Handheld) {
+        Disconnect();
+        ReloadInput();
+        return;
     }
 
     Disconnect();
     if (player.connected) {
+        Connect();
+    }
+
+    ReloadInput();
+}
+
+void EmulatedController::ReloadDebugPadFromSettings() {
+    for (std::size_t index = 0; index < Settings::values.debug_pad_buttons.size(); ++index) {
+        button_params[index] = Common::ParamPackage(Settings::values.debug_pad_buttons[index]);
+    }
+    for (std::size_t index = 0; index < Settings::values.debug_pad_analogs.size(); ++index) {
+        stick_params[index] = Common::ParamPackage(Settings::values.debug_pad_analogs[index]);
+    }
+    for (std::size_t index = 0; index < motion_params.size(); ++index) {
+        motion_params[index] = {};
+    }
+
+    controller.color_values = {};
+    controller.colors_state.fullkey = {};
+    controller.colors_state.left = {};
+    controller.colors_state.right = {};
+    ring_params[0] = {};
+    SetNpadStyleIndex(NpadStyleIndex::ProController);
+    original_npad_type = npad_type;
+
+    Disconnect();
+    if (Settings::values.debug_pad_enabled) {
         Connect();
     }
 
@@ -560,9 +600,23 @@ bool EmulatedController::IsConfiguring() const {
 }
 
 void EmulatedController::SaveCurrentConfig() {
-    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    // Other can't alter the config from here
+    if (npad_id_type == NpadIdType::Other) {
+        return;
+    }
+
+    const auto player_index = NpadIdTypeToConfigIndex(npad_id_type);
     auto& player = Settings::values.players.GetValue()[player_index];
-    player.connected = is_connected;
+
+    // Only save the connected status when handheld is connected
+    if (npad_id_type == NpadIdType::Handheld && npad_type == NpadStyleIndex::Handheld) {
+        player.connected = is_connected;
+    }
+
+    if (npad_id_type != NpadIdType::Handheld && npad_type != NpadStyleIndex::Handheld) {
+        player.connected = is_connected;
+    }
+
     player.controller_type = MapNPadToSettingsType(npad_type);
     for (std::size_t index = 0; index < player.buttons.size(); ++index) {
         player.buttons[index] = button_params[index].Serialize();
@@ -1152,7 +1206,7 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
     if (!output_devices[device_index]) {
         return false;
     }
-    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    const auto player_index = NpadIdTypeToConfigIndex(npad_id_type);
     const auto& player = Settings::values.players.GetValue()[player_index];
     const f32 strength = static_cast<f32>(player.vibration_strength) / 100.0f;
 
@@ -1178,7 +1232,7 @@ bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue v
 }
 
 bool EmulatedController::IsVibrationEnabled(std::size_t device_index) {
-    const auto player_index = NpadIdTypeToIndex(npad_id_type);
+    const auto player_index = NpadIdTypeToConfigIndex(npad_id_type);
     const auto& player = Settings::values.players.GetValue()[player_index];
 
     if (!player.vibration_enabled) {

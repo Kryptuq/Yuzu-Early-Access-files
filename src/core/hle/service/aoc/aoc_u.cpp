@@ -130,6 +130,9 @@ AOC_U::AOC_U(Core::System& system_)
         {101, &AOC_U::CreatePermanentEcPurchasedEventManager, "CreatePermanentEcPurchasedEventManager"},
         {110, nullptr, "CreateContentsServiceManager"},
         {200, nullptr, "SetRequiredAddOnContentsOnContentsAvailabilityTransition"},
+        {300, nullptr, "SetupHostAddOnContent"},
+        {301, nullptr, "GetRegisteredAddOnContentPath"},
+        {302, nullptr, "UpdateCachedList"},
     };
     // clang-format on
 

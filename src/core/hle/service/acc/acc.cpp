@@ -77,6 +77,8 @@ public:
             {141, nullptr, "RefreshNetworkServiceLicenseCacheAsync"}, // 5.0.0+
             {142, nullptr, "RefreshNetworkServiceLicenseCacheAsyncIfSecondsElapsed"}, // 5.0.0+
             {150, nullptr, "CreateAuthorizationRequest"},
+            {160, nullptr, "RequiresUpdateNetworkServiceAccountIdTokenCache"},
+            {161, nullptr, "RequireReauthenticationOfNetworkServiceAccount"},
         };
         // clang-format on
 
@@ -137,7 +139,10 @@ public:
             {140, nullptr, "GetNetworkServiceLicenseCache"}, // 5.0.0+
             {141, nullptr, "RefreshNetworkServiceLicenseCacheAsync"}, // 5.0.0+
             {142, nullptr, "RefreshNetworkServiceLicenseCacheAsyncIfSecondsElapsed"}, // 5.0.0+
+            {143, nullptr, "GetNetworkServiceLicenseCacheEx"},
             {150, nullptr, "CreateAuthorizationRequest"},
+            {160, nullptr, "RequiresUpdateNetworkServiceAccountIdTokenCache"},
+            {161, nullptr, "RequireReauthenticationOfNetworkServiceAccount"},
             {200, nullptr, "IsRegistered"},
             {201, nullptr, "RegisterAsync"},
             {202, nullptr, "UnregisterAsync"},
@@ -243,6 +248,7 @@ public:
             {100, nullptr, "GetRequestWithTheme"},
             {101, nullptr, "IsNetworkServiceAccountReplaced"},
             {199, nullptr, "GetUrlForIntroductionOfExtraMembership"}, // 2.0.0 - 5.1.0
+            {200, nullptr, "ApplyAsyncWithAuthorizedToken"},
         };
         // clang-format on
 
@@ -648,9 +654,11 @@ public:
             {0, nullptr, "EnsureAuthenticationTokenCacheAsync"},
             {1, nullptr, "LoadAuthenticationTokenCache"},
             {2, nullptr, "InvalidateAuthenticationTokenCache"},
+            {3, nullptr, "IsDeviceAuthenticationTokenCacheAvailable"},
             {10, nullptr, "EnsureEdgeTokenCacheAsync"},
             {11, nullptr, "LoadEdgeTokenCache"},
             {12, nullptr, "InvalidateEdgeTokenCache"},
+            {13, nullptr, "IsEdgeTokenCacheAvailable"},
             {20, nullptr, "EnsureApplicationAuthenticationCacheAsync"},
             {21, nullptr, "LoadApplicationAuthenticationTokenCache"},
             {22, nullptr, "LoadApplicationNetworkServiceClientConfigCache"},

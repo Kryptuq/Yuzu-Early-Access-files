@@ -33,6 +33,7 @@ enum class HidController : std::size_t {
     NPad,
     Gesture,
     ConsoleSixAxisSensor,
+    DebugMouse,
     Palma,
 
     MaxControllers,

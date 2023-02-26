@@ -124,6 +124,7 @@ public:
             {12, nullptr, "InactivateContentMetaDatabase"},
             {13, nullptr, "InvalidateRightsIdCache"},
             {14, nullptr, "GetMemoryReport"},
+            {15, nullptr, "ActivateFsContentStorage"},
         };
         // clang-format on
 

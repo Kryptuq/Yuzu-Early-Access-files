@@ -14,6 +14,10 @@ VI_M::VI_M(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_,
     static const FunctionInfo functions[] = {
         {2, &VI_M::GetDisplayService, "GetDisplayService"},
         {3, nullptr, "GetDisplayServiceWithProxyNameExchange"},
+        {100, nullptr, "PrepareFatal"},
+        {101, nullptr, "ShowFatal"},
+        {102, nullptr, "DrawFatalRectangle"},
+        {103, nullptr, "DrawFatalText32"},
     };
     RegisterHandlers(functions);
 }

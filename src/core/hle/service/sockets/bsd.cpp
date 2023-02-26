@@ -953,6 +953,9 @@ BSDCFG::BSDCFG(Core::System& system_) : ServiceFramework{system_, "bsdcfg"} {
         {10, nullptr, "ClearArpEntries"},
         {11, nullptr, "ClearArpEntries2"},
         {12, nullptr, "PrintArpEntries"},
+        {13, nullptr, "Unknown13"},
+        {14, nullptr, "Unknown14"},
+        {15, nullptr, "Unknown15"},
     };
     // clang-format on
 

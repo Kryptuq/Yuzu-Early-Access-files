@@ -47,8 +47,6 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
                                                &Settings::values.max_anisotropy);
         ConfigurationShared::SetHighlight(ui->label_gpu_accuracy,
                                           !Settings::values.gpu_accuracy.UsingGlobal());
-        ConfigurationShared::SetHighlight(ui->renderer_force_max_clock,
-                                          !Settings::values.renderer_force_max_clock.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->af_label,
                                           !Settings::values.max_anisotropy.UsingGlobal());
     }

@@ -227,6 +227,8 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {30, nullptr, "RequestLaunchApplicationWithUserAndArgumentForDebug"},
         {31, nullptr, "RequestLaunchApplicationByApplicationLaunchInfoForDebug"},
         {40, nullptr, "GetAppletResourceUsageInfo"},
+        {50, nullptr, "AddSystemProgramIdAndAppletIdForDebug"},
+        {51, nullptr, "AddOperationConfirmedLibraryAppletIdForDebug"},
         {100, nullptr, "SetCpuBoostModeForApplet"},
         {101, nullptr, "CancelCpuBoostModeForApplet"},
         {110, nullptr, "PushToAppletBoundChannelForDebug"},
@@ -238,6 +240,8 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {131, nullptr, "FriendInvitationClearApplicationParameter"},
         {132, nullptr, "FriendInvitationPushApplicationParameter"},
         {140, nullptr, "RestrictPowerOperationForSecureLaunchModeForDebug"},
+        {200, nullptr, "CreateFloatingLibraryAppletAccepterForDebug"},
+        {300, nullptr, "TerminateAllRunningApplicationsForDebug"},
         {900, nullptr, "GetGrcProcessLaunchedSystemEvent"},
     };
     // clang-format on
@@ -1860,6 +1864,8 @@ IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_)
         {31, nullptr, "GetWriterLockAccessorEx"},
         {40, nullptr, "IsSleepEnabled"},
         {41, nullptr, "IsRebootEnabled"},
+        {50, nullptr, "LaunchSystemApplet"},
+        {51, nullptr, "LaunchStarter"},
         {100, nullptr, "PopRequestLaunchApplicationForDebug"},
         {110, nullptr, "IsForceTerminateApplicationDisabledForDebug"},
         {200, nullptr, "LaunchDevMenu"},

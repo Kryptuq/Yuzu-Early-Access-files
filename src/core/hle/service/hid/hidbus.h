@@ -41,7 +41,7 @@ private:
     };
 
     // This is nn::hidbus::BusType
-    enum class BusType : u8 {
+    enum class BusType : u32 {
         LeftJoyRail,
         RightJoyRail,
         InternalBus, // Lark microphone
@@ -54,7 +54,7 @@ private:
         u32 abstracted_pad_id;
         u8 internal_index;
         u8 player_number;
-        BusType bus_type;
+        u8 bus_type_id;
         bool is_valid;
     };
     static_assert(sizeof(BusHandle) == 0x8, "BusHandle is an invalid size");

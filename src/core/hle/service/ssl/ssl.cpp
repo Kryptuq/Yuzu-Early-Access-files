@@ -46,6 +46,14 @@ public:
             {25, nullptr, "GetCipherInfo"},
             {26, nullptr, "SetNextAlpnProto"},
             {27, nullptr, "GetNextAlpnProto"},
+            {28, nullptr, "SetDtlsSocketDescriptor"},
+            {29, nullptr, "GetDtlsHandshakeTimeout"},
+            {30, nullptr, "SetPrivateOption"},
+            {31, nullptr, "SetSrtpCiphers"},
+            {32, nullptr, "GetSrtpCipher"},
+            {33, nullptr, "ExportKeyingMaterial"},
+            {34, nullptr, "SetIoTimeout"},
+            {35, nullptr, "GetIoTimeout"},
         };
         // clang-format on
 
@@ -69,6 +77,8 @@ public:
             {9, nullptr, "AddPolicyOid"},
             {10, nullptr, "ImportCrl"},
             {11, nullptr, "RemoveCrl"},
+            {12, nullptr, "ImportClientCertKeyPki"},
+            {13, nullptr, "GeneratePrivateKeyAndCert"},
         };
         RegisterHandlers(functions);
     }

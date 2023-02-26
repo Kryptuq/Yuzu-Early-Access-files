@@ -1589,7 +1589,6 @@ void ConfigureInputPlayer::LoadProfile() {
 }
 
 void ConfigureInputPlayer::SaveProfile() {
-    static constexpr size_t HANDHELD_INDEX = 8;
     const QString profile_name = ui->comboProfiles->itemText(ui->comboProfiles->currentIndex());
 
     if (profile_name.isEmpty()) {
@@ -1598,12 +1597,7 @@ void ConfigureInputPlayer::SaveProfile() {
 
     ApplyConfiguration();
 
-    // When we're in handheld mode, only the handheld emulated controller bindings are updated
-    const bool is_handheld = player_index == 0 && emulated_controller->GetNpadIdType() ==
-                                                      Core::HID::NpadIdType::Handheld;
-    const auto profile_player_index = is_handheld ? HANDHELD_INDEX : player_index;
-
-    if (!profiles->SaveProfile(profile_name.toStdString(), profile_player_index)) {
+    if (!profiles->SaveProfile(profile_name.toStdString(), player_index)) {
         QMessageBox::critical(this, tr("Save Input Profile"),
                               tr("Failed to save the input profile \"%1\"").arg(profile_name));
         UpdateInputProfiles();

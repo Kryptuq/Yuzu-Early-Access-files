@@ -212,16 +212,11 @@ void Config::ReadPlayerValue(std::size_t player_index) {
     }
 
     if (player_prefix.isEmpty() && Settings::IsConfiguringGlobal()) {
-        const auto controller = static_cast<Settings::ControllerType>(
+        player.controller_type = static_cast<Settings::ControllerType>(
             qt_config
                 ->value(QStringLiteral("%1type").arg(player_prefix),
                         static_cast<u8>(Settings::ControllerType::ProController))
                 .toUInt());
-
-        if (controller == Settings::ControllerType::LeftJoycon ||
-            controller == Settings::ControllerType::RightJoycon) {
-            player.controller_type = controller;
-        }
     } else {
         player.connected =
             ReadSetting(QStringLiteral("%1connected").arg(player_prefix), player_index == 0)
@@ -1313,9 +1308,7 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.renderer_backend.GetValue(global)),
                  static_cast<u32>(Settings::values.renderer_backend.GetDefault()),
                  Settings::values.renderer_backend.UsingGlobal());
-    WriteSetting(QString::fromStdString(Settings::values.renderer_force_max_clock.GetLabel()),
-                 static_cast<u32>(Settings::values.renderer_force_max_clock.GetValue(global)),
-                 static_cast<u32>(Settings::values.renderer_force_max_clock.GetDefault()));
+    WriteGlobalSetting(Settings::values.renderer_force_max_clock);
     WriteGlobalSetting(Settings::values.vulkan_device);
     WriteSetting(QString::fromStdString(Settings::values.fullscreen_mode.GetLabel()),
                  static_cast<u32>(Settings::values.fullscreen_mode.GetValue(global)),

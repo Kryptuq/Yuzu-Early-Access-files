@@ -690,6 +690,32 @@ constexpr size_t NpadIdTypeToIndex(NpadIdType npad_id_type) {
     }
 }
 
+/// Converts a NpadIdType to a config array index.
+constexpr size_t NpadIdTypeToConfigIndex(NpadIdType npad_id_type) {
+    switch (npad_id_type) {
+    case NpadIdType::Player1:
+        return 0;
+    case NpadIdType::Player2:
+        return 1;
+    case NpadIdType::Player3:
+        return 2;
+    case NpadIdType::Player4:
+        return 3;
+    case NpadIdType::Player5:
+        return 4;
+    case NpadIdType::Player6:
+        return 5;
+    case NpadIdType::Player7:
+        return 6;
+    case NpadIdType::Player8:
+        return 7;
+    case NpadIdType::Other:
+    case NpadIdType::Handheld:
+    default:
+        return 0;
+    }
+}
+
 /// Converts an array index to a NpadIdType
 constexpr NpadIdType IndexToNpadIdType(size_t index) {
     switch (index) {

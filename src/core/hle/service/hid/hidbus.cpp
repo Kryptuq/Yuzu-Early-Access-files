@@ -91,7 +91,7 @@ std::optional<std::size_t> HidBus::GetDeviceIndexFromHandle(BusHandle handle) co
         if (handle.abstracted_pad_id == device_handle.abstracted_pad_id &&
             handle.internal_index == device_handle.internal_index &&
             handle.player_number == device_handle.player_number &&
-            handle.bus_type == device_handle.bus_type &&
+            handle.bus_type_id == device_handle.bus_type_id &&
             handle.is_valid == device_handle.is_valid) {
             return i;
         }
@@ -123,7 +123,7 @@ void HidBus::GetBusHandle(Kernel::HLERequestContext& ctx) {
             continue;
         }
         if (static_cast<Core::HID::NpadIdType>(handle.player_number) == parameters.npad_id &&
-            handle.bus_type == parameters.bus_type) {
+            handle.bus_type_id == static_cast<u8>(parameters.bus_type)) {
             is_handle_found = true;
             handle_index = i;
             break;
@@ -140,7 +140,7 @@ void HidBus::GetBusHandle(Kernel::HLERequestContext& ctx) {
                 .abstracted_pad_id = static_cast<u8>(i),
                 .internal_index = static_cast<u8>(i),
                 .player_number = static_cast<u8>(parameters.npad_id),
-                .bus_type = parameters.bus_type,
+                .bus_type_id = static_cast<u8>(parameters.bus_type),
                 .is_valid = true,
             };
             handle_index = i;
@@ -172,7 +172,7 @@ void HidBus::IsExternalDeviceConnected(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "Called, abstracted_pad_id={}, bus_type={}, internal_index={}, "
              "player_number={}, is_valid={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+             bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
              bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -201,7 +201,7 @@ void HidBus::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "called, abstracted_pad_id={} bus_type={} internal_index={} "
              "player_number={} is_valid={}, applet_resource_user_id={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+             bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
              bus_handle_.player_number, bus_handle_.is_valid, applet_resource_user_id);
 
     is_hidbus_enabled = true;
@@ -253,7 +253,7 @@ void HidBus::Finalize(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "called, abstracted_pad_id={}, bus_type={}, internal_index={}, "
              "player_number={}, is_valid={}, applet_resource_user_id={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+             bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
              bus_handle_.player_number, bus_handle_.is_valid, applet_resource_user_id);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -301,7 +301,7 @@ void HidBus::EnableExternalDevice(Kernel::HLERequestContext& ctx) {
               "called, enable={}, abstracted_pad_id={}, bus_type={}, internal_index={}, "
               "player_number={}, is_valid={}, inval={}, applet_resource_user_id{}",
               parameters.enable, parameters.bus_handle.abstracted_pad_id,
-              parameters.bus_handle.bus_type, parameters.bus_handle.internal_index,
+              parameters.bus_handle.bus_type_id, parameters.bus_handle.internal_index,
               parameters.bus_handle.player_number, parameters.bus_handle.is_valid, parameters.inval,
               parameters.applet_resource_user_id);
 
@@ -329,7 +329,7 @@ void HidBus::GetExternalDeviceId(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID,
               "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
               "is_valid={}",
-              bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+              bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
               bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -357,7 +357,7 @@ void HidBus::SendCommandAsync(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID,
               "called, data_size={}, abstracted_pad_id={}, bus_type={}, internal_index={}, "
               "player_number={}, is_valid={}",
-              data.size(), bus_handle_.abstracted_pad_id, bus_handle_.bus_type,
+              data.size(), bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id,
               bus_handle_.internal_index, bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -384,7 +384,7 @@ void HidBus::GetSendCommandAsynceResult(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID,
               "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
               "is_valid={}",
-              bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+              bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
               bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -413,7 +413,7 @@ void HidBus::SetEventForSendCommandAsycResult(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
              "is_valid={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+             bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
              bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -464,7 +464,7 @@ void HidBus::EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "called, t_mem_handle=0x{:08X}, polling_mode={}, abstracted_pad_id={}, bus_type={}, "
              "internal_index={}, player_number={}, is_valid={}",
-             t_mem_handle, polling_mode_, bus_handle_.abstracted_pad_id, bus_handle_.bus_type,
+             t_mem_handle, polling_mode_, bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id,
              bus_handle_.internal_index, bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
@@ -492,7 +492,7 @@ void HidBus::DisableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_HID,
              "called, abstracted_pad_id={}, bus_type={}, internal_index={}, player_number={}, "
              "is_valid={}",
-             bus_handle_.abstracted_pad_id, bus_handle_.bus_type, bus_handle_.internal_index,
+             bus_handle_.abstracted_pad_id, bus_handle_.bus_type_id, bus_handle_.internal_index,
              bus_handle_.player_number, bus_handle_.is_valid);
 
     const auto device_index = GetDeviceIndexFromHandle(bus_handle_);
