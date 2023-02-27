@@ -80,7 +80,13 @@ private:
             LOG_CRITICAL(Service_IRS, "Invalid index {}", index);
             return;
         }
-        processors[index] = std::make_unique<T>(system.HIDCore(), device_state, index);
+
+        if constexpr (std::is_constructible_v<T, Core::System&, Core::IrSensor::DeviceFormat&,
+                                              std::size_t>) {
+            processors[index] = std::make_unique<T>(system, device_state, index);
+        } else {
+            processors[index] = std::make_unique<T>(system.HIDCore(), device_state, index);
+        }
     }
 
     template <typename T>

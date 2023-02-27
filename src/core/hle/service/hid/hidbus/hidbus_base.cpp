@@ -9,8 +9,8 @@
 
 namespace Service::HID {
 
-HidbusBase::HidbusBase(KernelHelpers::ServiceContext& service_context_)
-    : service_context(service_context_) {
+HidbusBase::HidbusBase(Core::System& system_, KernelHelpers::ServiceContext& service_context_)
+    : system(system_), service_context(service_context_) {
     send_command_async_event = service_context.CreateEvent("hidbus:SendCommandAsyncEvent");
 }
 HidbusBase::~HidbusBase() = default;
@@ -59,8 +59,7 @@ void HidbusBase::DisablePollingMode() {
     polling_mode_enabled = false;
 }
 
-void HidbusBase::SetTransferMemoryPointer(u8* t_mem) {
-    is_transfer_memory_set = true;
+void HidbusBase::SetTransferMemoryAddress(VAddr t_mem) {
     transfer_memory = t_mem;
 }
 

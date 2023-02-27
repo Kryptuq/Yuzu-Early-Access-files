@@ -14,8 +14,7 @@ namespace Service::HID {
 
 class HidbusStubbed final : public HidbusBase {
 public:
-    explicit HidbusStubbed(Core::HID::HIDCore& hid_core_,
-                           KernelHelpers::ServiceContext& service_context_);
+    explicit HidbusStubbed(Core::System& system_, KernelHelpers::ServiceContext& service_context_);
     ~HidbusStubbed() override;
 
     void OnInit() override;

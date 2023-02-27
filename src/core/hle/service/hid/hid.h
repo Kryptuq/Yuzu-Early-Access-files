@@ -61,9 +61,15 @@ public:
 private:
     template <typename T>
     void MakeController(HidController controller, u8* shared_memory) {
-        controllers[static_cast<std::size_t>(controller)] =
-            std::make_unique<T>(system.HIDCore(), shared_memory);
+        if constexpr (std::is_constructible_v<T, Core::System&, u8*>) {
+            controllers[static_cast<std::size_t>(controller)] =
+                std::make_unique<T>(system, shared_memory);
+        } else {
+            controllers[static_cast<std::size_t>(controller)] =
+                std::make_unique<T>(system.HIDCore(), shared_memory);
+        }
     }
+
     template <typename T>
     void MakeControllerWithServiceContext(HidController controller, u8* shared_memory) {
         controllers[static_cast<std::size_t>(controller)] =

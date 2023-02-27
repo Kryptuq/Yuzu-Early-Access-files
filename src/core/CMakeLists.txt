@@ -863,3 +863,7 @@ endif()
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(core PRIVATE precompiled_headers.h)
 endif()
+
+if (ENABLE_LTO)
+  set_property(TARGET core PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()

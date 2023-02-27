@@ -8,9 +8,8 @@
 namespace Service::HID {
 constexpr u8 DEVICE_ID = 0xFF;
 
-HidbusStubbed::HidbusStubbed(Core::HID::HIDCore& hid_core_,
-                             KernelHelpers::ServiceContext& service_context_)
-    : HidbusBase(service_context_) {}
+HidbusStubbed::HidbusStubbed(Core::System& system_, KernelHelpers::ServiceContext& service_context_)
+    : HidbusBase(system_, service_context_) {}
 HidbusStubbed::~HidbusStubbed() = default;
 
 void HidbusStubbed::OnInit() {
@@ -28,7 +27,7 @@ void HidbusStubbed::OnUpdate() {
     if (!device_enabled) {
         return;
     }
-    if (!polling_mode_enabled || !is_transfer_memory_set) {
+    if (!polling_mode_enabled || transfer_memory == 0) {
         return;
     }
 

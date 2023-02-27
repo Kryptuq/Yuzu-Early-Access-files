@@ -482,7 +482,7 @@ struct Values {
     SwitchableSetting<s32, true> sound_index{1, 0, 2, "sound_index"};
 
     // Controls
-    InputSetting<std::array<PlayerInput, 8>> players;
+    InputSetting<std::array<PlayerInput, 10>> players;
 
     SwitchableSetting<bool> use_docked_mode{true, "use_docked_mode"};
 

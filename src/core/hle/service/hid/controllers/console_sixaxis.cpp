@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/emulated_console.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/service/hid/controllers/console_sixaxis.h"
+#include "core/memory.h"
 
 namespace Service::HID {
 constexpr std::size_t SHARED_MEMORY_OFFSET = 0x3C200;
 
-Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_,
-                                                     u8* raw_shared_memory_)
-    : ControllerBase{hid_core_} {
+Controller_ConsoleSixAxis::Controller_ConsoleSixAxis(Core::System& system_, u8* raw_shared_memory_)
+    : ControllerBase{system_.HIDCore()}, system{system_} {
     console = hid_core.GetEmulatedConsole();
     static_assert(SHARED_MEMORY_OFFSET + sizeof(ConsoleSharedMemory) < shared_memory_size,
                   "ConsoleSharedMemory is bigger than the shared memory");
@@ -26,7 +27,7 @@ void Controller_ConsoleSixAxis::OnInit() {}
 void Controller_ConsoleSixAxis::OnRelease() {}
 
 void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
-    if (!IsControllerActivated() || !is_transfer_memory_set) {
+    if (!IsControllerActivated() || transfer_memory == 0) {
         seven_sixaxis_lifo.buffer_count = 0;
         seven_sixaxis_lifo.buffer_tail = 0;
         return;
@@ -59,11 +60,10 @@ void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_ti
 
     // Update seven six axis transfer memory
     seven_sixaxis_lifo.WriteNextEntry(next_seven_sixaxis_state);
-    std::memcpy(transfer_memory, &seven_sixaxis_lifo, sizeof(seven_sixaxis_lifo));
+    system.Memory().WriteBlock(transfer_memory, &seven_sixaxis_lifo, sizeof(seven_sixaxis_lifo));
 }
 
-void Controller_ConsoleSixAxis::SetTransferMemoryPointer(u8* t_mem) {
-    is_transfer_memory_set = true;
+void Controller_ConsoleSixAxis::SetTransferMemoryAddress(VAddr t_mem) {
     transfer_memory = t_mem;
 }
 

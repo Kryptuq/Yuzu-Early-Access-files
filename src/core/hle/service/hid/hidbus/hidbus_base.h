@@ -8,6 +8,10 @@
 #include "common/common_types.h"
 #include "core/hle/result.h"
 
+namespace Core {
+class System;
+}
+
 namespace Kernel {
 class KEvent;
 class KReadableEvent;
@@ -106,7 +110,7 @@ static_assert(sizeof(ButtonOnlyPollingDataAccessor) == 0x2F0,
 
 class HidbusBase {
 public:
-    explicit HidbusBase(KernelHelpers::ServiceContext& service_context_);
+    explicit HidbusBase(Core::System& system_, KernelHelpers::ServiceContext& service_context_);
     virtual ~HidbusBase();
 
     void ActivateDevice();
@@ -134,7 +138,7 @@ public:
     void DisablePollingMode();
 
     // Called on EnableJoyPollingReceiveMode
-    void SetTransferMemoryPointer(u8* t_mem);
+    void SetTransferMemoryAddress(VAddr t_mem);
 
     Kernel::KReadableEvent& GetSendCommandAsycEvent() const;
 
@@ -170,9 +174,9 @@ protected:
     JoyEnableSixAxisDataAccessor enable_sixaxis_data{};
     ButtonOnlyPollingDataAccessor button_only_data{};
 
-    u8* transfer_memory{nullptr};
-    bool is_transfer_memory_set{};
+    VAddr transfer_memory{};
 
+    Core::System& system;
     Kernel::KEvent* send_command_async_event;
     KernelHelpers::ServiceContext& service_context;
 };

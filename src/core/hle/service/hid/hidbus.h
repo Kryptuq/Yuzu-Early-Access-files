@@ -115,8 +115,7 @@ private:
     void MakeDevice(BusHandle handle) {
         const auto device_index = GetDeviceIndexFromHandle(handle);
         if (device_index) {
-            devices[device_index.value()].device =
-                std::make_unique<T>(system.HIDCore(), service_context);
+            devices[device_index.value()].device = std::make_unique<T>(system, service_context);
         }
     }
 

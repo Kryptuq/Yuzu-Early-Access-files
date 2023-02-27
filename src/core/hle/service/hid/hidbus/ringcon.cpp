@@ -1,18 +1,20 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "core/core.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/hid/hidbus/ringcon.h"
+#include "core/memory.h"
 
 namespace Service::HID {
 
-RingController::RingController(Core::HID::HIDCore& hid_core_,
+RingController::RingController(Core::System& system_,
                                KernelHelpers::ServiceContext& service_context_)
-    : HidbusBase(service_context_) {
-    input = hid_core_.GetEmulatedController(Core::HID::NpadIdType::Player1);
+    : HidbusBase(system_, service_context_) {
+    input = system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
 }
 
 RingController::~RingController() = default;
@@ -38,7 +40,7 @@ void RingController::OnUpdate() {
         return;
     }
 
-    if (!polling_mode_enabled || !is_transfer_memory_set) {
+    if (!polling_mode_enabled || transfer_memory == 0) {
         return;
     }
 
@@ -62,7 +64,8 @@ void RingController::OnUpdate() {
         curr_entry.polling_data.out_size = sizeof(ringcon_value);
         std::memcpy(curr_entry.polling_data.data.data(), &ringcon_value, sizeof(ringcon_value));
 
-        std::memcpy(transfer_memory, &enable_sixaxis_data, sizeof(enable_sixaxis_data));
+        system.Memory().WriteBlock(transfer_memory, &enable_sixaxis_data,
+                                   sizeof(enable_sixaxis_data));
         break;
     }
     default:

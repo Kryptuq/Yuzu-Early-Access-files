@@ -330,3 +330,7 @@ endif()
 if (YUZU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(video_core PRIVATE precompiled_headers.h)
 endif()
+
+if (ENABLE_LTO)
+  set_property(TARGET video_core PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()

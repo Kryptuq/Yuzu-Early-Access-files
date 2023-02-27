@@ -208,8 +208,6 @@ void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
 
     ASSERT_MSG(t_mem->GetSize() == parameters.transfer_memory_size, "t_mem has incorrect size");
 
-    u8* transfer_memory = system.Memory().GetPointer(t_mem->GetSourceAddress());
-
     LOG_INFO(Service_IRS,
              "called, npad_type={}, npad_id={}, transfer_memory_size={}, transfer_memory_size={}, "
              "applet_resource_user_id={}",
@@ -224,7 +222,7 @@ void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
         auto& image_transfer_processor =
             GetProcessor<ImageTransferProcessor>(parameters.camera_handle);
         image_transfer_processor.SetConfig(parameters.processor_config);
-        image_transfer_processor.SetTransferMemoryPointer(transfer_memory);
+        image_transfer_processor.SetTransferMemoryAddress(t_mem->GetSourceAddress());
         npad_device->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
                                     Common::Input::PollingMode::IR);
     }
@@ -448,8 +446,6 @@ void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
     auto t_mem = system.ApplicationProcess()->GetHandleTable().GetObject<Kernel::KTransferMemory>(
         t_mem_handle);
 
-    u8* transfer_memory = system.Memory().GetPointer(t_mem->GetSourceAddress());
-
     LOG_INFO(Service_IRS,
              "called, npad_type={}, npad_id={}, transfer_memory_size={}, "
              "applet_resource_user_id={}",
@@ -464,7 +460,7 @@ void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
         auto& image_transfer_processor =
             GetProcessor<ImageTransferProcessor>(parameters.camera_handle);
         image_transfer_processor.SetConfig(parameters.processor_config);
-        image_transfer_processor.SetTransferMemoryPointer(transfer_memory);
+        image_transfer_processor.SetTransferMemoryAddress(t_mem->GetSourceAddress());
         npad_device->SetPollingMode(Core::HID::EmulatedDeviceIndex::RightIndex,
                                     Common::Input::PollingMode::IR);
     }

@@ -56,6 +56,8 @@ option(YUZU_USE_BUNDLED_VCPKG "Use vcpkg for yuzu dependencies" "${MSVC}")
 
 option(YUZU_CHECK_SUBMODULES "Check if submodules are present" ON)
 
+option(ENABLE_LTO "Enable link-time optimization" OFF)
+
 CMAKE_DEPENDENT_OPTION(YUZU_USE_FASTER_LD "Check if a faster linker is available" ON "NOT WIN32" OFF)
 
 if (YUZU_USE_BUNDLED_VCPKG)
@@ -242,6 +244,9 @@ endif()
 if (ENABLE_WEB_SERVICE)
     find_package(cpp-jwt 1.4 CONFIG)
     find_package(httplib 0.12 MODULE)
+    if (NOT cpp-jwt_FOUND OR NOT httplib_FOUND)
+        find_package(OpenSSL 1.1 MODULE COMPONENTS Crypto SSL)
+    endif()
 endif()
 
 if (YUZU_TESTS)

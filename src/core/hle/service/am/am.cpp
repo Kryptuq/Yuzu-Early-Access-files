@@ -1265,9 +1265,8 @@ void ILibraryAppletCreator::CreateTransferMemoryStorage(Kernel::HLERequestContex
         return;
     }
 
-    const u8* const mem_begin = system.Memory().GetPointer(transfer_mem->GetSourceAddress());
-    const u8* const mem_end = mem_begin + transfer_mem->GetSize();
-    std::vector<u8> memory{mem_begin, mem_end};
+    std::vector<u8> memory(transfer_mem->GetSize());
+    system.Memory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(), memory.size());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -1299,9 +1298,8 @@ void ILibraryAppletCreator::CreateHandleStorage(Kernel::HLERequestContext& ctx) 
         return;
     }
 
-    const u8* const mem_begin = system.Memory().GetPointer(transfer_mem->GetSourceAddress());
-    const u8* const mem_end = mem_begin + transfer_mem->GetSize();
-    std::vector<u8> memory{mem_begin, mem_end};
+    std::vector<u8> memory(transfer_mem->GetSize());
+    system.Memory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(), memory.size());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);

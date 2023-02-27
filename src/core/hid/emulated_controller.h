@@ -250,13 +250,8 @@ public:
     /// Reload all input devices
     void ReloadInput();
 
-    /// Overrides current mapped devices with the stored configuration and reloads all input
-    /// callbacks
+    /// Overrides current mapped devices with the stored configuration and reloads all input devices
     void ReloadFromSettings();
-
-    /// Overrides current mapped debug pad with the stored configuration and reloads all input
-    /// callbacks
-    void ReloadDebugPadFromSettings();
 
     /// Saves the current mapped configuration
     void SaveCurrentConfig();

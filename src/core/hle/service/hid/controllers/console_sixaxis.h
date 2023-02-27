@@ -10,6 +10,10 @@
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
 
+namespace Core {
+class System;
+} // namespace Core
+
 namespace Core::HID {
 class EmulatedConsole;
 } // namespace Core::HID
@@ -17,7 +21,7 @@ class EmulatedConsole;
 namespace Service::HID {
 class Controller_ConsoleSixAxis final : public ControllerBase {
 public:
-    explicit Controller_ConsoleSixAxis(Core::HID::HIDCore& hid_core_, u8* raw_shared_memory_);
+    explicit Controller_ConsoleSixAxis(Core::System& system_, u8* raw_shared_memory_);
     ~Controller_ConsoleSixAxis() override;
 
     // Called when the controller is initialized
@@ -30,7 +34,7 @@ public:
     void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
     // Called on InitializeSevenSixAxisSensor
-    void SetTransferMemoryPointer(u8* t_mem);
+    void SetTransferMemoryAddress(VAddr t_mem);
 
     // Called on ResetSevenSixAxisSensorTimestamp
     void ResetTimestamp();
@@ -62,12 +66,13 @@ private:
     static_assert(sizeof(seven_sixaxis_lifo) == 0xA70, "SevenSixAxisState is an invalid size");
 
     SevenSixAxisState next_seven_sixaxis_state{};
-    u8* transfer_memory = nullptr;
+    VAddr transfer_memory{};
     ConsoleSharedMemory* shared_memory = nullptr;
     Core::HID::EmulatedConsole* console = nullptr;
 
-    bool is_transfer_memory_set = false;
     u64 last_saved_timestamp{};
     u64 last_global_timestamp{};
+
+    Core::System& system;
 };
 } // namespace Service::HID

@@ -212,11 +212,16 @@ void Config::ReadPlayerValue(std::size_t player_index) {
     }
 
     if (player_prefix.isEmpty() && Settings::IsConfiguringGlobal()) {
-        player.controller_type = static_cast<Settings::ControllerType>(
+        const auto controller = static_cast<Settings::ControllerType>(
             qt_config
                 ->value(QStringLiteral("%1type").arg(player_prefix),
                         static_cast<u8>(Settings::ControllerType::ProController))
                 .toUInt());
+
+        if (controller == Settings::ControllerType::LeftJoycon ||
+            controller == Settings::ControllerType::RightJoycon) {
+            player.controller_type = controller;
+        }
     } else {
         player.connected =
             ReadSetting(QStringLiteral("%1connected").arg(player_prefix), player_index == 0)

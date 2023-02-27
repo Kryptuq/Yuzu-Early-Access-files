@@ -1862,7 +1862,7 @@ void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
         .ActivateController();
 
     applet_resource->GetController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor)
-        .SetTransferMemoryPointer(system.Memory().GetPointer(t_mem_1->GetSourceAddress()));
+        .SetTransferMemoryAddress(t_mem_1->GetSourceAddress());
 
     LOG_WARNING(Service_HID,
                 "called, t_mem_1_handle=0x{:08X}, t_mem_2_handle=0x{:08X}, "
@@ -2149,8 +2149,7 @@ void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
                 connection_handle.npad_id, wave_set, unknown, t_mem_handle, t_mem_size, size);
 
     applet_resource->GetController<Controller_Palma>(HidController::Palma)
-        .WritePalmaWaveEntry(connection_handle, wave_set,
-                             system.Memory().GetPointer(t_mem->GetSourceAddress()), t_mem_size);
+        .WritePalmaWaveEntry(connection_handle, wave_set, t_mem->GetSourceAddress(), t_mem_size);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

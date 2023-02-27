@@ -472,7 +472,7 @@ void HidBus::EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
     if (device_index) {
         auto& device = devices[device_index.value()].device;
         device->SetPollingMode(polling_mode_);
-        device->SetTransferMemoryPointer(system.Memory().GetPointer(t_mem->GetSourceAddress()));
+        device->SetTransferMemoryAddress(t_mem->GetSourceAddress());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);

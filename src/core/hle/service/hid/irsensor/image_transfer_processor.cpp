@@ -1,16 +1,18 @@
 // SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "core/core.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/service/hid/irsensor/image_transfer_processor.h"
+#include "core/memory.h"
 
 namespace Service::IRS {
-ImageTransferProcessor::ImageTransferProcessor(Core::HID::HIDCore& hid_core_,
+ImageTransferProcessor::ImageTransferProcessor(Core::System& system_,
                                                Core::IrSensor::DeviceFormat& device_format,
                                                std::size_t npad_index)
-    : device{device_format} {
-    npad_device = hid_core_.GetEmulatedControllerByIndex(npad_index);
+    : device{device_format}, system{system_} {
+    npad_device = system.HIDCore().GetEmulatedControllerByIndex(npad_index);
 
     Core::HID::ControllerUpdateCallback engine_callback{
         .on_change = [this](Core::HID::ControllerTriggerType type) { OnControllerUpdate(type); },
@@ -43,7 +45,7 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
     if (type != Core::HID::ControllerTriggerType::IrSensor) {
         return;
     }
-    if (!is_transfer_memory_set) {
+    if (transfer_memory == 0) {
         return;
     }
 
@@ -56,14 +58,16 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
     if (camera_data.format != current_config.origin_format) {
         LOG_WARNING(Service_IRS, "Wrong Input format {} expected {}", camera_data.format,
                     current_config.origin_format);
-        memset(transfer_memory, 0, GetDataSize(current_config.trimming_format));
+        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
+                                  GetDataSize(current_config.trimming_format));
         return;
     }
 
     if (current_config.origin_format > current_config.trimming_format) {
         LOG_WARNING(Service_IRS, "Origin format {} is smaller than trimming format {}",
                     current_config.origin_format, current_config.trimming_format);
-        memset(transfer_memory, 0, GetDataSize(current_config.trimming_format));
+        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
+                                  GetDataSize(current_config.trimming_format));
         return;
     }
 
@@ -80,7 +84,8 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
                     "Trimming area ({}, {}, {}, {}) is outside of origin area ({}, {})",
                     current_config.trimming_start_x, current_config.trimming_start_y,
                     trimming_width, trimming_height, origin_width, origin_height);
-        memset(transfer_memory, 0, GetDataSize(current_config.trimming_format));
+        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
+                                  GetDataSize(current_config.trimming_format));
         return;
     }
 
@@ -94,7 +99,8 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
         }
     }
 
-    memcpy(transfer_memory, window_data.data(), GetDataSize(current_config.trimming_format));
+    system.Memory().WriteBlock(transfer_memory, window_data.data(),
+                               GetDataSize(current_config.trimming_format));
 
     if (!IsProcessorActive()) {
         StartProcessor();
@@ -134,8 +140,7 @@ void ImageTransferProcessor::SetConfig(
     npad_device->SetCameraFormat(current_config.origin_format);
 }
 
-void ImageTransferProcessor::SetTransferMemoryPointer(u8* t_mem) {
-    is_transfer_memory_set = true;
+void ImageTransferProcessor::SetTransferMemoryAddress(VAddr t_mem) {
     transfer_memory = t_mem;
 }
 
@@ -143,7 +148,7 @@ Core::IrSensor::ImageTransferProcessorState ImageTransferProcessor::GetState(
     std::vector<u8>& data) const {
     const auto size = GetDataSize(current_config.trimming_format);
     data.resize(size);
-    memcpy(data.data(), transfer_memory, size);
+    system.Memory().ReadBlock(transfer_memory, data.data(), size);
     return processor_state;
 }
 

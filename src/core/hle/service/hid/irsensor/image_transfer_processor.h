@@ -7,6 +7,10 @@
 #include "core/hid/irs_types.h"
 #include "core/hle/service/hid/irsensor/processor_base.h"
 
+namespace Core {
+class System;
+}
+
 namespace Core::HID {
 class EmulatedController;
 } // namespace Core::HID
@@ -14,7 +18,7 @@ class EmulatedController;
 namespace Service::IRS {
 class ImageTransferProcessor final : public ProcessorBase {
 public:
-    explicit ImageTransferProcessor(Core::HID::HIDCore& hid_core_,
+    explicit ImageTransferProcessor(Core::System& system_,
                                     Core::IrSensor::DeviceFormat& device_format,
                                     std::size_t npad_index);
     ~ImageTransferProcessor() override;
@@ -33,7 +37,7 @@ public:
     void SetConfig(Core::IrSensor::PackedImageTransferProcessorExConfig config);
 
     // Transfer memory where the image data will be stored
-    void SetTransferMemoryPointer(u8* t_mem);
+    void SetTransferMemoryAddress(VAddr t_mem);
 
     Core::IrSensor::ImageTransferProcessorState GetState(std::vector<u8>& data) const;
 
@@ -67,7 +71,7 @@ private:
     Core::HID::EmulatedController* npad_device;
     int callback_key{};
 
-    u8* transfer_memory = nullptr;
-    bool is_transfer_memory_set = false;
+    Core::System& system;
+    VAddr transfer_memory{};
 };
 } // namespace Service::IRS

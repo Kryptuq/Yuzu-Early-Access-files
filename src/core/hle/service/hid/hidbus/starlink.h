@@ -14,8 +14,7 @@ namespace Service::HID {
 
 class Starlink final : public HidbusBase {
 public:
-    explicit Starlink(Core::HID::HIDCore& hid_core_,
-                      KernelHelpers::ServiceContext& service_context_);
+    explicit Starlink(Core::System& system_, KernelHelpers::ServiceContext& service_context_);
     ~Starlink() override;
 
     void OnInit() override;

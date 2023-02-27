@@ -17,8 +17,7 @@ namespace Service::HID {
 
 class RingController final : public HidbusBase {
 public:
-    explicit RingController(Core::HID::HIDCore& hid_core_,
-                            KernelHelpers::ServiceContext& service_context_);
+    explicit RingController(Core::System& system_, KernelHelpers::ServiceContext& service_context_);
     ~RingController() override;
 
     void OnInit() override;

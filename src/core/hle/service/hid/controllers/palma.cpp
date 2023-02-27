@@ -152,7 +152,7 @@ Result Controller_Palma::WritePalmaRgbLedPatternEntry(const PalmaConnectionHandl
 }
 
 Result Controller_Palma::WritePalmaWaveEntry(const PalmaConnectionHandle& handle, PalmaWaveSet wave,
-                                             u8* t_mem, u64 size) {
+                                             VAddr t_mem, u64 size) {
     if (handle.npad_id != active_handle.npad_id) {
         return InvalidPalmaHandle;
     }
