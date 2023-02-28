@@ -73,32 +73,36 @@ private:
     void AcquireBleScanEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 3, 1};
         rb.Push(ResultSuccess);
+        rb.Push(true);
         rb.PushCopyObjects(scan_event->GetReadableEvent());
     }
 
     void AcquireBleConnectionEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 3, 1};
         rb.Push(ResultSuccess);
+        rb.Push(true);
         rb.PushCopyObjects(connection_event->GetReadableEvent());
     }
 
     void AcquireBleServiceDiscoveryEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 3, 1};
         rb.Push(ResultSuccess);
+        rb.Push(true);
         rb.PushCopyObjects(service_discovery_event->GetReadableEvent());
     }
 
     void AcquireBleMtuConfigEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 3, 1};
         rb.Push(ResultSuccess);
+        rb.Push(true);
         rb.PushCopyObjects(config_event->GetReadableEvent());
     }
 
