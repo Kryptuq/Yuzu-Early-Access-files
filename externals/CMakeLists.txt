@@ -100,41 +100,18 @@ endif()
 # Sirit
 add_subdirectory(sirit EXCLUDE_FROM_ALL)
 
-# LibreSSL
-if (ENABLE_WEB_SERVICE AND DEFINED OPENSSL_FOUND)
-    if (WIN32 OR NOT OPENSSL_FOUND)
-        set(LIBRESSL_SKIP_INSTALL ON)
-        set(OPENSSLDIR "/etc/ssl/")
-        add_subdirectory(libressl EXCLUDE_FROM_ALL)
-        target_include_directories(ssl INTERFACE ./libressl/include)
-        target_compile_definitions(ssl PRIVATE -DHAVE_INET_NTOP)
-        get_directory_property(OPENSSL_LIBRARIES
-            DIRECTORY libressl
-            DEFINITION OPENSSL_LIBS)
-    else()
-        set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
-    endif()
-endif()
-
 # httplib
 if (ENABLE_WEB_SERVICE AND NOT TARGET httplib::httplib)
-    add_library(httplib INTERFACE)
-    target_include_directories(httplib INTERFACE ./cpp-httplib)
-    target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
-    target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
-    if (WIN32)
-        target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
-    endif()
-    add_library(httplib::httplib ALIAS httplib)
+    set(HTTPLIB_REQUIRE_OPENSSL ON)
+    add_subdirectory(cpp-httplib EXCLUDE_FROM_ALL)
 endif()
 
 # cpp-jwt
 if (ENABLE_WEB_SERVICE AND NOT TARGET cpp-jwt::cpp-jwt)
-    add_library(cpp-jwt INTERFACE)
-    target_include_directories(cpp-jwt INTERFACE ./cpp-jwt/include)
-    target_compile_definitions(cpp-jwt INTERFACE CPP_JWT_USE_VENDORED_NLOHMANN_JSON)
-    target_link_libraries(cpp-jwt INTERFACE ${OPENSSL_LIBRARIES})
-    add_library(cpp-jwt::cpp-jwt ALIAS cpp-jwt)
+    set(CPP_JWT_BUILD_EXAMPLES OFF)
+    set(CPP_JWT_BUILD_TESTS OFF)
+    set(CPP_JWT_USE_VENDORED_NLOHMANN_JSON OFF)
+    add_subdirectory(cpp-jwt EXCLUDE_FROM_ALL)
 endif()
 
 # Opus
