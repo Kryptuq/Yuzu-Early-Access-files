@@ -29,7 +29,9 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
-    // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
+    // NOTE: If scheduler lock is not held here, interrupt disable is required.
+    // KScopedInterruptDisable di;
+
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
     // Load the value from the address.
@@ -59,7 +61,9 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
-    // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
+    // NOTE: If scheduler lock is not held here, interrupt disable is required.
+    // KScopedInterruptDisable di;
+
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
     // Load the value from the address.

@@ -111,36 +111,36 @@ Result KConditionVariable::SignalToAddress(VAddr addr) {
         KScopedSchedulerLock sl(kernel);
 
         // Remove waiter thread.
-        s32 num_waiters{};
-        KThread* next_owner_thread =
-            owner_thread->RemoveWaiterByKey(std::addressof(num_waiters), addr);
+        bool has_waiters{};
+        KThread* const next_owner_thread =
+            owner_thread->RemoveUserWaiterByKey(std::addressof(has_waiters), addr);
 
         // Determine the next tag.
         u32 next_value{};
         if (next_owner_thread != nullptr) {
             next_value = next_owner_thread->GetAddressKeyValue();
-            if (num_waiters > 1) {
+            if (has_waiters) {
                 next_value |= Svc::HandleWaitMask;
             }
-
-            // Write the value to userspace.
-            Result result{ResultSuccess};
-            if (WriteToUser(system, addr, std::addressof(next_value))) [[likely]] {
-                result = ResultSuccess;
-            } else {
-                result = ResultInvalidCurrentMemory;
-            }
-
-            // Signal the next owner thread.
-            next_owner_thread->EndWait(result);
-            return result;
-        } else {
-            // Just write the value to userspace.
-            R_UNLESS(WriteToUser(system, addr, std::addressof(next_value)),
-                     ResultInvalidCurrentMemory);
-
-            return ResultSuccess;
         }
+
+        // Synchronize memory before proceeding.
+        std::atomic_thread_fence(std::memory_order_seq_cst);
+
+        // Write the value to userspace.
+        Result result{ResultSuccess};
+        if (WriteToUser(system, addr, std::addressof(next_value))) [[likely]] {
+            result = ResultSuccess;
+        } else {
+            result = ResultInvalidCurrentMemory;
+        }
+
+        // If necessary, signal the next owner thread.
+        if (next_owner_thread != nullptr) {
+            next_owner_thread->EndWait(result);
+        }
+
+        R_RETURN(result);
     }
 }
 
@@ -198,7 +198,9 @@ void KConditionVariable::SignalImpl(KThread* thread) {
     u32 prev_tag{};
     bool can_access{};
     {
-        // TODO(bunnei): We should disable interrupts here via KScopedInterruptDisable.
+        // NOTE: If scheduler lock is not held here, interrupt disable is required.
+        // KScopedInterruptDisable di;
+
         // TODO(bunnei): We should call CanAccessAtomic(..) here.
         can_access = true;
         if (can_access) [[likely]] {
@@ -245,9 +247,11 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
                (it->GetConditionVariableKey() == cv_key)) {
             KThread* target_thread = std::addressof(*it);
 
-            this->SignalImpl(target_thread);
             it = thread_tree.erase(it);
             target_thread->ClearConditionVariable();
+
+            this->SignalImpl(target_thread);
+
             ++num_waiters;
         }
 
@@ -277,16 +281,16 @@ Result KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
         // Update the value and process for the next owner.
         {
             // Remove waiter thread.
-            s32 num_waiters{};
+            bool has_waiters{};
             KThread* next_owner_thread =
-                cur_thread->RemoveWaiterByKey(std::addressof(num_waiters), addr);
+                cur_thread->RemoveUserWaiterByKey(std::addressof(has_waiters), addr);
 
             // Update for the next owner thread.
             u32 next_value{};
             if (next_owner_thread != nullptr) {
                 // Get the next tag value.
                 next_value = next_owner_thread->GetAddressKeyValue();
-                if (num_waiters > 1) {
+                if (has_waiters) {
                     next_value |= Svc::HandleWaitMask;
                 }
 

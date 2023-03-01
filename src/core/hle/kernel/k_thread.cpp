@@ -191,7 +191,7 @@ Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack
     light_ipc_data = nullptr;
 
     // We're not waiting for a lock, and we haven't disabled migration.
-    lock_owner = nullptr;
+    waiting_lock_info = nullptr;
     num_core_migration_disables = 0;
 
     // We have no waiters, but we do have an entrypoint.
@@ -341,25 +341,39 @@ void KThread::Finalize() {
 
     // Release any waiters.
     {
-        ASSERT(lock_owner == nullptr);
+        ASSERT(waiting_lock_info == nullptr);
         KScopedSchedulerLock sl{kernel};
 
-        auto it = waiter_list.begin();
-        while (it != waiter_list.end()) {
-            // Get the thread.
-            KThread* const waiter = std::addressof(*it);
+        // Check that we have no kernel waiters.
+        ASSERT(num_kernel_waiters == 0);
 
-            // The thread shouldn't be a kernel waiter.
-            ASSERT(!waiter->GetAddressKeyIsKernel());
+        auto it = held_lock_info_list.begin();
+        while (it != held_lock_info_list.end()) {
+            // Get the lock info.
+            auto* const lock_info = std::addressof(*it);
 
-            // Clear the lock owner.
-            waiter->SetLockOwner(nullptr);
+            // The lock shouldn't have a kernel waiter.
+            ASSERT(!lock_info->GetIsKernelAddressKey());
 
-            // Erase the waiter from our list.
-            it = waiter_list.erase(it);
+            // Remove all waiters.
+            while (lock_info->GetWaiterCount() != 0) {
+                // Get the front waiter.
+                KThread* const waiter = lock_info->GetHighestPriorityWaiter();
 
-            // Cancel the thread's wait.
-            waiter->CancelWait(ResultInvalidState, true);
+                // Remove it from the lock.
+                if (lock_info->RemoveWaiter(waiter)) {
+                    ASSERT(lock_info->GetWaiterCount() == 0);
+                }
+
+                // Cancel the thread's wait.
+                waiter->CancelWait(ResultInvalidState, true);
+            }
+
+            // Remove the held lock from our list.
+            it = held_lock_info_list.erase(it);
+
+            // Free the lock info.
+            LockWithPriorityInheritanceInfo::Free(kernel, lock_info);
         }
     }
 
@@ -708,6 +722,24 @@ void KThread::SetBasePriority(s32 value) {
     RestorePriority(kernel, this);
 }
 
+KThread* KThread::GetLockOwner() const {
+    return waiting_lock_info != nullptr ? waiting_lock_info->GetOwner() : nullptr;
+}
+
+void KThread::IncreaseBasePriority(s32 priority_) {
+    ASSERT(Svc::HighestThreadPriority <= priority_ && priority_ <= Svc::LowestThreadPriority);
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+    ASSERT(!this->GetStackParameters().is_pinned);
+
+    // Set our base priority.
+    if (base_priority > priority_) {
+        base_priority = priority_;
+
+        // Perform a priority restoration.
+        RestorePriority(kernel, this);
+    }
+}
+
 void KThread::RequestSuspend(SuspendType type) {
     KScopedSchedulerLock sl{kernel};
 
@@ -891,51 +923,89 @@ Result KThread::GetThreadContext3(std::vector<u8>& out) {
     R_SUCCEED();
 }
 
-void KThread::AddWaiterImpl(KThread* thread) {
-    ASSERT(kernel.GlobalSchedulerContext().IsLocked());
+void KThread::AddHeldLock(LockWithPriorityInheritanceInfo* lock_info) {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
 
-    // Find the right spot to insert the waiter.
-    auto it = waiter_list.begin();
-    while (it != waiter_list.end()) {
-        if (it->GetPriority() > thread->GetPriority()) {
-            break;
+    // Set ourselves as the lock's owner.
+    lock_info->SetOwner(this);
+
+    // Add the lock to our held list.
+    held_lock_info_list.push_front(*lock_info);
+}
+
+KThread::LockWithPriorityInheritanceInfo* KThread::FindHeldLock(VAddr address_key_,
+                                                                bool is_kernel_address_key_) {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+
+    // Try to find an existing held lock.
+    for (auto& held_lock : held_lock_info_list) {
+        if (held_lock.GetAddressKey() == address_key_ &&
+            held_lock.GetIsKernelAddressKey() == is_kernel_address_key_) {
+            return std::addressof(held_lock);
         }
-        it++;
     }
 
+    return nullptr;
+}
+
+void KThread::AddWaiterImpl(KThread* thread) {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
+    ASSERT(thread->GetConditionVariableTree() == nullptr);
+
+    // Get the thread's address key.
+    const auto address_key_ = thread->GetAddressKey();
+    const auto is_kernel_address_key_ = thread->GetIsKernelAddressKey();
+
     // Keep track of how many kernel waiters we have.
-    if (thread->GetAddressKeyIsKernel()) {
+    if (is_kernel_address_key_) {
         ASSERT((num_kernel_waiters++) >= 0);
         KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
-    // Insert the waiter.
-    waiter_list.insert(it, *thread);
-    thread->SetLockOwner(this);
+    // Get the relevant lock info.
+    auto* lock_info = this->FindHeldLock(address_key_, is_kernel_address_key_);
+    if (lock_info == nullptr) {
+        // Create a new lock for the address key.
+        lock_info =
+            LockWithPriorityInheritanceInfo::Create(kernel, address_key_, is_kernel_address_key_);
+
+        // Add the new lock to our list.
+        this->AddHeldLock(lock_info);
+    }
+
+    // Add the thread as waiter to the lock info.
+    lock_info->AddWaiter(thread);
 }
 
 void KThread::RemoveWaiterImpl(KThread* thread) {
-    ASSERT(kernel.GlobalSchedulerContext().IsLocked());
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
 
     // Keep track of how many kernel waiters we have.
-    if (thread->GetAddressKeyIsKernel()) {
+    if (thread->GetIsKernelAddressKey()) {
         ASSERT((num_kernel_waiters--) > 0);
         KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
+    // Get the info for the lock the thread is waiting on.
+    auto* lock_info = thread->GetWaitingLockInfo();
+    ASSERT(lock_info->GetOwner() == this);
+
     // Remove the waiter.
-    waiter_list.erase(waiter_list.iterator_to(*thread));
-    thread->SetLockOwner(nullptr);
+    if (lock_info->RemoveWaiter(thread)) {
+        held_lock_info_list.erase(held_lock_info_list.iterator_to(*lock_info));
+        LockWithPriorityInheritanceInfo::Free(kernel, lock_info);
+    }
 }
 
-void KThread::RestorePriority(KernelCore& kernel_ctx, KThread* thread) {
-    ASSERT(kernel_ctx.GlobalSchedulerContext().IsLocked());
+void KThread::RestorePriority(KernelCore& kernel, KThread* thread) {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
 
-    while (true) {
+    while (thread != nullptr) {
         // We want to inherit priority where possible.
         s32 new_priority = thread->GetBasePriority();
-        if (thread->HasWaiters()) {
-            new_priority = std::min(new_priority, thread->waiter_list.front().GetPriority());
+        for (const auto& held_lock : thread->held_lock_info_list) {
+            new_priority =
+                std::min(new_priority, held_lock.GetHighestPriorityWaiter()->GetPriority());
         }
 
         // If the priority we would inherit is not different from ours, don't do anything.
@@ -943,9 +1013,18 @@ void KThread::RestorePriority(KernelCore& kernel_ctx, KThread* thread) {
             return;
         }
 
+        // Get the owner of whatever lock this thread is waiting on.
+        KThread* const lock_owner = thread->GetLockOwner();
+
+        // If the thread is waiting on some lock, remove it as a waiter to prevent violating red
+        // black tree invariants.
+        if (lock_owner != nullptr) {
+            lock_owner->RemoveWaiterImpl(thread);
+        }
+
         // Ensure we don't violate condition variable red black tree invariants.
         if (auto* cv_tree = thread->GetConditionVariableTree(); cv_tree != nullptr) {
-            BeforeUpdatePriority(kernel_ctx, cv_tree, thread);
+            BeforeUpdatePriority(kernel, cv_tree, thread);
         }
 
         // Change the priority.
@@ -954,73 +1033,99 @@ void KThread::RestorePriority(KernelCore& kernel_ctx, KThread* thread) {
 
         // Restore the condition variable, if relevant.
         if (auto* cv_tree = thread->GetConditionVariableTree(); cv_tree != nullptr) {
-            AfterUpdatePriority(kernel_ctx, cv_tree, thread);
+            AfterUpdatePriority(kernel, cv_tree, thread);
+        }
+
+        // If we removed the thread from some lock's waiting list, add it back.
+        if (lock_owner != nullptr) {
+            lock_owner->AddWaiterImpl(thread);
         }
 
         // Update the scheduler.
-        KScheduler::OnThreadPriorityChanged(kernel_ctx, thread, old_priority);
+        KScheduler::OnThreadPriorityChanged(kernel, thread, old_priority);
 
-        // Keep the lock owner up to date.
-        KThread* lock_owner = thread->GetLockOwner();
-        if (lock_owner == nullptr) {
-            return;
-        }
-
-        // Update the thread in the lock owner's sorted list, and continue inheriting.
-        lock_owner->RemoveWaiterImpl(thread);
-        lock_owner->AddWaiterImpl(thread);
+        // Continue inheriting priority.
         thread = lock_owner;
     }
 }
 
 void KThread::AddWaiter(KThread* thread) {
-    AddWaiterImpl(thread);
-    RestorePriority(kernel, this);
+    this->AddWaiterImpl(thread);
+
+    // If the thread has a higher priority than us, we should inherit.
+    if (thread->GetPriority() < this->GetPriority()) {
+        RestorePriority(kernel, this);
+    }
 }
 
 void KThread::RemoveWaiter(KThread* thread) {
-    RemoveWaiterImpl(thread);
-    RestorePriority(kernel, this);
+    this->RemoveWaiterImpl(thread);
+
+    // If our priority is the same as the thread's (and we've inherited), we may need to restore to
+    // lower priority.
+    if (this->GetPriority() == thread->GetPriority() &&
+        this->GetPriority() < this->GetBasePriority()) {
+        RestorePriority(kernel, this);
+    }
 }
 
-KThread* KThread::RemoveWaiterByKey(s32* out_num_waiters, VAddr key) {
-    ASSERT(kernel.GlobalSchedulerContext().IsLocked());
+KThread* KThread::RemoveWaiterByKey(bool* out_has_waiters, VAddr key, bool is_kernel_address_key_) {
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(kernel));
 
-    s32 num_waiters{};
-    KThread* next_lock_owner{};
-    auto it = waiter_list.begin();
-    while (it != waiter_list.end()) {
-        if (it->GetAddressKey() == key) {
-            KThread* thread = std::addressof(*it);
+    // Get the relevant lock info.
+    auto* lock_info = this->FindHeldLock(key, is_kernel_address_key_);
+    if (lock_info == nullptr) {
+        *out_has_waiters = false;
+        return nullptr;
+    }
 
-            // Keep track of how many kernel waiters we have.
-            if (thread->GetAddressKeyIsKernel()) {
-                ASSERT((num_kernel_waiters--) > 0);
-                KScheduler::SetSchedulerUpdateNeeded(kernel);
-            }
-            it = waiter_list.erase(it);
+    // Remove the lock info from our held list.
+    held_lock_info_list.erase(held_lock_info_list.iterator_to(*lock_info));
 
-            // Update the next lock owner.
-            if (next_lock_owner == nullptr) {
-                next_lock_owner = thread;
-                next_lock_owner->SetLockOwner(nullptr);
-            } else {
-                next_lock_owner->AddWaiterImpl(thread);
-            }
-            num_waiters++;
-        } else {
-            it++;
+    // Keep track of how many kernel waiters we have.
+    if (lock_info->GetIsKernelAddressKey()) {
+        num_kernel_waiters -= lock_info->GetWaiterCount();
+        ASSERT(num_kernel_waiters >= 0);
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
+    }
+
+    ASSERT(lock_info->GetWaiterCount() > 0);
+
+    // Remove the highest priority waiter from the lock to be the next owner.
+    KThread* next_lock_owner = lock_info->GetHighestPriorityWaiter();
+    if (lock_info->RemoveWaiter(next_lock_owner)) {
+        // The new owner was the only waiter.
+        *out_has_waiters = false;
+
+        // Free the lock info, since it has no waiters.
+        LockWithPriorityInheritanceInfo::Free(kernel, lock_info);
+    } else {
+        // There are additional waiters on the lock.
+        *out_has_waiters = true;
+
+        // Add the lock to the new owner's held list.
+        next_lock_owner->AddHeldLock(lock_info);
+
+        // Keep track of any kernel waiters for the new owner.
+        if (lock_info->GetIsKernelAddressKey()) {
+            next_lock_owner->num_kernel_waiters += lock_info->GetWaiterCount();
+            ASSERT(next_lock_owner->num_kernel_waiters > 0);
+
+            // NOTE: No need to set scheduler update needed, because we will have already done so
+            // when removing earlier.
         }
     }
 
-    // Do priority updates, if we have a next owner.
-    if (next_lock_owner) {
+    // If our priority is the same as the next owner's (and we've inherited), we may need to restore
+    // to lower priority.
+    if (this->GetPriority() == next_lock_owner->GetPriority() &&
+        this->GetPriority() < this->GetBasePriority()) {
         RestorePriority(kernel, this);
-        RestorePriority(kernel, next_lock_owner);
+        // NOTE: No need to restore priority on the next lock owner, because it was already the
+        // highest priority waiter on the lock.
     }
 
-    // Return output.
-    *out_num_waiters = num_waiters;
+    // Return the next lock owner.
     return next_lock_owner;
 }
 
@@ -1137,9 +1242,7 @@ ThreadState KThread::RequestTerminate() {
         }
 
         // Change the thread's priority to be higher than any system thread's.
-        if (this->GetBasePriority() >= Svc::SystemThreadPriorityHighest) {
-            this->SetBasePriority(TerminatingThreadPriority);
-        }
+        this->IncreaseBasePriority(TerminatingThreadPriority);
 
         // If the thread is runnable, send a termination interrupt to other cores.
         if (this->GetState() == ThreadState::Runnable) {

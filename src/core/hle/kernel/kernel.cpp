@@ -1318,4 +1318,97 @@ const Core::System& KernelCore::System() const {
     return impl->system;
 }
 
+struct KernelCore::SlabHeapContainer {
+    KSlabHeap<KClientSession> client_session;
+    KSlabHeap<KEvent> event;
+    KSlabHeap<KLinkedListNode> linked_list_node;
+    KSlabHeap<KPort> port;
+    KSlabHeap<KProcess> process;
+    KSlabHeap<KResourceLimit> resource_limit;
+    KSlabHeap<KSession> session;
+    KSlabHeap<KSharedMemory> shared_memory;
+    KSlabHeap<KSharedMemoryInfo> shared_memory_info;
+    KSlabHeap<KThread> thread;
+    KSlabHeap<KTransferMemory> transfer_memory;
+    KSlabHeap<KCodeMemory> code_memory;
+    KSlabHeap<KDeviceAddressSpace> device_address_space;
+    KSlabHeap<KPageBuffer> page_buffer;
+    KSlabHeap<KThreadLocalPage> thread_local_page;
+    KSlabHeap<KObjectName> object_name;
+    KSlabHeap<KSessionRequest> session_request;
+    KSlabHeap<KSecureSystemResource> secure_system_resource;
+    KSlabHeap<KThread::LockWithPriorityInheritanceInfo> lock_info;
+    KSlabHeap<KEventInfo> event_info;
+    KSlabHeap<KDebug> debug;
+};
+
+template <typename T>
+KSlabHeap<T>& KernelCore::SlabHeap() {
+    if constexpr (std::is_same_v<T, KClientSession>) {
+        return slab_heap_container->client_session;
+    } else if constexpr (std::is_same_v<T, KEvent>) {
+        return slab_heap_container->event;
+    } else if constexpr (std::is_same_v<T, KLinkedListNode>) {
+        return slab_heap_container->linked_list_node;
+    } else if constexpr (std::is_same_v<T, KPort>) {
+        return slab_heap_container->port;
+    } else if constexpr (std::is_same_v<T, KProcess>) {
+        return slab_heap_container->process;
+    } else if constexpr (std::is_same_v<T, KResourceLimit>) {
+        return slab_heap_container->resource_limit;
+    } else if constexpr (std::is_same_v<T, KSession>) {
+        return slab_heap_container->session;
+    } else if constexpr (std::is_same_v<T, KSharedMemory>) {
+        return slab_heap_container->shared_memory;
+    } else if constexpr (std::is_same_v<T, KSharedMemoryInfo>) {
+        return slab_heap_container->shared_memory_info;
+    } else if constexpr (std::is_same_v<T, KThread>) {
+        return slab_heap_container->thread;
+    } else if constexpr (std::is_same_v<T, KTransferMemory>) {
+        return slab_heap_container->transfer_memory;
+    } else if constexpr (std::is_same_v<T, KCodeMemory>) {
+        return slab_heap_container->code_memory;
+    } else if constexpr (std::is_same_v<T, KDeviceAddressSpace>) {
+        return slab_heap_container->device_address_space;
+    } else if constexpr (std::is_same_v<T, KPageBuffer>) {
+        return slab_heap_container->page_buffer;
+    } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
+        return slab_heap_container->thread_local_page;
+    } else if constexpr (std::is_same_v<T, KObjectName>) {
+        return slab_heap_container->object_name;
+    } else if constexpr (std::is_same_v<T, KSessionRequest>) {
+        return slab_heap_container->session_request;
+    } else if constexpr (std::is_same_v<T, KSecureSystemResource>) {
+        return slab_heap_container->secure_system_resource;
+    } else if constexpr (std::is_same_v<T, KThread::LockWithPriorityInheritanceInfo>) {
+        return slab_heap_container->lock_info;
+    } else if constexpr (std::is_same_v<T, KEventInfo>) {
+        return slab_heap_container->event_info;
+    } else if constexpr (std::is_same_v<T, KDebug>) {
+        return slab_heap_container->debug;
+    }
+}
+
+template KSlabHeap<KClientSession>& KernelCore::SlabHeap();
+template KSlabHeap<KEvent>& KernelCore::SlabHeap();
+template KSlabHeap<KLinkedListNode>& KernelCore::SlabHeap();
+template KSlabHeap<KPort>& KernelCore::SlabHeap();
+template KSlabHeap<KProcess>& KernelCore::SlabHeap();
+template KSlabHeap<KResourceLimit>& KernelCore::SlabHeap();
+template KSlabHeap<KSession>& KernelCore::SlabHeap();
+template KSlabHeap<KSharedMemory>& KernelCore::SlabHeap();
+template KSlabHeap<KSharedMemoryInfo>& KernelCore::SlabHeap();
+template KSlabHeap<KThread>& KernelCore::SlabHeap();
+template KSlabHeap<KTransferMemory>& KernelCore::SlabHeap();
+template KSlabHeap<KCodeMemory>& KernelCore::SlabHeap();
+template KSlabHeap<KDeviceAddressSpace>& KernelCore::SlabHeap();
+template KSlabHeap<KPageBuffer>& KernelCore::SlabHeap();
+template KSlabHeap<KThreadLocalPage>& KernelCore::SlabHeap();
+template KSlabHeap<KObjectName>& KernelCore::SlabHeap();
+template KSlabHeap<KSessionRequest>& KernelCore::SlabHeap();
+template KSlabHeap<KSecureSystemResource>& KernelCore::SlabHeap();
+template KSlabHeap<KThread::LockWithPriorityInheritanceInfo>& KernelCore::SlabHeap();
+template KSlabHeap<KEventInfo>& KernelCore::SlabHeap();
+template KSlabHeap<KDebug>& KernelCore::SlabHeap();
+
 } // namespace Kernel

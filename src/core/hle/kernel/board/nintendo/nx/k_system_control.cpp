@@ -14,15 +14,21 @@ namespace Kernel::Board::Nintendo::Nx {
 
 namespace impl {
 
-constexpr const std::size_t RequiredNonSecureSystemMemorySizeVi = 0x2238 * 4 * 1024;
-constexpr const std::size_t RequiredNonSecureSystemMemorySizeNvservices = 0x710 * 4 * 1024;
-constexpr const std::size_t RequiredNonSecureSystemMemorySizeMisc = 0x80 * 4 * 1024;
+using namespace Common::Literals;
+
+constexpr const std::size_t RequiredNonSecureSystemMemorySizeVi = 0x2280 * 4_KiB;
+constexpr const std::size_t RequiredNonSecureSystemMemorySizeViFatal = 0x200 * 4_KiB;
+constexpr const std::size_t RequiredNonSecureSystemMemorySizeNvservices = 0x704 * 4_KiB;
+constexpr const std::size_t RequiredNonSecureSystemMemorySizeMisc = 0x80 * 4_KiB;
 
 } // namespace impl
 
 constexpr const std::size_t RequiredNonSecureSystemMemorySize =
     impl::RequiredNonSecureSystemMemorySizeVi + impl::RequiredNonSecureSystemMemorySizeNvservices +
     impl::RequiredNonSecureSystemMemorySizeMisc;
+
+constexpr const std::size_t RequiredNonSecureSystemMemorySizeWithFatal =
+    RequiredNonSecureSystemMemorySize + impl::RequiredNonSecureSystemMemorySizeViFatal;
 
 namespace {
 
@@ -120,10 +126,13 @@ size_t KSystemControl::Init::GetAppletPoolSize() {
 
 size_t KSystemControl::Init::GetMinimumNonSecureSystemPoolSize() {
     // Verify that our minimum is at least as large as Nintendo's.
-    constexpr size_t MinimumSize = RequiredNonSecureSystemMemorySize;
-    static_assert(MinimumSize >= 0x29C8000);
+    constexpr size_t MinimumSizeWithFatal = RequiredNonSecureSystemMemorySizeWithFatal;
+    static_assert(MinimumSizeWithFatal >= 0x2C04000);
 
-    return MinimumSize;
+    constexpr size_t MinimumSizeWithoutFatal = RequiredNonSecureSystemMemorySize;
+    static_assert(MinimumSizeWithoutFatal >= 0x2A00000);
+
+    return MinimumSizeWithFatal;
 }
 
 namespace {

@@ -31,22 +31,23 @@ public:
         }
 
         if (IsLockedByCurrentThread()) {
-            // If we already own the lock, we can just increment the count.
+            // If we already own the lock, the lock count should be > 0.
+            // For debug, ensure this is true.
             ASSERT(lock_count > 0);
-            lock_count++;
         } else {
             // Otherwise, we want to disable scheduling and acquire the spinlock.
             SchedulerType::DisableScheduling(kernel);
             spin_lock.Lock();
 
-            // For debug, ensure that our state is valid.
             ASSERT(lock_count == 0);
             ASSERT(owner_thread == nullptr);
 
-            // Increment count, take ownership.
-            lock_count = 1;
+            // Take ownership of the lock.
             owner_thread = GetCurrentThreadPointer(kernel);
         }
+
+        // Increment the lock count.
+        lock_count++;
     }
 
     void Unlock() {

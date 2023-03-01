@@ -33,6 +33,9 @@
 
 namespace Kernel::Init {
 
+// For macro convenience.
+using KThreadLockInfo = KThread::LockWithPriorityInheritanceInfo;
+
 #define SLAB_COUNT(CLASS) kernel.SlabResourceCounts().num_##CLASS
 
 #define FOREACH_SLAB_TYPE(HANDLER, ...)                                                            \
@@ -54,7 +57,8 @@ namespace Kernel::Init {
     HANDLER(KResourceLimit, (SLAB_COUNT(KResourceLimit)), ##__VA_ARGS__)                           \
     HANDLER(KEventInfo, (SLAB_COUNT(KThread) + SLAB_COUNT(KDebug)), ##__VA_ARGS__)                 \
     HANDLER(KDebug, (SLAB_COUNT(KDebug)), ##__VA_ARGS__)                                           \
-    HANDLER(KSecureSystemResource, (SLAB_COUNT(KProcess)), ##__VA_ARGS__)
+    HANDLER(KSecureSystemResource, (SLAB_COUNT(KProcess)), ##__VA_ARGS__)                          \
+    HANDLER(KThreadLockInfo, (SLAB_COUNT(KThread)), ##__VA_ARGS__)
 
 namespace {
 
@@ -131,7 +135,7 @@ VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAd
 }
 
 size_t CalculateSlabHeapGapSize() {
-    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 320_KiB;
+    constexpr size_t KernelSlabHeapGapSize = 2_MiB - 356_KiB;
     static_assert(KernelSlabHeapGapSize <= KernelSlabHeapGapsSizeMax);
     return KernelSlabHeapGapSize;
 }

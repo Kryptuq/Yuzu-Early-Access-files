@@ -339,13 +339,7 @@ public:
     void SetInterruptFlag();
     void ClearInterruptFlag();
 
-    [[nodiscard]] KThread* GetLockOwner() const {
-        return lock_owner;
-    }
-
-    void SetLockOwner(KThread* owner) {
-        lock_owner = owner;
-    }
+    KThread* GetLockOwner() const;
 
     [[nodiscard]] const KAffinityMask& GetAffinityMask() const {
         return physical_affinity_mask;
@@ -601,7 +595,13 @@ public:
 
     [[nodiscard]] Result GetThreadContext3(std::vector<u8>& out);
 
-    [[nodiscard]] KThread* RemoveWaiterByKey(s32* out_num_waiters, VAddr key);
+    [[nodiscard]] KThread* RemoveUserWaiterByKey(bool* out_has_waiters, VAddr key) {
+        return this->RemoveWaiterByKey(out_has_waiters, key, false);
+    }
+
+    [[nodiscard]] KThread* RemoveKernelWaiterByKey(bool* out_has_waiters, VAddr key) {
+        return this->RemoveWaiterByKey(out_has_waiters, key, true);
+    }
 
     [[nodiscard]] VAddr GetAddressKey() const {
         return address_key;
@@ -611,8 +611,8 @@ public:
         return address_key_value;
     }
 
-    [[nodiscard]] bool GetAddressKeyIsKernel() const {
-        return address_key_is_kernel;
+    [[nodiscard]] bool GetIsKernelAddressKey() const {
+        return is_kernel_address_key;
     }
 
     //! NB: intentional deviation from official kernel.
@@ -621,20 +621,17 @@ public:
     // to cope with arbitrary host pointers making their way
     // into things.
 
-    void SetUserAddressKey(VAddr key) {
-        address_key = key;
-        address_key_is_kernel = false;
-    }
-
     void SetUserAddressKey(VAddr key, u32 val) {
+        ASSERT(waiting_lock_info == nullptr);
         address_key = key;
         address_key_value = val;
-        address_key_is_kernel = false;
+        is_kernel_address_key = false;
     }
 
     void SetKernelAddressKey(VAddr key) {
+        ASSERT(waiting_lock_info == nullptr);
         address_key = key;
-        address_key_is_kernel = true;
+        is_kernel_address_key = true;
     }
 
     void ClearWaitQueue() {
@@ -645,10 +642,6 @@ public:
     void NotifyAvailable(KSynchronizationObject* signaled_object, Result wait_result_);
     void EndWait(Result wait_result_);
     void CancelWait(Result wait_result_, bool cancel_timer_task);
-
-    [[nodiscard]] bool HasWaiters() const {
-        return !waiter_list.empty();
-    }
 
     [[nodiscard]] s32 GetNumKernelWaiters() const {
         return num_kernel_waiters;
@@ -679,6 +672,9 @@ public:
     }
 
 private:
+    [[nodiscard]] KThread* RemoveWaiterByKey(bool* out_has_waiters, VAddr key,
+                                             bool is_kernel_address_key);
+
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
         std::array<KSynchronizationObject*, Svc::ArgumentHandleCountMax> sync_objects{};
@@ -722,12 +718,13 @@ private:
     };
 
     void AddWaiterImpl(KThread* thread);
-
     void RemoveWaiterImpl(KThread* thread);
+    static void RestorePriority(KernelCore& kernel, KThread* thread);
 
     void StartTermination();
-
     void FinishTermination();
+
+    void IncreaseBasePriority(s32 priority);
 
     [[nodiscard]] Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
                                     s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
@@ -736,8 +733,6 @@ private:
                                                  uintptr_t arg, VAddr user_stack_top, s32 prio,
                                                  s32 core, KProcess* owner, ThreadType type,
                                                  std::function<void()>&& init_func);
-
-    static void RestorePriority(KernelCore& kernel_ctx, KThread* thread);
 
     // For core KThread implementation
     ThreadContext32 thread_context_32{};
@@ -749,6 +744,127 @@ private:
             &KThread::condvar_arbiter_tree_node>;
     using ConditionVariableThreadTree =
         ConditionVariableThreadTreeTraits::TreeType<ConditionVariableComparator>;
+
+private:
+    struct LockWithPriorityInheritanceComparator {
+        struct RedBlackKeyType {
+            s32 m_priority;
+
+            constexpr s32 GetPriority() const {
+                return m_priority;
+            }
+        };
+
+        template <typename T>
+            requires(std::same_as<T, KThread> || std::same_as<T, RedBlackKeyType>)
+        static constexpr int Compare(const T& lhs, const KThread& rhs) {
+            if (lhs.GetPriority() < rhs.GetPriority()) {
+                // Sort by priority.
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+    };
+    static_assert(std::same_as<Common::RedBlackKeyType<LockWithPriorityInheritanceComparator, void>,
+                               LockWithPriorityInheritanceComparator::RedBlackKeyType>);
+
+    using LockWithPriorityInheritanceThreadTreeTraits =
+        Common::IntrusiveRedBlackTreeMemberTraitsDeferredAssert<
+            &KThread::condvar_arbiter_tree_node>;
+    using LockWithPriorityInheritanceThreadTree =
+        ConditionVariableThreadTreeTraits::TreeType<LockWithPriorityInheritanceComparator>;
+
+public:
+    class LockWithPriorityInheritanceInfo : public KSlabAllocated<LockWithPriorityInheritanceInfo>,
+                                            public boost::intrusive::list_base_hook<> {
+    public:
+        explicit LockWithPriorityInheritanceInfo(KernelCore&) {}
+
+        static LockWithPriorityInheritanceInfo* Create(KernelCore& kernel, VAddr address_key,
+                                                       bool is_kernel_address_key) {
+            // Create a new lock info.
+            auto* new_lock = LockWithPriorityInheritanceInfo::Allocate(kernel);
+            ASSERT(new_lock != nullptr);
+
+            // Set the new lock's address key.
+            new_lock->m_address_key = address_key;
+            new_lock->m_is_kernel_address_key = is_kernel_address_key;
+
+            return new_lock;
+        }
+
+        void SetOwner(KThread* new_owner) {
+            // Set new owner.
+            m_owner = new_owner;
+        }
+
+        void AddWaiter(KThread* waiter) {
+            // Insert the waiter.
+            m_tree.insert(*waiter);
+            m_waiter_count++;
+
+            waiter->SetWaitingLockInfo(this);
+        }
+
+        [[nodiscard]] bool RemoveWaiter(KThread* waiter) {
+            m_tree.erase(m_tree.iterator_to(*waiter));
+
+            waiter->SetWaitingLockInfo(nullptr);
+
+            return (--m_waiter_count) == 0;
+        }
+
+        KThread* GetHighestPriorityWaiter() {
+            return std::addressof(m_tree.front());
+        }
+        const KThread* GetHighestPriorityWaiter() const {
+            return std::addressof(m_tree.front());
+        }
+
+        LockWithPriorityInheritanceThreadTree& GetThreadTree() {
+            return m_tree;
+        }
+        const LockWithPriorityInheritanceThreadTree& GetThreadTree() const {
+            return m_tree;
+        }
+
+        VAddr GetAddressKey() const {
+            return m_address_key;
+        }
+        bool GetIsKernelAddressKey() const {
+            return m_is_kernel_address_key;
+        }
+        KThread* GetOwner() const {
+            return m_owner;
+        }
+        u32 GetWaiterCount() const {
+            return m_waiter_count;
+        }
+
+    private:
+        LockWithPriorityInheritanceThreadTree m_tree{};
+        VAddr m_address_key{};
+        KThread* m_owner{};
+        u32 m_waiter_count{};
+        bool m_is_kernel_address_key{};
+    };
+
+    void SetWaitingLockInfo(LockWithPriorityInheritanceInfo* lock) {
+        waiting_lock_info = lock;
+    }
+
+    LockWithPriorityInheritanceInfo* GetWaitingLockInfo() {
+        return waiting_lock_info;
+    }
+
+    void AddHeldLock(LockWithPriorityInheritanceInfo* lock_info);
+    LockWithPriorityInheritanceInfo* FindHeldLock(VAddr address_key, bool is_kernel_address_key);
+
+private:
+    using LockWithPriorityInheritanceInfoList =
+        boost::intrusive::list<LockWithPriorityInheritanceInfo>;
+
     ConditionVariableThreadTree* condvar_tree{};
     u64 condvar_key{};
     u64 virtual_affinity_mask{};
@@ -765,9 +881,9 @@ private:
     s64 last_scheduled_tick{};
     std::array<QueueEntry, Core::Hardware::NUM_CPU_CORES> per_core_priority_queue_entry{};
     KThreadQueue* wait_queue{};
-    WaiterList waiter_list{};
+    LockWithPriorityInheritanceInfoList held_lock_info_list{};
+    LockWithPriorityInheritanceInfo* waiting_lock_info{};
     WaiterList pinned_waiter_list{};
-    KThread* lock_owner{};
     u32 address_key_value{};
     u32 suspend_request_flags{};
     u32 suspend_allowed_flags{};
@@ -791,7 +907,7 @@ private:
     bool debug_attached{};
     s8 priority_inheritance_count{};
     bool resource_limit_release_hint{};
-    bool address_key_is_kernel{};
+    bool is_kernel_address_key{};
     StackParameters stack_parameters{};
     Common::SpinLock context_guard{};
 
@@ -814,10 +930,12 @@ public:
 
     void SetConditionVariable(ConditionVariableThreadTree* tree, VAddr address, u64 cv_key,
                               u32 value) {
+        ASSERT(waiting_lock_info == nullptr);
         condvar_tree = tree;
         condvar_key = cv_key;
         address_key = address;
         address_key_value = value;
+        is_kernel_address_key = false;
     }
 
     void ClearConditionVariable() {
@@ -829,6 +947,7 @@ public:
     }
 
     void SetAddressArbiter(ConditionVariableThreadTree* tree, u64 address) {
+        ASSERT(waiting_lock_info == nullptr);
         condvar_tree = tree;
         condvar_key = address;
     }
