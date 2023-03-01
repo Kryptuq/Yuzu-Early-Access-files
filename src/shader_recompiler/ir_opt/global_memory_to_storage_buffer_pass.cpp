@@ -35,6 +35,7 @@ struct Bias {
     u32 index;
     u32 offset_begin;
     u32 offset_end;
+    u32 alignment;
 };
 
 using boost::container::flat_set;
@@ -349,7 +350,8 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
             .index = index.U32(),
             .offset = offset.U32(),
         };
-        if (!Common::IsAligned(storage_buffer.offset, 16)) {
+        const u32 alignment{bias ? bias->alignment : 8U};
+        if (!Common::IsAligned(storage_buffer.offset, alignment)) {
             // The SSBO pointer has to be aligned
             return std::nullopt;
         }
@@ -371,6 +373,7 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
         .index = 0,
         .offset_begin = 0x110,
         .offset_end = 0x610,
+        .alignment = 16,
     };
     // Track the low address of the instruction
     const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(&inst)};
@@ -386,8 +389,11 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
         storage_buffer = Track(low_addr, nullptr);
         if (!storage_buffer) {
             // If that also fails, use NVN fallbacks
+            LOG_WARNING(Shader, "Storage buffer failed to track, using global memory fallbacks");
             return;
         }
+        LOG_WARNING(Shader, "Storage buffer tracked without bias, index {} offset {}",
+                    storage_buffer->index, storage_buffer->offset);
     }
     // Collect storage buffer and the instruction
     if (IsGlobalMemoryWrite(inst)) {

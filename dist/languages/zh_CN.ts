@@ -1635,12 +1635,12 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="563"/>
         <source>Use global FSR Sharpness</source>
-        <translation>启用全局 FSR 锐化</translation>
+        <translation>使用全局 FSR 锐化度</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="568"/>
         <source>Set FSR Sharpness</source>
-        <translation>设置 FSR 锐化</translation>
+        <translation>设置 FSR 锐化度</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="582"/>
@@ -1729,76 +1729,86 @@ This would ban both their forum username and their IP address.</source>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="95"/>
+        <source>Enables asynchronous ASTC texture decoding, which may reduce load time stutter. This feature is experimental.</source>
+        <translation>启用异步 ASTC 纹理解码，可能减少加载时的卡顿。实验性功能。</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="98"/>
+        <source>Decode ASTC textures asynchronously (Hack)</source>
+        <translation>异步 ASTC 纹理解码 (不稳定)</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="105"/>
         <source>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</source>
         <translation>启用异步着色器编译，这可能会减少着色器卡顿。实验性功能。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="98"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="108"/>
         <source>Use asynchronous shader building (Hack)</source>
         <translation>启用异步着色器构建 (不稳定)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="105"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="115"/>
         <source>Enables Fast GPU Time. This option will force most games to run at their highest native resolution.</source>
         <translation>启用快速 GPU 时钟。此选项将强制大多数游戏以其最高分辨率运行。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="108"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="118"/>
         <source>Use Fast GPU Time (Hack)</source>
         <translation>启用快速 GPU 时钟 (不稳定)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="115"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="125"/>
         <source>Enables pessimistic buffer flushes. This option will force unmodified buffers to be flushed, which can cost performance.</source>
         <translation>启用悲观缓冲区刷新。此选项将强制刷新未修改的缓冲区，可能会降低性能。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="118"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="128"/>
         <source>Use pessimistic buffer flushes (Hack)</source>
         <translation>启用悲观缓冲区刷新 (不稳定)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="125"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="135"/>
         <source>Enables GPU vendor-specific pipeline cache. This option can improve shader loading time significantly in cases where the Vulkan driver does not store pipeline cache files internally.</source>
         <translation>启用 GPU 供应商专用的管线缓存。在 Vulkan 驱动程序内部不存储管线缓存的情况下，此选项可显著提高着色器加载速度。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="128"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="138"/>
         <source>Use Vulkan pipeline cache</source>
         <translation>启用 Vulkan 管线缓存</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="150"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="160"/>
         <source>Anisotropic Filtering:</source>
         <translation>各向异性过滤：</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="158"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="168"/>
         <source>Automatic</source>
         <translation>自动</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="163"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="173"/>
         <source>Default</source>
         <translation>系统默认</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="168"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="178"/>
         <source>2x</source>
         <translation>2x</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="173"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="183"/>
         <source>4x</source>
         <translation>4x</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="178"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="188"/>
         <source>8x</source>
         <translation>8x</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="183"/>
+        <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="193"/>
         <source>16x</source>
         <translation>16x</translation>
     </message>
@@ -2186,7 +2196,7 @@ This would ban both their forum username and their IP address.</source>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2602"/>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2616"/>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2630"/>
-        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2759"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2775"/>
         <source>Configure</source>
         <translation>设置</translation>
     </message>
@@ -2213,6 +2223,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2659"/>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2701"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2717"/>
         <source>Requires restarting yuzu</source>
         <translation>需要重启 yuzu</translation>
     </message>
@@ -2237,22 +2248,27 @@ This would ban both their forum username and their IP address.</source>
         <translation>启用 JoyCon 直接驱动</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2723"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2726"/>
+        <source>Enable direct Pro Controller driver [EXPERIMENTAL]</source>
+        <translation>启用 Pro Controller 直接驱动 [实验性]</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2739"/>
         <source>Enable mouse panning</source>
         <translation>启用鼠标平移</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2730"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2746"/>
         <source>Mouse sensitivity</source>
         <translation>鼠标灵敏度</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2736"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2752"/>
         <source>%</source>
         <translation>%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2752"/>
+        <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2768"/>
         <source>Motion / Touch</source>
         <translation>体感/触摸</translation>
     </message>
@@ -2364,7 +2380,7 @@ This would ban both their forum username and their IP address.</source>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="272"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1307"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1314"/>
         <source>Left Stick</source>
         <translation>左摇杆</translation>
     </message>
@@ -2458,14 +2474,14 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1232"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1271"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1312"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1319"/>
         <source>L</source>
         <translation>L</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1287"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1326"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1304"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1311"/>
         <source>ZL</source>
         <translation>ZL</translation>
     </message>
@@ -2484,7 +2500,7 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1526"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1565"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1303"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1310"/>
         <source>Plus</source>
         <translation>＋</translation>
     </message>
@@ -2497,15 +2513,15 @@ This would ban both their forum username and their IP address.</source>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1679"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1718"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1306"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1313"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1320"/>
         <source>R</source>
         <translation>R</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1734"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="1773"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1305"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1312"/>
         <source>ZR</source>
         <translation>ZR</translation>
     </message>
@@ -2562,236 +2578,241 @@ This would ban both their forum username and their IP address.</source>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_player.ui" line="2497"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1308"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1315"/>
         <source>Right Stick</source>
         <translation>右摇杆</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="381"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="454"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="549"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="644"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="382"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="461"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="556"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="651"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="383"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="456"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="553"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="572"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="646"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="384"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="463"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="560"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="579"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="653"/>
         <source>[not set]</source>
         <translation>[未设置]</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="386"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="658"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="387"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="665"/>
         <source>Invert button</source>
-        <translation>反转按钮</translation>
+        <translation>反转按键</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="392"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="649"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="393"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="656"/>
         <source>Toggle button</source>
-        <translation>切换按键</translation>
+        <translation>切换键</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="400"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="600"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="399"/>
+        <source>Turbo button</source>
+        <translation>连发键</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="407"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="607"/>
         <source>Invert axis</source>
         <translation>体感方向倒置</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="406"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="410"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="463"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="413"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="417"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="470"/>
         <source>Set threshold</source>
         <translation>阈值设定</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="410"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="463"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="417"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="470"/>
         <source>Choose a value between 0% and 100%</source>
         <translation>选择一个介于 0% 和 100% 之间的值</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="422"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="429"/>
         <source>Toggle axis</source>
         <translation>切换轴</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="459"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="466"/>
         <source>Set gyro threshold</source>
         <translation>陀螺仪阈值设定</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="505"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="512"/>
         <source>Map Analog Stick</source>
         <translation>映射摇杆</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="506"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="513"/>
         <source>After pressing OK, first move your joystick horizontally, and then vertically.
 To invert the axes, first move your joystick vertically, and then horizontally.</source>
         <translation>在按下确定后，首先水平移动你的手柄，然后垂直移动它。
 如果要使体感方向倒置，首先垂直移动你的手柄，然后水平移动它。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="574"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="581"/>
         <source>Center axis</source>
         <translation>中心轴</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="682"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1032"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="689"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1039"/>
         <source>Deadzone: %1%</source>
         <translation>摇杆死区：%1%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="691"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1037"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="698"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1044"/>
         <source>Modifier Range: %1%</source>
         <translation>摇杆灵敏度：%1%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="717"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1062"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="724"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1069"/>
         <source>Pro Controller</source>
         <translation>Pro Controller</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1066"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1073"/>
         <source>Dual Joycons</source>
         <translation>双 Joycons 手柄</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1070"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1077"/>
         <source>Left Joycon</source>
         <translation>左 Joycon 手柄</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1074"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1081"/>
         <source>Right Joycon</source>
         <translation>右 Joycon 手柄</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1078"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1085"/>
         <source>Handheld</source>
         <translation>掌机模式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1082"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1089"/>
         <source>GameCube Controller</source>
         <translation>GameCube 控制器</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1091"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1098"/>
         <source>Poke Ball Plus</source>
         <translation>精灵球 PLUS</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1095"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1102"/>
         <source>NES Controller</source>
         <translation>NES 控制器</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1099"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1106"/>
         <source>SNES Controller</source>
         <translation>SNES 控制器</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1103"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1110"/>
         <source>N64 Controller</source>
         <translation>N64 控制器</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1107"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1114"/>
         <source>Sega Genesis</source>
         <translation>世嘉创世纪</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1311"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1318"/>
         <source>Start / Pause</source>
         <translation>开始 / 暂停</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1314"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1321"/>
         <source>Z</source>
         <translation>Z</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1315"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1322"/>
         <source>Control Stick</source>
         <translation>控制摇杆</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1316"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1323"/>
         <source>C-Stick</source>
         <translation>C 摇杆</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1417"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1424"/>
         <source>Shake!</source>
         <translation>摇动！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1419"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1426"/>
         <source>[waiting]</source>
         <translation>[等待中]</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1514"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1521"/>
         <source>New Profile</source>
         <translation>新建自定义设置</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1514"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1521"/>
         <source>Enter a profile name:</source>
         <translation>输入配置文件名称：</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1522"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1530"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1529"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1537"/>
         <source>Create Input Profile</source>
         <translation>新建输入配置文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1523"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1530"/>
         <source>The given profile name is not valid!</source>
         <translation>输入的配置文件名称无效！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1531"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1538"/>
         <source>Failed to create the input profile &quot;%1&quot;</source>
         <translation>新建输入配置文件 &quot;%1&quot; 失败</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1551"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1558"/>
         <source>Delete Input Profile</source>
         <translation>删除输入配置文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1552"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1559"/>
         <source>Failed to delete the input profile &quot;%1&quot;</source>
         <translation>删除输入配置文件 &quot;%1&quot; 失败</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1574"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1581"/>
         <source>Load Input Profile</source>
         <translation>加载输入配置文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1575"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1582"/>
         <source>Failed to load the input profile &quot;%1&quot;</source>
         <translation>加载输入配置文件 &quot;%1&quot; 失败</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1600"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1607"/>
         <source>Save Input Profile</source>
         <translation>保存输入配置文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1601"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="1608"/>
         <source>Failed to save the input profile &quot;%1&quot;</source>
         <translation>保存输入配置文件 &quot;%1&quot; 失败</translation>
     </message>
@@ -4568,916 +4589,937 @@ Drag points to change position, or double-click table cells to edit values.</sou
         <translation>Vulkan 初始化失败。&lt;br&gt;&lt;br&gt;点击&lt;a href=&apos;https://yuzu-emu.org/wiki/faq/#yuzu-starts-with-the-error-broken-vulkan-installation-detected&apos;&gt;这里&lt;/a&gt;获取此问题的相关信息。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="770"/>
+        <location filename="../../src/yuzu/main.cpp" line="774"/>
         <source>Loading Web Applet...</source>
         <translation>正在加载 Web 应用程序...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="817"/>
-        <location filename="../../src/yuzu/main.cpp" line="820"/>
+        <location filename="../../src/yuzu/main.cpp" line="824"/>
+        <location filename="../../src/yuzu/main.cpp" line="827"/>
         <source>Disable Web Applet</source>
         <translation>禁用 Web 应用程序</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="821"/>
+        <location filename="../../src/yuzu/main.cpp" line="828"/>
         <source>Disabling the web applet can lead to undefined behavior and should only be used with Super Mario 3D All-Stars. Are you sure you want to disable the web applet?
 (This can be re-enabled in the Debug settings.)</source>
         <translation>禁用 Web 应用程序可能会发生未知的行为，且只能在《超级马里奥 3D 全明星》中使用。您确定要禁用 Web 应用程序吗？
 (您可以在调试选项中重新启用它。)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="928"/>
+        <location filename="../../src/yuzu/main.cpp" line="935"/>
         <source>The amount of shaders currently being built</source>
         <translation>当前正在构建的着色器数量</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="930"/>
+        <location filename="../../src/yuzu/main.cpp" line="937"/>
         <source>The current selected resolution scaling multiplier.</source>
         <translation>当前选定的分辨率缩放比例。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="933"/>
+        <location filename="../../src/yuzu/main.cpp" line="940"/>
         <source>Current emulation speed. Values higher or lower than 100% indicate emulation is running faster or slower than a Switch.</source>
         <translation>当前的模拟速度。高于或低于 100% 的值表示运行速度比实际的 Switch 更快或更慢。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="936"/>
+        <location filename="../../src/yuzu/main.cpp" line="943"/>
         <source>How many frames per second the game is currently displaying. This will vary from game to game and scene to scene.</source>
         <translation>游戏当前运行的帧率。这将因游戏和场景的不同而有所变化。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="940"/>
+        <location filename="../../src/yuzu/main.cpp" line="947"/>
         <source>Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For full-speed emulation this should be at most 16.67 ms.</source>
         <translation>在不计算速度限制和垂直同步的情况下，模拟一个 Switch 帧的实际时间。若要进行全速模拟，这个数值不应超过 16.67 毫秒。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1058"/>
+        <location filename="../../src/yuzu/main.cpp" line="1097"/>
         <source>&amp;Clear Recent Files</source>
         <translation>清除最近文件 (&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1367"/>
+        <location filename="../../src/yuzu/main.cpp" line="1171"/>
+        <source>Emulated mouse is enabled</source>
+        <translation>已启用模拟鼠标</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="1172"/>
+        <source>Real mouse input and mouse panning are incompatible. Please disable the emulated mouse in input advanced settings to allow mouse panning.</source>
+        <translation>实体鼠标输入与鼠标平移不兼容。请在高级输入设置中禁用模拟鼠标以使用鼠标平移。</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="1394"/>
         <source>&amp;Continue</source>
         <translation>继续 (&amp;C)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1369"/>
+        <location filename="../../src/yuzu/main.cpp" line="1396"/>
         <source>&amp;Pause</source>
         <translation>暂停 (&amp;P)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1449"/>
+        <location filename="../../src/yuzu/main.cpp" line="1476"/>
         <source>yuzu is running a game</source>
         <extracomment>TRANSLATORS: This string is shown to the user to explain why yuzu needs to prevent the computer from sleeping</extracomment>
         <translation>yuzu 正在运行中</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1582"/>
+        <location filename="../../src/yuzu/main.cpp" line="1609"/>
         <source>Warning Outdated Game Format</source>
         <translation>过时游戏格式警告</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1583"/>
+        <location filename="../../src/yuzu/main.cpp" line="1610"/>
         <source>You are using the deconstructed ROM directory format for this game, which is an outdated format that has been superseded by others such as NCA, NAX, XCI, or NSP. Deconstructed ROM directories lack icons, metadata, and update support.&lt;br&gt;&lt;br&gt;For an explanation of the various Switch formats yuzu supports, &lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt;check out our wiki&lt;/a&gt;. This message will not be shown again.</source>
         <translation>目前使用的游戏为解体的 ROM 目录格式，这是一种过时的格式，已被其他格式替代，如 NCA，NAX，XCI 或 NSP。解体的 ROM 目录缺少图标、元数据和更新支持。&lt;br&gt;&lt;br&gt;有关 yuzu 支持的各种 Switch 格式的说明，&lt;a href=&apos;https://yuzu-emu.org/wiki/overview-of-switch-game-formats&apos;&gt;请查看我们的 wiki&lt;/a&gt;。此消息将不会再次出现。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1595"/>
-        <location filename="../../src/yuzu/main.cpp" line="1629"/>
+        <location filename="../../src/yuzu/main.cpp" line="1622"/>
+        <location filename="../../src/yuzu/main.cpp" line="1656"/>
         <source>Error while loading ROM!</source>
         <translation>加载 ROM 时出错！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1596"/>
+        <location filename="../../src/yuzu/main.cpp" line="1623"/>
         <source>The ROM format is not supported.</source>
         <translation>该 ROM 格式不受支持。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1600"/>
+        <location filename="../../src/yuzu/main.cpp" line="1627"/>
         <source>An error occurred initializing the video core.</source>
         <translation>初始化视频核心时发生错误</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1601"/>
+        <location filename="../../src/yuzu/main.cpp" line="1628"/>
         <source>yuzu has encountered an error while running the video core. This is usually caused by outdated GPU drivers, including integrated ones. Please see the log for more details. For more information on accessing the log, please see the following page: &lt;a href=&apos;https://yuzu-emu.org/help/reference/log-files/&apos;&gt;How to Upload the Log File&lt;/a&gt;. </source>
         <translation>yuzu 在运行视频核心时发生错误。这可能是由 GPU 驱动程序过旧造成的。有关详细信息，请参阅日志文件。关于日志文件的更多信息，请参考以下页面：&lt;a href=&apos;https://yuzu-emu.org/help/reference/log-files/&apos;&gt;如何上传日志文件&lt;/a&gt;。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1616"/>
+        <location filename="../../src/yuzu/main.cpp" line="1643"/>
         <source>Error while loading ROM! %1</source>
         <comment>%1 signifies a numeric error code.</comment>
         <translation>加载 ROM 时出错！ %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1619"/>
+        <location filename="../../src/yuzu/main.cpp" line="1646"/>
         <source>%1&lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to redump your files.&lt;br&gt;You can refer to the yuzu wiki&lt;/a&gt; or the yuzu Discord&lt;/a&gt; for help.</source>
         <comment>%1 signifies an error string.</comment>
         <translation>%1&lt;br&gt;请参考&lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;yuzu 快速导航&lt;/a&gt;以获取相关文件。&lt;br&gt;您可以参考 yuzu 的 wiki 页面&lt;/a&gt;或 Discord 社区&lt;/a&gt;以获得帮助。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1630"/>
+        <location filename="../../src/yuzu/main.cpp" line="1657"/>
         <source>An unknown error occurred. Please see the log for more details.</source>
         <translation>发生了未知错误。请查看日志了解详情。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1765"/>
+        <location filename="../../src/yuzu/main.cpp" line="1792"/>
         <source>(64-bit)</source>
         <translation>(64-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1765"/>
+        <location filename="../../src/yuzu/main.cpp" line="1792"/>
         <source>(32-bit)</source>
         <translation>(32-bit)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1766"/>
+        <location filename="../../src/yuzu/main.cpp" line="1793"/>
         <source>%1 %2</source>
         <comment>%1 is the title name. %2 indicates if the title is 64-bit or 32-bit</comment>
         <translation>%1 %2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1824"/>
+        <location filename="../../src/yuzu/main.cpp" line="1851"/>
         <source>Closing software...</source>
         <translation>正在关闭…</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="1973"/>
+        <location filename="../../src/yuzu/main.cpp" line="2000"/>
         <source>Save Data</source>
         <translation>保存数据</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2023"/>
+        <location filename="../../src/yuzu/main.cpp" line="2050"/>
         <source>Mod Data</source>
         <translation>Mod 数据</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2036"/>
+        <location filename="../../src/yuzu/main.cpp" line="2063"/>
         <source>Error Opening %1 Folder</source>
         <translation>打开 %1 文件夹时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2037"/>
-        <location filename="../../src/yuzu/main.cpp" line="2619"/>
+        <location filename="../../src/yuzu/main.cpp" line="2064"/>
+        <location filename="../../src/yuzu/main.cpp" line="2646"/>
         <source>Folder does not exist!</source>
         <translation>文件夹不存在！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2049"/>
+        <location filename="../../src/yuzu/main.cpp" line="2076"/>
         <source>Error Opening Transferable Shader Cache</source>
         <translation>打开可转移着色器缓存时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2050"/>
+        <location filename="../../src/yuzu/main.cpp" line="2077"/>
         <source>Failed to create the shader cache directory for this title.</source>
         <translation>为该游戏创建着色器缓存目录时失败。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2101"/>
+        <location filename="../../src/yuzu/main.cpp" line="2128"/>
         <source>Error Removing Contents</source>
         <translation>删除内容时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2103"/>
+        <location filename="../../src/yuzu/main.cpp" line="2130"/>
         <source>Error Removing Update</source>
         <translation>删除更新时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2105"/>
+        <location filename="../../src/yuzu/main.cpp" line="2132"/>
         <source>Error Removing DLC</source>
         <translation>删除 DLC 时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2114"/>
+        <location filename="../../src/yuzu/main.cpp" line="2141"/>
         <source>Remove Installed Game Contents?</source>
         <translation>删除已安装的游戏内容？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2116"/>
+        <location filename="../../src/yuzu/main.cpp" line="2143"/>
         <source>Remove Installed Game Update?</source>
         <translation>删除已安装的游戏更新？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2118"/>
+        <location filename="../../src/yuzu/main.cpp" line="2145"/>
         <source>Remove Installed Game DLC?</source>
         <translation>删除已安装的游戏 DLC 内容？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2124"/>
+        <location filename="../../src/yuzu/main.cpp" line="2151"/>
         <source>Remove Entry</source>
         <translation>删除项目</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2155"/>
-        <location filename="../../src/yuzu/main.cpp" line="2171"/>
-        <location filename="../../src/yuzu/main.cpp" line="2202"/>
-        <location filename="../../src/yuzu/main.cpp" line="2265"/>
-        <location filename="../../src/yuzu/main.cpp" line="2299"/>
-        <location filename="../../src/yuzu/main.cpp" line="2322"/>
+        <location filename="../../src/yuzu/main.cpp" line="2182"/>
+        <location filename="../../src/yuzu/main.cpp" line="2198"/>
+        <location filename="../../src/yuzu/main.cpp" line="2229"/>
+        <location filename="../../src/yuzu/main.cpp" line="2292"/>
+        <location filename="../../src/yuzu/main.cpp" line="2326"/>
+        <location filename="../../src/yuzu/main.cpp" line="2349"/>
         <source>Successfully Removed</source>
         <translation>删除成功</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2156"/>
+        <location filename="../../src/yuzu/main.cpp" line="2183"/>
         <source>Successfully removed the installed base game.</source>
         <translation>成功删除已安装的游戏。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2160"/>
+        <location filename="../../src/yuzu/main.cpp" line="2187"/>
         <source>The base game is not installed in the NAND and cannot be removed.</source>
         <translation>该游戏未安装于 NAND 中，无法删除。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2172"/>
+        <location filename="../../src/yuzu/main.cpp" line="2199"/>
         <source>Successfully removed the installed update.</source>
         <translation>成功删除已安装的游戏更新。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2175"/>
+        <location filename="../../src/yuzu/main.cpp" line="2202"/>
         <source>There is no update installed for this title.</source>
         <translation>这个游戏没有任何已安装的更新。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2198"/>
+        <location filename="../../src/yuzu/main.cpp" line="2225"/>
         <source>There are no DLC installed for this title.</source>
         <translation>这个游戏没有任何已安装的 DLC 。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2203"/>
+        <location filename="../../src/yuzu/main.cpp" line="2230"/>
         <source>Successfully removed %1 installed DLC.</source>
         <translation>成功删除游戏 %1 安装的 DLC 。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2211"/>
+        <location filename="../../src/yuzu/main.cpp" line="2238"/>
         <source>Delete OpenGL Transferable Shader Cache?</source>
         <translation>删除 OpenGL 模式的着色器缓存？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2213"/>
+        <location filename="../../src/yuzu/main.cpp" line="2240"/>
         <source>Delete Vulkan Transferable Shader Cache?</source>
         <translation>删除 Vulkan 模式的着色器缓存？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2215"/>
+        <location filename="../../src/yuzu/main.cpp" line="2242"/>
         <source>Delete All Transferable Shader Caches?</source>
         <translation>删除所有的着色器缓存？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2217"/>
+        <location filename="../../src/yuzu/main.cpp" line="2244"/>
         <source>Remove Custom Game Configuration?</source>
         <translation>移除自定义游戏设置？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2223"/>
+        <location filename="../../src/yuzu/main.cpp" line="2250"/>
         <source>Remove File</source>
         <translation>删除文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2260"/>
-        <location filename="../../src/yuzu/main.cpp" line="2268"/>
+        <location filename="../../src/yuzu/main.cpp" line="2287"/>
+        <location filename="../../src/yuzu/main.cpp" line="2295"/>
         <source>Error Removing Transferable Shader Cache</source>
         <translation>删除着色器缓存时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2261"/>
-        <location filename="../../src/yuzu/main.cpp" line="2295"/>
+        <location filename="../../src/yuzu/main.cpp" line="2288"/>
+        <location filename="../../src/yuzu/main.cpp" line="2322"/>
         <source>A shader cache for this title does not exist.</source>
         <translation>这个游戏的着色器缓存不存在。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2266"/>
+        <location filename="../../src/yuzu/main.cpp" line="2293"/>
         <source>Successfully removed the transferable shader cache.</source>
         <translation>成功删除着色器缓存。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2269"/>
+        <location filename="../../src/yuzu/main.cpp" line="2296"/>
         <source>Failed to remove the transferable shader cache.</source>
         <translation>删除着色器缓存失败。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2284"/>
+        <location filename="../../src/yuzu/main.cpp" line="2311"/>
         <source>Error Removing Vulkan Driver Pipeline Cache</source>
         <translation>删除 Vulkan 驱动程序管线缓存时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2285"/>
+        <location filename="../../src/yuzu/main.cpp" line="2312"/>
         <source>Failed to remove the driver pipeline cache.</source>
         <translation>删除驱动程序管线缓存失败。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2294"/>
-        <location filename="../../src/yuzu/main.cpp" line="2302"/>
+        <location filename="../../src/yuzu/main.cpp" line="2321"/>
+        <location filename="../../src/yuzu/main.cpp" line="2329"/>
         <source>Error Removing Transferable Shader Caches</source>
         <translation>删除着色器缓存时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2300"/>
+        <location filename="../../src/yuzu/main.cpp" line="2327"/>
         <source>Successfully removed the transferable shader caches.</source>
         <translation>着色器缓存删除成功。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2303"/>
+        <location filename="../../src/yuzu/main.cpp" line="2330"/>
         <source>Failed to remove the transferable shader cache directory.</source>
         <translation>删除着色器缓存目录失败。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2316"/>
-        <location filename="../../src/yuzu/main.cpp" line="2325"/>
+        <location filename="../../src/yuzu/main.cpp" line="2343"/>
+        <location filename="../../src/yuzu/main.cpp" line="2352"/>
         <source>Error Removing Custom Configuration</source>
         <translation>移除自定义游戏设置时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2317"/>
+        <location filename="../../src/yuzu/main.cpp" line="2344"/>
         <source>A custom configuration for this title does not exist.</source>
         <translation>这个游戏的自定义设置不存在。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2323"/>
+        <location filename="../../src/yuzu/main.cpp" line="2350"/>
         <source>Successfully removed the custom game configuration.</source>
         <translation>成功移除自定义游戏设置。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2326"/>
+        <location filename="../../src/yuzu/main.cpp" line="2353"/>
         <source>Failed to remove the custom game configuration.</source>
         <translation>移除自定义游戏设置失败。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2333"/>
-        <location filename="../../src/yuzu/main.cpp" line="2412"/>
+        <location filename="../../src/yuzu/main.cpp" line="2360"/>
+        <location filename="../../src/yuzu/main.cpp" line="2439"/>
         <source>RomFS Extraction Failed!</source>
         <translation>RomFS 提取失败！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2334"/>
+        <location filename="../../src/yuzu/main.cpp" line="2361"/>
         <source>There was an error copying the RomFS files or the user cancelled the operation.</source>
         <translation>复制 RomFS 文件时出错，或用户取消了操作。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2392"/>
+        <location filename="../../src/yuzu/main.cpp" line="2419"/>
         <source>Full</source>
         <translation>完整</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2392"/>
+        <location filename="../../src/yuzu/main.cpp" line="2419"/>
         <source>Skeleton</source>
         <translation>框架</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2394"/>
+        <location filename="../../src/yuzu/main.cpp" line="2421"/>
         <source>Select RomFS Dump Mode</source>
         <translation>选择 RomFS 转储模式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2395"/>
+        <location filename="../../src/yuzu/main.cpp" line="2422"/>
         <source>Please select the how you would like the RomFS dumped.&lt;br&gt;Full will copy all of the files into the new directory while &lt;br&gt;skeleton will only create the directory structure.</source>
         <translation>请选择 RomFS 转储的方式。&lt;br&gt;“完整” 会将所有文件复制到新目录中，而&lt;br&gt;“框架” 只会创建目录结构。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2413"/>
+        <location filename="../../src/yuzu/main.cpp" line="2440"/>
         <source>There is not enough free space at %1 to extract the RomFS. Please free up space or select a different dump directory at Emulation &gt; Configure &gt; System &gt; Filesystem &gt; Dump Root</source>
         <translation>%1 没有足够的空间用于提取 RomFS。请保持足够的空间或于模拟—&gt;设置—&gt;系统—&gt;文件系统—&gt;转储根目录中选择一个其他目录。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2420"/>
+        <location filename="../../src/yuzu/main.cpp" line="2447"/>
         <source>Extracting RomFS...</source>
         <translation>正在提取 RomFS...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2420"/>
-        <location filename="../../src/yuzu/main.cpp" line="2755"/>
+        <location filename="../../src/yuzu/main.cpp" line="2447"/>
+        <location filename="../../src/yuzu/main.cpp" line="2784"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2427"/>
+        <location filename="../../src/yuzu/main.cpp" line="2454"/>
         <source>RomFS Extraction Succeeded!</source>
         <translation>RomFS 提取成功！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2428"/>
+        <location filename="../../src/yuzu/main.cpp" line="2455"/>
         <source>The operation completed successfully.</source>
         <translation>操作成功完成。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2472"/>
-        <location filename="../../src/yuzu/main.cpp" line="2496"/>
-        <location filename="../../src/yuzu/main.cpp" line="2506"/>
-        <location filename="../../src/yuzu/main.cpp" line="2588"/>
-        <location filename="../../src/yuzu/main.cpp" line="2596"/>
+        <location filename="../../src/yuzu/main.cpp" line="2499"/>
+        <location filename="../../src/yuzu/main.cpp" line="2523"/>
+        <location filename="../../src/yuzu/main.cpp" line="2533"/>
+        <location filename="../../src/yuzu/main.cpp" line="2615"/>
+        <location filename="../../src/yuzu/main.cpp" line="2623"/>
         <source>Create Shortcut</source>
         <translation>创建快捷方式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2473"/>
+        <location filename="../../src/yuzu/main.cpp" line="2500"/>
         <source>This will create a shortcut to the current AppImage. This may not work well if you update. Continue?</source>
         <translation>这将为当前的游戏创建快捷方式。但在其更新后，快捷方式可能无法正常工作。是否继续？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2497"/>
+        <location filename="../../src/yuzu/main.cpp" line="2524"/>
         <source>Cannot create shortcut on desktop. Path &quot;%1&quot; does not exist.</source>
         <translation>无法在桌面创建快捷方式。路径“ %1 ”不存在。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2507"/>
+        <location filename="../../src/yuzu/main.cpp" line="2534"/>
         <source>Cannot create shortcut in applications menu. Path &quot;%1&quot; does not exist and cannot be created.</source>
         <translation>无法在应用程序菜单中创建快捷方式。路径“ %1 ”不存在且无法被创建。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2524"/>
+        <location filename="../../src/yuzu/main.cpp" line="2551"/>
         <source>Create Icon</source>
         <translation>创建图标</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2525"/>
+        <location filename="../../src/yuzu/main.cpp" line="2552"/>
         <source>Cannot create icon file. Path &quot;%1&quot; does not exist and cannot be created.</source>
         <translation>无法创建图标文件。路径“ %1 ”不存在且无法被创建。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2576"/>
+        <location filename="../../src/yuzu/main.cpp" line="2603"/>
         <source>Start %1 with the yuzu Emulator</source>
         <translation>使用 yuzu 启动 %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2589"/>
+        <location filename="../../src/yuzu/main.cpp" line="2616"/>
         <source>Failed to create a shortcut at %1</source>
         <translation>在 %1 处创建快捷方式时失败</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2597"/>
+        <location filename="../../src/yuzu/main.cpp" line="2624"/>
         <source>Successfully created a shortcut to %1</source>
         <translation>成功地在 %1 处创建快捷方式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2618"/>
+        <location filename="../../src/yuzu/main.cpp" line="2645"/>
         <source>Error Opening %1</source>
         <translation>打开 %1 时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2627"/>
+        <location filename="../../src/yuzu/main.cpp" line="2654"/>
         <source>Select Directory</source>
         <translation>选择目录</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2654"/>
+        <location filename="../../src/yuzu/main.cpp" line="2683"/>
         <source>Properties</source>
         <translation>属性</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2655"/>
+        <location filename="../../src/yuzu/main.cpp" line="2684"/>
         <source>The game properties could not be loaded.</source>
         <translation>无法加载该游戏的属性信息。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2672"/>
+        <location filename="../../src/yuzu/main.cpp" line="2701"/>
         <source>Switch Executable (%1);;All Files (*.*)</source>
         <comment>%1 is an identifier for the Switch executable file extensions.</comment>
         <translation>Switch 可执行文件 (%1);;所有文件 (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2676"/>
+        <location filename="../../src/yuzu/main.cpp" line="2705"/>
         <source>Load File</source>
         <translation>加载文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2689"/>
+        <location filename="../../src/yuzu/main.cpp" line="2718"/>
         <source>Open Extracted ROM Directory</source>
         <translation>打开提取的 ROM 目录</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2700"/>
+        <location filename="../../src/yuzu/main.cpp" line="2729"/>
         <source>Invalid Directory Selected</source>
         <translation>选择的目录无效</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2701"/>
+        <location filename="../../src/yuzu/main.cpp" line="2730"/>
         <source>The directory you have selected does not contain a &apos;main&apos; file.</source>
         <translation>选择的目录不包含 “main” 文件。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2711"/>
+        <location filename="../../src/yuzu/main.cpp" line="2740"/>
         <source>Installable Switch File (*.nca *.nsp *.xci);;Nintendo Content Archive (*.nca);;Nintendo Submission Package (*.nsp);;NX Cartridge Image (*.xci)</source>
         <translation>可安装 Switch 文件 (*.nca *.nsp *.xci);;任天堂内容档案 (*.nca);;任天堂应用包 (*.nsp);;NX 卡带镜像 (*.xci)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2716"/>
+        <location filename="../../src/yuzu/main.cpp" line="2745"/>
         <source>Install Files</source>
         <translation>安装文件</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2762"/>
+        <location filename="../../src/yuzu/main.cpp" line="2791"/>
         <source>%n file(s) remaining</source>
         <translation><numerusform>剩余 %n 个文件</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2764"/>
+        <location filename="../../src/yuzu/main.cpp" line="2793"/>
         <source>Installing file &quot;%1&quot;...</source>
         <translation>正在安装文件 &quot;%1&quot;...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2810"/>
-        <location filename="../../src/yuzu/main.cpp" line="2824"/>
+        <location filename="../../src/yuzu/main.cpp" line="2839"/>
+        <location filename="../../src/yuzu/main.cpp" line="2853"/>
         <source>Install Results</source>
         <translation>安装结果</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2811"/>
+        <location filename="../../src/yuzu/main.cpp" line="2840"/>
         <source>To avoid possible conflicts, we discourage users from installing base games to the NAND.
 Please, only use this feature to install updates and DLC.</source>
         <translation>为了避免可能存在的冲突，我们不建议将游戏本体安装到 NAND 中。
 此功能仅用于安装游戏更新和 DLC 。</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2817"/>
+        <location filename="../../src/yuzu/main.cpp" line="2846"/>
         <source>%n file(s) were newly installed
 </source>
         <translation><numerusform>最近安装了 %n 个文件
 </numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2820"/>
+        <location filename="../../src/yuzu/main.cpp" line="2849"/>
         <source>%n file(s) were overwritten
 </source>
         <translation><numerusform>%n 个文件被覆盖
 </numerusform></translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="2822"/>
+        <location filename="../../src/yuzu/main.cpp" line="2851"/>
         <source>%n file(s) failed to install
 </source>
         <translation><numerusform>%n 个文件安装失败
 </numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2923"/>
+        <location filename="../../src/yuzu/main.cpp" line="2952"/>
         <source>System Application</source>
         <translation>系统应用</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2924"/>
+        <location filename="../../src/yuzu/main.cpp" line="2953"/>
         <source>System Archive</source>
         <translation>系统档案</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2925"/>
+        <location filename="../../src/yuzu/main.cpp" line="2954"/>
         <source>System Application Update</source>
         <translation>系统应用更新</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2926"/>
+        <location filename="../../src/yuzu/main.cpp" line="2955"/>
         <source>Firmware Package (Type A)</source>
         <translation>固件包 (A型)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2927"/>
+        <location filename="../../src/yuzu/main.cpp" line="2956"/>
         <source>Firmware Package (Type B)</source>
         <translation>固件包 (B型)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2928"/>
+        <location filename="../../src/yuzu/main.cpp" line="2957"/>
         <source>Game</source>
         <translation>游戏</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2929"/>
+        <location filename="../../src/yuzu/main.cpp" line="2958"/>
         <source>Game Update</source>
         <translation>游戏更新</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2930"/>
+        <location filename="../../src/yuzu/main.cpp" line="2959"/>
         <source>Game DLC</source>
         <translation>游戏 DLC</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2931"/>
+        <location filename="../../src/yuzu/main.cpp" line="2960"/>
         <source>Delta Title</source>
         <translation>差量程序</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2934"/>
+        <location filename="../../src/yuzu/main.cpp" line="2963"/>
         <source>Select NCA Install Type...</source>
         <translation>选择 NCA 安装类型...</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2935"/>
+        <location filename="../../src/yuzu/main.cpp" line="2964"/>
         <source>Please select the type of title you would like to install this NCA as:
 (In most instances, the default &apos;Game&apos; is fine.)</source>
         <translation>请选择此 NCA 的程序类型：
 （在大多数情况下，选择默认的“游戏”即可。）</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2941"/>
+        <location filename="../../src/yuzu/main.cpp" line="2970"/>
         <source>Failed to Install</source>
         <translation>安装失败</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2942"/>
+        <location filename="../../src/yuzu/main.cpp" line="2971"/>
         <source>The title type you selected for the NCA is invalid.</source>
         <translation>选择的 NCA 程序类型无效。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2977"/>
+        <location filename="../../src/yuzu/main.cpp" line="3006"/>
         <source>File not found</source>
         <translation>找不到文件</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="2978"/>
+        <location filename="../../src/yuzu/main.cpp" line="3007"/>
         <source>File &quot;%1&quot; not found</source>
         <translation>文件 &quot;%1&quot; 未找到</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3052"/>
+        <location filename="../../src/yuzu/main.cpp" line="3083"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3069"/>
-        <location filename="../../src/yuzu/main.cpp" line="3088"/>
+        <location filename="../../src/yuzu/main.cpp" line="3100"/>
+        <location filename="../../src/yuzu/main.cpp" line="3119"/>
         <source>Hardware requirements not met</source>
         <translation>硬件不满足要求</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3070"/>
-        <location filename="../../src/yuzu/main.cpp" line="3089"/>
+        <location filename="../../src/yuzu/main.cpp" line="3101"/>
+        <location filename="../../src/yuzu/main.cpp" line="3120"/>
         <source>Your system does not meet the recommended hardware requirements. Compatibility reporting has been disabled.</source>
         <translation>您的系统不满足运行 yuzu 的推荐配置。兼容性报告已被禁用。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3081"/>
+        <location filename="../../src/yuzu/main.cpp" line="3112"/>
         <source>Missing yuzu Account</source>
         <translation>未设置 yuzu 账户</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3082"/>
+        <location filename="../../src/yuzu/main.cpp" line="3113"/>
         <source>In order to submit a game compatibility test case, you must link your yuzu account.&lt;br&gt;&lt;br/&gt;To link your yuzu account, go to Emulation &amp;gt; Configuration &amp;gt; Web.</source>
         <translation>要提交游戏兼容性测试用例，您必须设置您的 yuzu 帐户。&lt;br&gt;&lt;br/&gt;要设置您的 yuzu 帐户，请转到模拟 &amp;gt; 设置 &amp;gt; 网络。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3097"/>
+        <location filename="../../src/yuzu/main.cpp" line="3128"/>
         <source>Error opening URL</source>
         <translation>打开 URL 时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3098"/>
+        <location filename="../../src/yuzu/main.cpp" line="3129"/>
         <source>Unable to open the URL &quot;%1&quot;.</source>
         <translation>无法打开 URL : &quot;%1&quot; 。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3400"/>
+        <location filename="../../src/yuzu/main.cpp" line="3432"/>
         <source>TAS Recording</source>
         <translation>TAS 录制中</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3401"/>
+        <location filename="../../src/yuzu/main.cpp" line="3433"/>
         <source>Overwrite file of player 1?</source>
         <translation>覆盖玩家 1 的文件？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3427"/>
+        <location filename="../../src/yuzu/main.cpp" line="3459"/>
         <source>Invalid config detected</source>
         <translation>检测到无效配置</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3428"/>
+        <location filename="../../src/yuzu/main.cpp" line="3460"/>
         <source>Handheld controller can&apos;t be used on docked mode. Pro controller will be selected.</source>
         <translation>掌机手柄无法在主机模式中使用。将会选择 Pro controller。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3565"/>
-        <location filename="../../src/yuzu/main.cpp" line="3593"/>
+        <location filename="../../src/yuzu/main.cpp" line="3630"/>
+        <location filename="../../src/yuzu/main.cpp" line="3658"/>
         <source>Amiibo</source>
         <translation>Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3565"/>
-        <location filename="../../src/yuzu/main.cpp" line="3593"/>
+        <location filename="../../src/yuzu/main.cpp" line="3630"/>
+        <location filename="../../src/yuzu/main.cpp" line="3658"/>
         <source>The current amiibo has been removed</source>
         <translation>当前的 Amiibo 已被移除。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3570"/>
+        <location filename="../../src/yuzu/main.cpp" line="3635"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3570"/>
-        <location filename="../../src/yuzu/main.cpp" line="3605"/>
+        <location filename="../../src/yuzu/main.cpp" line="3635"/>
+        <location filename="../../src/yuzu/main.cpp" line="3670"/>
         <source>The current game is not looking for amiibos</source>
         <translation>当前游戏并没有在寻找 Amiibos</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3576"/>
+        <location filename="../../src/yuzu/main.cpp" line="3641"/>
         <source>Amiibo File (%1);; All Files (*.*)</source>
         <translation>Amiibo 文件 (%1);; 全部文件 (*.*)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3577"/>
+        <location filename="../../src/yuzu/main.cpp" line="3642"/>
         <source>Load Amiibo</source>
         <translation>加载 Amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3589"/>
+        <location filename="../../src/yuzu/main.cpp" line="3654"/>
         <source>Error loading Amiibo data</source>
         <translation>加载 Amiibo 数据时出错</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3599"/>
+        <location filename="../../src/yuzu/main.cpp" line="3664"/>
         <source>The selected file is not a valid amiibo</source>
         <translation>选择的文件并不是有效的 amiibo</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3602"/>
+        <location filename="../../src/yuzu/main.cpp" line="3667"/>
         <source>The selected file is already on use</source>
         <translation>选择的文件已在使用中</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3608"/>
+        <location filename="../../src/yuzu/main.cpp" line="3673"/>
         <source>An unknown error occurred</source>
         <translation>发生了未知错误</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3660"/>
+        <location filename="../../src/yuzu/main.cpp" line="3725"/>
         <source>Capture Screenshot</source>
         <translation>捕获截图</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3661"/>
+        <location filename="../../src/yuzu/main.cpp" line="3726"/>
         <source>PNG Image (*.png)</source>
         <translation>PNG 图像 (*.png)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3744"/>
+        <location filename="../../src/yuzu/main.cpp" line="3809"/>
         <source>TAS state: Running %1/%2</source>
         <translation>TAS 状态：正在运行 %1/%2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3748"/>
+        <location filename="../../src/yuzu/main.cpp" line="3813"/>
         <source>TAS state: Recording %1</source>
         <translation>TAS 状态：正在录制 %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3750"/>
+        <location filename="../../src/yuzu/main.cpp" line="3815"/>
         <source>TAS state: Idle %1/%2</source>
         <translation>TAS 状态：空闲 %1/%2</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3754"/>
+        <location filename="../../src/yuzu/main.cpp" line="3819"/>
         <source>TAS State: Invalid</source>
         <translation>TAS 状态：无效</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3768"/>
+        <location filename="../../src/yuzu/main.cpp" line="3833"/>
         <source>&amp;Stop Running</source>
         <translation>停止运行 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3768"/>
+        <location filename="../../src/yuzu/main.cpp" line="3833"/>
         <source>&amp;Start</source>
         <translation>开始 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3769"/>
+        <location filename="../../src/yuzu/main.cpp" line="3834"/>
         <source>Stop R&amp;ecording</source>
         <translation>停止录制 (&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3769"/>
+        <location filename="../../src/yuzu/main.cpp" line="3834"/>
         <source>R&amp;ecord</source>
         <translation>录制 (&amp;E)</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../src/yuzu/main.cpp" line="3793"/>
+        <location filename="../../src/yuzu/main.cpp" line="3858"/>
         <source>Building: %n shader(s)</source>
         <translation><numerusform>正在编译 %n 个着色器文件</numerusform></translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3802"/>
+        <location filename="../../src/yuzu/main.cpp" line="3867"/>
         <source>Scale: %1x</source>
         <comment>%1 is the resolution scaling factor</comment>
         <translation>缩放比例: %1x</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3805"/>
+        <location filename="../../src/yuzu/main.cpp" line="3870"/>
         <source>Speed: %1% / %2%</source>
         <translation>速度: %1% / %2%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3809"/>
+        <location filename="../../src/yuzu/main.cpp" line="3874"/>
         <source>Speed: %1%</source>
         <translation>速度: %1%</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3813"/>
+        <location filename="../../src/yuzu/main.cpp" line="3878"/>
         <source>Game: %1 FPS (Unlocked)</source>
         <translation>FPS: %1 (未锁定)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3816"/>
+        <location filename="../../src/yuzu/main.cpp" line="3881"/>
         <source>Game: %1 FPS</source>
         <translation>FPS: %1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3818"/>
+        <location filename="../../src/yuzu/main.cpp" line="3883"/>
         <source>Frame: %1 ms</source>
         <translation>帧延迟: %1 毫秒</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3829"/>
+        <location filename="../../src/yuzu/main.cpp" line="3894"/>
         <source>GPU NORMAL</source>
         <translation>GPU NORMAL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3834"/>
+        <location filename="../../src/yuzu/main.cpp" line="3899"/>
         <source>GPU HIGH</source>
         <translation>GPU HIGH</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3839"/>
+        <location filename="../../src/yuzu/main.cpp" line="3904"/>
         <source>GPU EXTREME</source>
         <translation>GPU EXTREME</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3844"/>
+        <location filename="../../src/yuzu/main.cpp" line="3909"/>
         <source>GPU ERROR</source>
         <translation>GPU ERROR</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3854"/>
+        <location filename="../../src/yuzu/main.cpp" line="3919"/>
         <source>DOCKED</source>
         <translation>主机模式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3854"/>
+        <location filename="../../src/yuzu/main.cpp" line="3919"/>
         <source>HANDHELD</source>
         <translation>掌机模式</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3861"/>
+        <location filename="../../src/yuzu/main.cpp" line="3926"/>
         <source>OPENGL</source>
         <translation>OPENGL</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3864"/>
+        <location filename="../../src/yuzu/main.cpp" line="3929"/>
         <source>VULKAN</source>
         <translation>VULKAN</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3867"/>
+        <location filename="../../src/yuzu/main.cpp" line="3932"/>
         <source>NULL</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3876"/>
+        <location filename="../../src/yuzu/main.cpp" line="3941"/>
         <source>NEAREST</source>
         <translation>邻近取样</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3879"/>
-        <location filename="../../src/yuzu/main.cpp" line="3894"/>
+        <location filename="../../src/yuzu/main.cpp" line="3944"/>
+        <location filename="../../src/yuzu/main.cpp" line="3959"/>
         <source>BILINEAR</source>
         <translation>双线性过滤</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3882"/>
+        <location filename="../../src/yuzu/main.cpp" line="3947"/>
         <source>BICUBIC</source>
         <translation>双三线过滤</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3885"/>
+        <location filename="../../src/yuzu/main.cpp" line="3950"/>
         <source>GAUSSIAN</source>
         <translation>高斯模糊</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3888"/>
+        <location filename="../../src/yuzu/main.cpp" line="3953"/>
         <source>SCALEFORCE</source>
         <translation>强制缩放</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3891"/>
+        <location filename="../../src/yuzu/main.cpp" line="3956"/>
         <source>FSR</source>
         <translation>FSR</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3903"/>
-        <location filename="../../src/yuzu/main.cpp" line="3912"/>
+        <location filename="../../src/yuzu/main.cpp" line="3968"/>
+        <location filename="../../src/yuzu/main.cpp" line="3977"/>
         <source>NO AA</source>
         <translation>抗锯齿关</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3906"/>
+        <location filename="../../src/yuzu/main.cpp" line="3971"/>
         <source>FXAA</source>
         <translation>FXAA</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3909"/>
+        <location filename="../../src/yuzu/main.cpp" line="3974"/>
         <source>SMAA</source>
         <translation>SMAA</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3993"/>
+        <location filename="../../src/yuzu/main.cpp" line="3987"/>
+        <source>VOLUME: MUTE</source>
+        <translation>音量: 静音</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="3990"/>
+        <source>VOLUME: %1%</source>
+        <comment>Volume percentage (e.g. 50%)</comment>
+        <translation>音量: %1%</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/main.cpp" line="4071"/>
         <source>Confirm Key Rederivation</source>
         <translation>确认重新生成密钥</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="3994"/>
+        <location filename="../../src/yuzu/main.cpp" line="4072"/>
         <source>You are about to force rederive all of your keys. 
 If you do not know what this means or what you are doing, 
 this is a potentially destructive action. 
@@ -5493,37 +5535,37 @@ This will delete your autogenerated key files and re-run the key derivation modu
 这将删除您自动生成的密钥文件并重新运行密钥生成模块。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4026"/>
+        <location filename="../../src/yuzu/main.cpp" line="4104"/>
         <source>Missing fuses</source>
         <translation>项目丢失</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4029"/>
+        <location filename="../../src/yuzu/main.cpp" line="4107"/>
         <source> - Missing BOOT0</source>
         <translation>- 丢失 BOOT0</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4032"/>
+        <location filename="../../src/yuzu/main.cpp" line="4110"/>
         <source> - Missing BCPKG2-1-Normal-Main</source>
         <translation> - 丢失 BCPKG2-1-Normal-Main</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4035"/>
+        <location filename="../../src/yuzu/main.cpp" line="4113"/>
         <source> - Missing PRODINFO</source>
         <translation>- 丢失 PRODINFO</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4039"/>
+        <location filename="../../src/yuzu/main.cpp" line="4117"/>
         <source>Derivation Components Missing</source>
         <translation>组件丢失</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4040"/>
+        <location filename="../../src/yuzu/main.cpp" line="4118"/>
         <source>Encryption keys are missing. &lt;br&gt;Please follow &lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;the yuzu quickstart guide&lt;/a&gt; to get all your keys, firmware and games.&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</source>
         <translation>密钥缺失。&lt;br&gt;请查看&lt;a href=&apos;https://yuzu-emu.org/help/quickstart/&apos;&gt;yuzu 快速导航&lt;/a&gt;以获得你的密钥、固件和游戏。&lt;br&gt;&lt;br&gt;&lt;small&gt;(%1)&lt;/small&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4049"/>
+        <location filename="../../src/yuzu/main.cpp" line="4127"/>
         <source>Deriving keys...
 This may take up to a minute depending 
 on your system&apos;s performance.</source>
@@ -5532,39 +5574,39 @@ on your system&apos;s performance.</source>
 您的系统性能。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4051"/>
+        <location filename="../../src/yuzu/main.cpp" line="4129"/>
         <source>Deriving Keys</source>
         <translation>生成密钥</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4096"/>
+        <location filename="../../src/yuzu/main.cpp" line="4174"/>
         <source>Select RomFS Dump Target</source>
         <translation>选择 RomFS 转储目标</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4097"/>
+        <location filename="../../src/yuzu/main.cpp" line="4175"/>
         <source>Please select which RomFS you would like to dump.</source>
         <translation>请选择希望转储的 RomFS。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4112"/>
+        <location filename="../../src/yuzu/main.cpp" line="4190"/>
         <source>Are you sure you want to close yuzu?</source>
         <translation>您确定要关闭 yuzu 吗？</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4113"/>
-        <location filename="../../src/yuzu/main.cpp" line="4208"/>
-        <location filename="../../src/yuzu/main.cpp" line="4221"/>
+        <location filename="../../src/yuzu/main.cpp" line="4191"/>
+        <location filename="../../src/yuzu/main.cpp" line="4286"/>
+        <location filename="../../src/yuzu/main.cpp" line="4299"/>
         <source>yuzu</source>
         <translation>yuzu</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4209"/>
+        <location filename="../../src/yuzu/main.cpp" line="4287"/>
         <source>Are you sure you want to stop the emulation? Any unsaved progress will be lost.</source>
         <translation>您确定要停止模拟吗？未保存的进度将会丢失。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/main.cpp" line="4218"/>
+        <location filename="../../src/yuzu/main.cpp" line="4296"/>
         <source>The currently running application has requested yuzu to not exit.
 
 Would you like to bypass this and exit anyway?</source>
@@ -5576,44 +5618,44 @@ Would you like to bypass this and exit anyway?</source>
 <context>
     <name>GRenderWindow</name>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="968"/>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="985"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="974"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="991"/>
         <source>OpenGL not available!</source>
         <translation>OpenGL 模式不可用！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="969"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="975"/>
         <source>OpenGL shared contexts are not supported.</source>
         <translation>不支持 OpenGL 共享上下文。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="986"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="992"/>
         <source>yuzu has not been compiled with OpenGL support.</source>
         <translation>yuzu 没有使用 OpenGL 进行编译。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1010"/>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1030"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1016"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1036"/>
         <source>Error while initializing OpenGL!</source>
         <translation>初始化 OpenGL 时出错！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1011"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1017"/>
         <source>Your GPU may not support OpenGL, or you do not have the latest graphics driver.</source>
         <translation>您的 GPU 可能不支持 OpenGL ，或者您没有安装最新的显卡驱动。</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1020"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1026"/>
         <source>Error while initializing OpenGL 4.6!</source>
         <translation>初始化 OpenGL 4.6 时出错！</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1021"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1027"/>
         <source>Your GPU may not support OpenGL 4.6, or you do not have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1</source>
         <translation>您的 GPU 可能不支持 OpenGL 4.6 ，或者您没有安装最新的显卡驱动。&lt;br&gt;&lt;br&gt;GL 渲染器：&lt;br&gt;%1</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/bootmanager.cpp" line="1031"/>
+        <location filename="../../src/yuzu/bootmanager.cpp" line="1037"/>
         <source>Your GPU may not support one or more required OpenGL extensions. Please ensure you have the latest graphics driver.&lt;br&gt;&lt;br&gt;GL Renderer:&lt;br&gt;%1&lt;br&gt;&lt;br&gt;Unsupported extensions:&lt;br&gt;%2</source>
         <translation>您的 GPU 可能不支持某些必需的 OpenGL 扩展。请确保您已经安装最新的显卡驱动。&lt;br&gt;&lt;br&gt;GL 渲染器：&lt;br&gt;%1&lt;br&gt;&lt;br&gt;不支持的扩展：&lt;br&gt;%2</translation>
     </message>
@@ -5853,7 +5895,7 @@ Would you like to bypass this and exit anyway?</source>
 <context>
     <name>GameListPlaceholder</name>
     <message>
-        <location filename="../../src/yuzu/game_list.cpp" line="951"/>
+        <location filename="../../src/yuzu/game_list.cpp" line="952"/>
         <source>Double-click to add a new folder to the game list</source>
         <translation>双击添加新的游戏文件夹</translation>
     </message>
@@ -6199,51 +6241,56 @@ Debug Message: </source>
     </message>
     <message>
         <location filename="../../src/yuzu/multiplayer/lobby.ui" line="83"/>
+        <source>Hide Empty Rooms</source>
+        <translation>隐藏空房间</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/multiplayer/lobby.ui" line="90"/>
         <source>Hide Full Rooms</source>
         <translation>隐藏满员的房间</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.ui" line="103"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.ui" line="110"/>
         <source>Refresh Lobby</source>
         <translation>刷新游戏大厅</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="112"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="113"/>
         <source>Password Required to Join</source>
         <translation>需要密码</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="112"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="113"/>
         <source>Password:</source>
         <translation>密码:</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="215"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="216"/>
         <source>Players</source>
         <translation>玩家数</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="216"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="217"/>
         <source>Room Name</source>
         <translation>房间名称</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="217"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="218"/>
         <source>Preferred Game</source>
         <translation>首选游戏</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="218"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="219"/>
         <source>Host</source>
         <translation>房主</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="225"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="226"/>
         <source>Refreshing</source>
         <translation>刷新中</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="282"/>
+        <location filename="../../src/yuzu/multiplayer/lobby.cpp" line="283"/>
         <source>Refresh List</source>
         <translation>刷新列表</translation>
     </message>
@@ -6854,7 +6901,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="389"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="455"/>
         <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="179"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="246"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="247"/>
         <source>[not set]</source>
         <translation>[未设置]</translation>
     </message>
@@ -6869,10 +6916,10 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="482"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="486"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="490"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="269"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="273"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="277"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="281"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="270"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="274"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="278"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="282"/>
         <source>Axis %1%2</source>
         <translation>轴 %1%2</translation>
     </message>
@@ -6886,9 +6933,9 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="449"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="463"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="493"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="240"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="254"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="284"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="241"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="255"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="285"/>
         <source>[unknown]</source>
         <translation>[未知]</translation>
     </message>
@@ -7053,15 +7100,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="403"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="194"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="195"/>
         <source>[invalid]</source>
         <translation>[无效]</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="413"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="437"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="204"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="228"/>
         <source>%1%2Hat %3</source>
         <translation>%1%2Hat 控制器 %3</translation>
     </message>
@@ -7069,35 +7114,33 @@ p, li { white-space: pre-wrap; }
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="417"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="440"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="443"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="208"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="231"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="234"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="209"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="232"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="235"/>
         <source>%1%2Axis %3</source>
         <translation>%1%2轴 %3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="423"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="214"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="215"/>
         <source>%1%2Axis %3,%4,%5</source>
         <translation>%1%2轴 %3,%4,%5</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="427"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="218"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="219"/>
         <source>%1%2Motion %3</source>
         <translation>%1%2体感 %3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="431"/>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="446"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="222"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="237"/>
         <source>%1%2Button %3</source>
         <translation>%1%2按键 %3</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ringcon.cpp" line="473"/>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="264"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="265"/>
         <source>[unused]</source>
         <translation>[未使用]</translation>
     </message>
@@ -7184,9 +7227,21 @@ p, li { white-space: pre-wrap; }
         <translation>额外按键</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="190"/>
-        <source>%1%2%3</source>
-        <translation>%1%2%3</translation>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="191"/>
+        <source>%1%2%3%4</source>
+        <translation>%1%2%3%4</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="205"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="229"/>
+        <source>%1%2%3Hat %4</source>
+        <translation>%1%2%3 控制器 %4</translation>
+    </message>
+    <message>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="223"/>
+        <location filename="../../src/yuzu/configuration/configure_input_player.cpp" line="238"/>
+        <source>%1%2%3Button %4</source>
+        <translation>%1%2%3 按键 %4</translation>
     </message>
 </context>
 <context>

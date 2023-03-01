@@ -210,10 +210,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # =======================================================================
 
 # Enforce the search mode of non-required packages for better and shorter failure messages
+find_package(Boost 1.73.0 REQUIRED context)
 find_package(enet 1.3 MODULE)
 find_package(fmt 9 REQUIRED)
-find_package(inih MODULE)
-find_package(LLVM MODULE)
+find_package(inih 52 MODULE COMPONENTS INIReader)
+find_package(LLVM MODULE COMPONENTS Demangle)
 find_package(lz4 REQUIRED)
 find_package(nlohmann_json 3.8 REQUIRED)
 find_package(Opus 1.3 MODULE)
@@ -246,24 +247,11 @@ endif()
 
 if (ENABLE_WEB_SERVICE)
     find_package(cpp-jwt 1.4 CONFIG)
-    find_package(httplib 0.12 MODULE)
+    find_package(httplib 0.12 MODULE COMPONENTS OpenSSL)
 endif()
 
 if (YUZU_TESTS)
     find_package(Catch2 3.0.1 REQUIRED)
-endif()
-
-find_package(Boost 1.73.0 COMPONENTS context)
-if (Boost_FOUND)
-    set(Boost_LIBRARIES Boost::boost)
-    # Conditionally add Boost::context only if the found Boost package provides it
-    # The old version is missing Boost::context, so we want to avoid adding in that case
-    # The new version requires adding Boost::context to prevent linking issues
-    if (TARGET Boost::context)
-        list(APPEND Boost_LIBRARIES Boost::context)
-    endif()
-else()
-    message(FATAL_ERROR "Boost 1.73.0 or newer not found")
 endif()
 
 # boost:asio has functions that require AcceptEx et al
@@ -462,14 +450,6 @@ if (ENABLE_SDL2)
     endif()
 endif()
 
-# Reexport some targets that are named differently when using the upstream CmakeConfig
-# In order to ALIAS targets to a new name, they first need to be IMPORTED_GLOBAL
-# Dynarmic checks for target `boost` and so we want to make sure it can find it through our system instead of using their external
-if (TARGET Boost::boost)
-    set_target_properties(Boost::boost PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(boost ALIAS Boost::boost)
-endif()
-
 # List of all FFmpeg components required
 set(FFmpeg_COMPONENTS
     avcodec
@@ -585,11 +565,7 @@ function(create_target_directory_groups target_name)
 endfunction()
 
 # Prevent boost from linking against libs when building
-add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY
-    -DBOOST_SYSTEM_NO_LIB
-    -DBOOST_DATE_TIME_NO_LIB
-    -DBOOST_REGEX_NO_LIB
-)
+target_link_libraries(Boost::headers INTERFACE Boost::disable_autolinking)
 # Adjustments for MSVC + Ninja
 if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
     add_compile_options(

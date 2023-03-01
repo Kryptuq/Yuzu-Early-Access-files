@@ -314,7 +314,7 @@ endif()
 create_target_directory_groups(yuzu)
 
 target_link_libraries(yuzu PRIVATE common core input_common network video_core)
-target_link_libraries(yuzu PRIVATE Boost::boost glad Qt${QT_MAJOR_VERSION}::Widgets)
+target_link_libraries(yuzu PRIVATE Boost::headers glad Qt${QT_MAJOR_VERSION}::Widgets)
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 target_link_libraries(yuzu PRIVATE Vulkan::Headers)

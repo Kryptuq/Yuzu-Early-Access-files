@@ -383,7 +383,8 @@ private:
 
     void NotifyBufferDeletion();
 
-    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, bool is_written = false) const;
+    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+                                               bool is_written = false) const;
 
     [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,
                                                                PixelFormat format);
@@ -802,7 +803,7 @@ void BufferCache<P>::BindGraphicsStorageBuffer(size_t stage, size_t ssbo_index, 
 
     const auto& cbufs = maxwell3d->state.shader_stages[stage];
     const GPUVAddr ssbo_addr = cbufs.const_buffers[cbuf_index].address + cbuf_offset;
-    storage_buffers[stage][ssbo_index] = StorageBufferBinding(ssbo_addr, is_written);
+    storage_buffers[stage][ssbo_index] = StorageBufferBinding(ssbo_addr, cbuf_index, is_written);
 }
 
 template <class P>
@@ -842,7 +843,7 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
 
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
-    compute_storage_buffers[ssbo_index] = StorageBufferBinding(ssbo_addr, is_written);
+    compute_storage_buffers[ssbo_index] = StorageBufferBinding(ssbo_addr, cbuf_index, is_written);
 }
 
 template <class P>
@@ -1988,11 +1989,26 @@ void BufferCache<P>::NotifyBufferDeletion() {
 
 template <class P>
 typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr,
+                                                                      u32 cbuf_index,
                                                                       bool is_written) const {
     const GPUVAddr gpu_addr = gpu_memory->Read<u64>(ssbo_addr);
-    const u32 size = gpu_memory->Read<u32>(ssbo_addr + 8);
+    const auto size = [&]() {
+        const bool is_nvn_cbuf = cbuf_index == 0;
+        // The NVN driver buffer (index 0) is known to pack the SSBO address followed by its size.
+        if (is_nvn_cbuf) {
+            return gpu_memory->Read<u32>(ssbo_addr + 8);
+        }
+        // Other titles (notably Doom Eternal) may use STG/LDG on buffer addresses in custom defined
+        // cbufs, which do not store the sizes adjacent to the addresses, so use the fully
+        // mapped buffer size for now.
+        const u32 memory_layout_size = static_cast<u32>(gpu_memory->GetMemoryLayoutSize(gpu_addr));
+        LOG_INFO(HW_GPU, "Binding storage buffer for cbuf index {}, MemoryLayoutSize 0x{:X}",
+                 cbuf_index, memory_layout_size);
+        return memory_layout_size;
+    }();
     const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
     if (!cpu_addr || size == 0) {
+        LOG_WARNING(HW_GPU, "Failed to find storage buffer for cbuf index {}", cbuf_index);
         return NULL_BINDING;
     }
     const VAddr cpu_end = Common::AlignUp(*cpu_addr + size, Core::Memory::YUZU_PAGESIZE);
