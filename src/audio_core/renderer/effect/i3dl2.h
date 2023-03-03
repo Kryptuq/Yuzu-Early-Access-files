@@ -104,7 +104,8 @@ public:
         }
 
         void Write(const Common::FixedPoint<50, 14> sample) {
-            *(input++) = sample;
+            *input = sample;
+            input++;
             if (input >= buffer_end) {
                 input = buffer.data();
             }

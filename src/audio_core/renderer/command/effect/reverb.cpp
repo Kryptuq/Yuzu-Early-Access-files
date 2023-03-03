@@ -308,7 +308,8 @@ static void ApplyReverbEffect(const ReverbInfo::ParameterVersion2& params, Rever
         }
 
         Common::FixedPoint<50, 14> pre_delay_sample{
-            state.pre_delay_line.Read() * Common::FixedPoint<50, 14>::from_base(params.late_gain)};
+            state.pre_delay_line.TapOut(state.pre_delay_time) *
+            Common::FixedPoint<50, 14>::from_base(params.late_gain)};
 
         std::array<Common::FixedPoint<50, 14>, ReverbInfo::MaxDelayLines> mix_matrix{
             state.prev_feedback_output[2] + state.prev_feedback_output[1] + pre_delay_sample,

@@ -79,12 +79,10 @@ public:
                 return;
             }
             sample_count = delay_time;
-            input = &buffer[(output - buffer.data() + sample_count) % (sample_count_max + 1)];
+            input = &buffer[0];
         }
 
         Common::FixedPoint<50, 14> Tick(const Common::FixedPoint<50, 14> sample) {
-            Write(sample);
-
             auto out_sample{Read()};
 
             output++;
@@ -92,6 +90,7 @@ public:
                 output = buffer.data();
             }
 
+            Write(sample);
             return out_sample;
         }
 
@@ -100,7 +99,8 @@ public:
         }
 
         void Write(const Common::FixedPoint<50, 14> sample) {
-            *(input++) = sample;
+            *input = sample;
+            input++;
             if (input >= buffer_end) {
                 input = buffer.data();
             }
