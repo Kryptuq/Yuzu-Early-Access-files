@@ -15,7 +15,6 @@
 #include "core/core_timing.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/acc/acc.h"
 #include "core/hle/service/acc/acc_aa.h"
 #include "core/hle/service/acc/acc_su.h"
@@ -25,6 +24,7 @@
 #include "core/hle/service/acc/errors.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/glue/glue_manager.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/loader/loader.h"
 
@@ -295,7 +295,7 @@ public:
     }
 
 protected:
-    void Get(Kernel::HLERequestContext& ctx) {
+    void Get(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
         UserData data{};
@@ -312,7 +312,7 @@ protected:
         }
     }
 
-    void GetBase(Kernel::HLERequestContext& ctx) {
+    void GetBase(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
         if (profile_manager.GetProfileBase(user_id, profile_base)) {
@@ -326,7 +326,7 @@ protected:
         }
     }
 
-    void LoadImage(Kernel::HLERequestContext& ctx) {
+    void LoadImage(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -353,7 +353,7 @@ protected:
         rb.Push<u32>(size);
     }
 
-    void GetImageSize(Kernel::HLERequestContext& ctx) {
+    void GetImageSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -370,7 +370,7 @@ protected:
         }
     }
 
-    void Store(Kernel::HLERequestContext& ctx) {
+    void Store(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto base = rp.PopRaw<ProfileBase>();
 
@@ -402,7 +402,7 @@ protected:
         rb.Push(ResultSuccess);
     }
 
-    void StoreWithImage(Kernel::HLERequestContext& ctx) {
+    void StoreWithImage(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto base = rp.PopRaw<ProfileBase>();
 
@@ -499,7 +499,7 @@ public:
     }
     ~EnsureTokenIdCacheAsyncInterface() = default;
 
-    void LoadIdTokenCache(Kernel::HLERequestContext& ctx) {
+    void LoadIdTokenCache(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -542,14 +542,14 @@ public:
     }
 
 private:
-    void CheckAvailability(Kernel::HLERequestContext& ctx) {
+    void CheckAvailability(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push(false); // TODO: Check when this is supposed to return true and when not
     }
 
-    void GetAccountId(Kernel::HLERequestContext& ctx) {
+    void GetAccountId(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
 
         IPC::ResponseBuilder rb{ctx, 4};
@@ -557,7 +557,7 @@ private:
         rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
 
-    void EnsureIdTokenCacheAsync(Kernel::HLERequestContext& ctx) {
+    void EnsureIdTokenCacheAsync(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -565,13 +565,13 @@ private:
         rb.PushIpcInterface(ensure_token_id);
     }
 
-    void LoadIdTokenCache(Kernel::HLERequestContext& ctx) {
+    void LoadIdTokenCache(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
         ensure_token_id->LoadIdTokenCache(ctx);
     }
 
-    void GetNintendoAccountUserResourceCacheForApplication(Kernel::HLERequestContext& ctx) {
+    void GetNintendoAccountUserResourceCacheForApplication(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
         std::vector<u8> nas_user_base_for_application(0x68);
@@ -587,7 +587,7 @@ private:
         rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
 
-    void StoreOpenContext(Kernel::HLERequestContext& ctx) {
+    void StoreOpenContext(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
 
         profile_manager->StoreOpenedUsers();
@@ -689,14 +689,14 @@ public:
     }
 };
 
-void Module::Interface::GetUserCount(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetUserCount(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push<u32>(static_cast<u32>(profile_manager->GetUserCount()));
 }
 
-void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetUserExistence(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
     LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
@@ -706,28 +706,28 @@ void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
     rb.Push(profile_manager->UserExists(user_id));
 }
 
-void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ListAllUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     ctx.WriteBuffer(profile_manager->GetAllUsers());
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ListOpenUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     ctx.WriteBuffer(profile_manager->GetOpenUsers());
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetLastOpenedUser(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 6};
     rb.Push(ResultSuccess);
     rb.PushRaw<Common::UUID>(profile_manager->GetLastOpenedUser());
 }
 
-void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetProfile(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
     LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
@@ -737,20 +737,20 @@ void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IProfile>(system, user_id, *profile_manager);
 }
 
-void Module::Interface::IsUserRegistrationRequestPermitted(Kernel::HLERequestContext& ctx) {
+void Module::Interface::IsUserRegistrationRequestPermitted(HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push(profile_manager->CanSystemRegisterUser());
 }
 
-void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
+void Module::Interface::InitializeApplicationInfo(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(InitializeApplicationInfoBase());
 }
 
-void Module::Interface::InitializeApplicationInfoRestricted(Kernel::HLERequestContext& ctx) {
+void Module::Interface::InitializeApplicationInfoRestricted(HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(Partial implementation) called");
 
     // TODO(ogniK): We require checking if the user actually owns the title and what not. As of
@@ -800,14 +800,14 @@ Result Module::Interface::InitializeApplicationInfoBase() {
     return ResultSuccess;
 }
 
-void Module::Interface::GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetBaasAccountManagerForApplication(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IManagerForApplication>(system, profile_manager);
 }
 
-void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx) {
+void Module::Interface::IsUserAccountSwitchLocked(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     FileSys::NACP nacp;
     const auto res = system.GetAppLoader().ReadControlData(nacp);
@@ -834,14 +834,14 @@ void Module::Interface::IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx
     rb.Push(is_locked);
 }
 
-void Module::Interface::InitializeApplicationInfoV2(Kernel::HLERequestContext& ctx) {
+void Module::Interface::InitializeApplicationInfoV2(HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::GetProfileEditor(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetProfileEditor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
 
@@ -852,7 +852,7 @@ void Module::Interface::GetProfileEditor(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IProfileEditor>(system, user_id, *profile_manager);
 }
 
-void Module::Interface::ListQualifiedUsers(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ListQualifiedUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
     // All users should be qualified. We don't actually have parental control or anything to do with
@@ -863,7 +863,7 @@ void Module::Interface::ListQualifiedUsers(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ListOpenContextStoredUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
     ctx.WriteBuffer(profile_manager->GetStoredOpenedUsers());
@@ -871,7 +871,7 @@ void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ct
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::StoreSaveDataThumbnailApplication(Kernel::HLERequestContext& ctx) {
+void Module::Interface::StoreSaveDataThumbnailApplication(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
 
@@ -884,7 +884,7 @@ void Module::Interface::StoreSaveDataThumbnailApplication(Kernel::HLERequestCont
     StoreSaveDataThumbnail(ctx, uuid, tid);
 }
 
-void Module::Interface::StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& ctx) {
+void Module::Interface::StoreSaveDataThumbnailSystem(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
     const auto tid = rp.Pop<u64_le>();
@@ -893,8 +893,8 @@ void Module::Interface::StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& 
     StoreSaveDataThumbnail(ctx, uuid, tid);
 }
 
-void Module::Interface::StoreSaveDataThumbnail(Kernel::HLERequestContext& ctx,
-                                               const Common::UUID& uuid, const u64 tid) {
+void Module::Interface::StoreSaveDataThumbnail(HLERequestContext& ctx, const Common::UUID& uuid,
+                                               const u64 tid) {
     IPC::ResponseBuilder rb{ctx, 2};
 
     if (tid == 0) {
@@ -920,7 +920,7 @@ void Module::Interface::StoreSaveDataThumbnail(Kernel::HLERequestContext& ctx,
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContext& ctx) {
+void Module::Interface::TrySelectUserWithoutInteraction(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     // A u8 is passed into this function which we can safely ignore. It's to determine if we have
     // access to use the network or not by the looks of it

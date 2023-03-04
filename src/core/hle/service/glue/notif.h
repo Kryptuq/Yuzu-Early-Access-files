@@ -56,12 +56,12 @@ private:
     };
     static_assert(sizeof(AlarmSetting) == 0x40, "AlarmSetting is an invalid size");
 
-    void RegisterAlarmSetting(Kernel::HLERequestContext& ctx);
-    void UpdateAlarmSetting(Kernel::HLERequestContext& ctx);
-    void ListAlarmSettings(Kernel::HLERequestContext& ctx);
-    void LoadApplicationParameter(Kernel::HLERequestContext& ctx);
-    void DeleteAlarmSetting(Kernel::HLERequestContext& ctx);
-    void Initialize(Kernel::HLERequestContext& ctx);
+    void RegisterAlarmSetting(HLERequestContext& ctx);
+    void UpdateAlarmSetting(HLERequestContext& ctx);
+    void ListAlarmSettings(HLERequestContext& ctx);
+    void LoadApplicationParameter(HLERequestContext& ctx);
+    void DeleteAlarmSetting(HLERequestContext& ctx);
+    void Initialize(HLERequestContext& ctx);
 
     std::vector<AlarmSetting>::iterator GetAlarmFromId(AlarmSettingId alarm_setting_id);
 

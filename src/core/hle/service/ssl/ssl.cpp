@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/ssl/ssl.h"
@@ -84,7 +84,7 @@ public:
     }
 
 private:
-    void SetOption(Kernel::HLERequestContext& ctx) {
+    void SetOption(HLERequestContext& ctx) {
         struct Parameters {
             u8 enable;
             u32 option;
@@ -100,7 +100,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void CreateConnection(Kernel::HLERequestContext& ctx) {
+    void CreateConnection(HLERequestContext& ctx) {
         LOG_WARNING(Service_SSL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -108,7 +108,7 @@ private:
         rb.PushIpcInterface<ISslConnection>(system);
     }
 
-    void ImportServerPki(Kernel::HLERequestContext& ctx) {
+    void ImportServerPki(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto certificate_format = rp.PopEnum<CertificateFormat>();
         [[maybe_unused]] const auto pkcs_12_certificates = ctx.ReadBuffer(0);
@@ -122,7 +122,7 @@ private:
         rb.Push(server_id);
     }
 
-    void ImportClientPki(Kernel::HLERequestContext& ctx) {
+    void ImportClientPki(HLERequestContext& ctx) {
         [[maybe_unused]] const auto pkcs_12_certificate = ctx.ReadBuffer(0);
         [[maybe_unused]] const auto ascii_password = [&ctx] {
             if (ctx.CanReadBuffer(1)) {
@@ -164,7 +164,7 @@ public:
 
 private:
     u32 ssl_version{};
-    void CreateContext(Kernel::HLERequestContext& ctx) {
+    void CreateContext(HLERequestContext& ctx) {
         LOG_WARNING(Service_SSL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -172,7 +172,7 @@ private:
         rb.PushIpcInterface<ISslContext>(system);
     }
 
-    void SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+    void SetInterfaceVersion(HLERequestContext& ctx) {
         LOG_DEBUG(Service_SSL, "called");
 
         IPC::RequestParser rp{ctx};

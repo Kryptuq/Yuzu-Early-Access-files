@@ -50,7 +50,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateMonitorService(Kernel::HLERequestContext& ctx) {
+    void CreateMonitorService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -169,7 +169,7 @@ public:
         state_change_event->Signal();
     }
 
-    void GetState(Kernel::HLERequestContext& ctx) {
+    void GetState(HLERequestContext& ctx) {
         State state = State::Error;
 
         if (is_initialized) {
@@ -181,7 +181,7 @@ public:
         rb.PushEnum(state);
     }
 
-    void GetNetworkInfo(Kernel::HLERequestContext& ctx) {
+    void GetNetworkInfo(HLERequestContext& ctx) {
         const auto write_buffer_size = ctx.GetWriteBufferSize();
 
         if (write_buffer_size != sizeof(NetworkInfo)) {
@@ -205,7 +205,7 @@ public:
         rb.Push(ResultSuccess);
     }
 
-    void GetIpv4Address(Kernel::HLERequestContext& ctx) {
+    void GetIpv4Address(HLERequestContext& ctx) {
         const auto network_interface = Network::GetSelectedNetworkInterface();
 
         if (!network_interface) {
@@ -234,13 +234,13 @@ public:
         rb.PushRaw(subnet_mask);
     }
 
-    void GetDisconnectReason(Kernel::HLERequestContext& ctx) {
+    void GetDisconnectReason(HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.PushEnum(lan_discovery.GetDisconnectReason());
     }
 
-    void GetSecurityParameter(Kernel::HLERequestContext& ctx) {
+    void GetSecurityParameter(HLERequestContext& ctx) {
         SecurityParameter security_parameter{};
         NetworkInfo info{};
         const Result rc = lan_discovery.GetNetworkInfo(info);
@@ -261,7 +261,7 @@ public:
         rb.PushRaw<SecurityParameter>(security_parameter);
     }
 
-    void GetNetworkConfig(Kernel::HLERequestContext& ctx) {
+    void GetNetworkConfig(HLERequestContext& ctx) {
         NetworkConfig config{};
         NetworkInfo info{};
         const Result rc = lan_discovery.GetNetworkInfo(info);
@@ -283,7 +283,7 @@ public:
         rb.PushRaw<NetworkConfig>(config);
     }
 
-    void AttachStateChangeEvent(Kernel::HLERequestContext& ctx) {
+    void AttachStateChangeEvent(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -291,7 +291,7 @@ public:
         rb.PushCopyObjects(state_change_event->GetReadableEvent());
     }
 
-    void GetNetworkInfoLatestUpdate(Kernel::HLERequestContext& ctx) {
+    void GetNetworkInfoLatestUpdate(HLERequestContext& ctx) {
         const std::size_t network_buffer_size = ctx.GetWriteBufferSize(0);
         const std::size_t node_buffer_count = ctx.GetWriteBufferNumElements<NodeLatestUpdate>(1);
 
@@ -321,15 +321,15 @@ public:
         rb.Push(ResultSuccess);
     }
 
-    void Scan(Kernel::HLERequestContext& ctx) {
+    void Scan(HLERequestContext& ctx) {
         ScanImpl(ctx);
     }
 
-    void ScanPrivate(Kernel::HLERequestContext& ctx) {
+    void ScanPrivate(HLERequestContext& ctx) {
         ScanImpl(ctx, true);
     }
 
-    void ScanImpl(Kernel::HLERequestContext& ctx, bool is_private = false) {
+    void ScanImpl(HLERequestContext& ctx, bool is_private = false) {
         IPC::RequestParser rp{ctx};
         const auto channel{rp.PopEnum<WifiChannel>()};
         const auto scan_filter{rp.PopRaw<ScanFilter>()};
@@ -358,40 +358,40 @@ public:
         rb.Push<u32>(count);
     }
 
-    void SetWirelessControllerRestriction(Kernel::HLERequestContext& ctx) {
+    void SetWirelessControllerRestriction(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void OpenAccessPoint(Kernel::HLERequestContext& ctx) {
+    void OpenAccessPoint(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.OpenAccessPoint());
     }
 
-    void CloseAccessPoint(Kernel::HLERequestContext& ctx) {
+    void CloseAccessPoint(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.CloseAccessPoint());
     }
 
-    void CreateNetwork(Kernel::HLERequestContext& ctx) {
+    void CreateNetwork(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         CreateNetworkImpl(ctx);
     }
 
-    void CreateNetworkPrivate(Kernel::HLERequestContext& ctx) {
+    void CreateNetworkPrivate(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         CreateNetworkImpl(ctx, true);
     }
 
-    void CreateNetworkImpl(Kernel::HLERequestContext& ctx, bool is_private = false) {
+    void CreateNetworkImpl(HLERequestContext& ctx, bool is_private = false) {
         IPC::RequestParser rp{ctx};
 
         const auto security_config{rp.PopRaw<SecurityConfig>()};
@@ -405,49 +405,49 @@ public:
         rb.Push(lan_discovery.CreateNetwork(security_config, user_config, network_Config));
     }
 
-    void DestroyNetwork(Kernel::HLERequestContext& ctx) {
+    void DestroyNetwork(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.DestroyNetwork());
     }
 
-    void SetAdvertiseData(Kernel::HLERequestContext& ctx) {
+    void SetAdvertiseData(HLERequestContext& ctx) {
         const auto read_buffer = ctx.ReadBuffer();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.SetAdvertiseData(read_buffer));
     }
 
-    void SetStationAcceptPolicy(Kernel::HLERequestContext& ctx) {
+    void SetStationAcceptPolicy(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void AddAcceptFilterEntry(Kernel::HLERequestContext& ctx) {
+    void AddAcceptFilterEntry(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void OpenStation(Kernel::HLERequestContext& ctx) {
+    void OpenStation(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.OpenStation());
     }
 
-    void CloseStation(Kernel::HLERequestContext& ctx) {
+    void CloseStation(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.CloseStation());
     }
 
-    void Connect(Kernel::HLERequestContext& ctx) {
+    void Connect(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         struct Parameters {
             SecurityConfig security_config;
@@ -481,14 +481,14 @@ public:
                                       static_cast<u16>(parameters.local_communication_version)));
     }
 
-    void Disconnect(Kernel::HLERequestContext& ctx) {
+    void Disconnect(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(lan_discovery.Disconnect());
     }
 
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         const auto rc = InitializeImpl(ctx);
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
@@ -498,7 +498,7 @@ public:
         rb.Push(rc);
     }
 
-    void Finalize(Kernel::HLERequestContext& ctx) {
+    void Finalize(HLERequestContext& ctx) {
         if (auto room_member = room_network.GetRoomMember().lock()) {
             room_member->Unbind(ldn_packet_received);
         }
@@ -509,7 +509,7 @@ public:
         rb.Push(lan_discovery.Finalize());
     }
 
-    void Initialize2(Kernel::HLERequestContext& ctx) {
+    void Initialize2(HLERequestContext& ctx) {
         const auto rc = InitializeImpl(ctx);
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
@@ -519,7 +519,7 @@ public:
         rb.Push(rc);
     }
 
-    Result InitializeImpl(Kernel::HLERequestContext& ctx) {
+    Result InitializeImpl(HLERequestContext& ctx) {
         const auto network_interface = Network::GetSelectedNetworkInterface();
         if (!network_interface) {
             LOG_ERROR(Service_LDN, "No network interface is set");
@@ -562,7 +562,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateSystemLocalCommunicationService(Kernel::HLERequestContext& ctx) {
+    void CreateSystemLocalCommunicationService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -583,7 +583,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateUserLocalCommunicationService(Kernel::HLERequestContext& ctx) {
+    void CreateUserLocalCommunicationService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -647,7 +647,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -668,7 +668,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateNetworkervice(Kernel::HLERequestContext& ctx) {
+    void CreateNetworkervice(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 reserved_input = rp.Pop<u64>();
         const u32 input = rp.Pop<u32>();
@@ -681,7 +681,7 @@ public:
         rb.PushIpcInterface<INetworkService>(system);
     }
 
-    void CreateMonitorService(Kernel::HLERequestContext& ctx) {
+    void CreateMonitorService(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 reserved_input = rp.Pop<u64>();
 
@@ -706,7 +706,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateNetworkervice(Kernel::HLERequestContext& ctx) {
+    void CreateNetworkervice(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 reserved_input = rp.Pop<u64>();
         const u32 input = rp.Pop<u32>();
@@ -719,7 +719,7 @@ public:
         rb.PushIpcInterface<INetworkService>(system);
     }
 
-    void CreateMonitorService(Kernel::HLERequestContext& ctx) {
+    void CreateMonitorService(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 reserved_input = rp.Pop<u64>();
 

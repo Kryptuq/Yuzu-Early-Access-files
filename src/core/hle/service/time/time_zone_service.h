@@ -21,12 +21,12 @@ public:
                               TimeZone::TimeZoneContentManager& time_zone_manager_);
 
 private:
-    void GetDeviceLocationName(Kernel::HLERequestContext& ctx);
-    void LoadTimeZoneRule(Kernel::HLERequestContext& ctx);
-    void ToCalendarTime(Kernel::HLERequestContext& ctx);
-    void ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx);
-    void ToPosixTime(Kernel::HLERequestContext& ctx);
-    void ToPosixTimeWithMyRule(Kernel::HLERequestContext& ctx);
+    void GetDeviceLocationName(HLERequestContext& ctx);
+    void LoadTimeZoneRule(HLERequestContext& ctx);
+    void ToCalendarTime(HLERequestContext& ctx);
+    void ToCalendarTimeWithMyRule(HLERequestContext& ctx);
+    void ToPosixTime(HLERequestContext& ctx);
+    void ToPosixTimeWithMyRule(HLERequestContext& ctx);
 
 private:
     TimeZone::TimeZoneContentManager& time_zone_content_manager;

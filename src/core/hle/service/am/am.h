@@ -12,11 +12,12 @@
 
 namespace Kernel {
 class KernelCore;
+class KReadableEvent;
 class KTransferMemory;
 } // namespace Kernel
 
-namespace Service::NVFlinger {
-class NVFlinger;
+namespace Service::Nvnflinger {
+class Nvnflinger;
 }
 
 namespace Service::AM {
@@ -109,8 +110,8 @@ public:
     ~IWindowController() override;
 
 private:
-    void GetAppletResourceUserId(Kernel::HLERequestContext& ctx);
-    void AcquireForegroundRights(Kernel::HLERequestContext& ctx);
+    void GetAppletResourceUserId(HLERequestContext& ctx);
+    void AcquireForegroundRights(HLERequestContext& ctx);
 };
 
 class IAudioController final : public ServiceFramework<IAudioController> {
@@ -119,11 +120,11 @@ public:
     ~IAudioController() override;
 
 private:
-    void SetExpectedMasterVolume(Kernel::HLERequestContext& ctx);
-    void GetMainAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
-    void GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
-    void ChangeMainAppletMasterVolume(Kernel::HLERequestContext& ctx);
-    void SetTransparentAudioRate(Kernel::HLERequestContext& ctx);
+    void SetExpectedMasterVolume(HLERequestContext& ctx);
+    void GetMainAppletExpectedMasterVolume(HLERequestContext& ctx);
+    void GetLibraryAppletExpectedMasterVolume(HLERequestContext& ctx);
+    void ChangeMainAppletMasterVolume(HLERequestContext& ctx);
+    void SetTransparentAudioRate(HLERequestContext& ctx);
 
     static constexpr float min_allowed_volume = 0.0f;
     static constexpr float max_allowed_volume = 1.0f;
@@ -153,36 +154,36 @@ public:
 
 class ISelfController final : public ServiceFramework<ISelfController> {
 public:
-    explicit ISelfController(Core::System& system_, NVFlinger::NVFlinger& nvflinger_);
+    explicit ISelfController(Core::System& system_, Nvnflinger::Nvnflinger& nvnflinger_);
     ~ISelfController() override;
 
 private:
-    void Exit(Kernel::HLERequestContext& ctx);
-    void LockExit(Kernel::HLERequestContext& ctx);
-    void UnlockExit(Kernel::HLERequestContext& ctx);
-    void EnterFatalSection(Kernel::HLERequestContext& ctx);
-    void LeaveFatalSection(Kernel::HLERequestContext& ctx);
-    void GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx);
-    void SetScreenShotPermission(Kernel::HLERequestContext& ctx);
-    void SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx);
-    void SetPerformanceModeChangedNotification(Kernel::HLERequestContext& ctx);
-    void SetFocusHandlingMode(Kernel::HLERequestContext& ctx);
-    void SetRestartMessageEnabled(Kernel::HLERequestContext& ctx);
-    void SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx);
-    void SetAlbumImageOrientation(Kernel::HLERequestContext& ctx);
-    void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx);
-    void CreateManagedDisplaySeparableLayer(Kernel::HLERequestContext& ctx);
-    void SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx);
-    void SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
-    void GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
-    void ReportUserIsActive(Kernel::HLERequestContext& ctx);
-    void SetAutoSleepDisabled(Kernel::HLERequestContext& ctx);
-    void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
-    void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);
-    void GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx);
-    void SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx);
-    void SaveCurrentScreenshot(Kernel::HLERequestContext& ctx);
-    void SetRecordVolumeMuted(Kernel::HLERequestContext& ctx);
+    void Exit(HLERequestContext& ctx);
+    void LockExit(HLERequestContext& ctx);
+    void UnlockExit(HLERequestContext& ctx);
+    void EnterFatalSection(HLERequestContext& ctx);
+    void LeaveFatalSection(HLERequestContext& ctx);
+    void GetLibraryAppletLaunchableEvent(HLERequestContext& ctx);
+    void SetScreenShotPermission(HLERequestContext& ctx);
+    void SetOperationModeChangedNotification(HLERequestContext& ctx);
+    void SetPerformanceModeChangedNotification(HLERequestContext& ctx);
+    void SetFocusHandlingMode(HLERequestContext& ctx);
+    void SetRestartMessageEnabled(HLERequestContext& ctx);
+    void SetOutOfFocusSuspendingEnabled(HLERequestContext& ctx);
+    void SetAlbumImageOrientation(HLERequestContext& ctx);
+    void CreateManagedDisplayLayer(HLERequestContext& ctx);
+    void CreateManagedDisplaySeparableLayer(HLERequestContext& ctx);
+    void SetHandlesRequestToDisplay(HLERequestContext& ctx);
+    void SetIdleTimeDetectionExtension(HLERequestContext& ctx);
+    void GetIdleTimeDetectionExtension(HLERequestContext& ctx);
+    void ReportUserIsActive(HLERequestContext& ctx);
+    void SetAutoSleepDisabled(HLERequestContext& ctx);
+    void IsAutoSleepDisabled(HLERequestContext& ctx);
+    void GetAccumulatedSuspendedTickValue(HLERequestContext& ctx);
+    void GetAccumulatedSuspendedTickChangedEvent(HLERequestContext& ctx);
+    void SetAlbumImageTakenNotificationEnabled(HLERequestContext& ctx);
+    void SaveCurrentScreenshot(HLERequestContext& ctx);
+    void SetRecordVolumeMuted(HLERequestContext& ctx);
 
     enum class ScreenshotPermission : u32 {
         Inherit = 0,
@@ -190,7 +191,7 @@ private:
         Disable = 2,
     };
 
-    NVFlinger::NVFlinger& nvflinger;
+    Nvnflinger::Nvnflinger& nvnflinger;
 
     KernelHelpers::ServiceContext service_context;
 
@@ -235,22 +236,22 @@ private:
         CaptureButtonLongPressing,
     };
 
-    void GetEventHandle(Kernel::HLERequestContext& ctx);
-    void ReceiveMessage(Kernel::HLERequestContext& ctx);
-    void GetCurrentFocusState(Kernel::HLERequestContext& ctx);
-    void GetDefaultDisplayResolutionChangeEvent(Kernel::HLERequestContext& ctx);
-    void GetOperationMode(Kernel::HLERequestContext& ctx);
-    void GetPerformanceMode(Kernel::HLERequestContext& ctx);
-    void GetBootMode(Kernel::HLERequestContext& ctx);
-    void IsVrModeEnabled(Kernel::HLERequestContext& ctx);
-    void SetVrModeEnabled(Kernel::HLERequestContext& ctx);
-    void SetLcdBacklighOffEnabled(Kernel::HLERequestContext& ctx);
-    void BeginVrModeEx(Kernel::HLERequestContext& ctx);
-    void EndVrModeEx(Kernel::HLERequestContext& ctx);
-    void GetDefaultDisplayResolution(Kernel::HLERequestContext& ctx);
-    void SetCpuBoostMode(Kernel::HLERequestContext& ctx);
-    void PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx);
-    void SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(Kernel::HLERequestContext& ctx);
+    void GetEventHandle(HLERequestContext& ctx);
+    void ReceiveMessage(HLERequestContext& ctx);
+    void GetCurrentFocusState(HLERequestContext& ctx);
+    void GetDefaultDisplayResolutionChangeEvent(HLERequestContext& ctx);
+    void GetOperationMode(HLERequestContext& ctx);
+    void GetPerformanceMode(HLERequestContext& ctx);
+    void GetBootMode(HLERequestContext& ctx);
+    void IsVrModeEnabled(HLERequestContext& ctx);
+    void SetVrModeEnabled(HLERequestContext& ctx);
+    void SetLcdBacklighOffEnabled(HLERequestContext& ctx);
+    void BeginVrModeEx(HLERequestContext& ctx);
+    void EndVrModeEx(HLERequestContext& ctx);
+    void GetDefaultDisplayResolution(HLERequestContext& ctx);
+    void SetCpuBoostMode(HLERequestContext& ctx);
+    void PerformSystemButtonPressingIfInFocus(HLERequestContext& ctx);
+    void SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(HLERequestContext& ctx);
 
     std::shared_ptr<AppletMessageQueue> msg_queue;
     bool vr_mode_state{};
@@ -283,7 +284,7 @@ public:
 
 private:
     void Register();
-    void Open(Kernel::HLERequestContext& ctx);
+    void Open(HLERequestContext& ctx);
 
     std::shared_ptr<IStorageImpl> impl;
 };
@@ -294,9 +295,9 @@ public:
     ~IStorageAccessor() override;
 
 private:
-    void GetSize(Kernel::HLERequestContext& ctx);
-    void Write(Kernel::HLERequestContext& ctx);
-    void Read(Kernel::HLERequestContext& ctx);
+    void GetSize(HLERequestContext& ctx);
+    void Write(HLERequestContext& ctx);
+    void Read(HLERequestContext& ctx);
 
     IStorage& backing;
 };
@@ -307,10 +308,10 @@ public:
     ~ILibraryAppletCreator() override;
 
 private:
-    void CreateLibraryApplet(Kernel::HLERequestContext& ctx);
-    void CreateStorage(Kernel::HLERequestContext& ctx);
-    void CreateTransferMemoryStorage(Kernel::HLERequestContext& ctx);
-    void CreateHandleStorage(Kernel::HLERequestContext& ctx);
+    void CreateLibraryApplet(HLERequestContext& ctx);
+    void CreateStorage(HLERequestContext& ctx);
+    void CreateTransferMemoryStorage(HLERequestContext& ctx);
+    void CreateHandleStorage(HLERequestContext& ctx);
 };
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {
@@ -319,39 +320,39 @@ public:
     ~IApplicationFunctions() override;
 
 private:
-    void PopLaunchParameter(Kernel::HLERequestContext& ctx);
-    void CreateApplicationAndRequestToStartForQuest(Kernel::HLERequestContext& ctx);
-    void EnsureSaveData(Kernel::HLERequestContext& ctx);
-    void SetTerminateResult(Kernel::HLERequestContext& ctx);
-    void GetDisplayVersion(Kernel::HLERequestContext& ctx);
-    void GetDesiredLanguage(Kernel::HLERequestContext& ctx);
-    void IsGamePlayRecordingSupported(Kernel::HLERequestContext& ctx);
-    void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx);
-    void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx);
-    void NotifyRunning(Kernel::HLERequestContext& ctx);
-    void GetPseudoDeviceId(Kernel::HLERequestContext& ctx);
-    void ExtendSaveData(Kernel::HLERequestContext& ctx);
-    void GetSaveDataSize(Kernel::HLERequestContext& ctx);
-    void BeginBlockingHomeButtonShortAndLongPressed(Kernel::HLERequestContext& ctx);
-    void EndBlockingHomeButtonShortAndLongPressed(Kernel::HLERequestContext& ctx);
-    void BeginBlockingHomeButton(Kernel::HLERequestContext& ctx);
-    void EndBlockingHomeButton(Kernel::HLERequestContext& ctx);
-    void EnableApplicationCrashReport(Kernel::HLERequestContext& ctx);
-    void InitializeApplicationCopyrightFrameBuffer(Kernel::HLERequestContext& ctx);
-    void SetApplicationCopyrightImage(Kernel::HLERequestContext& ctx);
-    void SetApplicationCopyrightVisibility(Kernel::HLERequestContext& ctx);
-    void QueryApplicationPlayStatistics(Kernel::HLERequestContext& ctx);
-    void QueryApplicationPlayStatisticsByUid(Kernel::HLERequestContext& ctx);
-    void ExecuteProgram(Kernel::HLERequestContext& ctx);
-    void ClearUserChannel(Kernel::HLERequestContext& ctx);
-    void UnpopToUserChannel(Kernel::HLERequestContext& ctx);
-    void GetPreviousProgramIndex(Kernel::HLERequestContext& ctx);
-    void GetGpuErrorDetectedSystemEvent(Kernel::HLERequestContext& ctx);
-    void GetFriendInvitationStorageChannelEvent(Kernel::HLERequestContext& ctx);
-    void TryPopFromFriendInvitationStorageChannel(Kernel::HLERequestContext& ctx);
-    void GetNotificationStorageChannelEvent(Kernel::HLERequestContext& ctx);
-    void GetHealthWarningDisappearedSystemEvent(Kernel::HLERequestContext& ctx);
-    void PrepareForJit(Kernel::HLERequestContext& ctx);
+    void PopLaunchParameter(HLERequestContext& ctx);
+    void CreateApplicationAndRequestToStartForQuest(HLERequestContext& ctx);
+    void EnsureSaveData(HLERequestContext& ctx);
+    void SetTerminateResult(HLERequestContext& ctx);
+    void GetDisplayVersion(HLERequestContext& ctx);
+    void GetDesiredLanguage(HLERequestContext& ctx);
+    void IsGamePlayRecordingSupported(HLERequestContext& ctx);
+    void InitializeGamePlayRecording(HLERequestContext& ctx);
+    void SetGamePlayRecordingState(HLERequestContext& ctx);
+    void NotifyRunning(HLERequestContext& ctx);
+    void GetPseudoDeviceId(HLERequestContext& ctx);
+    void ExtendSaveData(HLERequestContext& ctx);
+    void GetSaveDataSize(HLERequestContext& ctx);
+    void BeginBlockingHomeButtonShortAndLongPressed(HLERequestContext& ctx);
+    void EndBlockingHomeButtonShortAndLongPressed(HLERequestContext& ctx);
+    void BeginBlockingHomeButton(HLERequestContext& ctx);
+    void EndBlockingHomeButton(HLERequestContext& ctx);
+    void EnableApplicationCrashReport(HLERequestContext& ctx);
+    void InitializeApplicationCopyrightFrameBuffer(HLERequestContext& ctx);
+    void SetApplicationCopyrightImage(HLERequestContext& ctx);
+    void SetApplicationCopyrightVisibility(HLERequestContext& ctx);
+    void QueryApplicationPlayStatistics(HLERequestContext& ctx);
+    void QueryApplicationPlayStatisticsByUid(HLERequestContext& ctx);
+    void ExecuteProgram(HLERequestContext& ctx);
+    void ClearUserChannel(HLERequestContext& ctx);
+    void UnpopToUserChannel(HLERequestContext& ctx);
+    void GetPreviousProgramIndex(HLERequestContext& ctx);
+    void GetGpuErrorDetectedSystemEvent(HLERequestContext& ctx);
+    void GetFriendInvitationStorageChannelEvent(HLERequestContext& ctx);
+    void TryPopFromFriendInvitationStorageChannel(HLERequestContext& ctx);
+    void GetNotificationStorageChannelEvent(HLERequestContext& ctx);
+    void GetHealthWarningDisappearedSystemEvent(HLERequestContext& ctx);
+    void PrepareForJit(HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
 
@@ -370,8 +371,8 @@ public:
     ~IHomeMenuFunctions() override;
 
 private:
-    void RequestToGetForeground(Kernel::HLERequestContext& ctx);
-    void GetPopFromGeneralChannelEvent(Kernel::HLERequestContext& ctx);
+    void RequestToGetForeground(HLERequestContext& ctx);
+    void GetPopFromGeneralChannelEvent(HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
 
@@ -396,6 +397,6 @@ public:
     ~IProcessWindingController() override;
 };
 
-void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system);
+void LoopProcess(Nvnflinger::Nvnflinger& nvnflinger, Core::System& system);
 
 } // namespace Service::AM

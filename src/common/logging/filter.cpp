@@ -119,7 +119,7 @@ bool ParseFilterRule(Filter& instance, Iterator begin, Iterator end) {
     SUB(Service, NPNS)                                                                             \
     SUB(Service, NS)                                                                               \
     SUB(Service, NVDRV)                                                                            \
-    SUB(Service, NVFlinger)                                                                        \
+    SUB(Service, Nvnflinger)                                                                       \
     SUB(Service, OLSC)                                                                             \
     SUB(Service, PCIE)                                                                             \
     SUB(Service, PCTL)                                                                             \

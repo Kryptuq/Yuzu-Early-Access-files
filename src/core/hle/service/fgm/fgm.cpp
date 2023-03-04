@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/fgm/fgm.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
@@ -40,7 +40,7 @@ public:
     }
 
 private:
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FGM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

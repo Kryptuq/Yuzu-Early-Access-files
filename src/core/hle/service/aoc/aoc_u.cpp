@@ -14,9 +14,9 @@
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/aoc/aoc_u.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/loader/loader.h"
 
@@ -69,7 +69,7 @@ public:
     }
 
 private:
-    void SetDefaultDeliveryTarget(Kernel::HLERequestContext& ctx) {
+    void SetDefaultDeliveryTarget(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto unknown_1 = rp.Pop<u64>();
@@ -81,7 +81,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetDeliveryTarget(Kernel::HLERequestContext& ctx) {
+    void SetDeliveryTarget(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto unknown_1 = rp.Pop<u64>();
@@ -93,7 +93,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetPurchasedEventReadableHandle(Kernel::HLERequestContext& ctx) {
+    void GetPurchasedEventReadableHandle(HLERequestContext& ctx) {
         LOG_WARNING(Service_AOC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -145,7 +145,7 @@ AOC_U::~AOC_U() {
     service_context.CloseEvent(aoc_change_event);
 }
 
-void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
+void AOC_U::CountAddOnContent(HLERequestContext& ctx) {
     struct Parameters {
         u64 process_id;
     };
@@ -172,7 +172,7 @@ void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
                       [current](u64 tid) { return CheckAOCTitleIDMatchesBase(tid, current); })));
 }
 
-void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
+void AOC_U::ListAddOnContent(HLERequestContext& ctx) {
     struct Parameters {
         u32 offset;
         u32 count;
@@ -218,7 +218,7 @@ void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
     rb.Push(out_count);
 }
 
-void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
+void AOC_U::GetAddOnContentBaseId(HLERequestContext& ctx) {
     struct Parameters {
         u64 process_id;
     };
@@ -245,7 +245,7 @@ void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
     rb.Push(res.first->GetDLCBaseTitleId());
 }
 
-void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
+void AOC_U::PrepareAddOnContent(HLERequestContext& ctx) {
     struct Parameters {
         s32 addon_index;
         u64 process_id;
@@ -262,7 +262,7 @@ void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void AOC_U::GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx) {
+void AOC_U::GetAddOnContentListChangedEvent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -270,7 +270,7 @@ void AOC_U::GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(aoc_change_event->GetReadableEvent());
 }
 
-void AOC_U::GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestContext& ctx) {
+void AOC_U::GetAddOnContentListChangedEventWithProcessId(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -278,28 +278,28 @@ void AOC_U::GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestConte
     rb.PushCopyObjects(aoc_change_event->GetReadableEvent());
 }
 
-void AOC_U::NotifyMountAddOnContent(Kernel::HLERequestContext& ctx) {
+void AOC_U::NotifyMountAddOnContent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void AOC_U::NotifyUnmountAddOnContent(Kernel::HLERequestContext& ctx) {
+void AOC_U::NotifyUnmountAddOnContent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void AOC_U::CheckAddOnContentMountStatus(Kernel::HLERequestContext& ctx) {
+void AOC_U::CheckAddOnContentMountStatus(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void AOC_U::CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx) {
+void AOC_U::CreateEcPurchasedEventManager(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -307,7 +307,7 @@ void AOC_U::CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IPurchaseEventManager>(system);
 }
 
-void AOC_U::CreatePermanentEcPurchasedEventManager(Kernel::HLERequestContext& ctx) {
+void AOC_U::CreatePermanentEcPurchasedEventManager(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

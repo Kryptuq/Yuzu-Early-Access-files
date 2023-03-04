@@ -197,7 +197,7 @@ struct GPU::Impl {
         constexpr u64 gpu_ticks_num = 384;
         constexpr u64 gpu_ticks_den = 625;
 
-        u64 nanoseconds = system.CoreTiming().GetGlobalTimeNs().count();
+        u64 nanoseconds = system.CoreTiming().GetCPUTimeNs().count();
         if (Settings::values.use_fast_gpu_time.GetValue()) {
             nanoseconds /= 256;
         }

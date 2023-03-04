@@ -23,13 +23,13 @@ public:
         ~Interface() override;
 
         // General
-        void GetConfig(Kernel::HLERequestContext& ctx);
-        void ModularExponentiate(Kernel::HLERequestContext& ctx);
-        void SetConfig(Kernel::HLERequestContext& ctx);
-        void GenerateRandomBytes(Kernel::HLERequestContext& ctx);
-        void IsDevelopment(Kernel::HLERequestContext& ctx);
-        void SetBootReason(Kernel::HLERequestContext& ctx);
-        void GetBootReason(Kernel::HLERequestContext& ctx);
+        void GetConfig(HLERequestContext& ctx);
+        void ModularExponentiate(HLERequestContext& ctx);
+        void SetConfig(HLERequestContext& ctx);
+        void GenerateRandomBytes(HLERequestContext& ctx);
+        void IsDevelopment(HLERequestContext& ctx);
+        void SetBootReason(HLERequestContext& ctx);
+        void GetBootReason(HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;

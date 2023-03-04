@@ -16,10 +16,10 @@ public:
     ~ARP_R() override;
 
 private:
-    void GetApplicationLaunchProperty(Kernel::HLERequestContext& ctx);
-    void GetApplicationLaunchPropertyWithApplicationId(Kernel::HLERequestContext& ctx);
-    void GetApplicationControlProperty(Kernel::HLERequestContext& ctx);
-    void GetApplicationControlPropertyWithApplicationId(Kernel::HLERequestContext& ctx);
+    void GetApplicationLaunchProperty(HLERequestContext& ctx);
+    void GetApplicationLaunchPropertyWithApplicationId(HLERequestContext& ctx);
+    void GetApplicationControlProperty(HLERequestContext& ctx);
+    void GetApplicationControlPropertyWithApplicationId(HLERequestContext& ctx);
 
     const ARPManager& manager;
 };
@@ -30,8 +30,8 @@ public:
     ~ARP_W() override;
 
 private:
-    void AcquireRegistrar(Kernel::HLERequestContext& ctx);
-    void UnregisterApplicationInstance(Kernel::HLERequestContext& ctx);
+    void AcquireRegistrar(HLERequestContext& ctx);
+    void UnregisterApplicationInstance(HLERequestContext& ctx);
 
     ARPManager& manager;
     std::shared_ptr<IRegistrar> registrar;

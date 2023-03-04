@@ -8,7 +8,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/hle/api_version.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/spl/csrng.h"
 #include "core/hle/service/spl/spl.h"
@@ -23,7 +23,7 @@ Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> modu
 
 Module::Interface::~Interface() = default;
 
-void Module::Interface::GetConfig(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetConfig(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto config_item = rp.PopEnum<ConfigItem>();
 
@@ -48,21 +48,21 @@ void Module::Interface::GetConfig(Kernel::HLERequestContext& ctx) {
     rb.Push(*smc_result);
 }
 
-void Module::Interface::ModularExponentiate(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ModularExponentiate(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("ModularExponentiate is not implemented!");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
-void Module::Interface::SetConfig(Kernel::HLERequestContext& ctx) {
+void Module::Interface::SetConfig(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("SetConfig is not implemented!");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
-void Module::Interface::GenerateRandomBytes(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GenerateRandomBytes(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SPL, "called");
 
     const std::size_t size = ctx.GetWriteBufferSize();
@@ -77,21 +77,21 @@ void Module::Interface::GenerateRandomBytes(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::IsDevelopment(Kernel::HLERequestContext& ctx) {
+void Module::Interface::IsDevelopment(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("IsDevelopment is not implemented!");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
-void Module::Interface::SetBootReason(Kernel::HLERequestContext& ctx) {
+void Module::Interface::SetBootReason(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("SetBootReason is not implemented!");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
-void Module::Interface::GetBootReason(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetBootReason(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("GetBootReason is not implemented!");
 
     IPC::ResponseBuilder rb{ctx, 2};

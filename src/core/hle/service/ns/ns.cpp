@@ -7,8 +7,8 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/vfs.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/glue/glue_manager.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ns/errors.h"
 #include "core/hle/service/ns/iplatform_service_manager.h"
 #include "core/hle/service/ns/language.h"
@@ -329,7 +329,7 @@ IApplicationManagerInterface::IApplicationManagerInterface(Core::System& system_
 
 IApplicationManagerInterface::~IApplicationManagerInterface() = default;
 
-void IApplicationManagerInterface::GetApplicationControlData(Kernel::HLERequestContext& ctx) {
+void IApplicationManagerInterface::GetApplicationControlData(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto flag = rp.PopRaw<u64>();
     LOG_DEBUG(Service_NS, "called with flag={:016X}", flag);
@@ -388,7 +388,7 @@ void IApplicationManagerInterface::GetApplicationControlData(Kernel::HLERequestC
     rb.Push<u32>(static_cast<u32>(out.size()));
 }
 
-void IApplicationManagerInterface::GetApplicationDesiredLanguage(Kernel::HLERequestContext& ctx) {
+void IApplicationManagerInterface::GetApplicationDesiredLanguage(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto supported_languages = rp.Pop<u32>();
 
@@ -440,7 +440,7 @@ ResultVal<u8> IApplicationManagerInterface::GetApplicationDesiredLanguage(
 }
 
 void IApplicationManagerInterface::ConvertApplicationLanguageToLanguageCode(
-    Kernel::HLERequestContext& ctx) {
+    HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto application_language = rp.Pop<u8>();
 
@@ -604,8 +604,7 @@ IReadOnlyApplicationControlDataInterface::IReadOnlyApplicationControlDataInterfa
 
 IReadOnlyApplicationControlDataInterface::~IReadOnlyApplicationControlDataInterface() = default;
 
-void IReadOnlyApplicationControlDataInterface::GetApplicationControlData(
-    Kernel::HLERequestContext& ctx) {
+void IReadOnlyApplicationControlDataInterface::GetApplicationControlData(HLERequestContext& ctx) {
     enum class ApplicationControlSource : u8 {
         CacheOnly,
         Storage,
@@ -753,7 +752,7 @@ public:
     }
 
 private:
-    void OpenSystemUpdateControl(Kernel::HLERequestContext& ctx) {
+    void OpenSystemUpdateControl(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -777,7 +776,7 @@ public:
     }
 
 private:
-    void NeedsUpdateVulnerability(Kernel::HLERequestContext& ctx) {
+    void NeedsUpdateVulnerability(HLERequestContext& ctx) {
         LOG_WARNING(Service_NS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};

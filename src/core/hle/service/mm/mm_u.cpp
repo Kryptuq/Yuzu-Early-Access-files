@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/mm/mm_u.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
@@ -29,21 +29,21 @@ public:
     }
 
 private:
-    void InitializeOld(Kernel::HLERequestContext& ctx) {
+    void InitializeOld(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void FinalizeOld(Kernel::HLERequestContext& ctx) {
+    void FinalizeOld(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void SetAndWaitOld(Kernel::HLERequestContext& ctx) {
+    void SetAndWaitOld(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         min = rp.Pop<u32>();
         max = rp.Pop<u32>();
@@ -54,7 +54,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetOld(Kernel::HLERequestContext& ctx) {
+    void GetOld(HLERequestContext& ctx) {
         LOG_DEBUG(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -62,7 +62,7 @@ private:
         rb.Push(current);
     }
 
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -70,14 +70,14 @@ private:
         rb.Push<u32>(id); // Any non zero value
     }
 
-    void Finalize(Kernel::HLERequestContext& ctx) {
+    void Finalize(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void SetAndWait(Kernel::HLERequestContext& ctx) {
+    void SetAndWait(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         u32 input_id = rp.Pop<u32>();
         min = rp.Pop<u32>();
@@ -90,7 +90,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Get(Kernel::HLERequestContext& ctx) {
+    void Get(HLERequestContext& ctx) {
         LOG_DEBUG(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};

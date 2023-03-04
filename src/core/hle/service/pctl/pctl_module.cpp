@@ -5,7 +5,7 @@
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/pctl/pctl_module.h"
 #include "core/hle/service/server_manager.h"
@@ -177,7 +177,7 @@ private:
         settings.is_stero_vision_restricted = is_restricted;
     }
 
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
         IPC::ResponseBuilder rb{ctx, 2};
 
@@ -215,7 +215,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void CheckFreeCommunicationPermission(Kernel::HLERequestContext& ctx) {
+    void CheckFreeCommunicationPermission(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -228,7 +228,7 @@ private:
         states.free_communication = true;
     }
 
-    void ConfirmStereoVisionPermission(Kernel::HLERequestContext& ctx) {
+    void ConfirmStereoVisionPermission(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
         states.stereo_vision = true;
 
@@ -236,14 +236,14 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void EndFreeCommunication(Kernel::HLERequestContext& ctx) {
+    void EndFreeCommunication(HLERequestContext& ctx) {
         LOG_WARNING(Service_PCTL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void IsFreeCommunicationAvailable(Kernel::HLERequestContext& ctx) {
+    void IsFreeCommunicationAvailable(HLERequestContext& ctx) {
         LOG_WARNING(Service_PCTL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -254,7 +254,7 @@ private:
         }
     }
 
-    void IsRestrictionEnabled(Kernel::HLERequestContext& ctx) {
+    void IsRestrictionEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -268,7 +268,7 @@ private:
         rb.Push(pin_code[0] != '\0');
     }
 
-    void ConfirmStereoVisionRestrictionConfigurable(Kernel::HLERequestContext& ctx) {
+    void ConfirmStereoVisionRestrictionConfigurable(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -287,7 +287,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void IsStereoVisionPermitted(Kernel::HLERequestContext& ctx) {
+    void IsStereoVisionPermitted(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -300,7 +300,7 @@ private:
         }
     }
 
-    void SetStereoVisionRestriction(Kernel::HLERequestContext& ctx) {
+    void SetStereoVisionRestriction(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto can_use = rp.Pop<bool>();
         LOG_DEBUG(Service_PCTL, "called, can_use={}", can_use);
@@ -316,7 +316,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetStereoVisionRestriction(Kernel::HLERequestContext& ctx) {
+    void GetStereoVisionRestriction(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -331,7 +331,7 @@ private:
         rb.Push(settings.is_stero_vision_restricted);
     }
 
-    void ResetConfirmedStereoVisionPermission(Kernel::HLERequestContext& ctx) {
+    void ResetConfirmedStereoVisionPermission(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
         states.stereo_vision = false;
@@ -370,7 +370,7 @@ private:
     Capability capability{};
 };
 
-void Module::Interface::CreateService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PCTL, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -380,7 +380,7 @@ void Module::Interface::CreateService(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IParentalControlService>(system, capability);
 }
 
-void Module::Interface::CreateServiceWithoutInitialize(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateServiceWithoutInitialize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PCTL, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

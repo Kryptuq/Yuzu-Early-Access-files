@@ -4,8 +4,8 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hid/hid_types.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nfp/nfp_device.h"
 #include "core/hle/service/nfp/nfp_result.h"
 #include "core/hle/service/nfp/nfp_user.h"
@@ -56,7 +56,7 @@ IUser ::~IUser() {
     availability_change_event->Close();
 }
 
-void IUser::Initialize(Kernel::HLERequestContext& ctx) {
+void IUser::Initialize(HLERequestContext& ctx) {
     LOG_INFO(Service_NFP, "called");
 
     state = State::Initialized;
@@ -69,7 +69,7 @@ void IUser::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void IUser::Finalize(Kernel::HLERequestContext& ctx) {
+void IUser::Finalize(HLERequestContext& ctx) {
     LOG_INFO(Service_NFP, "called");
 
     state = State::NonInitialized;
@@ -82,7 +82,7 @@ void IUser::Finalize(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
+void IUser::ListDevices(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFP, "called");
 
     if (state == State::NonInitialized) {
@@ -128,7 +128,7 @@ void IUser::ListDevices(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<s32>(nfp_devices.size()));
 }
 
-void IUser::StartDetection(Kernel::HLERequestContext& ctx) {
+void IUser::StartDetection(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto nfp_protocol{rp.PopEnum<TagProtocol>()};
@@ -153,7 +153,7 @@ void IUser::StartDetection(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::StopDetection(Kernel::HLERequestContext& ctx) {
+void IUser::StopDetection(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -177,7 +177,7 @@ void IUser::StopDetection(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::Mount(Kernel::HLERequestContext& ctx) {
+void IUser::Mount(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto model_type{rp.PopEnum<ModelType>()};
@@ -204,7 +204,7 @@ void IUser::Mount(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::Unmount(Kernel::HLERequestContext& ctx) {
+void IUser::Unmount(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -228,7 +228,7 @@ void IUser::Unmount(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::OpenApplicationArea(Kernel::HLERequestContext& ctx) {
+void IUser::OpenApplicationArea(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto access_id{rp.Pop<u32>()};
@@ -253,7 +253,7 @@ void IUser::OpenApplicationArea(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::GetApplicationArea(Kernel::HLERequestContext& ctx) {
+void IUser::GetApplicationArea(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto data_size = ctx.GetWriteBufferSize();
@@ -287,7 +287,7 @@ void IUser::GetApplicationArea(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u32>(data_size));
 }
 
-void IUser::SetApplicationArea(Kernel::HLERequestContext& ctx) {
+void IUser::SetApplicationArea(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto data{ctx.ReadBuffer()};
@@ -318,7 +318,7 @@ void IUser::SetApplicationArea(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::Flush(Kernel::HLERequestContext& ctx) {
+void IUser::Flush(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -342,7 +342,7 @@ void IUser::Flush(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::Restore(Kernel::HLERequestContext& ctx) {
+void IUser::Restore(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_WARNING(Service_NFP, "(STUBBED) called, device_handle={}", device_handle);
@@ -366,7 +366,7 @@ void IUser::Restore(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::CreateApplicationArea(Kernel::HLERequestContext& ctx) {
+void IUser::CreateApplicationArea(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto access_id{rp.Pop<u32>()};
@@ -399,7 +399,7 @@ void IUser::CreateApplicationArea(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::GetTagInfo(Kernel::HLERequestContext& ctx) {
+void IUser::GetTagInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -425,7 +425,7 @@ void IUser::GetTagInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::GetRegisterInfo(Kernel::HLERequestContext& ctx) {
+void IUser::GetRegisterInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -451,7 +451,7 @@ void IUser::GetRegisterInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::GetCommonInfo(Kernel::HLERequestContext& ctx) {
+void IUser::GetCommonInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -477,7 +477,7 @@ void IUser::GetCommonInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::GetModelInfo(Kernel::HLERequestContext& ctx) {
+void IUser::GetModelInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFP, "called, device_handle={}", device_handle);
@@ -503,7 +503,7 @@ void IUser::GetModelInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IUser::AttachActivateEvent(Kernel::HLERequestContext& ctx) {
+void IUser::AttachActivateEvent(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
@@ -527,7 +527,7 @@ void IUser::AttachActivateEvent(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(device.value()->GetActivateEvent());
 }
 
-void IUser::AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
+void IUser::AttachDeactivateEvent(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
@@ -551,7 +551,7 @@ void IUser::AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(device.value()->GetDeactivateEvent());
 }
 
-void IUser::GetState(Kernel::HLERequestContext& ctx) {
+void IUser::GetState(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFP, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -559,7 +559,7 @@ void IUser::GetState(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(state);
 }
 
-void IUser::GetDeviceState(Kernel::HLERequestContext& ctx) {
+void IUser::GetDeviceState(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
@@ -577,7 +577,7 @@ void IUser::GetDeviceState(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(device.value()->GetCurrentState());
 }
 
-void IUser::GetNpadId(Kernel::HLERequestContext& ctx) {
+void IUser::GetNpadId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
@@ -601,7 +601,7 @@ void IUser::GetNpadId(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(device.value()->GetNpadId());
 }
 
-void IUser::GetApplicationAreaSize(Kernel::HLERequestContext& ctx) {
+void IUser::GetApplicationAreaSize(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
@@ -619,7 +619,7 @@ void IUser::GetApplicationAreaSize(Kernel::HLERequestContext& ctx) {
     rb.Push(device.value()->GetApplicationAreaSize());
 }
 
-void IUser::AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
+void IUser::AttachAvailabilityChangeEvent(HLERequestContext& ctx) {
     LOG_INFO(Service_NFP, "called");
 
     if (state == State::NonInitialized) {
@@ -633,7 +633,7 @@ void IUser::AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(availability_change_event->GetReadableEvent());
 }
 
-void IUser::RecreateApplicationArea(Kernel::HLERequestContext& ctx) {
+void IUser::RecreateApplicationArea(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto access_id{rp.Pop<u32>()};

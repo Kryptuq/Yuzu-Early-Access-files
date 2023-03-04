@@ -12,11 +12,11 @@
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/core/container.h"
-#include "core/hle/service/nvflinger/buffer_item_consumer.h"
-#include "core/hle/service/nvflinger/buffer_queue_consumer.h"
-#include "core/hle/service/nvflinger/buffer_queue_core.h"
-#include "core/hle/service/nvflinger/buffer_queue_producer.h"
-#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
+#include "core/hle/service/nvnflinger/buffer_item_consumer.h"
+#include "core/hle/service/nvnflinger/buffer_queue_consumer.h"
+#include "core/hle/service/nvnflinger/buffer_queue_core.h"
+#include "core/hle/service/nvnflinger/buffer_queue_producer.h"
+#include "core/hle/service/nvnflinger/hos_binder_driver_server.h"
 #include "core/hle/service/vi/display/vi_display.h"
 #include "core/hle/service/vi/layer/vi_layer.h"
 #include "core/hle/service/vi/vi_results.h"
@@ -39,7 +39,7 @@ static BufferQueue CreateBufferQueue(KernelHelpers::ServiceContext& service_cont
 }
 
 Display::Display(u64 id, std::string name_,
-                 NVFlinger::HosBinderDriverServer& hos_binder_driver_server_,
+                 Nvnflinger::HosBinderDriverServer& hos_binder_driver_server_,
                  KernelHelpers::ServiceContext& service_context_, Core::System& system_)
     : display_id{id}, name{std::move(name_)}, hos_binder_driver_server{hos_binder_driver_server_},
       service_context{service_context_} {

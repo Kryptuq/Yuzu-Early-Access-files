@@ -8,7 +8,7 @@
 #include <boost/container_hash/hash.hpp>
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -93,7 +93,7 @@ public:
     }
 
 private:
-    void Log(Kernel::HLERequestContext& ctx) {
+    void Log(HLERequestContext& ctx) {
         std::size_t offset{};
         const auto data = ctx.ReadBuffer();
 
@@ -148,7 +148,7 @@ private:
         }
     }
 
-    void SetDestination(Kernel::HLERequestContext& ctx) {
+    void SetDestination(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto log_destination = rp.PopEnum<LogDestination>();
 
@@ -343,7 +343,7 @@ public:
     }
 
 private:
-    void OpenLogger(Kernel::HLERequestContext& ctx) {
+    void OpenLogger(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

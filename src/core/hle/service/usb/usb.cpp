@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/usb/usb.h"
@@ -147,7 +147,7 @@ public:
     }
 
 private:
-    void GetPdSession(Kernel::HLERequestContext& ctx) {
+    void GetPdSession(HLERequestContext& ctx) {
         LOG_DEBUG(Service_USB, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -191,7 +191,7 @@ public:
     }
 
 private:
-    void GetPdCradleSession(Kernel::HLERequestContext& ctx) {
+    void GetPdCradleSession(HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IPdCradleSession>(system);

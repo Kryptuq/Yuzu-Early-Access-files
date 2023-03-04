@@ -23,13 +23,13 @@ private:
         BasicBlack = 1,
     };
 
-    void GetSettingsItemValueSize(Kernel::HLERequestContext& ctx);
-    void GetSettingsItemValue(Kernel::HLERequestContext& ctx);
-    void GetFirmwareVersion(Kernel::HLERequestContext& ctx);
-    void GetFirmwareVersion2(Kernel::HLERequestContext& ctx);
-    void GetColorSetId(Kernel::HLERequestContext& ctx);
-    void SetColorSetId(Kernel::HLERequestContext& ctx);
-    void GetDeviceNickName(Kernel::HLERequestContext& ctx);
+    void GetSettingsItemValueSize(HLERequestContext& ctx);
+    void GetSettingsItemValue(HLERequestContext& ctx);
+    void GetFirmwareVersion(HLERequestContext& ctx);
+    void GetFirmwareVersion2(HLERequestContext& ctx);
+    void GetColorSetId(HLERequestContext& ctx);
+    void SetColorSetId(HLERequestContext& ctx);
+    void GetDeviceNickName(HLERequestContext& ctx);
 
     ColorSet color_set = ColorSet::BasicWhite;
 };

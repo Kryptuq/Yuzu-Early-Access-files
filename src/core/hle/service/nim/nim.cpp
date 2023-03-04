@@ -4,8 +4,8 @@
 #include <chrono>
 #include <ctime>
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nim/nim.h"
 #include "core/hle/service/server_manager.h"
@@ -46,7 +46,7 @@ public:
     }
 
 private:
-    void CreateAsyncInterface(Kernel::HLERequestContext& ctx) {
+    void CreateAsyncInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
@@ -68,7 +68,7 @@ public:
     }
 
 private:
-    void CreateAccessorInterface(Kernel::HLERequestContext& ctx) {
+    void CreateAccessorInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
@@ -239,14 +239,14 @@ public:
     }
 
 private:
-    void CreateServerInterface(Kernel::HLERequestContext& ctx) {
+    void CreateServerInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IShopServiceAccessServer>(system);
     }
 
-    void IsLargeResourceAvailable(Kernel::HLERequestContext& ctx) {
+    void IsLargeResourceAvailable(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto unknown{rp.Pop<u64>()};
@@ -325,7 +325,7 @@ public:
     }
 
 private:
-    void StartTask(Kernel::HLERequestContext& ctx) {
+    void StartTask(HLERequestContext& ctx) {
         // No need to connect to the internet, just finish the task straight away.
         LOG_DEBUG(Service_NIM, "called");
         finished_event->Signal();
@@ -333,7 +333,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetFinishNotificationEvent(Kernel::HLERequestContext& ctx) {
+    void GetFinishNotificationEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -341,21 +341,21 @@ private:
         rb.PushCopyObjects(finished_event->GetReadableEvent());
     }
 
-    void GetResult(Kernel::HLERequestContext& ctx) {
+    void GetResult(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void Cancel(Kernel::HLERequestContext& ctx) {
+    void Cancel(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
         finished_event->Clear();
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void IsProcessing(Kernel::HLERequestContext& ctx) {
+    void IsProcessing(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -363,7 +363,7 @@ private:
         rb.PushRaw<u32>(0); // We instantly process the request
     }
 
-    void GetServerTime(Kernel::HLERequestContext& ctx) {
+    void GetServerTime(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
         const s64 server_time{std::chrono::duration_cast<std::chrono::seconds>(
@@ -394,7 +394,7 @@ public:
     }
 
 private:
-    void OpenEnsureNetworkClockAvailabilityService(Kernel::HLERequestContext& ctx) {
+    void OpenEnsureNetworkClockAvailabilityService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -403,14 +403,14 @@ private:
     }
 
     // TODO(ogniK): Do we need these?
-    void SuspendAutonomicTimeCorrection(Kernel::HLERequestContext& ctx) {
+    void SuspendAutonomicTimeCorrection(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void ResumeAutonomicTimeCorrection(Kernel::HLERequestContext& ctx) {
+    void ResumeAutonomicTimeCorrection(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};

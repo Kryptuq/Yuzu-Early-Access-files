@@ -16,7 +16,7 @@
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvdrv/nvdata.h"
-#include "core/hle/service/nvflinger/ui/fence.h"
+#include "core/hle/service/nvnflinger/ui/fence.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -27,8 +27,8 @@ namespace Kernel {
 class KEvent;
 }
 
-namespace Service::NVFlinger {
-class NVFlinger;
+namespace Service::Nvnflinger {
+class Nvnflinger;
 }
 
 namespace Service::Nvidia {
@@ -95,7 +95,7 @@ public:
 
 private:
     friend class EventInterface;
-    friend class Service::NVFlinger::NVFlinger;
+    friend class Service::Nvnflinger::Nvnflinger;
 
     /// Manages syncpoints on the host
     NvCore::Container container;
@@ -114,6 +114,6 @@ private:
     std::unordered_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
 };
 
-void LoopProcess(NVFlinger::NVFlinger& nvflinger, Core::System& system);
+void LoopProcess(Nvnflinger::Nvnflinger& nvnflinger, Core::System& system);
 
 } // namespace Service::Nvidia

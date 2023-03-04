@@ -38,24 +38,24 @@ private:
     };
     static_assert(sizeof(StatusManager) == 0x8000, "StatusManager is an invalid size");
 
-    void ActivateIrsensor(Kernel::HLERequestContext& ctx);
-    void DeactivateIrsensor(Kernel::HLERequestContext& ctx);
-    void GetIrsensorSharedMemoryHandle(Kernel::HLERequestContext& ctx);
-    void StopImageProcessor(Kernel::HLERequestContext& ctx);
-    void RunMomentProcessor(Kernel::HLERequestContext& ctx);
-    void RunClusteringProcessor(Kernel::HLERequestContext& ctx);
-    void RunImageTransferProcessor(Kernel::HLERequestContext& ctx);
-    void GetImageTransferProcessorState(Kernel::HLERequestContext& ctx);
-    void RunTeraPluginProcessor(Kernel::HLERequestContext& ctx);
-    void GetNpadIrCameraHandle(Kernel::HLERequestContext& ctx);
-    void RunPointingProcessor(Kernel::HLERequestContext& ctx);
-    void SuspendImageProcessor(Kernel::HLERequestContext& ctx);
-    void CheckFirmwareVersion(Kernel::HLERequestContext& ctx);
-    void SetFunctionLevel(Kernel::HLERequestContext& ctx);
-    void RunImageTransferExProcessor(Kernel::HLERequestContext& ctx);
-    void RunIrLedProcessor(Kernel::HLERequestContext& ctx);
-    void StopImageProcessorAsync(Kernel::HLERequestContext& ctx);
-    void ActivateIrsensorWithFunctionLevel(Kernel::HLERequestContext& ctx);
+    void ActivateIrsensor(HLERequestContext& ctx);
+    void DeactivateIrsensor(HLERequestContext& ctx);
+    void GetIrsensorSharedMemoryHandle(HLERequestContext& ctx);
+    void StopImageProcessor(HLERequestContext& ctx);
+    void RunMomentProcessor(HLERequestContext& ctx);
+    void RunClusteringProcessor(HLERequestContext& ctx);
+    void RunImageTransferProcessor(HLERequestContext& ctx);
+    void GetImageTransferProcessorState(HLERequestContext& ctx);
+    void RunTeraPluginProcessor(HLERequestContext& ctx);
+    void GetNpadIrCameraHandle(HLERequestContext& ctx);
+    void RunPointingProcessor(HLERequestContext& ctx);
+    void SuspendImageProcessor(HLERequestContext& ctx);
+    void CheckFirmwareVersion(HLERequestContext& ctx);
+    void SetFunctionLevel(HLERequestContext& ctx);
+    void RunImageTransferExProcessor(HLERequestContext& ctx);
+    void RunIrLedProcessor(HLERequestContext& ctx);
+    void StopImageProcessorAsync(HLERequestContext& ctx);
+    void ActivateIrsensorWithFunctionLevel(HLERequestContext& ctx);
 
     Result IsIrCameraHandleValid(const Core::IrSensor::IrCameraHandle& camera_handle) const;
     Core::IrSensor::DeviceFormat& GetIrCameraSharedMemoryDeviceEntry(

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/mii/mii.h"
 #include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/server_manager.h"
@@ -65,7 +65,7 @@ private:
         return out;
     }
 
-    void IsUpdated(Kernel::HLERequestContext& ctx) {
+    void IsUpdated(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
 
@@ -76,7 +76,7 @@ private:
         rb.Push(manager.CheckAndResetUpdateCounter(source_flag, current_update_counter));
     }
 
-    void IsFullDatabase(Kernel::HLERequestContext& ctx) {
+    void IsFullDatabase(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Mii, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -84,7 +84,7 @@ private:
         rb.Push(manager.IsFullDatabase());
     }
 
-    void GetCount(Kernel::HLERequestContext& ctx) {
+    void GetCount(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
 
@@ -95,7 +95,7 @@ private:
         rb.Push<u32>(manager.GetCount(source_flag));
     }
 
-    void Get(Kernel::HLERequestContext& ctx) {
+    void Get(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
 
@@ -117,7 +117,7 @@ private:
         rb.Push<u32>(static_cast<u32>(result->size()));
     }
 
-    void Get1(Kernel::HLERequestContext& ctx) {
+    void Get1(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
 
@@ -142,7 +142,7 @@ private:
         rb.Push<u32>(static_cast<u32>(result->size()));
     }
 
-    void UpdateLatest(Kernel::HLERequestContext& ctx) {
+    void UpdateLatest(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto info{rp.PopRaw<CharInfo>()};
         const auto source_flag{rp.PopRaw<SourceFlag>()};
@@ -161,7 +161,7 @@ private:
         rb.PushRaw<CharInfo>(*result);
     }
 
-    void BuildRandom(Kernel::HLERequestContext& ctx) {
+    void BuildRandom(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto age{rp.PopRaw<Age>()};
@@ -196,7 +196,7 @@ private:
         rb.PushRaw<CharInfo>(manager.BuildRandom(age, gender, race));
     }
 
-    void BuildDefault(Kernel::HLERequestContext& ctx) {
+    void BuildDefault(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto index{rp.Pop<u32>()};
 
@@ -215,7 +215,7 @@ private:
         rb.PushRaw<CharInfo>(manager.BuildDefault(index));
     }
 
-    void GetIndex(Kernel::HLERequestContext& ctx) {
+    void GetIndex(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto info{rp.PopRaw<CharInfo>()};
 
@@ -227,7 +227,7 @@ private:
         rb.Push(index);
     }
 
-    void SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+    void SetInterfaceVersion(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         current_interface_version = rp.PopRaw<u32>();
 
@@ -239,7 +239,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Convert(Kernel::HLERequestContext& ctx) {
+    void Convert(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto mii_v3{rp.PopRaw<Ver3StoreData>()};
@@ -275,7 +275,7 @@ public:
     }
 
 private:
-    void GetDatabaseService(Kernel::HLERequestContext& ctx) {
+    void GetDatabaseService(HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDatabaseService>(system);

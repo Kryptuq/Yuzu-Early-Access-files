@@ -158,7 +158,6 @@ add_library(core STATIC
     hid/motion_input.h
     hle/api_version.h
     hle/ipc.h
-    hle/ipc_helpers.h
     hle/kernel/board/nintendo/nx/k_memory_layout.h
     hle/kernel/board/nintendo/nx/k_system_control.cpp
     hle/kernel/board/nintendo/nx/k_system_control.h
@@ -168,8 +167,6 @@ add_library(core STATIC
     hle/kernel/svc_results.h
     hle/kernel/global_scheduler_context.cpp
     hle/kernel/global_scheduler_context.h
-    hle/kernel/hle_ipc.cpp
-    hle/kernel/hle_ipc.h
     hle/kernel/init/init_slab_setup.cpp
     hle/kernel/init/init_slab_setup.h
     hle/kernel/initial_process.h
@@ -629,35 +626,35 @@ add_library(core STATIC
     hle/service/nvdrv/nvdrv_interface.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
-    hle/service/nvflinger/binder.h
-    hle/service/nvflinger/buffer_item.h
-    hle/service/nvflinger/buffer_item_consumer.cpp
-    hle/service/nvflinger/buffer_item_consumer.h
-    hle/service/nvflinger/buffer_queue_consumer.cpp
-    hle/service/nvflinger/buffer_queue_consumer.h
-    hle/service/nvflinger/buffer_queue_core.cpp
-    hle/service/nvflinger/buffer_queue_core.h
-    hle/service/nvflinger/buffer_queue_defs.h
-    hle/service/nvflinger/buffer_queue_producer.cpp
-    hle/service/nvflinger/buffer_queue_producer.h
-    hle/service/nvflinger/buffer_slot.h
-    hle/service/nvflinger/buffer_transform_flags.h
-    hle/service/nvflinger/consumer_base.cpp
-    hle/service/nvflinger/consumer_base.h
-    hle/service/nvflinger/consumer_listener.h
-    hle/service/nvflinger/graphic_buffer_producer.cpp
-    hle/service/nvflinger/graphic_buffer_producer.h
-    hle/service/nvflinger/hos_binder_driver_server.cpp
-    hle/service/nvflinger/hos_binder_driver_server.h
-    hle/service/nvflinger/nvflinger.cpp
-    hle/service/nvflinger/nvflinger.h
-    hle/service/nvflinger/parcel.h
-    hle/service/nvflinger/pixel_format.h
-    hle/service/nvflinger/producer_listener.h
-    hle/service/nvflinger/status.h
-    hle/service/nvflinger/ui/fence.h
-    hle/service/nvflinger/ui/graphic_buffer.h
-    hle/service/nvflinger/window.h
+    hle/service/nvnflinger/binder.h
+    hle/service/nvnflinger/buffer_item.h
+    hle/service/nvnflinger/buffer_item_consumer.cpp
+    hle/service/nvnflinger/buffer_item_consumer.h
+    hle/service/nvnflinger/buffer_queue_consumer.cpp
+    hle/service/nvnflinger/buffer_queue_consumer.h
+    hle/service/nvnflinger/buffer_queue_core.cpp
+    hle/service/nvnflinger/buffer_queue_core.h
+    hle/service/nvnflinger/buffer_queue_defs.h
+    hle/service/nvnflinger/buffer_queue_producer.cpp
+    hle/service/nvnflinger/buffer_queue_producer.h
+    hle/service/nvnflinger/buffer_slot.h
+    hle/service/nvnflinger/buffer_transform_flags.h
+    hle/service/nvnflinger/consumer_base.cpp
+    hle/service/nvnflinger/consumer_base.h
+    hle/service/nvnflinger/consumer_listener.h
+    hle/service/nvnflinger/graphic_buffer_producer.cpp
+    hle/service/nvnflinger/graphic_buffer_producer.h
+    hle/service/nvnflinger/hos_binder_driver_server.cpp
+    hle/service/nvnflinger/hos_binder_driver_server.h
+    hle/service/nvnflinger/nvnflinger.cpp
+    hle/service/nvnflinger/nvnflinger.h
+    hle/service/nvnflinger/parcel.h
+    hle/service/nvnflinger/pixel_format.h
+    hle/service/nvnflinger/producer_listener.h
+    hle/service/nvnflinger/status.h
+    hle/service/nvnflinger/ui/fence.h
+    hle/service/nvnflinger/ui/graphic_buffer.h
+    hle/service/nvnflinger/window.h
     hle/service/olsc/olsc.cpp
     hle/service/olsc/olsc.h
     hle/service/pcie/pcie.cpp
@@ -680,6 +677,9 @@ add_library(core STATIC
     hle/service/ptm/ptm.h
     hle/service/ptm/ts.cpp
     hle/service/ptm/ts.h
+    hle/service/hle_ipc.cpp
+    hle/service/hle_ipc.h
+    hle/service/ipc_helpers.h
     hle/service/kernel_helpers.cpp
     hle/service/kernel_helpers.h
     hle/service/mutex.cpp

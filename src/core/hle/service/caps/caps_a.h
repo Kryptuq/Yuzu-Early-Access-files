@@ -9,10 +9,6 @@ namespace Core {
 class System;
 }
 
-namespace Kernel {
-class HLERequestContext;
-}
-
 namespace Service::Capture {
 
 class CAPS_A final : public ServiceFramework<CAPS_A> {

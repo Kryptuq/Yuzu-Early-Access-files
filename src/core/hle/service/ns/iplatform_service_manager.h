@@ -42,12 +42,12 @@ public:
     ~IPlatformServiceManager() override;
 
 private:
-    void RequestLoad(Kernel::HLERequestContext& ctx);
-    void GetLoadState(Kernel::HLERequestContext& ctx);
-    void GetSize(Kernel::HLERequestContext& ctx);
-    void GetSharedMemoryAddressOffset(Kernel::HLERequestContext& ctx);
-    void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
-    void GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx);
+    void RequestLoad(HLERequestContext& ctx);
+    void GetLoadState(HLERequestContext& ctx);
+    void GetSize(HLERequestContext& ctx);
+    void GetSharedMemoryAddressOffset(HLERequestContext& ctx);
+    void GetSharedMemoryNativeHandle(HLERequestContext& ctx);
+    void GetSharedFontInOrderOfPriority(HLERequestContext& ctx);
 
     struct Impl;
     std::unique_ptr<Impl> impl;

@@ -5,8 +5,8 @@
 
 #include "common/common_types.h"
 #include "common/math_util.h"
-#include "core/hle/service/nvflinger/buffer_transform_flags.h"
-#include "core/hle/service/nvflinger/pixel_format.h"
+#include "core/hle/service/nvnflinger/buffer_transform_flags.h"
+#include "core/hle/service/nvnflinger/pixel_format.h"
 
 namespace Tegra {
 

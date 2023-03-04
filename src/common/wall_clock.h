@@ -55,4 +55,7 @@ private:
 [[nodiscard]] std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
                                                                  u64 emulated_clock_frequency);
 
+[[nodiscard]] std::unique_ptr<WallClock> CreateStandardWallClock(u64 emulated_cpu_frequency,
+                                                                 u64 emulated_clock_frequency);
+
 } // namespace Common

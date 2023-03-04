@@ -17,9 +17,9 @@ public:
     ~APM() override;
 
 private:
-    void OpenSession(Kernel::HLERequestContext& ctx);
-    void GetPerformanceMode(Kernel::HLERequestContext& ctx);
-    void IsCpuOverclockEnabled(Kernel::HLERequestContext& ctx);
+    void OpenSession(HLERequestContext& ctx);
+    void GetPerformanceMode(HLERequestContext& ctx);
+    void IsCpuOverclockEnabled(HLERequestContext& ctx);
 
     std::shared_ptr<Module> apm;
     Controller& controller;
@@ -30,11 +30,11 @@ public:
     explicit APM_Sys(Core::System& system_, Controller& controller);
     ~APM_Sys() override;
 
-    void SetCpuBoostMode(Kernel::HLERequestContext& ctx);
+    void SetCpuBoostMode(HLERequestContext& ctx);
 
 private:
-    void GetPerformanceEvent(Kernel::HLERequestContext& ctx);
-    void GetCurrentPerformanceConfiguration(Kernel::HLERequestContext& ctx);
+    void GetPerformanceEvent(HLERequestContext& ctx);
+    void GetCurrentPerformanceConfiguration(HLERequestContext& ctx);
 
     Controller& controller;
 };

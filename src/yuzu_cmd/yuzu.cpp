@@ -42,6 +42,8 @@
 #include <windows.h>
 
 #include <shellapi.h>
+
+#include "common/windows/timer_resolution.h"
 #endif
 
 #undef _UNICODE
@@ -314,6 +316,8 @@ int main(int argc, char** argv) {
 
 #ifdef _WIN32
     LocalFree(argv_w);
+
+    Common::Windows::SetCurrentTimerResolutionToMaximum();
 #endif
 
     MicroProfileOnThreadCreate("EmuThread");

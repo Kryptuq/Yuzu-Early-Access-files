@@ -27,11 +27,11 @@ public:
     ~HwOpus() override;
 
 private:
-    void OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx);
-    void OpenHardwareOpusDecoderEx(Kernel::HLERequestContext& ctx);
-    void GetWorkBufferSize(Kernel::HLERequestContext& ctx);
-    void GetWorkBufferSizeEx(Kernel::HLERequestContext& ctx);
-    void GetWorkBufferSizeForMultiStreamEx(Kernel::HLERequestContext& ctx);
+    void OpenHardwareOpusDecoder(HLERequestContext& ctx);
+    void OpenHardwareOpusDecoderEx(HLERequestContext& ctx);
+    void GetWorkBufferSize(HLERequestContext& ctx);
+    void GetWorkBufferSizeEx(HLERequestContext& ctx);
+    void GetWorkBufferSizeForMultiStreamEx(HLERequestContext& ctx);
 };
 
 } // namespace Service::Audio

@@ -112,13 +112,17 @@ GLenum ImageTarget(Shader::TextureType type, int num_samples = 1) {
     return GL_NONE;
 }
 
-GLenum TextureMode(PixelFormat format, bool is_first) {
+GLenum TextureMode(PixelFormat format, std::array<SwizzleSource, 4> swizzle) {
+    bool any_r =
+        std::ranges::any_of(swizzle, [](SwizzleSource s) { return s == SwizzleSource::R; });
     switch (format) {
     case PixelFormat::D24_UNORM_S8_UINT:
     case PixelFormat::D32_FLOAT_S8_UINT:
-        return is_first ? GL_DEPTH_COMPONENT : GL_STENCIL_INDEX;
+        // R = depth, G = stencil
+        return any_r ? GL_DEPTH_COMPONENT : GL_STENCIL_INDEX;
     case PixelFormat::S8_UINT_D24_UNORM:
-        return is_first ? GL_STENCIL_INDEX : GL_DEPTH_COMPONENT;
+        // R = stencil, G = depth
+        return any_r ? GL_STENCIL_INDEX : GL_DEPTH_COMPONENT;
     default:
         ASSERT(false);
         return GL_DEPTH_COMPONENT;
@@ -208,8 +212,7 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
     case PixelFormat::D32_FLOAT_S8_UINT:
     case PixelFormat::S8_UINT_D24_UNORM:
         UNIMPLEMENTED_IF(swizzle[0] != SwizzleSource::R && swizzle[0] != SwizzleSource::G);
-        glTextureParameteri(handle, GL_DEPTH_STENCIL_TEXTURE_MODE,
-                            TextureMode(format, swizzle[0] == SwizzleSource::R));
+        glTextureParameteri(handle, GL_DEPTH_STENCIL_TEXTURE_MODE, TextureMode(format, swizzle));
         std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         break;
     case PixelFormat::A5B5G5R1_UNORM: {

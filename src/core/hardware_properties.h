@@ -13,11 +13,9 @@ namespace Core {
 
 namespace Hardware {
 
-// The below clock rate is based on Switch's clockspeed being widely known as 1.020GHz
-// The exact value used is of course unverified.
-constexpr u64 BASE_CLOCK_RATE = 1019215872; // Switch cpu frequency is 1020MHz un/docked
-constexpr u64 CNTFREQ = 19200000;           // Switch's hardware clock speed
-constexpr u32 NUM_CPU_CORES = 4;            // Number of CPU Cores
+constexpr u64 BASE_CLOCK_RATE = 1'020'000'000; // Default CPU Frequency = 1020 MHz
+constexpr u64 CNTFREQ = 19'200'000;            // CNTPCT_EL0 Frequency = 19.2 MHz
+constexpr u32 NUM_CPU_CORES = 4;               // Number of CPU Cores
 
 // Virtual to Physical core map.
 constexpr std::array<s32, Common::BitSize<u64>()> VirtualToPhysicalCoreMap{

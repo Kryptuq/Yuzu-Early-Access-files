@@ -9,10 +9,10 @@
 #include "common/scm_rev.h"
 #include "common/swap.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/fatal/fatal_p.h"
 #include "core/hle/service/fatal/fatal_u.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/reporter.h"
 
@@ -126,7 +126,7 @@ static void ThrowFatalError(Core::System& system, Result error_code, FatalType f
     }
 }
 
-void Module::Interface::ThrowFatal(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ThrowFatal(HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp{ctx};
     const auto error_code = rp.Pop<Result>();
@@ -136,7 +136,7 @@ void Module::Interface::ThrowFatal(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ThrowFatalWithPolicy(HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
     const auto error_code = rp.Pop<Result>();
@@ -148,7 +148,7 @@ void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ThrowFatalWithCpuContext(HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
     const auto error_code = rp.Pop<Result>();

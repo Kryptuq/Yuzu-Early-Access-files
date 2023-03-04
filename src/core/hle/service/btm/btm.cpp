@@ -5,9 +5,9 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/btm/btm.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -70,7 +70,7 @@ public:
     }
 
 private:
-    void AcquireBleScanEvent(Kernel::HLERequestContext& ctx) {
+    void AcquireBleScanEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3, 1};
@@ -79,7 +79,7 @@ private:
         rb.PushCopyObjects(scan_event->GetReadableEvent());
     }
 
-    void AcquireBleConnectionEvent(Kernel::HLERequestContext& ctx) {
+    void AcquireBleConnectionEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3, 1};
@@ -88,7 +88,7 @@ private:
         rb.PushCopyObjects(connection_event->GetReadableEvent());
     }
 
-    void AcquireBleServiceDiscoveryEvent(Kernel::HLERequestContext& ctx) {
+    void AcquireBleServiceDiscoveryEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3, 1};
@@ -97,7 +97,7 @@ private:
         rb.PushCopyObjects(service_discovery_event->GetReadableEvent());
     }
 
-    void AcquireBleMtuConfigEvent(Kernel::HLERequestContext& ctx) {
+    void AcquireBleMtuConfigEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3, 1};
@@ -126,7 +126,7 @@ public:
     }
 
 private:
-    void GetCore(Kernel::HLERequestContext& ctx) {
+    void GetCore(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BTM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -307,7 +307,7 @@ public:
     }
 
 private:
-    void GetCore(Kernel::HLERequestContext& ctx) {
+    void GetCore(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BTM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

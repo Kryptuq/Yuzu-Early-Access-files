@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/psc/psc.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -62,7 +62,7 @@ public:
     }
 
 private:
-    void GetPmModule(Kernel::HLERequestContext& ctx) {
+    void GetPmModule(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PSC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

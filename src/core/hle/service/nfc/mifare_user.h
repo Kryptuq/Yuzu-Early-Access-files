@@ -24,20 +24,20 @@ private:
         Initialized,
     };
 
-    void Initialize(Kernel::HLERequestContext& ctx);
-    void Finalize(Kernel::HLERequestContext& ctx);
-    void ListDevices(Kernel::HLERequestContext& ctx);
-    void StartDetection(Kernel::HLERequestContext& ctx);
-    void StopDetection(Kernel::HLERequestContext& ctx);
-    void Read(Kernel::HLERequestContext& ctx);
-    void Write(Kernel::HLERequestContext& ctx);
-    void GetTagInfo(Kernel::HLERequestContext& ctx);
-    void GetActivateEventHandle(Kernel::HLERequestContext& ctx);
-    void GetDeactivateEventHandle(Kernel::HLERequestContext& ctx);
-    void GetState(Kernel::HLERequestContext& ctx);
-    void GetDeviceState(Kernel::HLERequestContext& ctx);
-    void GetNpadId(Kernel::HLERequestContext& ctx);
-    void GetAvailabilityChangeEventHandle(Kernel::HLERequestContext& ctx);
+    void Initialize(HLERequestContext& ctx);
+    void Finalize(HLERequestContext& ctx);
+    void ListDevices(HLERequestContext& ctx);
+    void StartDetection(HLERequestContext& ctx);
+    void StopDetection(HLERequestContext& ctx);
+    void Read(HLERequestContext& ctx);
+    void Write(HLERequestContext& ctx);
+    void GetTagInfo(HLERequestContext& ctx);
+    void GetActivateEventHandle(HLERequestContext& ctx);
+    void GetDeactivateEventHandle(HLERequestContext& ctx);
+    void GetState(HLERequestContext& ctx);
+    void GetDeviceState(HLERequestContext& ctx);
+    void GetNpadId(HLERequestContext& ctx);
+    void GetAvailabilityChangeEventHandle(HLERequestContext& ctx);
 
     std::optional<std::shared_ptr<NfcDevice>> GetNfcDevice(u64 handle);
 

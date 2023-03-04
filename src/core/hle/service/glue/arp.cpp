@@ -5,12 +5,12 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/glue/arp.h"
 #include "core/hle/service/glue/errors.h"
 #include "core/hle/service/glue/glue_manager.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Glue {
 
@@ -51,7 +51,7 @@ ARP_R::ARP_R(Core::System& system_, const ARPManager& manager_)
 
 ARP_R::~ARP_R() = default;
 
-void ARP_R::GetApplicationLaunchProperty(Kernel::HLERequestContext& ctx) {
+void ARP_R::GetApplicationLaunchProperty(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto process_id = rp.PopRaw<u64>();
 
@@ -79,7 +79,7 @@ void ARP_R::GetApplicationLaunchProperty(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(*res);
 }
 
-void ARP_R::GetApplicationLaunchPropertyWithApplicationId(Kernel::HLERequestContext& ctx) {
+void ARP_R::GetApplicationLaunchPropertyWithApplicationId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto title_id = rp.PopRaw<u64>();
 
@@ -99,7 +99,7 @@ void ARP_R::GetApplicationLaunchPropertyWithApplicationId(Kernel::HLERequestCont
     rb.PushRaw(*res);
 }
 
-void ARP_R::GetApplicationControlProperty(Kernel::HLERequestContext& ctx) {
+void ARP_R::GetApplicationControlProperty(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto process_id = rp.PopRaw<u64>();
 
@@ -128,7 +128,7 @@ void ARP_R::GetApplicationControlProperty(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void ARP_R::GetApplicationControlPropertyWithApplicationId(Kernel::HLERequestContext& ctx) {
+void ARP_R::GetApplicationControlPropertyWithApplicationId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto title_id = rp.PopRaw<u64>();
 
@@ -169,7 +169,7 @@ public:
     }
 
 private:
-    void Issue(Kernel::HLERequestContext& ctx) {
+    void Issue(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto process_id = rp.PopRaw<u64>();
 
@@ -197,7 +197,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetApplicationLaunchProperty(Kernel::HLERequestContext& ctx) {
+    void SetApplicationLaunchProperty(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ARP, "called");
 
         if (issued) {
@@ -216,7 +216,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetApplicationControlProperty(Kernel::HLERequestContext& ctx) {
+    void SetApplicationControlProperty(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ARP, "called");
 
         if (issued) {
@@ -256,7 +256,7 @@ ARP_W::ARP_W(Core::System& system_, ARPManager& manager_)
 
 ARP_W::~ARP_W() = default;
 
-void ARP_W::AcquireRegistrar(Kernel::HLERequestContext& ctx) {
+void ARP_W::AcquireRegistrar(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ARP, "called");
 
     registrar = std::make_shared<IRegistrar>(
@@ -274,7 +274,7 @@ void ARP_W::AcquireRegistrar(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface(registrar);
 }
 
-void ARP_W::UnregisterApplicationInstance(Kernel::HLERequestContext& ctx) {
+void ARP_W::UnregisterApplicationInstance(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto process_id = rp.PopRaw<u64>();
 

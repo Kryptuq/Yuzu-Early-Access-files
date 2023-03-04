@@ -15,7 +15,6 @@ namespace Kernel {
 class KClientSession;
 class KernelCore;
 class KPort;
-class SessionRequestManager;
 
 class KClientPort final : public KSynchronizationObject {
     KERNEL_AUTOOBJECT_TRAITS(KClientPort, KSynchronizationObject);

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "core/file_sys/romfs_factory.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ncm/ncm.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"

@@ -7,9 +7,9 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/audio/audin_u.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Audio {
 using namespace AudioCore::AudioIn;
@@ -61,7 +61,7 @@ public:
     }
 
 private:
-    void GetAudioInState(Kernel::HLERequestContext& ctx) {
+    void GetAudioInState(HLERequestContext& ctx) {
         const auto state = static_cast<u32>(impl->GetState());
 
         LOG_DEBUG(Service_Audio, "called. State={}", state);
@@ -71,7 +71,7 @@ private:
         rb.Push(state);
     }
 
-    void Start(Kernel::HLERequestContext& ctx) {
+    void Start(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto result = impl->StartSystem();
@@ -80,7 +80,7 @@ private:
         rb.Push(result);
     }
 
-    void Stop(Kernel::HLERequestContext& ctx) {
+    void Stop(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto result = impl->StopSystem();
@@ -89,7 +89,7 @@ private:
         rb.Push(result);
     }
 
-    void AppendAudioInBuffer(Kernel::HLERequestContext& ctx) {
+    void AppendAudioInBuffer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         u64 tag = rp.PopRaw<u64>();
 
@@ -111,7 +111,7 @@ private:
         rb.Push(result);
     }
 
-    void RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
+    void RegisterBufferEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto& buffer_event = impl->GetBufferEvent();
@@ -121,7 +121,7 @@ private:
         rb.PushCopyObjects(buffer_event);
     }
 
-    void GetReleasedAudioInBuffer(Kernel::HLERequestContext& ctx) {
+    void GetReleasedAudioInBuffer(HLERequestContext& ctx) {
         const auto write_buffer_size = ctx.GetWriteBufferNumElements<u64>();
         std::vector<u64> released_buffers(write_buffer_size);
 
@@ -141,7 +141,7 @@ private:
         rb.Push(count);
     }
 
-    void ContainsAudioInBuffer(Kernel::HLERequestContext& ctx) {
+    void ContainsAudioInBuffer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const u64 tag{rp.Pop<u64>()};
@@ -154,7 +154,7 @@ private:
         rb.Push(buffer_queued);
     }
 
-    void GetAudioInBufferCount(Kernel::HLERequestContext& ctx) {
+    void GetAudioInBufferCount(HLERequestContext& ctx) {
         const auto buffer_count = impl->GetBufferCount();
 
         LOG_DEBUG(Service_Audio, "called. Buffer count={}", buffer_count);
@@ -165,7 +165,7 @@ private:
         rb.Push(buffer_count);
     }
 
-    void SetDeviceGain(Kernel::HLERequestContext& ctx) {
+    void SetDeviceGain(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto volume{rp.Pop<f32>()};
@@ -177,7 +177,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetDeviceGain(Kernel::HLERequestContext& ctx) {
+    void GetDeviceGain(HLERequestContext& ctx) {
         auto volume{impl->GetVolume()};
 
         LOG_DEBUG(Service_Audio, "called. Gain {}", volume);
@@ -187,7 +187,7 @@ private:
         rb.Push(volume);
     }
 
-    void FlushAudioInBuffers(Kernel::HLERequestContext& ctx) {
+    void FlushAudioInBuffers(HLERequestContext& ctx) {
         bool flushed{impl->FlushAudioInBuffers()};
 
         LOG_DEBUG(Service_Audio, "called. Were any buffers flushed? {}", flushed);
@@ -221,7 +221,7 @@ AudInU::AudInU(Core::System& system_)
 
 AudInU::~AudInU() = default;
 
-void AudInU::ListAudioIns(Kernel::HLERequestContext& ctx) {
+void AudInU::ListAudioIns(HLERequestContext& ctx) {
     using namespace AudioCore::AudioRenderer;
 
     LOG_DEBUG(Service_Audio, "called");
@@ -241,7 +241,7 @@ void AudInU::ListAudioIns(Kernel::HLERequestContext& ctx) {
     rb.Push(out_count);
 }
 
-void AudInU::ListAudioInsAutoFiltered(Kernel::HLERequestContext& ctx) {
+void AudInU::ListAudioInsAutoFiltered(HLERequestContext& ctx) {
     using namespace AudioCore::AudioRenderer;
 
     LOG_DEBUG(Service_Audio, "called");
@@ -261,7 +261,7 @@ void AudInU::ListAudioInsAutoFiltered(Kernel::HLERequestContext& ctx) {
     rb.Push(out_count);
 }
 
-void AudInU::OpenAudioIn(Kernel::HLERequestContext& ctx) {
+void AudInU::OpenAudioIn(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto in_params{rp.PopRaw<AudioInParameter>()};
     auto applet_resource_user_id{rp.PopRaw<u64>()};
@@ -311,7 +311,7 @@ void AudInU::OpenAudioIn(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IAudioIn>(audio_in);
 }
 
-void AudInU::OpenAudioInProtocolSpecified(Kernel::HLERequestContext& ctx) {
+void AudInU::OpenAudioInProtocolSpecified(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto protocol_specified{rp.PopRaw<u64>()};
     auto in_params{rp.PopRaw<AudioInParameter>()};

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 #include "core/hle/service/server_manager.h"
@@ -22,7 +22,7 @@ public:
     }
 
 private:
-    void CreateUserInterface(Kernel::HLERequestContext& ctx) {
+    void CreateUserInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
 
         if (user_interface == nullptr) {

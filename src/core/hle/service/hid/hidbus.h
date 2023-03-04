@@ -94,19 +94,19 @@ private:
         std::unique_ptr<HidbusBase> device{nullptr};
     };
 
-    void GetBusHandle(Kernel::HLERequestContext& ctx);
-    void IsExternalDeviceConnected(Kernel::HLERequestContext& ctx);
-    void Initialize(Kernel::HLERequestContext& ctx);
-    void Finalize(Kernel::HLERequestContext& ctx);
-    void EnableExternalDevice(Kernel::HLERequestContext& ctx);
-    void GetExternalDeviceId(Kernel::HLERequestContext& ctx);
-    void SendCommandAsync(Kernel::HLERequestContext& ctx);
-    void GetSendCommandAsynceResult(Kernel::HLERequestContext& ctx);
-    void SetEventForSendCommandAsycResult(Kernel::HLERequestContext& ctx);
-    void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx);
-    void EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx);
-    void DisableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx);
-    void SetStatusManagerType(Kernel::HLERequestContext& ctx);
+    void GetBusHandle(HLERequestContext& ctx);
+    void IsExternalDeviceConnected(HLERequestContext& ctx);
+    void Initialize(HLERequestContext& ctx);
+    void Finalize(HLERequestContext& ctx);
+    void EnableExternalDevice(HLERequestContext& ctx);
+    void GetExternalDeviceId(HLERequestContext& ctx);
+    void SendCommandAsync(HLERequestContext& ctx);
+    void GetSendCommandAsynceResult(HLERequestContext& ctx);
+    void SetEventForSendCommandAsycResult(HLERequestContext& ctx);
+    void GetSharedMemoryHandle(HLERequestContext& ctx);
+    void EnableJoyPollingReceiveMode(HLERequestContext& ctx);
+    void DisableJoyPollingReceiveMode(HLERequestContext& ctx);
+    void SetStatusManagerType(HLERequestContext& ctx);
 
     void UpdateHidbus(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
     std::optional<std::size_t> GetDeviceIndexFromHandle(BusHandle handle) const;

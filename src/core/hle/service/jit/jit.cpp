@@ -3,10 +3,10 @@
 
 #include "core/arm/symbols.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/result.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/jit/jit.h"
 #include "core/hle/service/jit/jit_context.h"
 #include "core/hle/service/server_manager.h"
@@ -44,7 +44,7 @@ public:
         configuration.sys_rx_memory = user_rx;
     }
 
-    void GenerateCode(Kernel::HLERequestContext& ctx) {
+    void GenerateCode(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
         struct InputParameters {
@@ -126,7 +126,7 @@ public:
         }
     };
 
-    void Control(Kernel::HLERequestContext& ctx) {
+    void Control(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
         IPC::RequestParser rp{ctx};
@@ -171,7 +171,7 @@ public:
         }
     }
 
-    void LoadPlugin(Kernel::HLERequestContext& ctx) {
+    void LoadPlugin(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
         IPC::RequestParser rp{ctx};
@@ -277,7 +277,7 @@ public:
         rb.Push(ResultSuccess);
     }
 
-    void GetCodeAddress(Kernel::HLERequestContext& ctx) {
+    void GetCodeAddress(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
         IPC::ResponseBuilder rb{ctx, 6};
@@ -333,7 +333,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateJitEnvironment(Kernel::HLERequestContext& ctx) {
+    void CreateJitEnvironment(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
         struct Parameters {

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/caps/caps.h"
 #include "core/hle/service/caps/caps_u.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Capture {
 
@@ -52,7 +52,7 @@ CAPS_U::CAPS_U(Core::System& system_) : ServiceFramework{system_, "caps:u"} {
 
 CAPS_U::~CAPS_U() = default;
 
-void CAPS_U::SetShimLibraryVersion(Kernel::HLERequestContext& ctx) {
+void CAPS_U::SetShimLibraryVersion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto library_version{rp.Pop<u64>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
@@ -64,7 +64,7 @@ void CAPS_U::SetShimLibraryVersion(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void CAPS_U::GetAlbumContentsFileListForApplication(Kernel::HLERequestContext& ctx) {
+void CAPS_U::GetAlbumContentsFileListForApplication(HLERequestContext& ctx) {
     // Takes a type-0x6 output buffer containing an array of ApplicationAlbumFileEntry, a PID, an
     // u8 ContentType, two s64s, and an u64 AppletResourceUserId. Returns an output u64 for total
     // output entries (which is copied to a s32 by official SW).
@@ -93,7 +93,7 @@ void CAPS_U::GetAlbumContentsFileListForApplication(Kernel::HLERequestContext& c
     rb.Push(total_entries_2);
 }
 
-void CAPS_U::GetAlbumFileList3AaeAruid(Kernel::HLERequestContext& ctx) {
+void CAPS_U::GetAlbumFileList3AaeAruid(HLERequestContext& ctx) {
     GetAlbumContentsFileListForApplication(ctx);
 }
 

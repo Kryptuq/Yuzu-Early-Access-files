@@ -17,8 +17,8 @@ public:
     ~AudCtl() override;
 
 private:
-    void GetTargetVolumeMin(Kernel::HLERequestContext& ctx);
-    void GetTargetVolumeMax(Kernel::HLERequestContext& ctx);
+    void GetTargetVolumeMin(HLERequestContext& ctx);
+    void GetTargetVolumeMax(HLERequestContext& ctx);
 };
 
 } // namespace Service::Audio

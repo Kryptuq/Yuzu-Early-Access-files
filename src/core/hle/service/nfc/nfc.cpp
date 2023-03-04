@@ -5,7 +5,7 @@
 
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nfc/mifare_user.h"
 #include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfc/nfc_user.h"
@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    void CreateAmInterface(Kernel::HLERequestContext& ctx) {
+    void CreateAmInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    void CreateUserInterface(Kernel::HLERequestContext& ctx) {
+    void CreateUserInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -86,7 +86,7 @@ public:
     }
 
 private:
-    void CreateUserInterface(Kernel::HLERequestContext& ctx) {
+    void CreateUserInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -145,7 +145,7 @@ public:
     }
 
 private:
-    void CreateSystemInterface(Kernel::HLERequestContext& ctx) {
+    void CreateSystemInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

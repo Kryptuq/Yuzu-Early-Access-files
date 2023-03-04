@@ -22,18 +22,18 @@ public:
                            const char* name);
         ~Interface() override;
 
-        void GetStandardUserSystemClock(Kernel::HLERequestContext& ctx);
-        void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);
-        void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
-        void GetTimeZoneService(Kernel::HLERequestContext& ctx);
-        void GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx);
-        void IsStandardNetworkSystemClockAccuracySufficient(Kernel::HLERequestContext& ctx);
-        void CalculateMonotonicSystemClockBaseTimePoint(Kernel::HLERequestContext& ctx);
-        void GetClockSnapshot(Kernel::HLERequestContext& ctx);
-        void GetClockSnapshotFromSystemClockContext(Kernel::HLERequestContext& ctx);
-        void CalculateStandardUserSystemClockDifferenceByUser(Kernel::HLERequestContext& ctx);
-        void CalculateSpanBetween(Kernel::HLERequestContext& ctx);
-        void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
+        void GetStandardUserSystemClock(HLERequestContext& ctx);
+        void GetStandardNetworkSystemClock(HLERequestContext& ctx);
+        void GetStandardSteadyClock(HLERequestContext& ctx);
+        void GetTimeZoneService(HLERequestContext& ctx);
+        void GetStandardLocalSystemClock(HLERequestContext& ctx);
+        void IsStandardNetworkSystemClockAccuracySufficient(HLERequestContext& ctx);
+        void CalculateMonotonicSystemClockBaseTimePoint(HLERequestContext& ctx);
+        void GetClockSnapshot(HLERequestContext& ctx);
+        void GetClockSnapshotFromSystemClockContext(HLERequestContext& ctx);
+        void CalculateStandardUserSystemClockDifferenceByUser(HLERequestContext& ctx);
+        void CalculateSpanBetween(HLERequestContext& ctx);
+        void GetSharedMemoryNativeHandle(HLERequestContext& ctx);
 
     private:
         Result GetClockSnapshotFromSystemClockContextInternal(

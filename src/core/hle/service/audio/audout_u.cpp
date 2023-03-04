@@ -12,10 +12,10 @@
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/audio/audout_u.h"
 #include "core/hle/service/audio/errors.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/memory.h"
 
 namespace Service::Audio {
@@ -67,7 +67,7 @@ public:
     }
 
 private:
-    void GetAudioOutState(Kernel::HLERequestContext& ctx) {
+    void GetAudioOutState(HLERequestContext& ctx) {
         const auto state = static_cast<u32>(impl->GetState());
 
         LOG_DEBUG(Service_Audio, "called. State={}", state);
@@ -77,7 +77,7 @@ private:
         rb.Push(state);
     }
 
-    void Start(Kernel::HLERequestContext& ctx) {
+    void Start(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto result = impl->StartSystem();
@@ -86,7 +86,7 @@ private:
         rb.Push(result);
     }
 
-    void Stop(Kernel::HLERequestContext& ctx) {
+    void Stop(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto result = impl->StopSystem();
@@ -95,7 +95,7 @@ private:
         rb.Push(result);
     }
 
-    void AppendAudioOutBuffer(Kernel::HLERequestContext& ctx) {
+    void AppendAudioOutBuffer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         u64 tag = rp.PopRaw<u64>();
 
@@ -117,7 +117,7 @@ private:
         rb.Push(result);
     }
 
-    void RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
+    void RegisterBufferEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto& buffer_event = impl->GetBufferEvent();
@@ -127,7 +127,7 @@ private:
         rb.PushCopyObjects(buffer_event);
     }
 
-    void GetReleasedAudioOutBuffers(Kernel::HLERequestContext& ctx) {
+    void GetReleasedAudioOutBuffers(HLERequestContext& ctx) {
         const auto write_buffer_size = ctx.GetWriteBufferNumElements<u64>();
         std::vector<u64> released_buffers(write_buffer_size);
 
@@ -147,7 +147,7 @@ private:
         rb.Push(count);
     }
 
-    void ContainsAudioOutBuffer(Kernel::HLERequestContext& ctx) {
+    void ContainsAudioOutBuffer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const u64 tag{rp.Pop<u64>()};
@@ -160,7 +160,7 @@ private:
         rb.Push(buffer_queued);
     }
 
-    void GetAudioOutBufferCount(Kernel::HLERequestContext& ctx) {
+    void GetAudioOutBufferCount(HLERequestContext& ctx) {
         const auto buffer_count = impl->GetBufferCount();
 
         LOG_DEBUG(Service_Audio, "called. Buffer count={}", buffer_count);
@@ -171,7 +171,7 @@ private:
         rb.Push(buffer_count);
     }
 
-    void GetAudioOutPlayedSampleCount(Kernel::HLERequestContext& ctx) {
+    void GetAudioOutPlayedSampleCount(HLERequestContext& ctx) {
         const auto samples_played = impl->GetPlayedSampleCount();
 
         LOG_DEBUG(Service_Audio, "called. Played samples={}", samples_played);
@@ -182,7 +182,7 @@ private:
         rb.Push(samples_played);
     }
 
-    void FlushAudioOutBuffers(Kernel::HLERequestContext& ctx) {
+    void FlushAudioOutBuffers(HLERequestContext& ctx) {
         bool flushed{impl->FlushAudioOutBuffers()};
 
         LOG_DEBUG(Service_Audio, "called. Were any buffers flushed? {}", flushed);
@@ -192,7 +192,7 @@ private:
         rb.Push(flushed);
     }
 
-    void SetAudioOutVolume(Kernel::HLERequestContext& ctx) {
+    void SetAudioOutVolume(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto volume = rp.Pop<f32>();
 
@@ -204,7 +204,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetAudioOutVolume(Kernel::HLERequestContext& ctx) {
+    void GetAudioOutVolume(HLERequestContext& ctx) {
         const auto volume = impl->GetVolume();
 
         LOG_DEBUG(Service_Audio, "called. Volume={}", volume);
@@ -236,7 +236,7 @@ AudOutU::AudOutU(Core::System& system_)
 
 AudOutU::~AudOutU() = default;
 
-void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
+void AudOutU::ListAudioOuts(HLERequestContext& ctx) {
     using namespace AudioCore::AudioRenderer;
 
     std::scoped_lock l{impl->mutex};
@@ -258,7 +258,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(static_cast<u32>(device_names.size()));
 }
 
-void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
+void AudOutU::OpenAudioOut(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto in_params{rp.PopRaw<AudioOutParameter>()};
     auto applet_resource_user_id{rp.PopRaw<u64>()};

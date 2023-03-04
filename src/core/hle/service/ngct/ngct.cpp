@@ -3,7 +3,7 @@
 
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ngct/ngct.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -24,7 +24,7 @@ public:
     }
 
 private:
-    void Match(Kernel::HLERequestContext& ctx) {
+    void Match(HLERequestContext& ctx) {
         const auto buffer = ctx.ReadBuffer();
         const auto text = Common::StringFromFixedZeroTerminatedBuffer(
             reinterpret_cast<const char*>(buffer.data()), buffer.size());
@@ -37,7 +37,7 @@ private:
         rb.Push(false);
     }
 
-    void Filter(Kernel::HLERequestContext& ctx) {
+    void Filter(HLERequestContext& ctx) {
         const auto buffer = ctx.ReadBuffer();
         const auto text = Common::StringFromFixedZeroTerminatedBuffer(
             reinterpret_cast<const char*>(buffer.data()), buffer.size());

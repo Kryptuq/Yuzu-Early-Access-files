@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/svc_results.h"

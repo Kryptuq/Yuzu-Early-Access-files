@@ -12,10 +12,6 @@ namespace Core {
 class System;
 }
 
-namespace Kernel {
-class HLERequestContext;
-}
-
 namespace AudioCore::AudioOut {
 class Manager;
 class Out;
@@ -31,8 +27,8 @@ public:
     ~AudOutU() override;
 
 private:
-    void ListAudioOuts(Kernel::HLERequestContext& ctx);
-    void OpenAudioOut(Kernel::HLERequestContext& ctx);
+    void ListAudioOuts(HLERequestContext& ctx);
+    void OpenAudioOut(HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
     std::unique_ptr<AudioCore::AudioOut::Manager> impl;

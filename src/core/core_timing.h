@@ -122,6 +122,9 @@ public:
     /// Returns current time in emulated in Clock cycles
     u64 GetClockTicks() const;
 
+    /// Returns current time in nanoseconds.
+    std::chrono::nanoseconds GetCPUTimeNs() const;
+
     /// Returns current time in microseconds.
     std::chrono::microseconds GetGlobalTimeUs() const;
 
@@ -139,7 +142,8 @@ private:
 
     void Reset();
 
-    std::unique_ptr<Common::WallClock> clock;
+    std::unique_ptr<Common::WallClock> cpu_clock;
+    std::unique_ptr<Common::WallClock> event_clock;
 
     s64 global_timer = 0;
 

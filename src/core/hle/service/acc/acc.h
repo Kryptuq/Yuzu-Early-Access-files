@@ -20,28 +20,28 @@ public:
                            const char* name);
         ~Interface() override;
 
-        void GetUserCount(Kernel::HLERequestContext& ctx);
-        void GetUserExistence(Kernel::HLERequestContext& ctx);
-        void ListAllUsers(Kernel::HLERequestContext& ctx);
-        void ListOpenUsers(Kernel::HLERequestContext& ctx);
-        void GetLastOpenedUser(Kernel::HLERequestContext& ctx);
-        void GetProfile(Kernel::HLERequestContext& ctx);
-        void InitializeApplicationInfo(Kernel::HLERequestContext& ctx);
-        void InitializeApplicationInfoRestricted(Kernel::HLERequestContext& ctx);
-        void GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx);
-        void IsUserRegistrationRequestPermitted(Kernel::HLERequestContext& ctx);
-        void TrySelectUserWithoutInteraction(Kernel::HLERequestContext& ctx);
-        void IsUserAccountSwitchLocked(Kernel::HLERequestContext& ctx);
-        void InitializeApplicationInfoV2(Kernel::HLERequestContext& ctx);
-        void GetProfileEditor(Kernel::HLERequestContext& ctx);
-        void ListQualifiedUsers(Kernel::HLERequestContext& ctx);
-        void ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx);
-        void StoreSaveDataThumbnailApplication(Kernel::HLERequestContext& ctx);
-        void StoreSaveDataThumbnailSystem(Kernel::HLERequestContext& ctx);
+        void GetUserCount(HLERequestContext& ctx);
+        void GetUserExistence(HLERequestContext& ctx);
+        void ListAllUsers(HLERequestContext& ctx);
+        void ListOpenUsers(HLERequestContext& ctx);
+        void GetLastOpenedUser(HLERequestContext& ctx);
+        void GetProfile(HLERequestContext& ctx);
+        void InitializeApplicationInfo(HLERequestContext& ctx);
+        void InitializeApplicationInfoRestricted(HLERequestContext& ctx);
+        void GetBaasAccountManagerForApplication(HLERequestContext& ctx);
+        void IsUserRegistrationRequestPermitted(HLERequestContext& ctx);
+        void TrySelectUserWithoutInteraction(HLERequestContext& ctx);
+        void IsUserAccountSwitchLocked(HLERequestContext& ctx);
+        void InitializeApplicationInfoV2(HLERequestContext& ctx);
+        void GetProfileEditor(HLERequestContext& ctx);
+        void ListQualifiedUsers(HLERequestContext& ctx);
+        void ListOpenContextStoredUsers(HLERequestContext& ctx);
+        void StoreSaveDataThumbnailApplication(HLERequestContext& ctx);
+        void StoreSaveDataThumbnailSystem(HLERequestContext& ctx);
 
     private:
         Result InitializeApplicationInfoBase();
-        void StoreSaveDataThumbnail(Kernel::HLERequestContext& ctx, const Common::UUID& uuid,
+        void StoreSaveDataThumbnail(HLERequestContext& ctx, const Common::UUID& uuid,
                                     const u64 tid);
 
         enum class ApplicationType : u32_le {

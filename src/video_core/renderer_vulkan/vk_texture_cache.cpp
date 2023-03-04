@@ -189,13 +189,16 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     if (info.IsRenderTarget()) {
         return ImageAspectMask(info.format);
     }
-    const bool is_first = info.Swizzle()[0] == SwizzleSource::R;
+    bool any_r =
+        std::ranges::any_of(info.Swizzle(), [](SwizzleSource s) { return s == SwizzleSource::R; });
     switch (info.format) {
     case PixelFormat::D24_UNORM_S8_UINT:
     case PixelFormat::D32_FLOAT_S8_UINT:
-        return is_first ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT;
+        // R = depth, G = stencil
+        return any_r ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT;
     case PixelFormat::S8_UINT_D24_UNORM:
-        return is_first ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
+        // R = stencil, G = depth
+        return any_r ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
     case PixelFormat::D16_UNORM:
     case PixelFormat::D32_FLOAT:
         return VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -1769,7 +1772,7 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
         .minLod = tsc.mipmap_filter == TextureMipmapFilter::None ? 0.0f : tsc.MinLod(),
         .maxLod = tsc.mipmap_filter == TextureMipmapFilter::None ? 0.25f : tsc.MaxLod(),
         .borderColor =
-            arbitrary_borders ? VK_BORDER_COLOR_INT_CUSTOM_EXT : ConvertBorderColor(color),
+            arbitrary_borders ? VK_BORDER_COLOR_FLOAT_CUSTOM_EXT : ConvertBorderColor(color),
         .unnormalizedCoordinates = VK_FALSE,
     });
 }

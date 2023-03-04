@@ -17,8 +17,8 @@ public:
     ~SFDNSRES() override;
 
 private:
-    void GetAddrInfoRequest(Kernel::HLERequestContext& ctx);
-    void GetAddrInfoRequestWithOptions(Kernel::HLERequestContext& ctx);
+    void GetAddrInfoRequest(HLERequestContext& ctx);
+    void GetAddrInfoRequestWithOptions(HLERequestContext& ctx);
 };
 
 } // namespace Service::Sockets

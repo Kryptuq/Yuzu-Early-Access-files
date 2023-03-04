@@ -32,9 +32,9 @@ public:
     ResultVal<u64> ConvertApplicationLanguageToLanguageCode(u8 application_language);
 
 private:
-    void GetApplicationControlData(Kernel::HLERequestContext& ctx);
-    void GetApplicationDesiredLanguage(Kernel::HLERequestContext& ctx);
-    void ConvertApplicationLanguageToLanguageCode(Kernel::HLERequestContext& ctx);
+    void GetApplicationControlData(HLERequestContext& ctx);
+    void GetApplicationDesiredLanguage(HLERequestContext& ctx);
+    void ConvertApplicationLanguageToLanguageCode(HLERequestContext& ctx);
 };
 
 class IApplicationVersionInterface final : public ServiceFramework<IApplicationVersionInterface> {
@@ -80,7 +80,7 @@ public:
     ~IReadOnlyApplicationControlDataInterface() override;
 
 private:
-    void GetApplicationControlData(Kernel::HLERequestContext& ctx);
+    void GetApplicationControlData(HLERequestContext& ctx);
 };
 
 class NS final : public ServiceFramework<NS> {
@@ -92,7 +92,7 @@ public:
 
 private:
     template <typename T, typename... Args>
-    void PushInterface(Kernel::HLERequestContext& ctx) {
+    void PushInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -100,7 +100,7 @@ private:
         rb.PushIpcInterface<T>(system);
     }
 
-    void PushIApplicationManagerInterface(Kernel::HLERequestContext& ctx) {
+    void PushIApplicationManagerInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -110,7 +110,7 @@ private:
 
     template <typename T, typename... Args>
     std::shared_ptr<T> GetInterface(Args&&... args) const {
-        static_assert(std::is_base_of_v<Kernel::SessionRequestHandler, T>,
+        static_assert(std::is_base_of_v<SessionRequestHandler, T>,
                       "Not a base of ServiceFrameworkBase");
 
         return std::make_shared<T>(std::forward<Args>(args)...);

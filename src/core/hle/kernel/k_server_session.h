@@ -10,18 +10,20 @@
 
 #include <boost/intrusive/list.hpp>
 
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_session_request.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/result.h"
 
+namespace Service {
+class HLERequestContext;
+class SessionRequestManager;
+} // namespace Service
+
 namespace Kernel {
 
-class HLERequestContext;
 class KernelCore;
 class KSession;
-class SessionRequestManager;
 class KThread;
 
 class KServerSession final : public KSynchronizationObject,
@@ -52,8 +54,8 @@ public:
     /// TODO: flesh these out to match the real kernel
     Result OnRequest(KSessionRequest* request);
     Result SendReply(bool is_hle = false);
-    Result ReceiveRequest(std::shared_ptr<HLERequestContext>* out_context = nullptr,
-                          std::weak_ptr<SessionRequestManager> manager = {});
+    Result ReceiveRequest(std::shared_ptr<Service::HLERequestContext>* out_context = nullptr,
+                          std::weak_ptr<Service::SessionRequestManager> manager = {});
 
     Result SendReplyHLE() {
         return SendReply(true);

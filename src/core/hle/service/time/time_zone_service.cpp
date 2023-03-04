@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/time/time_zone_content_manager.h"
 #include "core/hle/service/time/time_zone_service.h"
 #include "core/hle/service/time/time_zone_types.h"
@@ -28,7 +28,7 @@ ITimeZoneService::ITimeZoneService(Core::System& system_,
     RegisterHandlers(functions);
 }
 
-void ITimeZoneService::GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::GetDeviceLocationName(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     TimeZone::LocationName location_name{};
@@ -45,7 +45,7 @@ void ITimeZoneService::GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(location_name);
 }
 
-void ITimeZoneService::LoadTimeZoneRule(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::LoadTimeZoneRule(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto raw_location_name{rp.PopRaw<std::array<u8, 0x24>>()};
 
@@ -77,7 +77,7 @@ void ITimeZoneService::LoadTimeZoneRule(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void ITimeZoneService::ToCalendarTime(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::ToCalendarTime(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto posix_time{rp.Pop<s64>()};
 
@@ -101,7 +101,7 @@ void ITimeZoneService::ToCalendarTime(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(calendar_info);
 }
 
-void ITimeZoneService::ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::ToCalendarTimeWithMyRule(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto posix_time{rp.Pop<s64>()};
 
@@ -122,7 +122,7 @@ void ITimeZoneService::ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) 
     rb.PushRaw(calendar_info);
 }
 
-void ITimeZoneService::ToPosixTime(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::ToPosixTime(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     IPC::RequestParser rp{ctx};
@@ -147,7 +147,7 @@ void ITimeZoneService::ToPosixTime(Kernel::HLERequestContext& ctx) {
     rb.PushRaw<u32>(1); // Number of times we're returning
 }
 
-void ITimeZoneService::ToPosixTimeWithMyRule(Kernel::HLERequestContext& ctx) {
+void ITimeZoneService::ToPosixTimeWithMyRule(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     IPC::RequestParser rp{ctx};

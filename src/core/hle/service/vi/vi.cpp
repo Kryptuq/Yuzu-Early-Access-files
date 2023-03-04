@@ -17,15 +17,15 @@
 #include "common/settings.h"
 #include "common/swap.h"
 #include "core/core_timing.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nvdrv/nvdata.h"
-#include "core/hle/service/nvflinger/binder.h"
-#include "core/hle/service/nvflinger/buffer_queue_producer.h"
-#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
-#include "core/hle/service/nvflinger/nvflinger.h"
-#include "core/hle/service/nvflinger/parcel.h"
+#include "core/hle/service/nvnflinger/binder.h"
+#include "core/hle/service/nvnflinger/buffer_queue_producer.h"
+#include "core/hle/service/nvnflinger/hos_binder_driver_server.h"
+#include "core/hle/service/nvnflinger/nvnflinger.h"
+#include "core/hle/service/nvnflinger/parcel.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/vi/vi.h"
@@ -73,7 +73,7 @@ static_assert(sizeof(NativeWindow) == 0x28, "NativeWindow has wrong size");
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
-    explicit IHOSBinderDriver(Core::System& system_, NVFlinger::HosBinderDriverServer& server_)
+    explicit IHOSBinderDriver(Core::System& system_, Nvnflinger::HosBinderDriverServer& server_)
         : ServiceFramework{system_, "IHOSBinderDriver"}, server(server_) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
@@ -85,7 +85,7 @@ public:
     }
 
 private:
-    void TransactParcel(Kernel::HLERequestContext& ctx) {
+    void TransactParcel(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 id = rp.Pop<u32>();
         const auto transaction = static_cast<android::TransactionId>(rp.Pop<u32>());
@@ -100,7 +100,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void AdjustRefcount(Kernel::HLERequestContext& ctx) {
+    void AdjustRefcount(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 id = rp.Pop<u32>();
         const s32 addval = rp.PopRaw<s32>();
@@ -113,7 +113,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetNativeHandle(Kernel::HLERequestContext& ctx) {
+    void GetNativeHandle(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 id = rp.Pop<u32>();
         const u32 unknown = rp.Pop<u32>();
@@ -126,7 +126,7 @@ private:
     }
 
 private:
-    NVFlinger::HosBinderDriverServer& server;
+    Nvnflinger::HosBinderDriverServer& server;
 };
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
@@ -186,7 +186,7 @@ public:
     }
 
 private:
-    void SetLayerZ(Kernel::HLERequestContext& ctx) {
+    void SetLayerZ(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
         const u64 z_value = rp.Pop<u64>();
@@ -200,7 +200,7 @@ private:
 
     // This function currently does nothing but return a success error code in
     // the vi library itself, so do the same thing, but log out the passed in values.
-    void SetLayerVisibility(Kernel::HLERequestContext& ctx) {
+    void SetLayerVisibility(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
         const bool visibility = rp.Pop<bool>();
@@ -211,7 +211,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetDisplayMode(Kernel::HLERequestContext& ctx) {
+    void GetDisplayMode(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 6};
@@ -232,7 +232,7 @@ private:
 
 class IManagerDisplayService final : public ServiceFramework<IManagerDisplayService> {
 public:
-    explicit IManagerDisplayService(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_)
+    explicit IManagerDisplayService(Core::System& system_, Nvnflinger::Nvnflinger& nv_flinger_)
         : ServiceFramework{system_, "IManagerDisplayService"}, nv_flinger{nv_flinger_} {
         // clang-format off
         static const FunctionInfo functions[] = {
@@ -325,7 +325,7 @@ public:
     }
 
 private:
-    void CloseDisplay(Kernel::HLERequestContext& ctx) {
+    void CloseDisplay(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 display = rp.Pop<u64>();
 
@@ -335,7 +335,7 @@ private:
         rb.Push(rc);
     }
 
-    void CreateManagedLayer(Kernel::HLERequestContext& ctx) {
+    void CreateManagedLayer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 unknown = rp.Pop<u32>();
         rp.Skip(1, false);
@@ -359,7 +359,7 @@ private:
         rb.Push(*layer_id);
     }
 
-    void AddToLayerStack(Kernel::HLERequestContext& ctx) {
+    void AddToLayerStack(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 stack = rp.Pop<u32>();
         const u64 layer_id = rp.Pop<u64>();
@@ -371,7 +371,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetLayerVisibility(Kernel::HLERequestContext& ctx) {
+    void SetLayerVisibility(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
         const bool visibility = rp.Pop<bool>();
@@ -383,13 +383,13 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    NVFlinger::NVFlinger& nv_flinger;
+    Nvnflinger::Nvnflinger& nv_flinger;
 };
 
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
 public:
-    IApplicationDisplayService(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_,
-                               NVFlinger::HosBinderDriverServer& hos_binder_driver_server_)
+    IApplicationDisplayService(Core::System& system_, Nvnflinger::Nvnflinger& nv_flinger_,
+                               Nvnflinger::HosBinderDriverServer& hos_binder_driver_server_)
         : ServiceFramework{system_, "IApplicationDisplayService"}, nv_flinger{nv_flinger_},
           hos_binder_driver_server{hos_binder_driver_server_} {
 
@@ -440,7 +440,7 @@ private:
         PreserveAspectRatio = 4,
     };
 
-    void GetRelayService(Kernel::HLERequestContext& ctx) {
+    void GetRelayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -448,7 +448,7 @@ private:
         rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
 
-    void GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
+    void GetSystemDisplayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -456,7 +456,7 @@ private:
         rb.PushIpcInterface<ISystemDisplayService>(system);
     }
 
-    void GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
+    void GetManagerDisplayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -464,7 +464,7 @@ private:
         rb.PushIpcInterface<IManagerDisplayService>(system, nv_flinger);
     }
 
-    void GetIndirectDisplayTransactionService(Kernel::HLERequestContext& ctx) {
+    void GetIndirectDisplayTransactionService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -472,7 +472,7 @@ private:
         rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
 
-    void OpenDisplay(Kernel::HLERequestContext& ctx) {
+    void OpenDisplay(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::RequestParser rp{ctx};
@@ -481,13 +481,13 @@ private:
         OpenDisplayImpl(ctx, std::string_view{name_buf.data(), name_buf.size()});
     }
 
-    void OpenDefaultDisplay(Kernel::HLERequestContext& ctx) {
+    void OpenDefaultDisplay(HLERequestContext& ctx) {
         LOG_DEBUG(Service_VI, "called");
 
         OpenDisplayImpl(ctx, "Default");
     }
 
-    void OpenDisplayImpl(Kernel::HLERequestContext& ctx, std::string_view name) {
+    void OpenDisplayImpl(HLERequestContext& ctx, std::string_view name) {
         const auto trim_pos = name.find('\0');
 
         if (trim_pos != std::string_view::npos) {
@@ -509,7 +509,7 @@ private:
         rb.Push<u64>(*display_id);
     }
 
-    void CloseDisplay(Kernel::HLERequestContext& ctx) {
+    void CloseDisplay(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
@@ -521,14 +521,14 @@ private:
 
     // This literally does nothing internally in the actual service itself,
     // and just returns a successful result code regardless of the input.
-    void SetDisplayEnabled(Kernel::HLERequestContext& ctx) {
+    void SetDisplayEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_VI, "called.");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void GetDisplayResolution(Kernel::HLERequestContext& ctx) {
+    void GetDisplayResolution(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
@@ -544,7 +544,7 @@ private:
         rb.Push(static_cast<u64>(DisplayResolution::UndockedHeight));
     }
 
-    void SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
+    void SetLayerScalingMode(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto scaling_mode = rp.PopEnum<NintendoScaleMode>();
         const u64 unknown = rp.Pop<u64>();
@@ -570,7 +570,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void ListDisplays(Kernel::HLERequestContext& ctx) {
+    void ListDisplays(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
         const DisplayInfo display_info;
@@ -580,7 +580,7 @@ private:
         rb.Push<u64>(1);
     }
 
-    void OpenLayer(Kernel::HLERequestContext& ctx) {
+    void OpenLayer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
         const auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -616,7 +616,7 @@ private:
         rb.Push<u64>(buffer_size);
     }
 
-    void CloseLayer(Kernel::HLERequestContext& ctx) {
+    void CloseLayer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto layer_id{rp.Pop<u64>()};
 
@@ -628,7 +628,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void CreateStrayLayer(Kernel::HLERequestContext& ctx) {
+    void CreateStrayLayer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u32 flags = rp.Pop<u32>();
         rp.Pop<u32>(); // padding
@@ -663,7 +663,7 @@ private:
         rb.Push<u64>(buffer_size);
     }
 
-    void DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
+    void DestroyStrayLayer(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
 
@@ -673,7 +673,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
+    void GetDisplayVsyncEvent(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
@@ -696,7 +696,7 @@ private:
         rb.PushCopyObjects(*vsync_event);
     }
 
-    void ConvertScalingMode(Kernel::HLERequestContext& ctx) {
+    void ConvertScalingMode(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto mode = rp.PopEnum<NintendoScaleMode>();
         LOG_DEBUG(Service_VI, "called mode={}", mode);
@@ -713,7 +713,7 @@ private:
         }
     }
 
-    void GetIndirectLayerImageMap(Kernel::HLERequestContext& ctx) {
+    void GetIndirectLayerImageMap(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto width = rp.Pop<s64>();
         const auto height = rp.Pop<s64>();
@@ -739,7 +739,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetIndirectLayerImageRequiredMemoryInfo(Kernel::HLERequestContext& ctx) {
+    void GetIndirectLayerImageRequiredMemoryInfo(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto width = rp.Pop<u64>();
         const auto height = rp.Pop<u64>();
@@ -774,8 +774,8 @@ private:
         }
     }
 
-    NVFlinger::NVFlinger& nv_flinger;
-    NVFlinger::HosBinderDriverServer& hos_binder_driver_server;
+    Nvnflinger::Nvnflinger& nv_flinger;
+    Nvnflinger::HosBinderDriverServer& hos_binder_driver_server;
 };
 
 static bool IsValidServiceAccess(Permission permission, Policy policy) {
@@ -790,9 +790,9 @@ static bool IsValidServiceAccess(Permission permission, Policy policy) {
     return false;
 }
 
-void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System& system,
-                                   NVFlinger::NVFlinger& nv_flinger,
-                                   NVFlinger::HosBinderDriverServer& hos_binder_driver_server,
+void detail::GetDisplayServiceImpl(HLERequestContext& ctx, Core::System& system,
+                                   Nvnflinger::Nvnflinger& nv_flinger,
+                                   Nvnflinger::HosBinderDriverServer& hos_binder_driver_server,
                                    Permission permission) {
     IPC::RequestParser rp{ctx};
     const auto policy = rp.PopEnum<Policy>();
@@ -809,8 +809,8 @@ void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System&
     rb.PushIpcInterface<IApplicationDisplayService>(system, nv_flinger, hos_binder_driver_server);
 }
 
-void LoopProcess(Core::System& system, NVFlinger::NVFlinger& nv_flinger,
-                 NVFlinger::HosBinderDriverServer& hos_binder_driver_server) {
+void LoopProcess(Core::System& system, Nvnflinger::Nvnflinger& nv_flinger,
+                 Nvnflinger::HosBinderDriverServer& hos_binder_driver_server) {
     auto server_manager = std::make_unique<ServerManager>(system);
 
     server_manager->RegisterNamedService(

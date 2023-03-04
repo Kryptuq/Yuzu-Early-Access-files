@@ -12,9 +12,9 @@
 
 union Result;
 
-namespace Kernel {
+namespace Service {
 class HLERequestContext;
-} // namespace Kernel
+} // namespace Service
 
 namespace Service::LM {
 struct LogMessage;
@@ -40,7 +40,7 @@ public:
                             const std::optional<std::vector<u8>>& resolved_buffer = {}) const;
 
     // Used by HLE service handler
-    void SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u32 command_id,
+    void SaveUnimplementedFunctionReport(Service::HLERequestContext& ctx, u32 command_id,
                                          const std::string& name,
                                          const std::string& service_name) const;
 

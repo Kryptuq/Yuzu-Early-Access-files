@@ -5,13 +5,13 @@
 #include "common/assert.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_server_port.h"
 #include "core/hle/result.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sm/sm_controller.h"
@@ -38,7 +38,7 @@ ServiceManager::~ServiceManager() {
     }
 }
 
-void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
+void ServiceManager::InvokeControlRequest(HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
 }
 
@@ -51,7 +51,7 @@ static Result ValidateServiceName(const std::string& name) {
 }
 
 Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
-                                       Kernel::SessionRequestHandlerPtr handler) {
+                                       SessionRequestHandlerPtr handler) {
 
     CASCADE_CODE(ValidateServiceName(name));
 
@@ -109,7 +109,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
  *  Outputs:
  *      0: Result
  */
-void SM::Initialize(Kernel::HLERequestContext& ctx) {
+void SM::Initialize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SM, "called");
 
     ctx.GetManager()->SetIsInitializedForSm();
@@ -118,7 +118,7 @@ void SM::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void SM::GetService(Kernel::HLERequestContext& ctx) {
+void SM::GetService(HLERequestContext& ctx) {
     auto result = GetServiceImpl(ctx);
     if (ctx.GetIsDeferred()) {
         // Don't overwrite the command buffer.
@@ -135,7 +135,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     }
 }
 
-void SM::GetServiceTipc(Kernel::HLERequestContext& ctx) {
+void SM::GetServiceTipc(HLERequestContext& ctx) {
     auto result = GetServiceImpl(ctx);
     if (ctx.GetIsDeferred()) {
         // Don't overwrite the command buffer.
@@ -158,7 +158,7 @@ static std::string PopServiceName(IPC::RequestParser& rp) {
     return result;
 }
 
-ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext& ctx) {
+ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(HLERequestContext& ctx) {
     if (!ctx.GetManager()->GetIsInitializedForSm()) {
         return ERR_NOT_INITIALIZED;
     }
@@ -192,7 +192,7 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(Kernel::HLERequestContext&
     return session;
 }
 
-void SM::RegisterService(Kernel::HLERequestContext& ctx) {
+void SM::RegisterService(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     std::string name(PopServiceName(rp));
 
@@ -219,7 +219,7 @@ void SM::RegisterService(Kernel::HLERequestContext& ctx) {
     rb.PushMoveObjects(port->GetServerPort());
 }
 
-void SM::UnregisterService(Kernel::HLERequestContext& ctx) {
+void SM::UnregisterService(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     std::string name(PopServiceName(rp));
 

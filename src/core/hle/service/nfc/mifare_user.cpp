@@ -4,8 +4,8 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hid/hid_types.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nfc/mifare_user.h"
 #include "core/hle/service/nfc/nfc_device.h"
 #include "core/hle/service/nfc/nfc_result.h"
@@ -45,7 +45,7 @@ MFIUser ::~MFIUser() {
     availability_change_event->Close();
 }
 
-void MFIUser::Initialize(Kernel::HLERequestContext& ctx) {
+void MFIUser::Initialize(HLERequestContext& ctx) {
     LOG_INFO(Service_NFC, "called");
 
     state = State::Initialized;
@@ -58,7 +58,7 @@ void MFIUser::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void MFIUser::Finalize(Kernel::HLERequestContext& ctx) {
+void MFIUser::Finalize(HLERequestContext& ctx) {
     LOG_INFO(Service_NFC, "called");
 
     state = State::NonInitialized;
@@ -71,7 +71,7 @@ void MFIUser::Finalize(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void MFIUser::ListDevices(Kernel::HLERequestContext& ctx) {
+void MFIUser::ListDevices(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFC, "called");
 
     if (state == State::NonInitialized) {
@@ -117,7 +117,7 @@ void MFIUser::ListDevices(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<s32>(nfp_devices.size()));
 }
 
-void MFIUser::StartDetection(Kernel::HLERequestContext& ctx) {
+void MFIUser::StartDetection(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFC, "called, device_handle={}", device_handle);
@@ -141,7 +141,7 @@ void MFIUser::StartDetection(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void MFIUser::StopDetection(Kernel::HLERequestContext& ctx) {
+void MFIUser::StopDetection(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFC, "called, device_handle={}", device_handle);
@@ -165,7 +165,7 @@ void MFIUser::StopDetection(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void MFIUser::Read(Kernel::HLERequestContext& ctx) {
+void MFIUser::Read(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto buffer{ctx.ReadBuffer()};
@@ -206,7 +206,7 @@ void MFIUser::Read(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void MFIUser::Write(Kernel::HLERequestContext& ctx) {
+void MFIUser::Write(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     const auto buffer{ctx.ReadBuffer()};
@@ -250,7 +250,7 @@ void MFIUser::Write(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void MFIUser::GetTagInfo(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetTagInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_INFO(Service_NFC, "called, device_handle={}", device_handle);
@@ -276,7 +276,7 @@ void MFIUser::GetTagInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void MFIUser::GetActivateEventHandle(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetActivateEventHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFC, "called, device_handle={}", device_handle);
@@ -300,7 +300,7 @@ void MFIUser::GetActivateEventHandle(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(device.value()->GetActivateEvent());
 }
 
-void MFIUser::GetDeactivateEventHandle(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetDeactivateEventHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFC, "called, device_handle={}", device_handle);
@@ -324,7 +324,7 @@ void MFIUser::GetDeactivateEventHandle(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(device.value()->GetDeactivateEvent());
 }
 
-void MFIUser::GetState(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetState(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFC, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -332,7 +332,7 @@ void MFIUser::GetState(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(state);
 }
 
-void MFIUser::GetDeviceState(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetDeviceState(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFC, "called, device_handle={}", device_handle);
@@ -350,7 +350,7 @@ void MFIUser::GetDeviceState(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(device.value()->GetCurrentState());
 }
 
-void MFIUser::GetNpadId(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetNpadId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFC, "called, device_handle={}", device_handle);
@@ -374,7 +374,7 @@ void MFIUser::GetNpadId(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(device.value()->GetNpadId());
 }
 
-void MFIUser::GetAvailabilityChangeEventHandle(Kernel::HLERequestContext& ctx) {
+void MFIUser::GetAvailabilityChangeEventHandle(HLERequestContext& ctx) {
     LOG_INFO(Service_NFC, "called");
 
     if (state == State::NonInitialized) {

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/steady_clock.h"
 #include "common/uint128.h"
 #include "common/wall_clock.h"
 
@@ -11,45 +12,33 @@
 
 namespace Common {
 
-using base_timer = std::chrono::steady_clock;
-using base_time_point = std::chrono::time_point<base_timer>;
-
 class StandardWallClock final : public WallClock {
 public:
     explicit StandardWallClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequency_)
-        : WallClock(emulated_cpu_frequency_, emulated_clock_frequency_, false) {
-        start_time = base_timer::now();
+        : WallClock{emulated_cpu_frequency_, emulated_clock_frequency_, false} {
+        start_time = SteadyClock::Now();
     }
 
     std::chrono::nanoseconds GetTimeNS() override {
-        base_time_point current = base_timer::now();
-        auto elapsed = current - start_time;
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed);
+        return SteadyClock::Now() - start_time;
     }
 
     std::chrono::microseconds GetTimeUS() override {
-        base_time_point current = base_timer::now();
-        auto elapsed = current - start_time;
-        return std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
+        return std::chrono::duration_cast<std::chrono::microseconds>(GetTimeNS());
     }
 
     std::chrono::milliseconds GetTimeMS() override {
-        base_time_point current = base_timer::now();
-        auto elapsed = current - start_time;
-        return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
+        return std::chrono::duration_cast<std::chrono::milliseconds>(GetTimeNS());
     }
 
     u64 GetClockCycles() override {
-        std::chrono::nanoseconds time_now = GetTimeNS();
-        const u128 temporary =
-            Common::Multiply64Into128(time_now.count(), emulated_clock_frequency);
-        return Common::Divide128On32(temporary, 1000000000).first;
+        const u128 temp = Common::Multiply64Into128(GetTimeNS().count(), emulated_clock_frequency);
+        return Common::Divide128On32(temp, NS_RATIO).first;
     }
 
     u64 GetCPUCycles() override {
-        std::chrono::nanoseconds time_now = GetTimeNS();
-        const u128 temporary = Common::Multiply64Into128(time_now.count(), emulated_cpu_frequency);
-        return Common::Divide128On32(temporary, 1000000000).first;
+        const u128 temp = Common::Multiply64Into128(GetTimeNS().count(), emulated_cpu_frequency);
+        return Common::Divide128On32(temp, NS_RATIO).first;
     }
 
     void Pause([[maybe_unused]] bool is_paused) override {
@@ -57,7 +46,7 @@ public:
     }
 
 private:
-    base_time_point start_time;
+    SteadyClock::time_point start_time;
 };
 
 #ifdef ARCHITECTURE_x86_64
@@ -92,5 +81,10 @@ std::unique_ptr<WallClock> CreateBestMatchingClock(u64 emulated_cpu_frequency,
 }
 
 #endif
+
+std::unique_ptr<WallClock> CreateStandardWallClock(u64 emulated_cpu_frequency,
+                                                   u64 emulated_clock_frequency) {
+    return std::make_unique<StandardWallClock>(emulated_cpu_frequency, emulated_clock_frequency);
+}
 
 } // namespace Common

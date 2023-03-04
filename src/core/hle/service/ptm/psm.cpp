@@ -5,8 +5,8 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/ptm/psm.h"
 
@@ -54,7 +54,7 @@ public:
     }
 
 private:
-    void BindStateChangeEvent(Kernel::HLERequestContext& ctx) {
+    void BindStateChangeEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PTM, "called");
 
         should_signal = true;
@@ -64,7 +64,7 @@ private:
         rb.PushCopyObjects(state_change_event->GetReadableEvent());
     }
 
-    void UnbindStateChangeEvent(Kernel::HLERequestContext& ctx) {
+    void UnbindStateChangeEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PTM, "called");
 
         should_signal = false;
@@ -73,7 +73,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetChargerTypeChangeEventEnabled(Kernel::HLERequestContext& ctx) {
+    void SetChargerTypeChangeEventEnabled(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto state = rp.Pop<bool>();
         LOG_DEBUG(Service_PTM, "called, state={}", state);
@@ -84,7 +84,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetPowerSupplyChangeEventEnabled(Kernel::HLERequestContext& ctx) {
+    void SetPowerSupplyChangeEventEnabled(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto state = rp.Pop<bool>();
         LOG_DEBUG(Service_PTM, "called, state={}", state);
@@ -95,7 +95,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetBatteryVoltageStateChangeEventEnabled(Kernel::HLERequestContext& ctx) {
+    void SetBatteryVoltageStateChangeEventEnabled(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto state = rp.Pop<bool>();
         LOG_DEBUG(Service_PTM, "called, state={}", state);
@@ -145,7 +145,7 @@ PSM::PSM(Core::System& system_) : ServiceFramework{system_, "psm"} {
 
 PSM::~PSM() = default;
 
-void PSM::GetBatteryChargePercentage(Kernel::HLERequestContext& ctx) {
+void PSM::GetBatteryChargePercentage(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -153,7 +153,7 @@ void PSM::GetBatteryChargePercentage(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(battery_charge_percentage);
 }
 
-void PSM::GetChargerType(Kernel::HLERequestContext& ctx) {
+void PSM::GetChargerType(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -161,7 +161,7 @@ void PSM::GetChargerType(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(charger_type);
 }
 
-void PSM::OpenSession(Kernel::HLERequestContext& ctx) {
+void PSM::OpenSession(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

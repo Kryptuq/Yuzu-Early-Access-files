@@ -17,11 +17,11 @@ NVMEMP::NVMEMP(Core::System& system_) : ServiceFramework{system_, "nvmemp"} {
 
 NVMEMP::~NVMEMP() = default;
 
-void NVMEMP::Open(Kernel::HLERequestContext& ctx) {
+void NVMEMP::Open(HLERequestContext& ctx) {
     UNIMPLEMENTED();
 }
 
-void NVMEMP::GetAruid(Kernel::HLERequestContext& ctx) {
+void NVMEMP::GetAruid(HLERequestContext& ctx) {
     UNIMPLEMENTED();
 }
 

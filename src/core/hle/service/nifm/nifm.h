@@ -22,18 +22,18 @@ public:
     ~IGeneralService() override;
 
 private:
-    void GetClientId(Kernel::HLERequestContext& ctx);
-    void CreateScanRequest(Kernel::HLERequestContext& ctx);
-    void CreateRequest(Kernel::HLERequestContext& ctx);
-    void GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx);
-    void RemoveNetworkProfile(Kernel::HLERequestContext& ctx);
-    void GetCurrentIpAddress(Kernel::HLERequestContext& ctx);
-    void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx);
-    void GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx);
-    void IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx);
-    void GetInternetConnectionStatus(Kernel::HLERequestContext& ctx);
-    void IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx);
-    void IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx);
+    void GetClientId(HLERequestContext& ctx);
+    void CreateScanRequest(HLERequestContext& ctx);
+    void CreateRequest(HLERequestContext& ctx);
+    void GetCurrentNetworkProfile(HLERequestContext& ctx);
+    void RemoveNetworkProfile(HLERequestContext& ctx);
+    void GetCurrentIpAddress(HLERequestContext& ctx);
+    void CreateTemporaryNetworkProfile(HLERequestContext& ctx);
+    void GetCurrentIpConfigInfo(HLERequestContext& ctx);
+    void IsWirelessCommunicationEnabled(HLERequestContext& ctx);
+    void GetInternetConnectionStatus(HLERequestContext& ctx);
+    void IsEthernetCommunicationEnabled(HLERequestContext& ctx);
+    void IsAnyInternetRequestAccepted(HLERequestContext& ctx);
 
     Network::RoomNetwork& network;
 };

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ptm/ts.h"
 
 namespace Service::PTM {
@@ -25,7 +25,7 @@ TS::TS(Core::System& system_) : ServiceFramework{system_, "ts"} {
 
 TS::~TS() = default;
 
-void TS::GetTemperature(Kernel::HLERequestContext& ctx) {
+void TS::GetTemperature(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto location{rp.PopEnum<Location>()};
 
@@ -36,7 +36,7 @@ void TS::GetTemperature(Kernel::HLERequestContext& ctx) {
     rb.Push(temperature);
 }
 
-void TS::GetTemperatureMilliC(Kernel::HLERequestContext& ctx) {
+void TS::GetTemperatureMilliC(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto location{rp.PopEnum<Location>()};
 

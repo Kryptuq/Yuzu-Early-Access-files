@@ -11,8 +11,8 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/audio/hwopus.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Audio {
 namespace {
@@ -53,7 +53,7 @@ public:
 
     // Decodes interleaved Opus packets. Optionally allows reporting time taken to
     // perform the decoding, as well as any relevant extra behavior.
-    void DecodeInterleaved(Kernel::HLERequestContext& ctx, PerfTime perf_time,
+    void DecodeInterleaved(HLERequestContext& ctx, PerfTime perf_time,
                            ExtraBehavior extra_behavior) {
         if (perf_time == PerfTime::Disabled) {
             DecodeInterleavedHelper(ctx, nullptr, extra_behavior);
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    void DecodeInterleavedHelper(Kernel::HLERequestContext& ctx, u64* performance,
+    void DecodeInterleavedHelper(HLERequestContext& ctx, u64* performance,
                                  ExtraBehavior extra_behavior) {
         u32 consumed = 0;
         u32 sample_count = 0;
@@ -180,21 +180,21 @@ public:
     }
 
 private:
-    void DecodeInterleavedOld(Kernel::HLERequestContext& ctx) {
+    void DecodeInterleavedOld(HLERequestContext& ctx) {
         LOG_DEBUG(Audio, "called");
 
         decoder_state.DecodeInterleaved(ctx, OpusDecoderState::PerfTime::Disabled,
                                         OpusDecoderState::ExtraBehavior::None);
     }
 
-    void DecodeInterleavedWithPerfOld(Kernel::HLERequestContext& ctx) {
+    void DecodeInterleavedWithPerfOld(HLERequestContext& ctx) {
         LOG_DEBUG(Audio, "called");
 
         decoder_state.DecodeInterleaved(ctx, OpusDecoderState::PerfTime::Enabled,
                                         OpusDecoderState::ExtraBehavior::None);
     }
 
-    void DecodeInterleaved(Kernel::HLERequestContext& ctx) {
+    void DecodeInterleaved(HLERequestContext& ctx) {
         LOG_DEBUG(Audio, "called");
 
         IPC::RequestParser rp{ctx};
@@ -231,7 +231,7 @@ std::array<u8, 2> CreateMappingTable(u32 channel_count) {
 }
 } // Anonymous namespace
 
-void HwOpus::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
+void HwOpus::GetWorkBufferSize(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sample_rate = rp.Pop<u32>();
     const auto channel_count = rp.Pop<u32>();
@@ -251,11 +251,11 @@ void HwOpus::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(worker_buffer_sz);
 }
 
-void HwOpus::GetWorkBufferSizeEx(Kernel::HLERequestContext& ctx) {
+void HwOpus::GetWorkBufferSizeEx(HLERequestContext& ctx) {
     GetWorkBufferSize(ctx);
 }
 
-void HwOpus::GetWorkBufferSizeForMultiStreamEx(Kernel::HLERequestContext& ctx) {
+void HwOpus::GetWorkBufferSizeForMultiStreamEx(HLERequestContext& ctx) {
     OpusMultiStreamParametersEx param;
     std::memcpy(&param, ctx.ReadBuffer().data(), ctx.GetReadBufferSize());
 
@@ -281,7 +281,7 @@ void HwOpus::GetWorkBufferSizeForMultiStreamEx(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(worker_buffer_sz);
 }
 
-void HwOpus::OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx) {
+void HwOpus::OpenHardwareOpusDecoder(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sample_rate = rp.Pop<u32>();
     const auto channel_count = rp.Pop<u32>();
@@ -319,7 +319,7 @@ void HwOpus::OpenHardwareOpusDecoder(Kernel::HLERequestContext& ctx) {
         system, OpusDecoderState{std::move(decoder), sample_rate, channel_count});
 }
 
-void HwOpus::OpenHardwareOpusDecoderEx(Kernel::HLERequestContext& ctx) {
+void HwOpus::OpenHardwareOpusDecoderEx(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sample_rate = rp.Pop<u32>();
     const auto channel_count = rp.Pop<u32>();

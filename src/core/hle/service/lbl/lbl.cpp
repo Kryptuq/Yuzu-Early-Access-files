@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/lbl/lbl.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -60,7 +60,7 @@ private:
         On = 1,
     };
 
-    void SetCurrentBrightnessSetting(Kernel::HLERequestContext& ctx) {
+    void SetCurrentBrightnessSetting(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         auto brightness = rp.Pop<float>();
 
@@ -78,7 +78,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetCurrentBrightnessSetting(Kernel::HLERequestContext& ctx) {
+    void GetCurrentBrightnessSetting(HLERequestContext& ctx) {
         auto brightness = current_brightness;
         if (!std::isfinite(brightness)) {
             LOG_ERROR(Service_LBL, "Brightness is infinite!");
@@ -92,7 +92,7 @@ private:
         rb.Push(brightness);
     }
 
-    void SwitchBacklightOn(Kernel::HLERequestContext& ctx) {
+    void SwitchBacklightOn(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto fade_time = rp.Pop<u64_le>();
         LOG_WARNING(Service_LBL, "(STUBBED) called, fade_time={}", fade_time);
@@ -103,7 +103,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SwitchBacklightOff(Kernel::HLERequestContext& ctx) {
+    void SwitchBacklightOff(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto fade_time = rp.Pop<u64_le>();
         LOG_WARNING(Service_LBL, "(STUBBED) called, fade_time={}", fade_time);
@@ -114,7 +114,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetBacklightSwitchStatus(Kernel::HLERequestContext& ctx) {
+    void GetBacklightSwitchStatus(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -123,7 +123,7 @@ private:
                                                              : BacklightSwitchStatus::Off);
     }
 
-    void EnableDimming(Kernel::HLERequestContext& ctx) {
+    void EnableDimming(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         dimming = true;
@@ -132,7 +132,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void DisableDimming(Kernel::HLERequestContext& ctx) {
+    void DisableDimming(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         dimming = false;
@@ -141,7 +141,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void IsDimmingEnabled(Kernel::HLERequestContext& ctx) {
+    void IsDimmingEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -149,7 +149,7 @@ private:
         rb.Push(dimming);
     }
 
-    void EnableAutoBrightnessControl(Kernel::HLERequestContext& ctx) {
+    void EnableAutoBrightnessControl(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
         auto_brightness = true;
         update_instantly = true;
@@ -158,7 +158,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void DisableAutoBrightnessControl(Kernel::HLERequestContext& ctx) {
+    void DisableAutoBrightnessControl(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
         auto_brightness = false;
 
@@ -166,7 +166,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void IsAutoBrightnessControlEnabled(Kernel::HLERequestContext& ctx) {
+    void IsAutoBrightnessControlEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -174,7 +174,7 @@ private:
         rb.Push(auto_brightness);
     }
 
-    void SetAmbientLightSensorValue(Kernel::HLERequestContext& ctx) {
+    void SetAmbientLightSensorValue(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto light_value = rp.Pop<float>();
 
@@ -186,7 +186,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetAmbientLightSensorValue(Kernel::HLERequestContext& ctx) {
+    void GetAmbientLightSensorValue(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -194,7 +194,7 @@ private:
         rb.Push(ambient_light_value);
     }
 
-    void SetBrightnessReflectionDelayLevel(Kernel::HLERequestContext& ctx) {
+    void SetBrightnessReflectionDelayLevel(HLERequestContext& ctx) {
         // This is Intentional, this function does absolutely nothing
         LOG_DEBUG(Service_LBL, "called");
 
@@ -202,7 +202,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetBrightnessReflectionDelayLevel(Kernel::HLERequestContext& ctx) {
+    void GetBrightnessReflectionDelayLevel(HLERequestContext& ctx) {
         // This is intentional, the function is hard coded to return 0.0f on hardware
         LOG_DEBUG(Service_LBL, "called");
 
@@ -211,7 +211,7 @@ private:
         rb.Push(0.0f);
     }
 
-    void SetCurrentBrightnessMapping(Kernel::HLERequestContext& ctx) {
+    void SetCurrentBrightnessMapping(HLERequestContext& ctx) {
         // This is Intentional, this function does absolutely nothing
         LOG_DEBUG(Service_LBL, "called");
 
@@ -219,24 +219,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetCurrentBrightnessMapping(Kernel::HLERequestContext& ctx) {
-        // This is Intentional, this function does absolutely nothing
-        LOG_DEBUG(Service_LBL, "called");
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
-        // This function is suppose to return something but it seems like it doesn't
-    }
-
-    void SetCurrentAmbientLightSensorMapping(Kernel::HLERequestContext& ctx) {
-        // This is Intentional, this function does absolutely nothing
-        LOG_DEBUG(Service_LBL, "called");
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultSuccess);
-    }
-
-    void GetCurrentAmbientLightSensorMapping(Kernel::HLERequestContext& ctx) {
+    void GetCurrentBrightnessMapping(HLERequestContext& ctx) {
         // This is Intentional, this function does absolutely nothing
         LOG_DEBUG(Service_LBL, "called");
 
@@ -245,7 +228,24 @@ private:
         // This function is suppose to return something but it seems like it doesn't
     }
 
-    void IsAmbientLightSensorAvailable(Kernel::HLERequestContext& ctx) {
+    void SetCurrentAmbientLightSensorMapping(HLERequestContext& ctx) {
+        // This is Intentional, this function does absolutely nothing
+        LOG_DEBUG(Service_LBL, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultSuccess);
+    }
+
+    void GetCurrentAmbientLightSensorMapping(HLERequestContext& ctx) {
+        // This is Intentional, this function does absolutely nothing
+        LOG_DEBUG(Service_LBL, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultSuccess);
+        // This function is suppose to return something but it seems like it doesn't
+    }
+
+    void IsAmbientLightSensorAvailable(HLERequestContext& ctx) {
         LOG_WARNING(Service_LBL, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
@@ -253,7 +253,7 @@ private:
         rb.Push(true);
     }
 
-    void SetCurrentBrightnessSettingForVrMode(Kernel::HLERequestContext& ctx) {
+    void SetCurrentBrightnessSettingForVrMode(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         auto brightness = rp.Pop<float>();
 
@@ -270,7 +270,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetCurrentBrightnessSettingForVrMode(Kernel::HLERequestContext& ctx) {
+    void GetCurrentBrightnessSettingForVrMode(HLERequestContext& ctx) {
         auto brightness = current_vr_brightness;
         if (!std::isfinite(brightness)) {
             LOG_ERROR(Service_LBL, "Brightness is infinite!");
@@ -284,7 +284,7 @@ private:
         rb.Push(brightness);
     }
 
-    void EnableVrMode(Kernel::HLERequestContext& ctx) {
+    void EnableVrMode(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -293,7 +293,7 @@ private:
         vr_mode_enabled = true;
     }
 
-    void DisableVrMode(Kernel::HLERequestContext& ctx) {
+    void DisableVrMode(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -302,7 +302,7 @@ private:
         vr_mode_enabled = false;
     }
 
-    void IsVrModeEnabled(Kernel::HLERequestContext& ctx) {
+    void IsVrModeEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};

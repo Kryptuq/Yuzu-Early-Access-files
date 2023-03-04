@@ -6,8 +6,8 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/glue/notif.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Glue {
 
@@ -28,7 +28,7 @@ NOTIF_A::NOTIF_A(Core::System& system_) : ServiceFramework{system_, "notif:a"} {
 
 NOTIF_A::~NOTIF_A() = default;
 
-void NOTIF_A::RegisterAlarmSetting(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::RegisterAlarmSetting(HLERequestContext& ctx) {
     const auto alarm_setting_buffer_size = ctx.GetReadBufferSize(0);
     const auto application_parameter_size = ctx.GetReadBufferSize(1);
 
@@ -63,7 +63,7 @@ void NOTIF_A::RegisterAlarmSetting(Kernel::HLERequestContext& ctx) {
     rb.Push(new_alarm.alarm_setting_id);
 }
 
-void NOTIF_A::UpdateAlarmSetting(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::UpdateAlarmSetting(HLERequestContext& ctx) {
     const auto alarm_setting_buffer_size = ctx.GetReadBufferSize(0);
     const auto application_parameter_size = ctx.GetReadBufferSize(1);
 
@@ -91,7 +91,7 @@ void NOTIF_A::UpdateAlarmSetting(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void NOTIF_A::ListAlarmSettings(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::ListAlarmSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_NOTIF, "called, alarm_count={}", alarms.size());
 
     // TODO: Only return alarms of this game id
@@ -102,7 +102,7 @@ void NOTIF_A::ListAlarmSettings(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u32>(alarms.size()));
 }
 
-void NOTIF_A::LoadApplicationParameter(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::LoadApplicationParameter(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto alarm_setting_id{rp.Pop<AlarmSettingId>()};
 
@@ -126,7 +126,7 @@ void NOTIF_A::LoadApplicationParameter(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u32>(application_parameter.size()));
 }
 
-void NOTIF_A::DeleteAlarmSetting(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::DeleteAlarmSetting(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto alarm_setting_id{rp.Pop<AlarmSettingId>()};
 
@@ -140,7 +140,7 @@ void NOTIF_A::DeleteAlarmSetting(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void NOTIF_A::Initialize(Kernel::HLERequestContext& ctx) {
+void NOTIF_A::Initialize(HLERequestContext& ctx) {
     // TODO: Load previous alarms from config
 
     LOG_WARNING(Service_NOTIF, "(STUBBED) called");

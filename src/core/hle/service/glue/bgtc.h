@@ -16,7 +16,7 @@ public:
     explicit BGTC_T(Core::System& system_);
     ~BGTC_T() override;
 
-    void OpenTaskService(Kernel::HLERequestContext& ctx);
+    void OpenTaskService(HLERequestContext& ctx);
 };
 
 class ITaskService final : public ServiceFramework<ITaskService> {

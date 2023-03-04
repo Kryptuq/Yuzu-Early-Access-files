@@ -12,10 +12,6 @@ namespace Core {
 class System;
 }
 
-namespace Kernel {
-class HLERequestContext;
-}
-
 namespace AudioCore::AudioOut {
 class Manager;
 class In;
@@ -29,11 +25,11 @@ public:
     ~AudInU() override;
 
 private:
-    void ListAudioIns(Kernel::HLERequestContext& ctx);
-    void ListAudioInsAutoFiltered(Kernel::HLERequestContext& ctx);
-    void OpenInOutImpl(Kernel::HLERequestContext& ctx);
-    void OpenAudioIn(Kernel::HLERequestContext& ctx);
-    void OpenAudioInProtocolSpecified(Kernel::HLERequestContext& ctx);
+    void ListAudioIns(HLERequestContext& ctx);
+    void ListAudioInsAutoFiltered(HLERequestContext& ctx);
+    void OpenInOutImpl(HLERequestContext& ctx);
+    void OpenAudioIn(HLERequestContext& ctx);
+    void OpenAudioInProtocolSpecified(HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
     std::unique_ptr<AudioCore::AudioIn::Manager> impl;

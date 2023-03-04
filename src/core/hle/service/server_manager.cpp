@@ -4,8 +4,6 @@
 #include "common/scope_exit.h"
 
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_client_session.h"
 #include "core/hle/kernel/k_event.h"
@@ -15,6 +13,8 @@
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/svc_results.h"
+#include "core/hle/service/hle_ipc.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -73,7 +73,7 @@ void ServerManager::RunServer(std::unique_ptr<ServerManager>&& server_manager) {
 }
 
 Result ServerManager::RegisterSession(Kernel::KServerSession* session,
-                                      std::shared_ptr<Kernel::SessionRequestManager> manager) {
+                                      std::shared_ptr<SessionRequestManager> manager) {
     ASSERT(m_sessions.size() + m_ports.size() < MaximumWaitObjects);
 
     // We are taking ownership of the server session, so don't open it.
@@ -90,7 +90,7 @@ Result ServerManager::RegisterSession(Kernel::KServerSession* session,
 }
 
 Result ServerManager::RegisterNamedService(const std::string& service_name,
-                                           std::shared_ptr<Kernel::SessionRequestHandler>&& handler,
+                                           std::shared_ptr<SessionRequestHandler>&& handler,
                                            u32 max_sessions) {
     ASSERT(m_sessions.size() + m_ports.size() < MaximumWaitObjects);
 
@@ -118,7 +118,7 @@ Result ServerManager::RegisterNamedService(const std::string& service_name,
 }
 
 Result ServerManager::ManageNamedPort(const std::string& service_name,
-                                      std::shared_ptr<Kernel::SessionRequestHandler>&& handler,
+                                      std::shared_ptr<SessionRequestHandler>&& handler,
                                       u32 max_sessions) {
     ASSERT(m_sessions.size() + m_ports.size() < MaximumWaitObjects);
 
@@ -265,7 +265,7 @@ Result ServerManager::WaitAndProcessImpl() {
         case HandleType::Port: {
             // Port signaled.
             auto* port = wait_obj->DynamicCast<Kernel::KServerPort*>();
-            std::shared_ptr<Kernel::SessionRequestHandler> handler;
+            std::shared_ptr<SessionRequestHandler> handler;
 
             // Remove from tracking.
             {
@@ -284,7 +284,7 @@ Result ServerManager::WaitAndProcessImpl() {
         case HandleType::Session: {
             // Session signaled.
             auto* session = wait_obj->DynamicCast<Kernel::KServerSession*>();
-            std::shared_ptr<Kernel::SessionRequestManager> manager;
+            std::shared_ptr<SessionRequestManager> manager;
 
             // Remove from tracking.
             {
@@ -329,13 +329,13 @@ Result ServerManager::WaitAndProcessImpl() {
 }
 
 Result ServerManager::OnPortEvent(Kernel::KServerPort* port,
-                                  std::shared_ptr<Kernel::SessionRequestHandler>&& handler) {
+                                  std::shared_ptr<SessionRequestHandler>&& handler) {
     // Accept a new server session.
     Kernel::KServerSession* session = port->AcceptSession();
     ASSERT(session != nullptr);
 
     // Create the session manager and install the handler.
-    auto manager = std::make_shared<Kernel::SessionRequestManager>(m_system.Kernel(), *this);
+    auto manager = std::make_shared<SessionRequestManager>(m_system.Kernel(), *this);
     manager->SetSessionHandler(std::shared_ptr(handler));
 
     // Track the server session.
@@ -353,11 +353,11 @@ Result ServerManager::OnPortEvent(Kernel::KServerPort* port,
 }
 
 Result ServerManager::OnSessionEvent(Kernel::KServerSession* session,
-                                     std::shared_ptr<Kernel::SessionRequestManager>&& manager) {
+                                     std::shared_ptr<SessionRequestManager>&& manager) {
     Result rc{ResultSuccess};
 
     // Try to receive a message.
-    std::shared_ptr<Kernel::HLERequestContext> context;
+    std::shared_ptr<HLERequestContext> context;
     rc = session->ReceiveRequest(&context, manager);
 
     // If the session has been closed, we're done.

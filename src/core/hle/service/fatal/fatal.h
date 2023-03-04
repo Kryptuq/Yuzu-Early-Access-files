@@ -19,9 +19,9 @@ public:
                            const char* name);
         ~Interface() override;
 
-        void ThrowFatal(Kernel::HLERequestContext& ctx);
-        void ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx);
-        void ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx);
+        void ThrowFatal(HLERequestContext& ctx);
+        void ThrowFatalWithPolicy(HLERequestContext& ctx);
+        void ThrowFatalWithCpuContext(HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;

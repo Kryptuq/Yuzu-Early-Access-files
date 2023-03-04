@@ -9,12 +9,12 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/file_sys/vfs.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/bcat/backend/backend.h"
 #include "core/hle/service/bcat/bcat.h"
 #include "core/hle/service/bcat/bcat_module.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 
 namespace Service::BCAT {
@@ -51,8 +51,7 @@ BCATDigest DigestFile(const FileSys::VirtualFile& file) {
 // For a name to be valid it must be non-empty, must have a null terminating character as the final
 // char, can only contain numbers, letters, underscores and a hyphen if directory and a period if
 // file.
-bool VerifyNameValidInternal(Kernel::HLERequestContext& ctx, std::array<char, 0x20> name,
-                             char match_char) {
+bool VerifyNameValidInternal(HLERequestContext& ctx, std::array<char, 0x20> name, char match_char) {
     const auto null_chars = std::count(name.begin(), name.end(), 0);
     const auto bad_chars = std::count_if(name.begin(), name.end(), [match_char](char c) {
         return !std::isalnum(static_cast<u8>(c)) && c != '_' && c != match_char && c != '\0';
@@ -67,11 +66,11 @@ bool VerifyNameValidInternal(Kernel::HLERequestContext& ctx, std::array<char, 0x
     return true;
 }
 
-bool VerifyNameValidDir(Kernel::HLERequestContext& ctx, DirectoryName name) {
+bool VerifyNameValidDir(HLERequestContext& ctx, DirectoryName name) {
     return VerifyNameValidInternal(ctx, name, '-');
 }
 
-bool VerifyNameValidFile(Kernel::HLERequestContext& ctx, FileName name) {
+bool VerifyNameValidFile(HLERequestContext& ctx, FileName name) {
     return VerifyNameValidInternal(ctx, name, '.');
 }
 
@@ -99,7 +98,7 @@ public:
     }
 
 private:
-    void GetEvent(Kernel::HLERequestContext& ctx) {
+    void GetEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -107,7 +106,7 @@ private:
         rb.PushCopyObjects(event);
     }
 
-    void GetImpl(Kernel::HLERequestContext& ctx) {
+    void GetImpl(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         ctx.WriteBuffer(impl);
@@ -174,7 +173,7 @@ private:
                                                                progress_backend.GetImpl());
     }
 
-    void RequestSyncDeliveryCache(Kernel::HLERequestContext& ctx) {
+    void RequestSyncDeliveryCache(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         backend.Synchronize({system.GetApplicationProcessProgramID(),
@@ -186,7 +185,7 @@ private:
         rb.PushIpcInterface(CreateProgressService(SyncType::Normal));
     }
 
-    void RequestSyncDeliveryCacheWithDirectoryName(Kernel::HLERequestContext& ctx) {
+    void RequestSyncDeliveryCacheWithDirectoryName(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto name_raw = rp.PopRaw<DirectoryName>();
         const auto name =
@@ -203,7 +202,7 @@ private:
         rb.PushIpcInterface(CreateProgressService(SyncType::Directory));
     }
 
-    void SetPassphrase(Kernel::HLERequestContext& ctx) {
+    void SetPassphrase(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto title_id = rp.PopRaw<u64>();
 
@@ -235,7 +234,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void ClearDeliveryCacheStorage(Kernel::HLERequestContext& ctx) {
+    void ClearDeliveryCacheStorage(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto title_id = rp.PopRaw<u64>();
 
@@ -271,7 +270,7 @@ private:
     std::array<ProgressServiceBackend, static_cast<size_t>(SyncType::Count)> progress;
 };
 
-void Module::Interface::CreateBcatService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateBcatService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -296,7 +295,7 @@ public:
     }
 
 private:
-    void Open(Kernel::HLERequestContext& ctx) {
+    void Open(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto dir_name_raw = rp.PopRaw<DirectoryName>();
         const auto file_name_raw = rp.PopRaw<FileName>();
@@ -340,7 +339,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Read(Kernel::HLERequestContext& ctx) {
+    void Read(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto offset{rp.PopRaw<u64>()};
 
@@ -363,7 +362,7 @@ private:
         rb.Push<u64>(buffer.size());
     }
 
-    void GetSize(Kernel::HLERequestContext& ctx) {
+    void GetSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         if (current_file == nullptr) {
@@ -377,7 +376,7 @@ private:
         rb.Push<u64>(current_file->GetSize());
     }
 
-    void GetDigest(Kernel::HLERequestContext& ctx) {
+    void GetDigest(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         if (current_file == nullptr) {
@@ -412,7 +411,7 @@ public:
     }
 
 private:
-    void Open(Kernel::HLERequestContext& ctx) {
+    void Open(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto name_raw = rp.PopRaw<DirectoryName>();
         const auto name =
@@ -443,7 +442,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Read(Kernel::HLERequestContext& ctx) {
+    void Read(HLERequestContext& ctx) {
         auto write_size = ctx.GetWriteBufferNumElements<DeliveryCacheDirectoryEntry>();
 
         LOG_DEBUG(Service_BCAT, "called, write_size={:016X}", write_size);
@@ -473,7 +472,7 @@ private:
         rb.Push(static_cast<u32>(write_size * sizeof(DeliveryCacheDirectoryEntry)));
     }
 
-    void GetCount(Kernel::HLERequestContext& ctx) {
+    void GetCount(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         if (current_dir == nullptr) {
@@ -517,7 +516,7 @@ public:
     }
 
 private:
-    void CreateFileService(Kernel::HLERequestContext& ctx) {
+    void CreateFileService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -525,7 +524,7 @@ private:
         rb.PushIpcInterface<IDeliveryCacheFileService>(system, root);
     }
 
-    void CreateDirectoryService(Kernel::HLERequestContext& ctx) {
+    void CreateDirectoryService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -533,7 +532,7 @@ private:
         rb.PushIpcInterface<IDeliveryCacheDirectoryService>(system, root);
     }
 
-    void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
+    void EnumerateDeliveryCacheDirectory(HLERequestContext& ctx) {
         auto size = ctx.GetWriteBufferNumElements<DirectoryName>();
 
         LOG_DEBUG(Service_BCAT, "called, size={:016X}", size);
@@ -552,7 +551,7 @@ private:
     u64 next_read_index = 0;
 };
 
-void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateDeliveryCacheStorageService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
 
     const auto title_id = system.GetApplicationProcessProgramID();
@@ -561,8 +560,7 @@ void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestCont
     rb.PushIpcInterface<IDeliveryCacheStorageService>(system, fsc.GetBCATDirectory(title_id));
 }
 
-void Module::Interface::CreateDeliveryCacheStorageServiceWithApplicationId(
-    Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateDeliveryCacheStorageServiceWithApplicationId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto title_id = rp.PopRaw<u64>();
 

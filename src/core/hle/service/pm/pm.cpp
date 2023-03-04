@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/pm/pm.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -34,7 +34,7 @@ std::optional<Kernel::KProcess*> SearchProcessList(
     return *iter;
 }
 
-void GetApplicationPidGeneric(Kernel::HLERequestContext& ctx,
+void GetApplicationPidGeneric(HLERequestContext& ctx,
                               const std::vector<Kernel::KProcess*>& process_list) {
     const auto process = SearchProcessList(process_list, [](const auto& proc) {
         return proc->GetProcessID() == Kernel::KProcess::ProcessIDMin;
@@ -58,7 +58,7 @@ public:
     }
 
 private:
-    void GetBootMode(Kernel::HLERequestContext& ctx) {
+    void GetBootMode(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -66,7 +66,7 @@ private:
         rb.PushEnum(boot_mode);
     }
 
-    void SetMaintenanceBoot(Kernel::HLERequestContext& ctx) {
+    void SetMaintenanceBoot(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
 
         boot_mode = SystemBootMode::Maintenance;
@@ -100,7 +100,7 @@ public:
     }
 
 private:
-    void GetProcessId(Kernel::HLERequestContext& ctx) {
+    void GetProcessId(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto program_id = rp.PopRaw<u64>();
 
@@ -122,12 +122,12 @@ private:
         rb.Push((*process)->GetProcessID());
     }
 
-    void GetApplicationProcessId(Kernel::HLERequestContext& ctx) {
+    void GetApplicationProcessId(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
         GetApplicationPidGeneric(ctx, kernel.GetProcessList());
     }
 
-    void AtmosphereGetProcessInfo(Kernel::HLERequestContext& ctx) {
+    void AtmosphereGetProcessInfo(HLERequestContext& ctx) {
         // https://github.com/Atmosphere-NX/Atmosphere/blob/master/stratosphere/pm/source/impl/pm_process_manager.cpp#L614
         // This implementation is incomplete; only a handle to the process is returned.
         IPC::RequestParser rp{ctx};
@@ -187,7 +187,7 @@ public:
     }
 
 private:
-    void GetProgramId(Kernel::HLERequestContext& ctx) {
+    void GetProgramId(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto process_id = rp.PopRaw<u64>();
 
@@ -208,7 +208,7 @@ private:
         rb.Push((*process)->GetProgramID());
     }
 
-    void AtmosphereGetProcessId(Kernel::HLERequestContext& ctx) {
+    void AtmosphereGetProcessId(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto program_id = rp.PopRaw<u64>();
 
@@ -255,7 +255,7 @@ public:
     }
 
 private:
-    void GetApplicationProcessIdForShell(Kernel::HLERequestContext& ctx) {
+    void GetApplicationProcessIdForShell(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
         GetApplicationPidGeneric(ctx, kernel.GetProcessList());
     }

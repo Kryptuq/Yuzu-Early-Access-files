@@ -20,9 +20,9 @@ private:
         Unknown = 3,
     };
 
-    void GetBatteryChargePercentage(Kernel::HLERequestContext& ctx);
-    void GetChargerType(Kernel::HLERequestContext& ctx);
-    void OpenSession(Kernel::HLERequestContext& ctx);
+    void GetBatteryChargePercentage(HLERequestContext& ctx);
+    void GetChargerType(HLERequestContext& ctx);
+    void OpenSession(HLERequestContext& ctx);
 
     u32 battery_charge_percentage{100};
     ChargerType charger_type{ChargerType::RegularCharger};

@@ -3,9 +3,9 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/btdrv/btdrv.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -41,7 +41,7 @@ public:
     }
 
 private:
-    void RegisterBleEvent(Kernel::HLERequestContext& ctx) {
+    void RegisterBleEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};

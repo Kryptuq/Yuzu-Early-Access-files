@@ -22,17 +22,17 @@ public:
     ~AOC_U() override;
 
 private:
-    void CountAddOnContent(Kernel::HLERequestContext& ctx);
-    void ListAddOnContent(Kernel::HLERequestContext& ctx);
-    void GetAddOnContentBaseId(Kernel::HLERequestContext& ctx);
-    void PrepareAddOnContent(Kernel::HLERequestContext& ctx);
-    void GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx);
-    void GetAddOnContentListChangedEventWithProcessId(Kernel::HLERequestContext& ctx);
-    void NotifyMountAddOnContent(Kernel::HLERequestContext& ctx);
-    void NotifyUnmountAddOnContent(Kernel::HLERequestContext& ctx);
-    void CheckAddOnContentMountStatus(Kernel::HLERequestContext& ctx);
-    void CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
-    void CreatePermanentEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
+    void CountAddOnContent(HLERequestContext& ctx);
+    void ListAddOnContent(HLERequestContext& ctx);
+    void GetAddOnContentBaseId(HLERequestContext& ctx);
+    void PrepareAddOnContent(HLERequestContext& ctx);
+    void GetAddOnContentListChangedEvent(HLERequestContext& ctx);
+    void GetAddOnContentListChangedEventWithProcessId(HLERequestContext& ctx);
+    void NotifyMountAddOnContent(HLERequestContext& ctx);
+    void NotifyUnmountAddOnContent(HLERequestContext& ctx);
+    void CheckAddOnContentMountStatus(HLERequestContext& ctx);
+    void CreateEcPurchasedEventManager(HLERequestContext& ctx);
+    void CreatePermanentEcPurchasedEventManager(HLERequestContext& ctx);
 
     std::vector<u64> add_on_content;
     KernelHelpers::ServiceContext service_context;

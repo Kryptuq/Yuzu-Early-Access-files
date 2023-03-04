@@ -4,8 +4,8 @@
 #include "common/hex_util.h"
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/acc/profile_manager.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -54,7 +54,7 @@ public:
 
 private:
     template <Core::Reporter::PlayReportType Type>
-    void SaveReport(Kernel::HLERequestContext& ctx) {
+    void SaveReport(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto process_id = rp.PopRaw<u64>();
 
@@ -80,7 +80,7 @@ private:
     }
 
     template <Core::Reporter::PlayReportType Type>
-    void SaveReportWithUser(Kernel::HLERequestContext& ctx) {
+    void SaveReportWithUser(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto user_id = rp.PopRaw<u128>();
         const auto process_id = rp.PopRaw<u64>();
@@ -107,14 +107,14 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void RequestImmediateTransmission(Kernel::HLERequestContext& ctx) {
+    void RequestImmediateTransmission(HLERequestContext& ctx) {
         LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void GetTransmissionStatus(Kernel::HLERequestContext& ctx) {
+    void GetTransmissionStatus(HLERequestContext& ctx) {
         LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
         constexpr s32 status = 0;
@@ -124,7 +124,7 @@ private:
         rb.Push(status);
     }
 
-    void GetSystemSessionId(Kernel::HLERequestContext& ctx) {
+    void GetSystemSessionId(HLERequestContext& ctx) {
         LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
         constexpr u64 system_session_id = 0;
@@ -133,7 +133,7 @@ private:
         rb.Push(system_session_id);
     }
 
-    void SaveSystemReport(Kernel::HLERequestContext& ctx) {
+    void SaveSystemReport(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto title_id = rp.PopRaw<u64>();
 
@@ -156,7 +156,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SaveSystemReportWithUser(Kernel::HLERequestContext& ctx) {
+    void SaveSystemReportWithUser(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto user_id = rp.PopRaw<u128>();
         const auto title_id = rp.PopRaw<u64>();

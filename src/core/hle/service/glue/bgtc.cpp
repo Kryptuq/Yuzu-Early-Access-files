@@ -3,8 +3,8 @@
 
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/glue/bgtc.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Glue {
 
@@ -20,7 +20,7 @@ BGTC_T::BGTC_T(Core::System& system_) : ServiceFramework{system_, "bgtc:t"} {
 
 BGTC_T::~BGTC_T() = default;
 
-void BGTC_T::OpenTaskService(Kernel::HLERequestContext& ctx) {
+void BGTC_T::OpenTaskService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_BGTC, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

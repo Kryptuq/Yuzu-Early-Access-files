@@ -5,8 +5,8 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hardware_properties.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/time/time_interface.h"
@@ -34,7 +34,7 @@ public:
     }
 
 private:
-    void GetCurrentTime(Kernel::HLERequestContext& ctx) {
+    void GetCurrentTime(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
@@ -55,7 +55,7 @@ private:
         rb.Push<s64>(posix_time);
     }
 
-    void GetSystemClockContext(Kernel::HLERequestContext& ctx) {
+    void GetSystemClockContext(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
@@ -98,7 +98,7 @@ public:
     }
 
 private:
-    void GetCurrentTimePoint(Kernel::HLERequestContext& ctx) {
+    void GetCurrentTimePoint(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
@@ -178,7 +178,7 @@ Result Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     return ResultSuccess;
 }
 
-void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardUserSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -186,7 +186,7 @@ void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ct
                                       system);
 }
 
-void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardNetworkSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -194,14 +194,14 @@ void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext&
                                       system);
 }
 
-void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardSteadyClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISteadyClock>(system.GetTimeManager().GetStandardSteadyClockCore(), system);
 }
 
-void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetTimeZoneService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -209,7 +209,7 @@ void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
                                           system.GetTimeManager().GetTimeZoneContentManager());
 }
 
-void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardLocalSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -217,8 +217,7 @@ void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& c
                                       system);
 }
 
-void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(
-    Kernel::HLERequestContext& ctx) {
+void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     auto& clock_core{system.GetTimeManager().GetStandardNetworkSystemClockCore()};
     IPC::ResponseBuilder rb{ctx, 3};
@@ -226,7 +225,7 @@ void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(
     rb.Push<u32>(clock_core.IsStandardNetworkSystemClockAccuracySufficient(system));
 }
 
-void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     auto& steady_clock_core{system.GetTimeManager().GetStandardSteadyClockCore()};
@@ -255,7 +254,7 @@ void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(Kernel::HLERe
     rb.Push(ERROR_TIME_MISMATCH);
 }
 
-void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetClockSnapshot(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto type{rp.PopEnum<Clock::TimeType>()};
 
@@ -296,7 +295,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::GetClockSnapshotFromSystemClockContext(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetClockSnapshotFromSystemClockContext(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto type{rp.PopEnum<Clock::TimeType>()};
 
@@ -322,8 +321,7 @@ void Module::Interface::GetClockSnapshotFromSystemClockContext(Kernel::HLEReques
     rb.Push(ResultSuccess);
 }
 
-void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(
-    Kernel::HLERequestContext& ctx) {
+void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     Clock::ClockSnapshot snapshot_a;
@@ -350,7 +348,7 @@ void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(
     rb.PushRaw(time_span_type.nanoseconds);
 }
 
-void Module::Interface::CalculateSpanBetween(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CalculateSpanBetween(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
     Clock::ClockSnapshot snapshot_a;
@@ -385,7 +383,7 @@ void Module::Interface::CalculateSpanBetween(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(time_span_type.nanoseconds);
 }
 
-void Module::Interface::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetSharedMemoryNativeHandle(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(ResultSuccess);

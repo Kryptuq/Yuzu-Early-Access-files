@@ -7,7 +7,6 @@
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
 #include "core/hid/hid_types.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_shared_memory.h"
@@ -16,6 +15,7 @@
 #include "core/hle/service/hid/hidbus/ringcon.h"
 #include "core/hle/service/hid/hidbus/starlink.h"
 #include "core/hle/service/hid/hidbus/stubbed.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/service.h"
 #include "core/memory.h"
 
@@ -99,7 +99,7 @@ std::optional<std::size_t> HidBus::GetDeviceIndexFromHandle(BusHandle handle) co
     return std::nullopt;
 }
 
-void HidBus::GetBusHandle(Kernel::HLERequestContext& ctx) {
+void HidBus::GetBusHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -165,7 +165,7 @@ void HidBus::GetBusHandle(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(out_data);
 }
 
-void HidBus::IsExternalDeviceConnected(Kernel::HLERequestContext& ctx) {
+void HidBus::IsExternalDeviceConnected(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
@@ -193,7 +193,7 @@ void HidBus::IsExternalDeviceConnected(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::Initialize(Kernel::HLERequestContext& ctx) {
+void HidBus::Initialize(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
@@ -245,7 +245,7 @@ void HidBus::Initialize(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::Finalize(Kernel::HLERequestContext& ctx) {
+void HidBus::Finalize(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
@@ -284,7 +284,7 @@ void HidBus::Finalize(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::EnableExternalDevice(Kernel::HLERequestContext& ctx) {
+void HidBus::EnableExternalDevice(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool enable;
@@ -322,7 +322,7 @@ void HidBus::EnableExternalDevice(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::GetExternalDeviceId(Kernel::HLERequestContext& ctx) {
+void HidBus::GetExternalDeviceId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
@@ -349,7 +349,7 @@ void HidBus::GetExternalDeviceId(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::SendCommandAsync(Kernel::HLERequestContext& ctx) {
+void HidBus::SendCommandAsync(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto data = ctx.ReadBuffer();
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
@@ -377,7 +377,7 @@ void HidBus::SendCommandAsync(Kernel::HLERequestContext& ctx) {
     return;
 };
 
-void HidBus::GetSendCommandAsynceResult(Kernel::HLERequestContext& ctx) {
+void HidBus::GetSendCommandAsynceResult(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
@@ -406,7 +406,7 @@ void HidBus::GetSendCommandAsynceResult(Kernel::HLERequestContext& ctx) {
     return;
 };
 
-void HidBus::SetEventForSendCommandAsycResult(Kernel::HLERequestContext& ctx) {
+void HidBus::SetEventForSendCommandAsycResult(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
@@ -432,7 +432,7 @@ void HidBus::SetEventForSendCommandAsycResult(Kernel::HLERequestContext& ctx) {
     return;
 };
 
-void HidBus::GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
+void HidBus::GetSharedMemoryHandle(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -440,7 +440,7 @@ void HidBus::GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(&system.Kernel().GetHidBusSharedMem());
 }
 
-void HidBus::EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
+void HidBus::EnableJoyPollingReceiveMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto t_mem_size{rp.Pop<u32>()};
     const auto t_mem_handle{ctx.GetCopyHandle(0)};
@@ -485,7 +485,7 @@ void HidBus::EnableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::DisableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
+void HidBus::DisableJoyPollingReceiveMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto bus_handle_{rp.PopRaw<BusHandle>()};
 
@@ -512,7 +512,7 @@ void HidBus::DisableJoyPollingReceiveMode(Kernel::HLERequestContext& ctx) {
     return;
 }
 
-void HidBus::SetStatusManagerType(Kernel::HLERequestContext& ctx) {
+void HidBus::SetStatusManagerType(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto manager_type{rp.PopEnum<StatusManagerType>()};
 

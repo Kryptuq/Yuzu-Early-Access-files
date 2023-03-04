@@ -41,7 +41,7 @@ private:
 
     struct PollWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 nfds;
         s32 timeout;
@@ -53,7 +53,7 @@ private:
 
     struct AcceptWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         std::vector<u8> write_buffer;
@@ -63,7 +63,7 @@ private:
 
     struct ConnectWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         std::span<const u8> addr;
@@ -72,7 +72,7 @@ private:
 
     struct RecvWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         u32 flags;
@@ -83,7 +83,7 @@ private:
 
     struct RecvFromWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         u32 flags;
@@ -95,7 +95,7 @@ private:
 
     struct SendWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         u32 flags;
@@ -106,7 +106,7 @@ private:
 
     struct SendToWork {
         void Execute(BSD* bsd);
-        void Response(Kernel::HLERequestContext& ctx);
+        void Response(HLERequestContext& ctx);
 
         s32 fd;
         u32 flags;
@@ -116,32 +116,32 @@ private:
         Errno bsd_errno{};
     };
 
-    void RegisterClient(Kernel::HLERequestContext& ctx);
-    void StartMonitoring(Kernel::HLERequestContext& ctx);
-    void Socket(Kernel::HLERequestContext& ctx);
-    void Select(Kernel::HLERequestContext& ctx);
-    void Poll(Kernel::HLERequestContext& ctx);
-    void Accept(Kernel::HLERequestContext& ctx);
-    void Bind(Kernel::HLERequestContext& ctx);
-    void Connect(Kernel::HLERequestContext& ctx);
-    void GetPeerName(Kernel::HLERequestContext& ctx);
-    void GetSockName(Kernel::HLERequestContext& ctx);
-    void GetSockOpt(Kernel::HLERequestContext& ctx);
-    void Listen(Kernel::HLERequestContext& ctx);
-    void Fcntl(Kernel::HLERequestContext& ctx);
-    void SetSockOpt(Kernel::HLERequestContext& ctx);
-    void Shutdown(Kernel::HLERequestContext& ctx);
-    void Recv(Kernel::HLERequestContext& ctx);
-    void RecvFrom(Kernel::HLERequestContext& ctx);
-    void Send(Kernel::HLERequestContext& ctx);
-    void SendTo(Kernel::HLERequestContext& ctx);
-    void Write(Kernel::HLERequestContext& ctx);
-    void Read(Kernel::HLERequestContext& ctx);
-    void Close(Kernel::HLERequestContext& ctx);
-    void EventFd(Kernel::HLERequestContext& ctx);
+    void RegisterClient(HLERequestContext& ctx);
+    void StartMonitoring(HLERequestContext& ctx);
+    void Socket(HLERequestContext& ctx);
+    void Select(HLERequestContext& ctx);
+    void Poll(HLERequestContext& ctx);
+    void Accept(HLERequestContext& ctx);
+    void Bind(HLERequestContext& ctx);
+    void Connect(HLERequestContext& ctx);
+    void GetPeerName(HLERequestContext& ctx);
+    void GetSockName(HLERequestContext& ctx);
+    void GetSockOpt(HLERequestContext& ctx);
+    void Listen(HLERequestContext& ctx);
+    void Fcntl(HLERequestContext& ctx);
+    void SetSockOpt(HLERequestContext& ctx);
+    void Shutdown(HLERequestContext& ctx);
+    void Recv(HLERequestContext& ctx);
+    void RecvFrom(HLERequestContext& ctx);
+    void Send(HLERequestContext& ctx);
+    void SendTo(HLERequestContext& ctx);
+    void Write(HLERequestContext& ctx);
+    void Read(HLERequestContext& ctx);
+    void Close(HLERequestContext& ctx);
+    void EventFd(HLERequestContext& ctx);
 
     template <typename Work>
-    void ExecuteWork(Kernel::HLERequestContext& ctx, Work work);
+    void ExecuteWork(HLERequestContext& ctx, Work work);
 
     std::pair<s32, Errno> SocketImpl(Domain domain, Type type, Protocol protocol);
     std::pair<s32, Errno> PollImpl(std::vector<u8>& write_buffer, std::span<const u8> read_buffer,
@@ -166,7 +166,7 @@ private:
     s32 FindFreeFileDescriptorHandle() noexcept;
     bool IsFileDescriptorValid(s32 fd) const noexcept;
 
-    void BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) const noexcept;
+    void BuildErrnoResponse(HLERequestContext& ctx, Errno bsd_errno) const noexcept;
 
     std::array<std::optional<FileDescriptor>, MAX_FD> file_descriptors;
 

@@ -8,7 +8,6 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hid/hid_core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_transfer_memory.h"
@@ -18,6 +17,7 @@
 #include "core/hle/service/hid/hidbus.h"
 #include "core/hle/service/hid/irs.h"
 #include "core/hle/service/hid/xcd.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/memory.h"
 
@@ -138,7 +138,7 @@ IAppletResource::~IAppletResource() {
     system.CoreTiming().UnscheduleEvent(motion_update_event, 0);
 }
 
-void IAppletResource::GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
+void IAppletResource::GetSharedMemoryHandle(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -203,7 +203,7 @@ public:
     }
 
 private:
-    void InitializeVibrationDevice(Kernel::HLERequestContext& ctx) {
+    void InitializeVibrationDevice(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto vibration_device_handle{rp.PopRaw<Core::HID::VibrationDeviceHandle>()};
 
@@ -382,7 +382,7 @@ Hid::Hid(Core::System& system_)
 
 Hid::~Hid() = default;
 
-void Hid::CreateAppletResource(Kernel::HLERequestContext& ctx) {
+void Hid::CreateAppletResource(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -397,7 +397,7 @@ void Hid::CreateAppletResource(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IAppletResource>(applet_resource);
 }
 
-void Hid::ActivateDebugPad(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateDebugPad(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -409,7 +409,7 @@ void Hid::ActivateDebugPad(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ActivateTouchScreen(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateTouchScreen(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -421,7 +421,7 @@ void Hid::ActivateTouchScreen(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ActivateMouse(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateMouse(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -433,7 +433,7 @@ void Hid::ActivateMouse(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ActivateKeyboard(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateKeyboard(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -445,7 +445,7 @@ void Hid::ActivateKeyboard(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx) {
+void Hid::SendKeyboardLockKeyEvent(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto flags{rp.Pop<u32>()};
 
@@ -455,7 +455,7 @@ void Hid::SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ActivateXpad(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateXpad(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         u32 basic_xpad_id;
@@ -475,7 +475,7 @@ void Hid::ActivateXpad(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetXpadIDs(Kernel::HLERequestContext& ctx) {
+void Hid::GetXpadIDs(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -486,7 +486,7 @@ void Hid::GetXpadIDs(Kernel::HLERequestContext& ctx) {
     rb.Push(0);
 }
 
-void Hid::ActivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         u32 basic_xpad_id;
@@ -506,7 +506,7 @@ void Hid::ActivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::DeactivateSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         u32 basic_xpad_id;
@@ -526,7 +526,7 @@ void Hid::DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StartSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -549,7 +549,7 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StopSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -572,7 +572,7 @@ void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::IsSixAxisSensorFusionEnabled(Kernel::HLERequestContext& ctx) {
+void Hid::IsSixAxisSensorFusionEnabled(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -598,7 +598,7 @@ void Hid::IsSixAxisSensorFusionEnabled(Kernel::HLERequestContext& ctx) {
     rb.Push(is_enabled);
 }
 
-void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
+void Hid::EnableSixAxisSensorFusion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool enable_sixaxis_sensor_fusion;
@@ -625,7 +625,7 @@ void Hid::EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
+void Hid::SetSixAxisSensorFusionParameters(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -652,7 +652,7 @@ void Hid::SetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
+void Hid::GetSixAxisSensorFusionParameters(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -679,7 +679,7 @@ void Hid::GetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(fusion_parameters);
 }
 
-void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
+void Hid::ResetSixAxisSensorFusionParameters(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -713,7 +713,7 @@ void Hid::ResetSixAxisSensorFusionParameters(Kernel::HLERequestContext& ctx) {
     rb.Push(result2);
 }
 
-void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
+void Hid::SetGyroscopeZeroDriftMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto sixaxis_handle{rp.PopRaw<Core::HID::SixAxisSensorHandle>()};
     const auto drift_mode{rp.PopEnum<Core::HID::GyroscopeZeroDriftMode>()};
@@ -732,7 +732,7 @@ void Hid::SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
+void Hid::GetGyroscopeZeroDriftMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -757,7 +757,7 @@ void Hid::GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(drift_mode);
 }
 
-void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
+void Hid::ResetGyroscopeZeroDriftMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -781,7 +781,7 @@ void Hid::ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
+void Hid::IsSixAxisSensorAtRest(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -806,7 +806,7 @@ void Hid::IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
     rb.Push(is_at_rest);
 }
 
-void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -833,7 +833,7 @@ void Hid::IsFirmwareUpdateAvailableForSixAxisSensor(Kernel::HLERequestContext& c
     rb.Push(is_firmware_available);
 }
 
-void Hid::EnableSixAxisSensorUnalteredPassthrough(Kernel::HLERequestContext& ctx) {
+void Hid::EnableSixAxisSensorUnalteredPassthrough(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool enabled;
@@ -859,7 +859,7 @@ void Hid::EnableSixAxisSensorUnalteredPassthrough(Kernel::HLERequestContext& ctx
     rb.Push(result);
 }
 
-void Hid::IsSixAxisSensorUnalteredPassthroughEnabled(Kernel::HLERequestContext& ctx) {
+void Hid::IsSixAxisSensorUnalteredPassthroughEnabled(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -886,7 +886,7 @@ void Hid::IsSixAxisSensorUnalteredPassthroughEnabled(Kernel::HLERequestContext& 
     rb.Push(is_unaltered_sisxaxis_enabled);
 }
 
-void Hid::LoadSixAxisSensorCalibrationParameter(Kernel::HLERequestContext& ctx) {
+void Hid::LoadSixAxisSensorCalibrationParameter(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -916,7 +916,7 @@ void Hid::LoadSixAxisSensorCalibrationParameter(Kernel::HLERequestContext& ctx) 
     rb.Push(result);
 }
 
-void Hid::GetSixAxisSensorIcInformation(Kernel::HLERequestContext& ctx) {
+void Hid::GetSixAxisSensorIcInformation(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -946,7 +946,7 @@ void Hid::GetSixAxisSensorIcInformation(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ResetIsSixAxisSensorDeviceNewlyAssigned(Kernel::HLERequestContext& ctx) {
+void Hid::ResetIsSixAxisSensorDeviceNewlyAssigned(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::SixAxisSensorHandle sixaxis_handle;
@@ -971,7 +971,7 @@ void Hid::ResetIsSixAxisSensorDeviceNewlyAssigned(Kernel::HLERequestContext& ctx
     rb.Push(result);
 }
 
-void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateGesture(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         u32 unknown;
@@ -991,7 +991,7 @@ void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
+void Hid::SetSupportedNpadStyleSet(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadStyleSet supported_styleset;
@@ -1012,7 +1012,7 @@ void Hid::SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
+void Hid::GetSupportedNpadStyleSet(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1025,7 +1025,7 @@ void Hid::GetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
                     .raw);
 }
 
-void Hid::SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
+void Hid::SetSupportedNpadIdType(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1038,7 +1038,7 @@ void Hid::SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ActivateNpad(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateNpad(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1050,7 +1050,7 @@ void Hid::ActivateNpad(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::DeactivateNpad(Kernel::HLERequestContext& ctx) {
+void Hid::DeactivateNpad(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1062,7 +1062,7 @@ void Hid::DeactivateNpad(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
+void Hid::AcquireNpadStyleSetUpdateEventHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1087,7 +1087,7 @@ void Hid::AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
                            .GetStyleSetChangedEvent(parameters.npad_id));
 }
 
-void Hid::DisconnectNpad(Kernel::HLERequestContext& ctx) {
+void Hid::DisconnectNpad(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1108,7 +1108,7 @@ void Hid::DisconnectNpad(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetPlayerLedPattern(Kernel::HLERequestContext& ctx) {
+void Hid::GetPlayerLedPattern(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto npad_id{rp.PopEnum<Core::HID::NpadIdType>()};
 
@@ -1123,7 +1123,7 @@ void Hid::GetPlayerLedPattern(Kernel::HLERequestContext& ctx) {
     rb.Push(pattern.raw);
 }
 
-void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateNpadWithRevision(HLERequestContext& ctx) {
     // Should have no effect with how our npad sets up the data
     IPC::RequestParser rp{ctx};
     struct Parameters {
@@ -1144,7 +1144,7 @@ void Hid::ActivateNpadWithRevision(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadJoyHoldType(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
     const auto hold_type{rp.PopEnum<Controller_NPad::NpadJoyHoldType>()};
@@ -1158,7 +1158,7 @@ void Hid::SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
+void Hid::GetNpadJoyHoldType(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1169,7 +1169,7 @@ void Hid::GetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(applet_resource->GetController<Controller_NPad>(HidController::NPad).GetHoldType());
 }
 
-void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadJoyAssignmentModeSingleByDefault(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1191,7 +1191,7 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadJoyAssignmentModeSingle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1215,7 +1215,7 @@ void Hid::SetNpadJoyAssignmentModeSingle(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadJoyAssignmentModeDual(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1236,7 +1236,7 @@ void Hid::SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
+void Hid::MergeSingleJoyAsDualJoy(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto npad_id_1{rp.PopEnum<Core::HID::NpadIdType>()};
     const auto npad_id_2{rp.PopEnum<Core::HID::NpadIdType>()};
@@ -1252,7 +1252,7 @@ void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::StartLrAssignmentMode(Kernel::HLERequestContext& ctx) {
+void Hid::StartLrAssignmentMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1264,7 +1264,7 @@ void Hid::StartLrAssignmentMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StopLrAssignmentMode(Kernel::HLERequestContext& ctx) {
+void Hid::StopLrAssignmentMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1276,7 +1276,7 @@ void Hid::StopLrAssignmentMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadHandheldActivationMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
     const auto activation_mode{rp.PopEnum<Controller_NPad::NpadHandheldActivationMode>()};
@@ -1291,7 +1291,7 @@ void Hid::SetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
+void Hid::GetNpadHandheldActivationMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1303,7 +1303,7 @@ void Hid::GetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
                     .GetNpadHandheldActivationMode());
 }
 
-void Hid::SwapNpadAssignment(Kernel::HLERequestContext& ctx) {
+void Hid::SwapNpadAssignment(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto npad_id_1{rp.PopEnum<Core::HID::NpadIdType>()};
     const auto npad_id_2{rp.PopEnum<Core::HID::NpadIdType>()};
@@ -1319,7 +1319,7 @@ void Hid::SwapNpadAssignment(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext& ctx) {
+void Hid::IsUnintendedHomeButtonInputProtectionEnabled(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1343,7 +1343,7 @@ void Hid::IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext
     rb.Push(is_enabled);
 }
 
-void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& ctx) {
+void Hid::EnableUnintendedHomeButtonInputProtection(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool unintended_home_button_input_protection;
@@ -1369,7 +1369,7 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
     rb.Push(result);
 }
 
-void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadAnalogStickUseCenterClamp(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool analog_stick_use_center_clamp;
@@ -1392,7 +1392,7 @@ void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadCaptureButtonAssignment(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadCaptureButtonAssignment(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadStyleSet npad_styleset;
@@ -1412,7 +1412,7 @@ void Hid::SetNpadCaptureButtonAssignment(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ClearNpadCaptureButtonAssignment(Kernel::HLERequestContext& ctx) {
+void Hid::ClearNpadCaptureButtonAssignment(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1423,7 +1423,7 @@ void Hid::ClearNpadCaptureButtonAssignment(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
+void Hid::GetVibrationDeviceInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto vibration_device_handle{rp.PopRaw<Core::HID::VibrationDeviceHandle>()};
     const auto& controller =
@@ -1483,7 +1483,7 @@ void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(vibration_device_info);
 }
 
-void Hid::SendVibrationValue(Kernel::HLERequestContext& ctx) {
+void Hid::SendVibrationValue(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::VibrationDeviceHandle vibration_device_handle;
@@ -1508,7 +1508,7 @@ void Hid::SendVibrationValue(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
+void Hid::GetActualVibrationValue(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::VibrationDeviceHandle vibration_device_handle;
@@ -1531,7 +1531,7 @@ void Hid::GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
                    .GetLastVibration(parameters.vibration_device_handle));
 }
 
-void Hid::CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
+void Hid::CreateActiveVibrationDeviceList(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -1539,7 +1539,7 @@ void Hid::CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IActiveVibrationDeviceList>(system, applet_resource);
 }
 
-void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
+void Hid::PermitVibration(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto can_vibrate{rp.Pop<bool>()};
 
@@ -1553,7 +1553,7 @@ void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::IsVibrationPermitted(Kernel::HLERequestContext& ctx) {
+void Hid::IsVibrationPermitted(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
     // nnSDK checks if a float is greater than zero. We return the bool we stored earlier
@@ -1564,7 +1564,7 @@ void Hid::IsVibrationPermitted(Kernel::HLERequestContext& ctx) {
     rb.Push(is_enabled);
 }
 
-void Hid::SendVibrationValues(Kernel::HLERequestContext& ctx) {
+void Hid::SendVibrationValues(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1588,7 +1588,7 @@ void Hid::SendVibrationValues(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SendVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
+void Hid::SendVibrationGcErmCommand(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::VibrationDeviceHandle vibration_device_handle;
@@ -1649,7 +1649,7 @@ void Hid::SendVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetActualVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
+void Hid::GetActualVibrationGcErmCommand(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::VibrationDeviceHandle vibration_device_handle;
@@ -1691,7 +1691,7 @@ void Hid::GetActualVibrationGcErmCommand(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(gc_erm_command);
 }
 
-void Hid::BeginPermitVibrationSession(Kernel::HLERequestContext& ctx) {
+void Hid::BeginPermitVibrationSession(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1704,7 +1704,7 @@ void Hid::BeginPermitVibrationSession(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::EndPermitVibrationSession(Kernel::HLERequestContext& ctx) {
+void Hid::EndPermitVibrationSession(HLERequestContext& ctx) {
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
         .SetPermitVibrationSession(false);
 
@@ -1714,7 +1714,7 @@ void Hid::EndPermitVibrationSession(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::IsVibrationDeviceMounted(Kernel::HLERequestContext& ctx) {
+void Hid::IsVibrationDeviceMounted(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::VibrationDeviceHandle vibration_device_handle;
@@ -1737,7 +1737,7 @@ void Hid::IsVibrationDeviceMounted(Kernel::HLERequestContext& ctx) {
                 .IsVibrationDeviceMounted(parameters.vibration_device_handle));
 }
 
-void Hid::ActivateConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateConsoleSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1749,7 +1749,7 @@ void Hid::ActivateConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StartConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StartConsoleSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::ConsoleSixAxisSensorHandle console_sixaxis_handle;
@@ -1769,7 +1769,7 @@ void Hid::StartConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StopConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StopConsoleSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::ConsoleSixAxisSensorHandle console_sixaxis_handle;
@@ -1789,7 +1789,7 @@ void Hid::StopConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ActivateSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::ActivateSevenSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1801,7 +1801,7 @@ void Hid::ActivateSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StartSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StartSevenSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1812,7 +1812,7 @@ void Hid::StartSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::StopSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::StopSevenSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1823,7 +1823,7 @@ void Hid::StopSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::InitializeSevenSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
     const auto t_mem_1_size{rp.Pop<u64>()};
@@ -1873,7 +1873,7 @@ void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::FinalizeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+void Hid::FinalizeSevenSixAxisSensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1884,7 +1884,7 @@ void Hid::FinalizeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx) {
+void Hid::ResetSevenSixAxisSensorTimestamp(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -1897,7 +1897,7 @@ void Hid::ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx) {
+void Hid::IsUsbFullKeyControllerEnabled(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     LOG_WARNING(Service_HID, "(STUBBED) called");
@@ -1907,7 +1907,7 @@ void Hid::IsUsbFullKeyControllerEnabled(Kernel::HLERequestContext& ctx) {
     rb.Push(false);
 }
 
-void Hid::GetPalmaConnectionHandle(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaConnectionHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::HID::NpadIdType npad_id;
@@ -1930,7 +1930,7 @@ void Hid::GetPalmaConnectionHandle(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(handle);
 }
 
-void Hid::InitializePalma(Kernel::HLERequestContext& ctx) {
+void Hid::InitializePalma(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -1943,7 +1943,7 @@ void Hid::InitializePalma(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::AcquirePalmaOperationCompleteEvent(Kernel::HLERequestContext& ctx) {
+void Hid::AcquirePalmaOperationCompleteEvent(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -1956,7 +1956,7 @@ void Hid::AcquirePalmaOperationCompleteEvent(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(controller.AcquirePalmaOperationCompleteEvent(connection_handle));
 }
 
-void Hid::GetPalmaOperationInfo(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaOperationInfo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -1978,7 +1978,7 @@ void Hid::GetPalmaOperationInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u64>(operation_type));
 }
 
-void Hid::PlayPalmaActivity(Kernel::HLERequestContext& ctx) {
+void Hid::PlayPalmaActivity(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
     const auto palma_activity{rp.Pop<u64>()};
@@ -1993,7 +1993,7 @@ void Hid::PlayPalmaActivity(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::SetPalmaFrModeType(Kernel::HLERequestContext& ctx) {
+void Hid::SetPalmaFrModeType(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
     const auto fr_mode{rp.PopEnum<Controller_Palma::PalmaFrModeType>()};
@@ -2008,7 +2008,7 @@ void Hid::SetPalmaFrModeType(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ReadPalmaStep(Kernel::HLERequestContext& ctx) {
+void Hid::ReadPalmaStep(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2021,7 +2021,7 @@ void Hid::ReadPalmaStep(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::EnablePalmaStep(Kernel::HLERequestContext& ctx) {
+void Hid::EnablePalmaStep(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool is_enabled;
@@ -2043,7 +2043,7 @@ void Hid::EnablePalmaStep(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ResetPalmaStep(Kernel::HLERequestContext& ctx) {
+void Hid::ResetPalmaStep(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2056,21 +2056,21 @@ void Hid::ResetPalmaStep(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ReadPalmaApplicationSection(Kernel::HLERequestContext& ctx) {
+void Hid::ReadPalmaApplicationSection(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::WritePalmaApplicationSection(Kernel::HLERequestContext& ctx) {
+void Hid::WritePalmaApplicationSection(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::ReadPalmaUniqueCode(Kernel::HLERequestContext& ctx) {
+void Hid::ReadPalmaUniqueCode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2083,7 +2083,7 @@ void Hid::ReadPalmaUniqueCode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetPalmaUniqueCodeInvalid(Kernel::HLERequestContext& ctx) {
+void Hid::SetPalmaUniqueCodeInvalid(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2096,14 +2096,14 @@ void Hid::SetPalmaUniqueCodeInvalid(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::WritePalmaActivityEntry(Kernel::HLERequestContext& ctx) {
+void Hid::WritePalmaActivityEntry(HLERequestContext& ctx) {
     LOG_CRITICAL(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::WritePalmaRgbLedPatternEntry(Kernel::HLERequestContext& ctx) {
+void Hid::WritePalmaRgbLedPatternEntry(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
     const auto unknown{rp.Pop<u64>()};
@@ -2120,7 +2120,7 @@ void Hid::WritePalmaRgbLedPatternEntry(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
+void Hid::WritePalmaWaveEntry(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
     const auto wave_set{rp.PopEnum<Controller_Palma::PalmaWaveSet>()};
@@ -2155,7 +2155,7 @@ void Hid::WritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) {
+void Hid::SetPalmaDataBaseIdentificationVersion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         s32 database_id_version;
@@ -2177,7 +2177,7 @@ void Hid::SetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) 
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaDataBaseIdentificationVersion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2190,14 +2190,14 @@ void Hid::GetPalmaDataBaseIdentificationVersion(Kernel::HLERequestContext& ctx) 
     rb.Push(ResultSuccess);
 }
 
-void Hid::SuspendPalmaFeature(Kernel::HLERequestContext& ctx) {
+void Hid::SuspendPalmaFeature(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetPalmaOperationResult(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaOperationResult(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2210,21 +2210,21 @@ void Hid::GetPalmaOperationResult(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void Hid::ReadPalmaPlayLog(Kernel::HLERequestContext& ctx) {
+void Hid::ReadPalmaPlayLog(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::ResetPalmaPlayLog(Kernel::HLERequestContext& ctx) {
+void Hid::ResetPalmaPlayLog(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx) {
+void Hid::SetIsPalmaAllConnectable(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         bool is_palma_all_connectable;
@@ -2246,14 +2246,14 @@ void Hid::SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetIsPalmaPairedConnectable(Kernel::HLERequestContext& ctx) {
+void Hid::SetIsPalmaPairedConnectable(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::PairPalma(Kernel::HLERequestContext& ctx) {
+void Hid::PairPalma(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto connection_handle{rp.PopRaw<Controller_Palma::PalmaConnectionHandle>()};
 
@@ -2266,7 +2266,7 @@ void Hid::PairPalma(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetPalmaBoostMode(Kernel::HLERequestContext& ctx) {
+void Hid::SetPalmaBoostMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto palma_boost_mode{rp.Pop<bool>()};
 
@@ -2279,35 +2279,35 @@ void Hid::SetPalmaBoostMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::CancelWritePalmaWaveEntry(Kernel::HLERequestContext& ctx) {
+void Hid::CancelWritePalmaWaveEntry(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::EnablePalmaBoostMode(Kernel::HLERequestContext& ctx) {
+void Hid::EnablePalmaBoostMode(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetPalmaBluetoothAddress(Kernel::HLERequestContext& ctx) {
+void Hid::GetPalmaBluetoothAddress(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetDisallowedPalmaConnection(Kernel::HLERequestContext& ctx) {
+void Hid::SetDisallowedPalmaConnection(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void Hid::SetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
+void Hid::SetNpadCommunicationMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
     const auto communication_mode{rp.PopEnum<Controller_NPad::NpadCommunicationMode>()};
@@ -2322,7 +2322,7 @@ void Hid::SetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::GetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
+void Hid::GetNpadCommunicationMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     LOG_WARNING(Service_HID, "(STUBBED) called");
@@ -2333,7 +2333,7 @@ void Hid::GetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
                     .GetNpadCommunicationMode());
 }
 
-void Hid::SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx) {
+void Hid::SetTouchScreenConfiguration(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto touchscreen_mode{rp.PopRaw<Controller_Touchscreen::TouchScreenConfigurationForNx>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
@@ -2345,7 +2345,7 @@ void Hid::SetTouchScreenConfiguration(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void Hid::IsFirmwareUpdateNeededForNotification(Kernel::HLERequestContext& ctx) {
+void Hid::IsFirmwareUpdateNeededForNotification(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         s32 unknown;
@@ -2719,7 +2719,7 @@ public:
     }
 
 private:
-    void ApplyNpadSystemCommonPolicy(Kernel::HLERequestContext& ctx) {
+    void ApplyNpadSystemCommonPolicy(HLERequestContext& ctx) {
         // We already do this for homebrew so we can just stub it out
         LOG_WARNING(Service_HID, "called");
 
@@ -2727,7 +2727,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetUniquePadsFromNpad(Kernel::HLERequestContext& ctx) {
+    void GetUniquePadsFromNpad(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto npad_id_type{rp.PopEnum<Core::HID::NpadIdType>()};
 

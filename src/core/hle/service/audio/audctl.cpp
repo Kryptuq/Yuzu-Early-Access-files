@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/audio/audctl.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Audio {
 
@@ -72,7 +72,7 @@ AudCtl::AudCtl(Core::System& system_) : ServiceFramework{system_, "audctl"} {
 
 AudCtl::~AudCtl() = default;
 
-void AudCtl::GetTargetVolumeMin(Kernel::HLERequestContext& ctx) {
+void AudCtl::GetTargetVolumeMin(HLERequestContext& ctx) {
     LOG_DEBUG(Audio, "called.");
 
     // This service function is currently hardcoded on the
@@ -84,7 +84,7 @@ void AudCtl::GetTargetVolumeMin(Kernel::HLERequestContext& ctx) {
     rb.Push(target_min_volume);
 }
 
-void AudCtl::GetTargetVolumeMax(Kernel::HLERequestContext& ctx) {
+void AudCtl::GetTargetVolumeMax(HLERequestContext& ctx) {
     LOG_DEBUG(Audio, "called.");
 
     // This service function is currently hardcoded on the

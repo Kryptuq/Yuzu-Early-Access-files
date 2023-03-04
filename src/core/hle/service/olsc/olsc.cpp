@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/olsc/olsc.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_OLSC, "(STUBBED) called");
 
         initialized = true;
@@ -51,7 +51,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetSaveDataBackupSetting(Kernel::HLERequestContext& ctx) {
+    void GetSaveDataBackupSetting(HLERequestContext& ctx) {
         LOG_WARNING(Service_OLSC, "(STUBBED) called");
 
         // backup_setting is set to 0 since real value is unknown
@@ -62,7 +62,7 @@ private:
         rb.Push(backup_setting);
     }
 
-    void SetSaveDataBackupSettingEnabled(Kernel::HLERequestContext& ctx) {
+    void SetSaveDataBackupSettingEnabled(HLERequestContext& ctx) {
         LOG_WARNING(Service_OLSC, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};

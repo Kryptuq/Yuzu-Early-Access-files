@@ -8,7 +8,7 @@
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/sockets/sfdnsres.h"
 #include "core/memory.h"
 
@@ -185,7 +185,7 @@ static std::vector<u8> SerializeAddrInfo(const addrinfo* addrinfo, s32 result_co
     return data;
 }
 
-static std::pair<u32, s32> GetAddrInfoRequestImpl(Kernel::HLERequestContext& ctx) {
+static std::pair<u32, s32> GetAddrInfoRequestImpl(HLERequestContext& ctx) {
     struct Parameters {
         u8 use_nsd_resolve;
         u32 unknown;
@@ -221,7 +221,7 @@ static std::pair<u32, s32> GetAddrInfoRequestImpl(Kernel::HLERequestContext& ctx
     return std::make_pair(data_size, result_code);
 }
 
-void SFDNSRES::GetAddrInfoRequest(Kernel::HLERequestContext& ctx) {
+void SFDNSRES::GetAddrInfoRequest(HLERequestContext& ctx) {
     auto [data_size, result_code] = GetAddrInfoRequestImpl(ctx);
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -231,7 +231,7 @@ void SFDNSRES::GetAddrInfoRequest(Kernel::HLERequestContext& ctx) {
     rb.Push(data_size);                                                // serialized size
 }
 
-void SFDNSRES::GetAddrInfoRequestWithOptions(Kernel::HLERequestContext& ctx) {
+void SFDNSRES::GetAddrInfoRequestWithOptions(HLERequestContext& ctx) {
     // Additional options are ignored
     auto [data_size, result_code] = GetAddrInfoRequestImpl(ctx);
 

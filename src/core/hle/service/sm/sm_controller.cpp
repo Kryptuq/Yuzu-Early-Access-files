@@ -4,18 +4,18 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_scoped_resource_reservation.h"
 #include "core/hle/kernel/k_server_session.h"
 #include "core/hle/kernel/k_session.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm_controller.h"
 
 namespace Service::SM {
 
-void Controller::ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx) {
+void Controller::ConvertCurrentObjectToDomain(HLERequestContext& ctx) {
     ASSERT_MSG(!ctx.GetManager()->IsDomain(), "Session is already a domain");
     LOG_DEBUG(Service, "called, server_session={}", ctx.Session()->GetId());
     ctx.GetManager()->ConvertToDomainOnRequestEnd();
@@ -25,7 +25,7 @@ void Controller::ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(1); // Converted sessions start with 1 request handler
 }
 
-void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
+void Controller::CloneCurrentObject(HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called");
 
     auto& process = *ctx.GetThread().GetOwnerProcess();
@@ -59,13 +59,13 @@ void Controller::CloneCurrentObject(Kernel::HLERequestContext& ctx) {
     rb.PushMoveObjects(session->GetClientSession());
 }
 
-void Controller::CloneCurrentObjectEx(Kernel::HLERequestContext& ctx) {
+void Controller::CloneCurrentObjectEx(HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called");
 
     CloneCurrentObject(ctx);
 }
 
-void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
+void Controller::QueryPointerBufferSize(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};

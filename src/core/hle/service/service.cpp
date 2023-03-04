@@ -7,7 +7,6 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/ipc.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_server_port.h"
 #include "core/hle/kernel/kernel.h"
@@ -31,6 +30,7 @@
 #include "core/hle/service/glue/glue.h"
 #include "core/hle/service/grc/grc.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/jit/jit.h"
 #include "core/hle/service/lbl/lbl.h"
 #include "core/hle/service/ldn/ldn.h"
@@ -49,8 +49,8 @@
 #include "core/hle/service/npns/npns.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvflinger/hos_binder_driver_server.h"
-#include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/nvnflinger/hos_binder_driver_server.h"
+#include "core/hle/service/nvnflinger/nvnflinger.h"
 #include "core/hle/service/olsc/olsc.h"
 #include "core/hle/service/pcie/pcie.h"
 #include "core/hle/service/pctl/pctl_module.h"
@@ -117,7 +117,7 @@ void ServiceFrameworkBase::RegisterHandlersBaseTipc(const FunctionInfoBase* func
     }
 }
 
-void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx,
+void ServiceFrameworkBase::ReportUnimplementedFunction(HLERequestContext& ctx,
                                                        const FunctionInfoBase* info) {
     auto cmd_buf = ctx.CommandBuffer();
     std::string function_name = info == nullptr ? fmt::format("{}", ctx.GetCommand()) : info->name;
@@ -140,7 +140,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     }
 }
 
-void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
+void ServiceFrameworkBase::InvokeRequest(HLERequestContext& ctx) {
     auto itr = handlers.find(ctx.GetCommand());
     const FunctionInfoBase* info = itr == handlers.end() ? nullptr : &itr->second;
     if (info == nullptr || info->handler_callback == nullptr) {
@@ -151,7 +151,7 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
     handler_invoker(this, info->handler_callback, ctx);
 }
 
-void ServiceFrameworkBase::InvokeRequestTipc(Kernel::HLERequestContext& ctx) {
+void ServiceFrameworkBase::InvokeRequestTipc(HLERequestContext& ctx) {
     boost::container::flat_map<u32, FunctionInfoBase>::iterator itr;
 
     itr = handlers_tipc.find(ctx.GetCommand());
@@ -166,7 +166,7 @@ void ServiceFrameworkBase::InvokeRequestTipc(Kernel::HLERequestContext& ctx) {
 }
 
 Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
-                                               Kernel::HLERequestContext& ctx) {
+                                               HLERequestContext& ctx) {
     const auto guard = LockService();
 
     Result result = ResultSuccess;
@@ -210,12 +210,12 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
 
 /// Initialize Services
 Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system)
-    : hos_binder_driver_server{std::make_unique<NVFlinger::HosBinderDriverServer>(system)},
-      nv_flinger{std::make_unique<NVFlinger::NVFlinger>(system, *hos_binder_driver_server)} {
+    : hos_binder_driver_server{std::make_unique<Nvnflinger::HosBinderDriverServer>(system)},
+      nv_flinger{std::make_unique<Nvnflinger::Nvnflinger>(system, *hos_binder_driver_server)} {
 
     auto& kernel = system.Kernel();
 
-    // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
+    // Nvnflinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
     system.GetFileSystemController().CreateFactories(*system.GetFilesystem(), false);
 

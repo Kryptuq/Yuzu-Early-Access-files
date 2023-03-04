@@ -17,10 +17,10 @@
 #include "common/settings.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/result.h"
+#include "core/hle/service/hle_ipc.h"
 #include "core/memory.h"
 #include "core/reporter.h"
 
@@ -170,7 +170,7 @@ json GetHLEBufferDescriptorData(const std::vector<DescriptorType>& buffer,
     return buffer_out;
 }
 
-json GetHLERequestContextData(Kernel::HLERequestContext& ctx, Core::Memory::Memory& memory) {
+json GetHLERequestContextData(Service::HLERequestContext& ctx, Core::Memory::Memory& memory) {
     json out;
 
     auto cmd_buf = json::array();
@@ -253,7 +253,7 @@ void Reporter::SaveSvcBreakReport(u32 type, bool signal_debugger, u64 info1, u64
     SaveToFile(out, GetPath("svc_break_report", title_id, timestamp));
 }
 
-void Reporter::SaveUnimplementedFunctionReport(Kernel::HLERequestContext& ctx, u32 command_id,
+void Reporter::SaveUnimplementedFunctionReport(Service::HLERequestContext& ctx, u32 command_id,
                                                const std::string& name,
                                                const std::string& service_name) const {
     if (!IsReportingEnabled()) {

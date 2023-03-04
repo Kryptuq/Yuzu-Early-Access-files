@@ -1288,7 +1288,7 @@ void RasterizerVulkan::UpdateDepthBoundsTestEnable(Tegra::Engines::Maxwell3D::Re
         LOG_WARNING(Render_Vulkan, "Depth bounds is enabled but not supported");
         enabled = false;
     }
-    scheduler.Record([enable = regs.depth_bounds_enable](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([enable = enabled](vk::CommandBuffer cmdbuf) {
         cmdbuf.SetDepthBoundsTestEnableEXT(enable);
     });
 }

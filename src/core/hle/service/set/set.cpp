@@ -6,7 +6,7 @@
 #include <chrono>
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/set/set.h"
 
 namespace Service::Set {
@@ -76,13 +76,13 @@ constexpr std::size_t POST_4_0_0_MAX_ENTRIES = 0x40;
 
 constexpr Result ERR_INVALID_LANGUAGE{ErrorModule::Settings, 625};
 
-void PushResponseLanguageCode(Kernel::HLERequestContext& ctx, std::size_t num_language_codes) {
+void PushResponseLanguageCode(HLERequestContext& ctx, std::size_t num_language_codes) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(num_language_codes));
 }
 
-void GetAvailableLanguageCodesImpl(Kernel::HLERequestContext& ctx, std::size_t max_entries) {
+void GetAvailableLanguageCodesImpl(HLERequestContext& ctx, std::size_t max_entries) {
     const std::size_t requested_amount = ctx.GetWriteBufferNumElements<LanguageCode>();
     const std::size_t max_amount = std::min(requested_amount, max_entries);
     const std::size_t copy_amount = std::min(available_language_codes.size(), max_amount);
@@ -92,7 +92,7 @@ void GetAvailableLanguageCodesImpl(Kernel::HLERequestContext& ctx, std::size_t m
     PushResponseLanguageCode(ctx, copy_amount);
 }
 
-void GetKeyCodeMapImpl(Kernel::HLERequestContext& ctx) {
+void GetKeyCodeMapImpl(HLERequestContext& ctx) {
     const auto language_code = available_language_codes[Settings::values.language_index.GetValue()];
     const auto key_code =
         std::find_if(language_to_layout.cbegin(), language_to_layout.cend(),
@@ -117,13 +117,13 @@ LanguageCode GetLanguageCodeFromIndex(std::size_t index) {
     return available_language_codes.at(index);
 }
 
-void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
+void SET::GetAvailableLanguageCodes(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     GetAvailableLanguageCodesImpl(ctx, PRE_4_0_0_MAX_ENTRIES);
 }
 
-void SET::MakeLanguageCode(Kernel::HLERequestContext& ctx) {
+void SET::MakeLanguageCode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto index = rp.Pop<u32>();
 
@@ -139,25 +139,25 @@ void SET::MakeLanguageCode(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(available_language_codes[index]);
 }
 
-void SET::GetAvailableLanguageCodes2(Kernel::HLERequestContext& ctx) {
+void SET::GetAvailableLanguageCodes2(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     GetAvailableLanguageCodesImpl(ctx, POST_4_0_0_MAX_ENTRIES);
 }
 
-void SET::GetAvailableLanguageCodeCount(Kernel::HLERequestContext& ctx) {
+void SET::GetAvailableLanguageCodeCount(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     PushResponseLanguageCode(ctx, PRE_4_0_0_MAX_ENTRIES);
 }
 
-void SET::GetAvailableLanguageCodeCount2(Kernel::HLERequestContext& ctx) {
+void SET::GetAvailableLanguageCodeCount2(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     PushResponseLanguageCode(ctx, POST_4_0_0_MAX_ENTRIES);
 }
 
-void SET::GetQuestFlag(Kernel::HLERequestContext& ctx) {
+void SET::GetQuestFlag(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -165,7 +165,7 @@ void SET::GetQuestFlag(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u32>(Settings::values.quest_flag.GetValue()));
 }
 
-void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {
+void SET::GetLanguageCode(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called {}", Settings::values.language_index.GetValue());
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -173,7 +173,7 @@ void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(available_language_codes[Settings::values.language_index.GetValue()]);
 }
 
-void SET::GetRegionCode(Kernel::HLERequestContext& ctx) {
+void SET::GetRegionCode(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -181,17 +181,17 @@ void SET::GetRegionCode(Kernel::HLERequestContext& ctx) {
     rb.Push(Settings::values.region_index.GetValue());
 }
 
-void SET::GetKeyCodeMap(Kernel::HLERequestContext& ctx) {
+void SET::GetKeyCodeMap(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "Called {}", ctx.Description());
     GetKeyCodeMapImpl(ctx);
 }
 
-void SET::GetKeyCodeMap2(Kernel::HLERequestContext& ctx) {
+void SET::GetKeyCodeMap2(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "Called {}", ctx.Description());
     GetKeyCodeMapImpl(ctx);
 }
 
-void SET::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
+void SET::GetDeviceNickName(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

@@ -5,7 +5,7 @@
 
 #include "common/logging/log.h"
 #include "common/uuid.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ns/pdm_qry.h"
 #include "core/hle/service/service.h"
 
@@ -42,7 +42,7 @@ PDM_QRY::PDM_QRY(Core::System& system_) : ServiceFramework{system_, "pdm:qry"} {
 
 PDM_QRY::~PDM_QRY() = default;
 
-void PDM_QRY::QueryPlayStatisticsByApplicationIdAndUserAccountId(Kernel::HLERequestContext& ctx) {
+void PDM_QRY::QueryPlayStatisticsByApplicationIdAndUserAccountId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto unknown = rp.Pop<bool>();
     rp.Pop<u8>(); // Padding

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/mnpp/mnpp_app.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -23,14 +23,14 @@ public:
     }
 
 private:
-    void Unknown0(Kernel::HLERequestContext& ctx) {
+    void Unknown0(HLERequestContext& ctx) {
         LOG_WARNING(Service_MNPP, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void Unknown1(Kernel::HLERequestContext& ctx) {
+    void Unknown1(HLERequestContext& ctx) {
         LOG_WARNING(Service_MNPP, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};

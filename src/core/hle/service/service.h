@@ -8,7 +8,7 @@
 #include <string>
 #include <boost/container/flat_map.hpp>
 #include "common/common_types.h"
-#include "core/hle/kernel/hle_ipc.h"
+#include "core/hle/service/hle_ipc.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Namespace Service
@@ -18,7 +18,6 @@ class System;
 }
 
 namespace Kernel {
-class HLERequestContext;
 class KServerSession;
 class ServiceThread;
 } // namespace Kernel
@@ -29,10 +28,10 @@ namespace FileSystem {
 class FileSystemController;
 }
 
-namespace NVFlinger {
+namespace Nvnflinger {
 class HosBinderDriverServer;
-class NVFlinger;
-} // namespace NVFlinger
+class Nvnflinger;
+} // namespace Nvnflinger
 
 namespace SM {
 class ServiceManager;
@@ -50,7 +49,7 @@ static_assert(ServerSessionCountMax == 0x40,
  *
  * @see ServiceFramework
  */
-class ServiceFrameworkBase : public Kernel::SessionRequestHandler {
+class ServiceFrameworkBase : public SessionRequestHandler {
 public:
     /// Returns the string identifier used to connect to the service.
     std::string GetServiceName() const {
@@ -66,19 +65,18 @@ public:
     }
 
     /// Invokes a service request routine using the HIPC protocol.
-    void InvokeRequest(Kernel::HLERequestContext& ctx);
+    void InvokeRequest(HLERequestContext& ctx);
 
     /// Invokes a service request routine using the HIPC protocol.
-    void InvokeRequestTipc(Kernel::HLERequestContext& ctx);
+    void InvokeRequestTipc(HLERequestContext& ctx);
 
     /// Handles a synchronization request for the service.
-    Result HandleSyncRequest(Kernel::KServerSession& session,
-                             Kernel::HLERequestContext& context) override;
+    Result HandleSyncRequest(Kernel::KServerSession& session, HLERequestContext& context) override;
 
 protected:
     /// Member-function pointer type of SyncRequest handlers.
     template <typename Self>
-    using HandlerFnP = void (Self::*)(Kernel::HLERequestContext&);
+    using HandlerFnP = void (Self::*)(HLERequestContext&);
 
     /// Used to gain exclusive access to the service members, e.g. from CoreTiming thread.
     [[nodiscard]] std::scoped_lock<std::mutex> LockService() {
@@ -102,7 +100,7 @@ private:
     };
 
     using InvokerFn = void(ServiceFrameworkBase* object, HandlerFnP<ServiceFrameworkBase> member,
-                           Kernel::HLERequestContext& ctx);
+                           HLERequestContext& ctx);
 
     explicit ServiceFrameworkBase(Core::System& system_, const char* service_name_,
                                   u32 max_sessions_, InvokerFn* handler_invoker_);
@@ -110,7 +108,7 @@ private:
 
     void RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n);
     void RegisterHandlersBaseTipc(const FunctionInfoBase* functions, std::size_t n);
-    void ReportUnimplementedFunction(Kernel::HLERequestContext& ctx, const FunctionInfoBase* info);
+    void ReportUnimplementedFunction(HLERequestContext& ctx, const FunctionInfoBase* info);
 
     /// Maximum number of concurrent sessions that this service can handle.
     u32 max_sessions;
@@ -212,7 +210,7 @@ private:
      * of the derived class in order to invoke one of it's functions through a pointer.
      */
     static void Invoker(ServiceFrameworkBase* object, HandlerFnP<ServiceFrameworkBase> member,
-                        Kernel::HLERequestContext& ctx) {
+                        HLERequestContext& ctx) {
         // Cast back up to our original types and call the member function
         (static_cast<Self*>(object)->*static_cast<HandlerFnP<Self>>(member))(ctx);
     }
@@ -230,8 +228,8 @@ public:
     void KillNVNFlinger();
 
 private:
-    std::unique_ptr<NVFlinger::HosBinderDriverServer> hos_binder_driver_server;
-    std::unique_ptr<NVFlinger::NVFlinger> nv_flinger;
+    std::unique_ptr<Nvnflinger::HosBinderDriverServer> hos_binder_driver_server;
+    std::unique_ptr<Nvnflinger::Nvnflinger> nv_flinger;
 };
 
 } // namespace Service

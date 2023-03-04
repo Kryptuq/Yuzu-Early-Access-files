@@ -8,7 +8,6 @@
 #include "core/core_timing.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/kernel/kernel.h"
@@ -20,6 +19,7 @@
 #include "core/hle/service/hid/irsensor/moment_processor.h"
 #include "core/hle/service/hid/irsensor/pointing_processor.h"
 #include "core/hle/service/hid/irsensor/tera_plugin_processor.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/memory.h"
 
 namespace Service::IRS {
@@ -56,7 +56,7 @@ IRS::IRS(Core::System& system_) : ServiceFramework{system_, "irs"} {
 }
 IRS::~IRS() = default;
 
-void IRS::ActivateIrsensor(Kernel::HLERequestContext& ctx) {
+void IRS::ActivateIrsensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -67,7 +67,7 @@ void IRS::ActivateIrsensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void IRS::DeactivateIrsensor(Kernel::HLERequestContext& ctx) {
+void IRS::DeactivateIrsensor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -78,7 +78,7 @@ void IRS::DeactivateIrsensor(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void IRS::GetIrsensorSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
+void IRS::GetIrsensorSharedMemoryHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -89,7 +89,7 @@ void IRS::GetIrsensorSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(&system.Kernel().GetIrsSharedMem());
 }
 
-void IRS::StopImageProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::StopImageProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -117,7 +117,7 @@ void IRS::StopImageProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::RunMomentProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunMomentProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -149,7 +149,7 @@ void IRS::RunMomentProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::RunClusteringProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunClusteringProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -182,7 +182,7 @@ void IRS::RunClusteringProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunImageTransferProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -231,7 +231,7 @@ void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::GetImageTransferProcessorState(Kernel::HLERequestContext& ctx) {
+void IRS::GetImageTransferProcessorState(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -272,7 +272,7 @@ void IRS::GetImageTransferProcessorState(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(state);
 }
 
-void IRS::RunTeraPluginProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunTeraPluginProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -308,7 +308,7 @@ void IRS::RunTeraPluginProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::GetNpadIrCameraHandle(Kernel::HLERequestContext& ctx) {
+void IRS::GetNpadIrCameraHandle(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto npad_id{rp.PopEnum<Core::HID::NpadIdType>()};
 
@@ -332,7 +332,7 @@ void IRS::GetNpadIrCameraHandle(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(camera_handle);
 }
 
-void IRS::RunPointingProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunPointingProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto camera_handle{rp.PopRaw<Core::IrSensor::IrCameraHandle>()};
     const auto processor_config{rp.PopRaw<Core::IrSensor::PackedPointingProcessorConfig>()};
@@ -359,7 +359,7 @@ void IRS::RunPointingProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::SuspendImageProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::SuspendImageProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -385,7 +385,7 @@ void IRS::SuspendImageProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::CheckFirmwareVersion(Kernel::HLERequestContext& ctx) {
+void IRS::CheckFirmwareVersion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto camera_handle{rp.PopRaw<Core::IrSensor::IrCameraHandle>()};
     const auto mcu_version{rp.PopRaw<Core::IrSensor::PackedMcuVersion>()};
@@ -407,7 +407,7 @@ void IRS::CheckFirmwareVersion(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::SetFunctionLevel(Kernel::HLERequestContext& ctx) {
+void IRS::SetFunctionLevel(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto camera_handle{rp.PopRaw<Core::IrSensor::IrCameraHandle>()};
     const auto function_level{rp.PopRaw<Core::IrSensor::PackedFunctionLevel>()};
@@ -429,7 +429,7 @@ void IRS::SetFunctionLevel(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunImageTransferExProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -469,7 +469,7 @@ void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::RunIrLedProcessor(Kernel::HLERequestContext& ctx) {
+void IRS::RunIrLedProcessor(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto camera_handle{rp.PopRaw<Core::IrSensor::IrCameraHandle>()};
     const auto processor_config{rp.PopRaw<Core::IrSensor::PackedIrLedProcessorConfig>()};
@@ -497,7 +497,7 @@ void IRS::RunIrLedProcessor(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::StopImageProcessorAsync(Kernel::HLERequestContext& ctx) {
+void IRS::StopImageProcessorAsync(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::IrCameraHandle camera_handle;
@@ -525,7 +525,7 @@ void IRS::StopImageProcessorAsync(Kernel::HLERequestContext& ctx) {
     rb.Push(result);
 }
 
-void IRS::ActivateIrsensorWithFunctionLevel(Kernel::HLERequestContext& ctx) {
+void IRS::ActivateIrsensorWithFunctionLevel(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     struct Parameters {
         Core::IrSensor::PackedFunctionLevel function_level;

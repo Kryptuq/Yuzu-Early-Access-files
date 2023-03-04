@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "core/hle/ipc_helpers.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/pcv/pcv.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -76,7 +76,7 @@ public:
     }
 
 private:
-    void SetClockRate(Kernel::HLERequestContext& ctx) {
+    void SetClockRate(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         clock_rate = rp.Pop<u32>();
         LOG_DEBUG(Service_PCV, "(STUBBED) called, clock_rate={}", clock_rate);
@@ -85,7 +85,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetClockRate(Kernel::HLERequestContext& ctx) {
+    void GetClockRate(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCV, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -115,7 +115,7 @@ public:
     }
 
 private:
-    void OpenSession(Kernel::HLERequestContext& ctx) {
+    void OpenSession(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto device_code = static_cast<DeviceCode>(rp.Pop<u32>());
         const auto unkonwn_input = rp.Pop<u32>();

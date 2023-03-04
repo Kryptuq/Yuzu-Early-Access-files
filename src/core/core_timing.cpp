@@ -6,6 +6,10 @@
 #include <string>
 #include <tuple>
 
+#ifdef _WIN32
+#include "common/windows/timer_resolution.h"
+#endif
+
 #include "common/microprofile.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
@@ -38,7 +42,8 @@ struct CoreTiming::Event {
 };
 
 CoreTiming::CoreTiming()
-    : clock{Common::CreateBestMatchingClock(Hardware::BASE_CLOCK_RATE, Hardware::CNTFREQ)} {}
+    : cpu_clock{Common::CreateBestMatchingClock(Hardware::BASE_CLOCK_RATE, Hardware::CNTFREQ)},
+      event_clock{Common::CreateStandardWallClock(Hardware::BASE_CLOCK_RATE, Hardware::CNTFREQ)} {}
 
 CoreTiming::~CoreTiming() {
     Reset();
@@ -185,15 +190,15 @@ void CoreTiming::ResetTicks() {
 }
 
 u64 CoreTiming::GetCPUTicks() const {
-    if (is_multicore) {
-        return clock->GetCPUCycles();
+    if (is_multicore) [[likely]] {
+        return cpu_clock->GetCPUCycles();
     }
     return ticks;
 }
 
 u64 CoreTiming::GetClockTicks() const {
-    if (is_multicore) {
-        return clock->GetClockCycles();
+    if (is_multicore) [[likely]] {
+        return cpu_clock->GetClockCycles();
     }
     return CpuCyclesToClockCycles(ticks);
 }
@@ -252,21 +257,20 @@ void CoreTiming::ThreadLoop() {
             const auto next_time = Advance();
             if (next_time) {
                 // There are more events left in the queue, wait until the next event.
-                const auto wait_time = *next_time - GetGlobalTimeNs().count();
+                auto wait_time = *next_time - GetGlobalTimeNs().count();
                 if (wait_time > 0) {
 #ifdef _WIN32
-                    // Assume a timer resolution of 1ms.
-                    static constexpr s64 TimerResolutionNS = 1000000;
+                    const auto timer_resolution_ns =
+                        Common::Windows::GetCurrentTimerResolution().count();
 
-                    // Sleep in discrete intervals of the timer resolution, and spin the rest.
-                    const auto sleep_time = wait_time - (wait_time % TimerResolutionNS);
-                    if (sleep_time > 0) {
-                        event.WaitFor(std::chrono::nanoseconds(sleep_time));
-                    }
+                    while (!paused && !event.IsSet() && wait_time > 0) {
+                        wait_time = *next_time - GetGlobalTimeNs().count();
 
-                    while (!paused && !event.IsSet() && GetGlobalTimeNs().count() < *next_time) {
-                        // Yield to reduce thread starvation.
-                        std::this_thread::yield();
+                        if (wait_time >= timer_resolution_ns) {
+                            Common::Windows::SleepForOneTick();
+                        } else {
+                            std::this_thread::yield();
+                        }
                     }
 
                     if (event.IsSet()) {
@@ -285,9 +289,9 @@ void CoreTiming::ThreadLoop() {
         }
 
         paused_set = true;
-        clock->Pause(true);
+        event_clock->Pause(true);
         pause_event.Wait();
-        clock->Pause(false);
+        event_clock->Pause(false);
     }
 }
 
@@ -303,16 +307,23 @@ void CoreTiming::Reset() {
     has_started = false;
 }
 
+std::chrono::nanoseconds CoreTiming::GetCPUTimeNs() const {
+    if (is_multicore) [[likely]] {
+        return cpu_clock->GetTimeNS();
+    }
+    return CyclesToNs(ticks);
+}
+
 std::chrono::nanoseconds CoreTiming::GetGlobalTimeNs() const {
-    if (is_multicore) {
-        return clock->GetTimeNS();
+    if (is_multicore) [[likely]] {
+        return event_clock->GetTimeNS();
     }
     return CyclesToNs(ticks);
 }
 
 std::chrono::microseconds CoreTiming::GetGlobalTimeUs() const {
-    if (is_multicore) {
-        return clock->GetTimeUS();
+    if (is_multicore) [[likely]] {
+        return event_clock->GetTimeUS();
     }
     return CyclesToUs(ticks);
 }

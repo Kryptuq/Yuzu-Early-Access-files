@@ -19,8 +19,8 @@ public:
                            const char* name);
         ~Interface() override;
 
-        void CreateFriendService(Kernel::HLERequestContext& ctx);
-        void CreateNotificationService(Kernel::HLERequestContext& ctx);
+        void CreateFriendService(HLERequestContext& ctx);
+        void CreateNotificationService(HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;

@@ -26,7 +26,7 @@ public:
     ~PDM_QRY() override;
 
 private:
-    void QueryPlayStatisticsByApplicationIdAndUserAccountId(Kernel::HLERequestContext& ctx);
+    void QueryPlayStatisticsByApplicationIdAndUserAccountId(HLERequestContext& ctx);
 };
 
 } // namespace Service::NS

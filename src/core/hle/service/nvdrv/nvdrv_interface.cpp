@@ -5,16 +5,16 @@
 #include <cinttypes>
 #include "common/logging/log.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/nvdrv/nvdata.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvdrv/nvdrv_interface.h"
 
 namespace Service::Nvidia {
 
-void NVDRV::Open(Kernel::HLERequestContext& ctx) {
+void NVDRV::Open(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
@@ -44,13 +44,13 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(fd != INVALID_NVDRV_FD ? NvResult::Success : NvResult::FileOperationFailed);
 }
 
-void NVDRV::ServiceError(Kernel::HLERequestContext& ctx, NvResult result) {
+void NVDRV::ServiceError(HLERequestContext& ctx, NvResult result) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.PushEnum(result);
 }
 
-void NVDRV::Ioctl1(Kernel::HLERequestContext& ctx) {
+void NVDRV::Ioctl1(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto fd = rp.Pop<DeviceFD>();
     const auto command = rp.PopRaw<Ioctl>();
@@ -76,7 +76,7 @@ void NVDRV::Ioctl1(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(nv_result);
 }
 
-void NVDRV::Ioctl2(Kernel::HLERequestContext& ctx) {
+void NVDRV::Ioctl2(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto fd = rp.Pop<DeviceFD>();
     const auto command = rp.PopRaw<Ioctl>();
@@ -103,7 +103,7 @@ void NVDRV::Ioctl2(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(nv_result);
 }
 
-void NVDRV::Ioctl3(Kernel::HLERequestContext& ctx) {
+void NVDRV::Ioctl3(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto fd = rp.Pop<DeviceFD>();
     const auto command = rp.PopRaw<Ioctl>();
@@ -131,7 +131,7 @@ void NVDRV::Ioctl3(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(nv_result);
 }
 
-void NVDRV::Close(Kernel::HLERequestContext& ctx) {
+void NVDRV::Close(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
 
     if (!is_initialized) {
@@ -149,7 +149,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(result);
 }
 
-void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
+void NVDRV::Initialize(HLERequestContext& ctx) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     is_initialized = true;
@@ -159,7 +159,7 @@ void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(NvResult::Success);
 }
 
-void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
+void NVDRV::QueryEvent(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto fd = rp.Pop<DeviceFD>();
     const auto event_id = rp.Pop<u32>();
@@ -187,7 +187,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     }
 }
 
-void NVDRV::SetAruid(Kernel::HLERequestContext& ctx) {
+void NVDRV::SetAruid(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
@@ -197,14 +197,14 @@ void NVDRV::SetAruid(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(NvResult::Success);
 }
 
-void NVDRV::SetGraphicsFirmwareMemoryMarginEnabled(Kernel::HLERequestContext& ctx) {
+void NVDRV::SetGraphicsFirmwareMemoryMarginEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void NVDRV::GetStatus(Kernel::HLERequestContext& ctx) {
+void NVDRV::GetStatus(HLERequestContext& ctx) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -212,7 +212,7 @@ void NVDRV::GetStatus(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(NvResult::Success);
 }
 
-void NVDRV::DumpGraphicsMemoryInfo(Kernel::HLERequestContext& ctx) {
+void NVDRV::DumpGraphicsMemoryInfo(HLERequestContext& ctx) {
     // According to SwitchBrew, this has no inputs and no outputs, so effectively does nothing on
     // retail hardware.
     LOG_DEBUG(Service_NVDRV, "called");

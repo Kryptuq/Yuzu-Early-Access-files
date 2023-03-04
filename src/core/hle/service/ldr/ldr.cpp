@@ -9,10 +9,10 @@
 #include "common/hex_util.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/hle/kernel/svc_types.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/ldr/ldr.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
@@ -175,7 +175,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void RegisterModuleInfo(Kernel::HLERequestContext& ctx) {
+    void RegisterModuleInfo(HLERequestContext& ctx) {
         struct Parameters {
             u64_le process_id;
             u64_le nrr_address;
@@ -272,7 +272,7 @@ public:
         rb.Push(ResultSuccess);
     }
 
-    void UnregisterModuleInfo(Kernel::HLERequestContext& ctx) {
+    void UnregisterModuleInfo(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto pid = rp.Pop<u64>();
         const auto nrr_address = rp.Pop<VAddr>();
@@ -446,7 +446,7 @@ public:
             data_start, bss_end_addr - data_start, Kernel::Svc::MemoryPermission::ReadWrite);
     }
 
-    void LoadModule(Kernel::HLERequestContext& ctx) {
+    void LoadModule(HLERequestContext& ctx) {
         struct Parameters {
             u64_le process_id;
             u64_le image_address;
@@ -592,7 +592,7 @@ public:
         return ResultSuccess;
     }
 
-    void UnloadModule(Kernel::HLERequestContext& ctx) {
+    void UnloadModule(HLERequestContext& ctx) {
         if (!initialized) {
             LOG_ERROR(Service_LDR, "LDR:RO not initialized before use!");
             IPC::ResponseBuilder rb{ctx, 2};
@@ -638,7 +638,7 @@ public:
         rb.Push(result);
     }
 
-    void Initialize(Kernel::HLERequestContext& ctx) {
+    void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDR, "(STUBBED) called");
 
         initialized = true;

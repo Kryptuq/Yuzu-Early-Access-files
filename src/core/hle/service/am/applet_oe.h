@@ -12,8 +12,8 @@ namespace FileSystem {
 class FileSystemController;
 }
 
-namespace NVFlinger {
-class NVFlinger;
+namespace Nvnflinger {
+class Nvnflinger;
 }
 
 namespace AM {
@@ -22,16 +22,16 @@ class AppletMessageQueue;
 
 class AppletOE final : public ServiceFramework<AppletOE> {
 public:
-    explicit AppletOE(NVFlinger::NVFlinger& nvflinger_,
+    explicit AppletOE(Nvnflinger::Nvnflinger& nvnflinger_,
                       std::shared_ptr<AppletMessageQueue> msg_queue_, Core::System& system_);
     ~AppletOE() override;
 
     const std::shared_ptr<AppletMessageQueue>& GetMessageQueue() const;
 
 private:
-    void OpenApplicationProxy(Kernel::HLERequestContext& ctx);
+    void OpenApplicationProxy(HLERequestContext& ctx);
 
-    NVFlinger::NVFlinger& nvflinger;
+    Nvnflinger::Nvnflinger& nvnflinger;
     std::shared_ptr<AppletMessageQueue> msg_queue;
 };
 

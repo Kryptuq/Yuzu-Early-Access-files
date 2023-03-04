@@ -24,9 +24,9 @@
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/system_archive/system_archive.h"
 #include "core/file_sys/vfs.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/reporter.h"
 
 namespace Service::FileSystem {
@@ -72,7 +72,7 @@ public:
 private:
     FileSys::VirtualFile backend;
 
-    void Read(Kernel::HLERequestContext& ctx) {
+    void Read(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
@@ -102,7 +102,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetSize(Kernel::HLERequestContext& ctx) {
+    void GetSize(HLERequestContext& ctx) {
         const u64 size = backend->GetSize();
         LOG_DEBUG(Service_FS, "called, size={}", size);
 
@@ -131,7 +131,7 @@ public:
 private:
     FileSys::VirtualFile backend;
 
-    void Read(Kernel::HLERequestContext& ctx) {
+    void Read(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 option = rp.Pop<u64>();
         const s64 offset = rp.Pop<s64>();
@@ -165,7 +165,7 @@ private:
         rb.Push(static_cast<u64>(output.size()));
     }
 
-    void Write(Kernel::HLERequestContext& ctx) {
+    void Write(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 option = rp.Pop<u64>();
         const s64 offset = rp.Pop<s64>();
@@ -208,7 +208,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Flush(Kernel::HLERequestContext& ctx) {
+    void Flush(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
         // Exists for SDK compatibiltity -- No need to flush file.
@@ -217,7 +217,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void SetSize(Kernel::HLERequestContext& ctx) {
+    void SetSize(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 size = rp.Pop<u64>();
         LOG_DEBUG(Service_FS, "called, size={}", size);
@@ -228,7 +228,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetSize(Kernel::HLERequestContext& ctx) {
+    void GetSize(HLERequestContext& ctx) {
         const u64 size = backend->GetSize();
         LOG_DEBUG(Service_FS, "called, size={}", size);
 
@@ -270,7 +270,7 @@ private:
     std::vector<FileSys::Entry> entries;
     u64 next_entry_index = 0;
 
-    void Read(Kernel::HLERequestContext& ctx) {
+    void Read(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called.");
 
         // Calculate how many entries we can fit in the output buffer
@@ -294,7 +294,7 @@ private:
         rb.Push(actual_entries);
     }
 
-    void GetEntryCount(Kernel::HLERequestContext& ctx) {
+    void GetEntryCount(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
         u64 count = entries.size() - next_entry_index;
@@ -331,7 +331,7 @@ public:
         RegisterHandlers(functions);
     }
 
-    void CreateFile(Kernel::HLERequestContext& ctx) {
+    void CreateFile(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto file_buffer = ctx.ReadBuffer();
@@ -347,7 +347,7 @@ public:
         rb.Push(backend.CreateFile(name, file_size));
     }
 
-    void DeleteFile(Kernel::HLERequestContext& ctx) {
+    void DeleteFile(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -357,7 +357,7 @@ public:
         rb.Push(backend.DeleteFile(name));
     }
 
-    void CreateDirectory(Kernel::HLERequestContext& ctx) {
+    void CreateDirectory(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -367,7 +367,7 @@ public:
         rb.Push(backend.CreateDirectory(name));
     }
 
-    void DeleteDirectory(Kernel::HLERequestContext& ctx) {
+    void DeleteDirectory(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -377,7 +377,7 @@ public:
         rb.Push(backend.DeleteDirectory(name));
     }
 
-    void DeleteDirectoryRecursively(Kernel::HLERequestContext& ctx) {
+    void DeleteDirectoryRecursively(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -387,7 +387,7 @@ public:
         rb.Push(backend.DeleteDirectoryRecursively(name));
     }
 
-    void CleanDirectoryRecursively(Kernel::HLERequestContext& ctx) {
+    void CleanDirectoryRecursively(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -397,7 +397,7 @@ public:
         rb.Push(backend.CleanDirectoryRecursively(name));
     }
 
-    void RenameFile(Kernel::HLERequestContext& ctx) {
+    void RenameFile(HLERequestContext& ctx) {
         const std::string src_name = Common::StringFromBuffer(ctx.ReadBuffer(0));
         const std::string dst_name = Common::StringFromBuffer(ctx.ReadBuffer(1));
 
@@ -407,7 +407,7 @@ public:
         rb.Push(backend.RenameFile(src_name, dst_name));
     }
 
-    void OpenFile(Kernel::HLERequestContext& ctx) {
+    void OpenFile(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto file_buffer = ctx.ReadBuffer();
@@ -431,7 +431,7 @@ public:
         rb.PushIpcInterface<IFile>(std::move(file));
     }
 
-    void OpenDirectory(Kernel::HLERequestContext& ctx) {
+    void OpenDirectory(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
         const auto file_buffer = ctx.ReadBuffer();
@@ -456,7 +456,7 @@ public:
         rb.PushIpcInterface<IDirectory>(std::move(directory));
     }
 
-    void GetEntryType(Kernel::HLERequestContext& ctx) {
+    void GetEntryType(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -474,14 +474,14 @@ public:
         rb.Push<u32>(static_cast<u32>(*result));
     }
 
-    void Commit(Kernel::HLERequestContext& ctx) {
+    void Commit(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void GetFreeSpaceSize(Kernel::HLERequestContext& ctx) {
+    void GetFreeSpaceSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
         IPC::ResponseBuilder rb{ctx, 4};
@@ -489,7 +489,7 @@ public:
         rb.Push(size.get_free_size());
     }
 
-    void GetTotalSpaceSize(Kernel::HLERequestContext& ctx) {
+    void GetTotalSpaceSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
         IPC::ResponseBuilder rb{ctx, 4};
@@ -497,7 +497,7 @@ public:
         rb.Push(size.get_total_size());
     }
 
-    void GetFileTimeStampRaw(Kernel::HLERequestContext& ctx) {
+    void GetFileTimeStampRaw(HLERequestContext& ctx) {
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
@@ -533,7 +533,7 @@ public:
         FindAllSaves(space);
     }
 
-    void ReadSaveDataInfo(Kernel::HLERequestContext& ctx) {
+    void ReadSaveDataInfo(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
         // Calculate how many entries we can fit in the output buffer
@@ -811,7 +811,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
 
 FSP_SRV::~FSP_SRV() = default;
 
-void FSP_SRV::SetCurrentProcess(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::SetCurrentProcess(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     current_process_id = rp.Pop<u64>();
 
@@ -821,7 +821,7 @@ void FSP_SRV::SetCurrentProcess(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenFileSystemWithPatch(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const auto type = rp.PopRaw<FileSystemType>();
@@ -832,7 +832,7 @@ void FSP_SRV::OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultUnknown);
 }
 
-void FSP_SRV::OpenSdCardFileSystem(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenSdCardFileSystem(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     auto filesystem =
@@ -844,7 +844,7 @@ void FSP_SRV::OpenSdCardFileSystem(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
 
-void FSP_SRV::CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::CreateSaveDataFileSystem(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     auto save_struct = rp.PopRaw<FileSys::SaveDataAttribute>();
@@ -860,7 +860,7 @@ void FSP_SRV::CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenSaveDataFileSystem(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     struct Parameters {
@@ -905,12 +905,12 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
 
-void FSP_SRV::OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenReadOnlySaveDataFileSystem(HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called, delegating to 51 OpenSaveDataFilesystem");
     OpenSaveDataFileSystem(ctx);
 }
 
-void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto space = rp.PopRaw<FileSys::SaveDataSpaceId>();
     LOG_INFO(Service_FS, "called, space={}", space);
@@ -921,15 +921,14 @@ void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext&
         std::make_shared<ISaveDataInfoReader>(system, space, fsc));
 }
 
-void FSP_SRV::WriteSaveDataFileSystemExtraDataBySaveDataAttribute(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::WriteSaveDataFileSystemExtraDataBySaveDataAttribute(HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called.");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(
-    Kernel::HLERequestContext& ctx) {
+void FSP_SRV::ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     struct Parameters {
@@ -955,7 +954,7 @@ void FSP_SRV::ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(
     rb.Push(flags);
 }
 
-void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenDataStorageByCurrentProcess(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     auto current_romfs = fsc.OpenRomFSCurrentProcess();
@@ -974,7 +973,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
 
-void FSP_SRV::OpenDataStorageByDataId(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenDataStorageByDataId(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto storage_id = rp.PopRaw<FileSys::StorageId>();
     const auto unknown = rp.PopRaw<u32>();
@@ -1014,7 +1013,7 @@ void FSP_SRV::OpenDataStorageByDataId(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
 
-void FSP_SRV::OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenPatchDataStorageByCurrentProcess(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const auto storage_id = rp.PopRaw<FileSys::StorageId>();
@@ -1026,7 +1025,7 @@ void FSP_SRV::OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ct
     rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
 }
 
-void FSP_SRV::OpenDataStorageWithProgramIndex(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenDataStorageWithProgramIndex(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const auto program_index = rp.PopRaw<u8>();
@@ -1053,7 +1052,7 @@ void FSP_SRV::OpenDataStorageWithProgramIndex(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
 
-void FSP_SRV::DisableAutoSaveDataCreation(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::DisableAutoSaveDataCreation(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     fsc.SetAutoSaveDataCreation(false);
@@ -1062,7 +1061,7 @@ void FSP_SRV::DisableAutoSaveDataCreation(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::SetGlobalAccessLogMode(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     access_log_mode = rp.PopEnum<AccessLogMode>();
 
@@ -1072,7 +1071,7 @@ void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::GetGlobalAccessLogMode(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -1080,7 +1079,7 @@ void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(access_log_mode);
 }
 
-void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OutputAccessLogToSdCard(HLERequestContext& ctx) {
     const auto raw = ctx.ReadBufferCopy();
     auto log = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(raw.data()), raw.size());
@@ -1093,7 +1092,7 @@ void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void FSP_SRV::GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::GetProgramIndexForAccessLog(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -1102,7 +1101,7 @@ void FSP_SRV::GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx) {
     rb.Push(access_log_program_index);
 }
 
-void FSP_SRV::GetCacheStorageSize(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::GetCacheStorageSize(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto index{rp.Pop<s32>()};
 
@@ -1128,14 +1127,14 @@ public:
 private:
     FileSys::VirtualFile backend;
 
-    void Add(Kernel::HLERequestContext& ctx) {
+    void Add(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void Commit(Kernel::HLERequestContext& ctx) {
+    void Commit(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -1143,7 +1142,7 @@ private:
     }
 };
 
-void FSP_SRV::OpenMultiCommitManager(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::OpenMultiCommitManager(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

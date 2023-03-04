@@ -31,8 +31,8 @@ public:
                            const char* name_, Capability capability_);
         ~Interface() override;
 
-        void CreateService(Kernel::HLERequestContext& ctx);
-        void CreateServiceWithoutInitialize(Kernel::HLERequestContext& ctx);
+        void CreateService(HLERequestContext& ctx);
+        void CreateServiceWithoutInitialize(HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;

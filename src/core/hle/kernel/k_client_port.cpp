@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/scope_exit.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/k_scheduler.h"

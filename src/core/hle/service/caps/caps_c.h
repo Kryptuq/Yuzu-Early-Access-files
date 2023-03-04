@@ -9,10 +9,6 @@ namespace Core {
 class System;
 }
 
-namespace Kernel {
-class HLERequestContext;
-}
-
 namespace Service::Capture {
 
 class CAPS_C final : public ServiceFramework<CAPS_C> {
@@ -21,7 +17,7 @@ public:
     ~CAPS_C() override;
 
 private:
-    void SetShimLibraryVersion(Kernel::HLERequestContext& ctx);
+    void SetShimLibraryVersion(HLERequestContext& ctx);
 };
 
 } // namespace Service::Capture

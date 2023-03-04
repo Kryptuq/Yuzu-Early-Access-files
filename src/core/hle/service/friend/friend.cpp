@@ -5,11 +5,11 @@
 #include "common/logging/log.h"
 #include "common/uuid.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/friend/errors.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/friend_interface.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/server_manager.h"
 
@@ -136,7 +136,7 @@ private:
     };
     static_assert(sizeof(SizedFriendFilter) == 0x10, "SizedFriendFilter is an invalid size");
 
-    void GetCompletionEvent(Kernel::HLERequestContext& ctx) {
+    void GetCompletionEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -144,7 +144,7 @@ private:
         rb.PushCopyObjects(completion_event->GetReadableEvent());
     }
 
-    void GetBlockedUserListIds(Kernel::HLERequestContext& ctx) {
+    void GetBlockedUserListIds(HLERequestContext& ctx) {
         // This is safe to stub, as there should be no adverse consequences from reporting no
         // blocked users.
         LOG_WARNING(Service_Friend, "(STUBBED) called");
@@ -153,21 +153,21 @@ private:
         rb.Push<u32>(0); // Indicates there are no blocked users
     }
 
-    void DeclareCloseOnlinePlaySession(Kernel::HLERequestContext& ctx) {
+    void DeclareCloseOnlinePlaySession(HLERequestContext& ctx) {
         // Stub used by Splatoon 2
         LOG_WARNING(Service_Friend, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void UpdateUserPresence(Kernel::HLERequestContext& ctx) {
+    void UpdateUserPresence(HLERequestContext& ctx) {
         // Stub used by Retro City Rampage
         LOG_WARNING(Service_Friend, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void GetPlayHistoryRegistrationKey(Kernel::HLERequestContext& ctx) {
+    void GetPlayHistoryRegistrationKey(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto local_play = rp.Pop<bool>();
         const auto uuid = rp.PopRaw<Common::UUID>();
@@ -179,7 +179,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetFriendList(Kernel::HLERequestContext& ctx) {
+    void GetFriendList(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto friend_offset = rp.Pop<u32>();
         const auto uuid = rp.PopRaw<Common::UUID>();
@@ -195,7 +195,7 @@ private:
         // TODO(ogniK): Return a buffer of u64s which are the "NetworkServiceAccountId"
     }
 
-    void CheckFriendListAvailability(Kernel::HLERequestContext& ctx) {
+    void CheckFriendListAvailability(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto uuid{rp.PopRaw<Common::UUID>()};
 
@@ -234,7 +234,7 @@ public:
     }
 
 private:
-    void GetEvent(Kernel::HLERequestContext& ctx) {
+    void GetEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -242,7 +242,7 @@ private:
         rb.PushCopyObjects(notification_event->GetReadableEvent());
     }
 
-    void Clear(Kernel::HLERequestContext& ctx) {
+    void Clear(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
         while (!notifications.empty()) {
             notifications.pop();
@@ -253,7 +253,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Pop(Kernel::HLERequestContext& ctx) {
+    void Pop(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
 
         if (notifications.empty()) {
@@ -312,14 +312,14 @@ private:
     States states{};
 };
 
-void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateFriendService(HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IFriendService>(system);
     LOG_DEBUG(Service_Friend, "called");
 }
 
-void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateNotificationService(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto uuid = rp.PopRaw<Common::UUID>();
 

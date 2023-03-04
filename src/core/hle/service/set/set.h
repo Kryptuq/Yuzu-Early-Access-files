@@ -40,17 +40,17 @@ public:
     ~SET() override;
 
 private:
-    void GetLanguageCode(Kernel::HLERequestContext& ctx);
-    void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
-    void MakeLanguageCode(Kernel::HLERequestContext& ctx);
-    void GetAvailableLanguageCodes2(Kernel::HLERequestContext& ctx);
-    void GetAvailableLanguageCodeCount(Kernel::HLERequestContext& ctx);
-    void GetAvailableLanguageCodeCount2(Kernel::HLERequestContext& ctx);
-    void GetQuestFlag(Kernel::HLERequestContext& ctx);
-    void GetRegionCode(Kernel::HLERequestContext& ctx);
-    void GetKeyCodeMap(Kernel::HLERequestContext& ctx);
-    void GetKeyCodeMap2(Kernel::HLERequestContext& ctx);
-    void GetDeviceNickName(Kernel::HLERequestContext& ctx);
+    void GetLanguageCode(HLERequestContext& ctx);
+    void GetAvailableLanguageCodes(HLERequestContext& ctx);
+    void MakeLanguageCode(HLERequestContext& ctx);
+    void GetAvailableLanguageCodes2(HLERequestContext& ctx);
+    void GetAvailableLanguageCodeCount(HLERequestContext& ctx);
+    void GetAvailableLanguageCodeCount2(HLERequestContext& ctx);
+    void GetQuestFlag(HLERequestContext& ctx);
+    void GetRegionCode(HLERequestContext& ctx);
+    void GetKeyCodeMap(HLERequestContext& ctx);
+    void GetKeyCodeMap2(HLERequestContext& ctx);
+    void GetDeviceNickName(HLERequestContext& ctx);
 };
 
 } // namespace Service::Set

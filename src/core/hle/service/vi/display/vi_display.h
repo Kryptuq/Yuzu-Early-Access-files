@@ -23,7 +23,7 @@ namespace Service::KernelHelpers {
 class ServiceContext;
 }
 
-namespace Service::NVFlinger {
+namespace Service::Nvnflinger {
 class HosBinderDriverServer;
 }
 
@@ -45,12 +45,12 @@ public:
     /// Constructs a display with a given unique ID and name.
     ///
     /// @param id The unique ID for this display.
-    /// @param hos_binder_driver_server_ NVFlinger HOSBinderDriver server instance.
+    /// @param hos_binder_driver_server_ Nvnflinger HOSBinderDriver server instance.
     /// @param service_context_ The ServiceContext for the owning service.
     /// @param name_ The name for this display.
     /// @param system_ The global system instance.
     ///
-    Display(u64 id, std::string name_, NVFlinger::HosBinderDriverServer& hos_binder_driver_server_,
+    Display(u64 id, std::string name_, Nvnflinger::HosBinderDriverServer& hos_binder_driver_server_,
             KernelHelpers::ServiceContext& service_context_, Core::System& system_);
     ~Display();
 
@@ -133,7 +133,7 @@ public:
 private:
     u64 display_id;
     std::string name;
-    NVFlinger::HosBinderDriverServer& hos_binder_driver_server;
+    Nvnflinger::HosBinderDriverServer& hos_binder_driver_server;
     KernelHelpers::ServiceContext& service_context;
 
     std::vector<std::unique_ptr<Layer>> layers;

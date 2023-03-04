@@ -17,10 +17,10 @@ public:
     ~Controller() override;
 
 private:
-    void ConvertCurrentObjectToDomain(Kernel::HLERequestContext& ctx);
-    void CloneCurrentObject(Kernel::HLERequestContext& ctx);
-    void CloneCurrentObjectEx(Kernel::HLERequestContext& ctx);
-    void QueryPointerBufferSize(Kernel::HLERequestContext& ctx);
+    void ConvertCurrentObjectToDomain(HLERequestContext& ctx);
+    void CloneCurrentObject(HLERequestContext& ctx);
+    void CloneCurrentObjectEx(HLERequestContext& ctx);
+    void QueryPointerBufferSize(HLERequestContext& ctx);
 };
 
 } // namespace Service::SM

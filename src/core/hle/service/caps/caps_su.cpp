@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/caps/caps_su.h"
+#include "core/hle/service/ipc_helpers.h"
 
 namespace Service::Capture {
 
@@ -23,7 +23,7 @@ CAPS_SU::CAPS_SU(Core::System& system_) : ServiceFramework{system_, "caps:su"} {
 
 CAPS_SU::~CAPS_SU() = default;
 
-void CAPS_SU::SetShimLibraryVersion(Kernel::HLERequestContext& ctx) {
+void CAPS_SU::SetShimLibraryVersion(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto library_version{rp.Pop<u64>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};

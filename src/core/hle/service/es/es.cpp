@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/crypto/key_manager.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/es/es.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
 
@@ -110,7 +110,7 @@ public:
     }
 
 private:
-    bool CheckRightsId(Kernel::HLERequestContext& ctx, const u128& rights_id) {
+    bool CheckRightsId(HLERequestContext& ctx, const u128& rights_id) {
         if (rights_id == u128{}) {
             LOG_ERROR(Service_ETicket, "The rights ID was invalid!");
             IPC::ResponseBuilder rb{ctx, 2};
@@ -121,7 +121,7 @@ private:
         return true;
     }
 
-    void ImportTicket(Kernel::HLERequestContext& ctx) {
+    void ImportTicket(HLERequestContext& ctx) {
         const auto ticket = ctx.ReadBuffer();
         [[maybe_unused]] const auto cert = ctx.ReadBuffer(1);
 
@@ -146,7 +146,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetTitleKey(Kernel::HLERequestContext& ctx) {
+    void GetTitleKey(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto rights_id = rp.PopRaw<u128>();
 
@@ -172,7 +172,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void CountCommonTicket(Kernel::HLERequestContext& ctx) {
+    void CountCommonTicket(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ETicket, "called");
 
         const u32 count = static_cast<u32>(keys.GetCommonTickets().size());
@@ -182,7 +182,7 @@ private:
         rb.Push<u32>(count);
     }
 
-    void CountPersonalizedTicket(Kernel::HLERequestContext& ctx) {
+    void CountPersonalizedTicket(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ETicket, "called");
 
         const u32 count = static_cast<u32>(keys.GetPersonalizedTickets().size());
@@ -192,7 +192,7 @@ private:
         rb.Push<u32>(count);
     }
 
-    void ListCommonTicketRightsIds(Kernel::HLERequestContext& ctx) {
+    void ListCommonTicketRightsIds(HLERequestContext& ctx) {
         size_t out_entries = 0;
         if (!keys.GetCommonTickets().empty()) {
             out_entries = ctx.GetWriteBufferNumElements<u128>();
@@ -213,7 +213,7 @@ private:
         rb.Push<u32>(static_cast<u32>(out_entries));
     }
 
-    void ListPersonalizedTicketRightsIds(Kernel::HLERequestContext& ctx) {
+    void ListPersonalizedTicketRightsIds(HLERequestContext& ctx) {
         size_t out_entries = 0;
         if (!keys.GetPersonalizedTickets().empty()) {
             out_entries = ctx.GetWriteBufferNumElements<u128>();
@@ -235,7 +235,7 @@ private:
         rb.Push<u32>(static_cast<u32>(out_entries));
     }
 
-    void GetCommonTicketSize(Kernel::HLERequestContext& ctx) {
+    void GetCommonTicketSize(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto rights_id = rp.PopRaw<u128>();
 
@@ -251,7 +251,7 @@ private:
         rb.Push<u64>(ticket.GetSize());
     }
 
-    void GetPersonalizedTicketSize(Kernel::HLERequestContext& ctx) {
+    void GetPersonalizedTicketSize(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto rights_id = rp.PopRaw<u128>();
 
@@ -267,7 +267,7 @@ private:
         rb.Push<u64>(ticket.GetSize());
     }
 
-    void GetCommonTicketData(Kernel::HLERequestContext& ctx) {
+    void GetCommonTicketData(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto rights_id = rp.PopRaw<u128>();
 
@@ -286,7 +286,7 @@ private:
         rb.Push<u64>(write_size);
     }
 
-    void GetPersonalizedTicketData(Kernel::HLERequestContext& ctx) {
+    void GetPersonalizedTicketData(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto rights_id = rp.PopRaw<u128>();
 

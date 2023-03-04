@@ -17,12 +17,12 @@
 #include "common/polyfill_ranges.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/service/audio/audren_u.h"
 #include "core/hle/service/audio/errors.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/memory.h"
 
 using namespace AudioCore::AudioRenderer;
@@ -68,7 +68,7 @@ public:
     }
 
 private:
-    void GetSampleRate(Kernel::HLERequestContext& ctx) {
+    void GetSampleRate(HLERequestContext& ctx) {
         const auto sample_rate{impl->GetSystem().GetSampleRate()};
 
         LOG_DEBUG(Service_Audio, "called. Sample rate {}", sample_rate);
@@ -78,7 +78,7 @@ private:
         rb.Push(sample_rate);
     }
 
-    void GetSampleCount(Kernel::HLERequestContext& ctx) {
+    void GetSampleCount(HLERequestContext& ctx) {
         const auto sample_count{impl->GetSystem().GetSampleCount()};
 
         LOG_DEBUG(Service_Audio, "called. Sample count {}", sample_count);
@@ -88,7 +88,7 @@ private:
         rb.Push(sample_count);
     }
 
-    void GetState(Kernel::HLERequestContext& ctx) {
+    void GetState(HLERequestContext& ctx) {
         const u32 state{!impl->GetSystem().IsActive()};
 
         LOG_DEBUG(Service_Audio, "called, state {}", state);
@@ -98,7 +98,7 @@ private:
         rb.Push(state);
     }
 
-    void GetMixBufferCount(Kernel::HLERequestContext& ctx) {
+    void GetMixBufferCount(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         const auto buffer_count{impl->GetSystem().GetMixBufferCount()};
@@ -108,7 +108,7 @@ private:
         rb.Push(buffer_count);
     }
 
-    void RequestUpdate(Kernel::HLERequestContext& ctx) {
+    void RequestUpdate(HLERequestContext& ctx) {
         LOG_TRACE(Service_Audio, "called");
 
         const auto input{ctx.ReadBuffer(0)};
@@ -147,7 +147,7 @@ private:
         rb.Push(result);
     }
 
-    void Start(Kernel::HLERequestContext& ctx) {
+    void Start(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         impl->Start();
@@ -156,7 +156,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void Stop(Kernel::HLERequestContext& ctx) {
+    void Stop(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         impl->Stop();
@@ -165,7 +165,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void QuerySystemEvent(Kernel::HLERequestContext& ctx) {
+    void QuerySystemEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         if (impl->GetSystem().GetExecutionMode() == AudioCore::ExecutionMode::Manual) {
@@ -179,7 +179,7 @@ private:
         rb.PushCopyObjects(rendered_event->GetReadableEvent());
     }
 
-    void SetRenderingTimeLimit(Kernel::HLERequestContext& ctx) {
+    void SetRenderingTimeLimit(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         IPC::RequestParser rp{ctx};
@@ -192,7 +192,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetRenderingTimeLimit(Kernel::HLERequestContext& ctx) {
+    void GetRenderingTimeLimit(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto& system_ = impl->GetSystem();
@@ -203,11 +203,11 @@ private:
         rb.Push(time);
     }
 
-    void ExecuteAudioRendererRendering(Kernel::HLERequestContext& ctx) {
+    void ExecuteAudioRendererRendering(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
     }
 
-    void SetVoiceDropParameter(Kernel::HLERequestContext& ctx) {
+    void SetVoiceDropParameter(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         IPC::RequestParser rp{ctx};
@@ -220,7 +220,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetVoiceDropParameter(Kernel::HLERequestContext& ctx) {
+    void GetVoiceDropParameter(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         auto& system_ = impl->GetSystem();
@@ -271,7 +271,7 @@ public:
     }
 
 private:
-    void ListAudioDeviceName(Kernel::HLERequestContext& ctx) {
+    void ListAudioDeviceName(HLERequestContext& ctx) {
         const size_t in_count = ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>();
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
@@ -299,7 +299,7 @@ private:
         rb.Push(out_count);
     }
 
-    void SetAudioDeviceOutputVolume(Kernel::HLERequestContext& ctx) {
+    void SetAudioDeviceOutputVolume(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const f32 volume = rp.Pop<f32>();
 
@@ -316,7 +316,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetAudioDeviceOutputVolume(Kernel::HLERequestContext& ctx) {
+    void GetAudioDeviceOutputVolume(HLERequestContext& ctx) {
         const auto device_name_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(device_name_buffer);
 
@@ -332,7 +332,7 @@ private:
         rb.Push(volume);
     }
 
-    void GetActiveAudioDeviceName(Kernel::HLERequestContext& ctx) {
+    void GetActiveAudioDeviceName(HLERequestContext& ctx) {
         const auto write_size = ctx.GetWriteBufferSize();
         std::string out_name{"AudioTvOutput"};
 
@@ -346,7 +346,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
+    void QueryAudioDeviceSystemEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
         event->Signal();
@@ -356,7 +356,7 @@ private:
         rb.PushCopyObjects(event->GetReadableEvent());
     }
 
-    void GetActiveChannelCount(Kernel::HLERequestContext& ctx) {
+    void GetActiveChannelCount(HLERequestContext& ctx) {
         const auto& sink{system.AudioCore().GetOutputSink()};
         u32 channel_count{sink.GetDeviceChannels()};
 
@@ -368,7 +368,7 @@ private:
         rb.Push<u32>(channel_count);
     }
 
-    void QueryAudioDeviceInputEvent(Kernel::HLERequestContext& ctx) {
+    void QueryAudioDeviceInputEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -376,7 +376,7 @@ private:
         rb.PushCopyObjects(event->GetReadableEvent());
     }
 
-    void QueryAudioDeviceOutputEvent(Kernel::HLERequestContext& ctx) {
+    void QueryAudioDeviceOutputEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -384,7 +384,7 @@ private:
         rb.PushCopyObjects(event->GetReadableEvent());
     }
 
-    void ListAudioOutputDeviceName(Kernel::HLERequestContext& ctx) {
+    void ListAudioOutputDeviceName(HLERequestContext& ctx) {
         const size_t in_count = ctx.GetWriteBufferNumElements<AudioDevice::AudioDeviceName>();
 
         std::vector<AudioDevice::AudioDeviceName> out_names{};
@@ -435,7 +435,7 @@ AudRenU::AudRenU(Core::System& system_)
 
 AudRenU::~AudRenU() = default;
 
-void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
+void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     AudioCore::AudioRendererParameterInternal params;
@@ -475,7 +475,7 @@ void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
                                         applet_resource_user_id, session_id);
 }
 
-void AudRenU::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
+void AudRenU::GetWorkBufferSize(HLERequestContext& ctx) {
     AudioCore::AudioRendererParameterInternal params;
 
     IPC::RequestParser rp{ctx};
@@ -506,7 +506,7 @@ void AudRenU::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
     rb.Push<u64>(size);
 }
 
-void AudRenU::GetAudioDeviceService(Kernel::HLERequestContext& ctx) {
+void AudRenU::GetAudioDeviceService(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const auto applet_resource_user_id = rp.Pop<u64>();
@@ -520,11 +520,11 @@ void AudRenU::GetAudioDeviceService(Kernel::HLERequestContext& ctx) {
                                       ::Common::MakeMagic('R', 'E', 'V', '1'), num_audio_devices++);
 }
 
-void AudRenU::OpenAudioRendererForManualExecution(Kernel::HLERequestContext& ctx) {
+void AudRenU::OpenAudioRendererForManualExecution(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called");
 }
 
-void AudRenU::GetAudioDeviceServiceWithRevisionInfo(Kernel::HLERequestContext& ctx) {
+void AudRenU::GetAudioDeviceServiceWithRevisionInfo(HLERequestContext& ctx) {
     struct Parameters {
         u32 revision;
         u64 applet_resource_user_id;

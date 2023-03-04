@@ -11,8 +11,8 @@
 #include "common/microprofile.h"
 #include "common/socket_types.h"
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/sockets/bsd.h"
 #include "core/hle/service/sockets/sockets_translate.h"
 #include "core/internal_network/network.h"
@@ -42,7 +42,7 @@ void BSD::PollWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->PollImpl(write_buffer, read_buffer, nfds, timeout);
 }
 
-void BSD::PollWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::PollWork::Response(HLERequestContext& ctx) {
     if (write_buffer.size() > 0) {
         ctx.WriteBuffer(write_buffer);
     }
@@ -57,7 +57,7 @@ void BSD::AcceptWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->AcceptImpl(fd, write_buffer);
 }
 
-void BSD::AcceptWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::AcceptWork::Response(HLERequestContext& ctx) {
     if (write_buffer.size() > 0) {
         ctx.WriteBuffer(write_buffer);
     }
@@ -73,7 +73,7 @@ void BSD::ConnectWork::Execute(BSD* bsd) {
     bsd_errno = bsd->ConnectImpl(fd, addr);
 }
 
-void BSD::ConnectWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::ConnectWork::Response(HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
     rb.Push<s32>(bsd_errno == Errno::SUCCESS ? 0 : -1);
@@ -84,7 +84,7 @@ void BSD::RecvWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->RecvImpl(fd, flags, message);
 }
 
-void BSD::RecvWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::RecvWork::Response(HLERequestContext& ctx) {
     ctx.WriteBuffer(message);
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -97,7 +97,7 @@ void BSD::RecvFromWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->RecvFromImpl(fd, flags, message, addr);
 }
 
-void BSD::RecvFromWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::RecvFromWork::Response(HLERequestContext& ctx) {
     ctx.WriteBuffer(message, 0);
     if (!addr.empty()) {
         ctx.WriteBuffer(addr, 1);
@@ -114,7 +114,7 @@ void BSD::SendWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->SendImpl(fd, flags, message);
 }
 
-void BSD::SendWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::SendWork::Response(HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
@@ -125,14 +125,14 @@ void BSD::SendToWork::Execute(BSD* bsd) {
     std::tie(ret, bsd_errno) = bsd->SendToImpl(fd, flags, message, addr);
 }
 
-void BSD::SendToWork::Response(Kernel::HLERequestContext& ctx) {
+void BSD::SendToWork::Response(HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
 }
 
-void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
+void BSD::RegisterClient(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -141,7 +141,7 @@ void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
     rb.Push<s32>(0); // bsd errno
 }
 
-void BSD::StartMonitoring(Kernel::HLERequestContext& ctx) {
+void BSD::StartMonitoring(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
@@ -149,7 +149,7 @@ void BSD::StartMonitoring(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void BSD::Socket(Kernel::HLERequestContext& ctx) {
+void BSD::Socket(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u32 domain = rp.Pop<u32>();
     const u32 type = rp.Pop<u32>();
@@ -166,7 +166,7 @@ void BSD::Socket(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(bsd_errno);
 }
 
-void BSD::Select(Kernel::HLERequestContext& ctx) {
+void BSD::Select(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -176,7 +176,7 @@ void BSD::Select(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD::Poll(Kernel::HLERequestContext& ctx) {
+void BSD::Poll(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 nfds = rp.Pop<s32>();
     const s32 timeout = rp.Pop<s32>();
@@ -191,7 +191,7 @@ void BSD::Poll(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::Accept(Kernel::HLERequestContext& ctx) {
+void BSD::Accept(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -203,7 +203,7 @@ void BSD::Accept(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::Bind(Kernel::HLERequestContext& ctx) {
+void BSD::Bind(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -211,7 +211,7 @@ void BSD::Bind(Kernel::HLERequestContext& ctx) {
     BuildErrnoResponse(ctx, BindImpl(fd, ctx.ReadBuffer()));
 }
 
-void BSD::Connect(Kernel::HLERequestContext& ctx) {
+void BSD::Connect(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -223,7 +223,7 @@ void BSD::Connect(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::GetPeerName(Kernel::HLERequestContext& ctx) {
+void BSD::GetPeerName(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -241,7 +241,7 @@ void BSD::GetPeerName(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(static_cast<u32>(write_buffer.size()));
 }
 
-void BSD::GetSockName(Kernel::HLERequestContext& ctx) {
+void BSD::GetSockName(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -259,7 +259,7 @@ void BSD::GetSockName(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(static_cast<u32>(write_buffer.size()));
 }
 
-void BSD::GetSockOpt(Kernel::HLERequestContext& ctx) {
+void BSD::GetSockOpt(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
     const u32 level = rp.Pop<u32>();
@@ -278,7 +278,7 @@ void BSD::GetSockOpt(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(static_cast<u32>(optval.size()));
 }
 
-void BSD::Listen(Kernel::HLERequestContext& ctx) {
+void BSD::Listen(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
     const s32 backlog = rp.Pop<s32>();
@@ -288,7 +288,7 @@ void BSD::Listen(Kernel::HLERequestContext& ctx) {
     BuildErrnoResponse(ctx, ListenImpl(fd, backlog));
 }
 
-void BSD::Fcntl(Kernel::HLERequestContext& ctx) {
+void BSD::Fcntl(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
     const s32 cmd = rp.Pop<s32>();
@@ -304,7 +304,7 @@ void BSD::Fcntl(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(bsd_errno);
 }
 
-void BSD::SetSockOpt(Kernel::HLERequestContext& ctx) {
+void BSD::SetSockOpt(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const s32 fd = rp.Pop<s32>();
@@ -328,7 +328,7 @@ void BSD::SetSockOpt(Kernel::HLERequestContext& ctx) {
     BuildErrnoResponse(ctx, SetSockOptImpl(fd, level, optname, optlen, optval));
 }
 
-void BSD::Shutdown(Kernel::HLERequestContext& ctx) {
+void BSD::Shutdown(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const s32 fd = rp.Pop<s32>();
@@ -339,7 +339,7 @@ void BSD::Shutdown(Kernel::HLERequestContext& ctx) {
     BuildErrnoResponse(ctx, ShutdownImpl(fd, how));
 }
 
-void BSD::Recv(Kernel::HLERequestContext& ctx) {
+void BSD::Recv(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const s32 fd = rp.Pop<s32>();
@@ -354,7 +354,7 @@ void BSD::Recv(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::RecvFrom(Kernel::HLERequestContext& ctx) {
+void BSD::RecvFrom(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const s32 fd = rp.Pop<s32>();
@@ -371,7 +371,7 @@ void BSD::RecvFrom(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::Send(Kernel::HLERequestContext& ctx) {
+void BSD::Send(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const s32 fd = rp.Pop<s32>();
@@ -386,7 +386,7 @@ void BSD::Send(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::SendTo(Kernel::HLERequestContext& ctx) {
+void BSD::SendTo(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
     const u32 flags = rp.Pop<u32>();
@@ -402,7 +402,7 @@ void BSD::SendTo(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::Write(Kernel::HLERequestContext& ctx) {
+void BSD::Write(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -415,7 +415,7 @@ void BSD::Write(Kernel::HLERequestContext& ctx) {
                      });
 }
 
-void BSD::Read(Kernel::HLERequestContext& ctx) {
+void BSD::Read(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -427,7 +427,7 @@ void BSD::Read(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD::Close(Kernel::HLERequestContext& ctx) {
+void BSD::Close(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
@@ -436,7 +436,7 @@ void BSD::Close(Kernel::HLERequestContext& ctx) {
     BuildErrnoResponse(ctx, CloseImpl(fd));
 }
 
-void BSD::EventFd(Kernel::HLERequestContext& ctx) {
+void BSD::EventFd(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u64 initval = rp.Pop<u64>();
     const u32 flags = rp.Pop<u32>();
@@ -447,7 +447,7 @@ void BSD::EventFd(Kernel::HLERequestContext& ctx) {
 }
 
 template <typename Work>
-void BSD::ExecuteWork(Kernel::HLERequestContext& ctx, Work work) {
+void BSD::ExecuteWork(HLERequestContext& ctx, Work work) {
     work.Execute(this);
     work.Response(ctx);
 }
@@ -862,7 +862,7 @@ bool BSD::IsFileDescriptorValid(s32 fd) const noexcept {
     return true;
 }
 
-void BSD::BuildErrnoResponse(Kernel::HLERequestContext& ctx, Errno bsd_errno) const noexcept {
+void BSD::BuildErrnoResponse(HLERequestContext& ctx, Errno bsd_errno) const noexcept {
     IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(ResultSuccess);

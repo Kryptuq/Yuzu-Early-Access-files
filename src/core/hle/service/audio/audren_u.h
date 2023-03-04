@@ -11,10 +11,6 @@ namespace Core {
 class System;
 }
 
-namespace Kernel {
-class HLERequestContext;
-}
-
 namespace Service::Audio {
 class IAudioRenderer;
 
@@ -24,11 +20,11 @@ public:
     ~AudRenU() override;
 
 private:
-    void OpenAudioRenderer(Kernel::HLERequestContext& ctx);
-    void GetWorkBufferSize(Kernel::HLERequestContext& ctx);
-    void GetAudioDeviceService(Kernel::HLERequestContext& ctx);
-    void OpenAudioRendererForManualExecution(Kernel::HLERequestContext& ctx);
-    void GetAudioDeviceServiceWithRevisionInfo(Kernel::HLERequestContext& ctx);
+    void OpenAudioRenderer(HLERequestContext& ctx);
+    void GetWorkBufferSize(HLERequestContext& ctx);
+    void GetAudioDeviceService(HLERequestContext& ctx);
+    void OpenAudioRendererForManualExecution(HLERequestContext& ctx);
+    void GetAudioDeviceServiceWithRevisionInfo(HLERequestContext& ctx);
 
     KernelHelpers::ServiceContext service_context;
     std::unique_ptr<AudioCore::AudioRenderer::Manager> impl;

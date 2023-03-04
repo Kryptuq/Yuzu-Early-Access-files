@@ -10,8 +10,6 @@
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_client_port.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
@@ -22,6 +20,8 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_queue.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/hle_ipc.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/memory.h"
 
 namespace Kernel {
@@ -281,8 +281,8 @@ Result KServerSession::SendReply(bool is_hle) {
     return result;
 }
 
-Result KServerSession::ReceiveRequest(std::shared_ptr<HLERequestContext>* out_context,
-                                      std::weak_ptr<SessionRequestManager> manager) {
+Result KServerSession::ReceiveRequest(std::shared_ptr<Service::HLERequestContext>* out_context,
+                                      std::weak_ptr<Service::SessionRequestManager> manager) {
     // Lock the session.
     KScopedLightLock lk{m_lock};
 
@@ -329,7 +329,8 @@ Result KServerSession::ReceiveRequest(std::shared_ptr<HLERequestContext>* out_co
     if (out_context != nullptr) {
         // HLE request.
         u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(client_message))};
-        *out_context = std::make_shared<HLERequestContext>(kernel, memory, this, client_thread);
+        *out_context =
+            std::make_shared<Service::HLERequestContext>(kernel, memory, this, client_thread);
         (*out_context)->SetSessionRequestManager(manager);
         (*out_context)
             ->PopulateFromIncomingCommandBuffer(client_thread->GetOwnerProcess()->GetHandleTable(),

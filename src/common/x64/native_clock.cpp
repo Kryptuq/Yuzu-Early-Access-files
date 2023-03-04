@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "common/atomic_ops.h"
+#include "common/steady_clock.h"
 #include "common/uint128.h"
 #include "common/x64/native_clock.h"
 
@@ -39,6 +40,12 @@ static u64 FencedRDTSC() {
 }
 #endif
 
+template <u64 Nearest>
+static u64 RoundToNearest(u64 value) {
+    const auto mod = value % Nearest;
+    return mod >= (Nearest / 2) ? (value - mod + Nearest) : (value - mod);
+}
+
 u64 EstimateRDTSCFrequency() {
     // Discard the first result measuring the rdtsc.
     FencedRDTSC();
@@ -46,18 +53,18 @@ u64 EstimateRDTSCFrequency() {
     FencedRDTSC();
 
     // Get the current time.
-    const auto start_time = std::chrono::steady_clock::now();
+    const auto start_time = Common::SteadyClock::Now();
     const u64 tsc_start = FencedRDTSC();
-    // Wait for 200 milliseconds.
-    std::this_thread::sleep_for(std::chrono::milliseconds{200});
-    const auto end_time = std::chrono::steady_clock::now();
+    // Wait for 250 milliseconds.
+    std::this_thread::sleep_for(std::chrono::milliseconds{250});
+    const auto end_time = Common::SteadyClock::Now();
     const u64 tsc_end = FencedRDTSC();
     // Calculate differences.
     const u64 timer_diff = static_cast<u64>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
     const u64 tsc_diff = tsc_end - tsc_start;
     const u64 tsc_freq = MultiplyAndDivide64(tsc_diff, 1000000000ULL, timer_diff);
-    return tsc_freq;
+    return RoundToNearest<1000>(tsc_freq);
 }
 
 namespace X64 {

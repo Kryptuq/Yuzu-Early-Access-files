@@ -7,8 +7,8 @@
 
 namespace Service::VI {
 
-VI_M::VI_M(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_,
-           NVFlinger::HosBinderDriverServer& hos_binder_driver_server_)
+VI_M::VI_M(Core::System& system_, Nvnflinger::Nvnflinger& nv_flinger_,
+           Nvnflinger::HosBinderDriverServer& hos_binder_driver_server_)
     : ServiceFramework{system_, "vi:m"}, nv_flinger{nv_flinger_}, hos_binder_driver_server{
                                                                       hos_binder_driver_server_} {
     static const FunctionInfo functions[] = {
@@ -24,7 +24,7 @@ VI_M::VI_M(Core::System& system_, NVFlinger::NVFlinger& nv_flinger_,
 
 VI_M::~VI_M() = default;
 
-void VI_M::GetDisplayService(Kernel::HLERequestContext& ctx) {
+void VI_M::GetDisplayService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_VI, "called");
 
     detail::GetDisplayServiceImpl(ctx, system, nv_flinger, hos_binder_driver_server,

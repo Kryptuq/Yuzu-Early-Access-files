@@ -19,8 +19,8 @@ private:
         External,
     };
 
-    void GetTemperature(Kernel::HLERequestContext& ctx);
-    void GetTemperatureMilliC(Kernel::HLERequestContext& ctx);
+    void GetTemperature(HLERequestContext& ctx);
+    void GetTemperatureMilliC(HLERequestContext& ctx);
 };
 
 } // namespace Service::PTM

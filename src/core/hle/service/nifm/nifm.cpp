@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/server_manager.h"
@@ -217,7 +217,7 @@ public:
     }
 
 private:
-    void Submit(Kernel::HLERequestContext& ctx) {
+    void Submit(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         if (state == RequestState::NotSubmitted) {
@@ -228,7 +228,7 @@ private:
         rb.Push(ResultSuccess);
     }
 
-    void GetRequestState(Kernel::HLERequestContext& ctx) {
+    void GetRequestState(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -236,7 +236,7 @@ private:
         rb.PushEnum(state);
     }
 
-    void GetResult(Kernel::HLERequestContext& ctx) {
+    void GetResult(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         const auto result = [this] {
@@ -261,7 +261,7 @@ private:
         rb.Push(result);
     }
 
-    void GetSystemEventReadableHandles(Kernel::HLERequestContext& ctx) {
+    void GetSystemEventReadableHandles(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 2};
@@ -269,21 +269,21 @@ private:
         rb.PushCopyObjects(event1->GetReadableEvent(), event2->GetReadableEvent());
     }
 
-    void Cancel(Kernel::HLERequestContext& ctx) {
+    void Cancel(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void SetConnectionConfirmationOption(Kernel::HLERequestContext& ctx) {
+    void SetConnectionConfirmationOption(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    void GetAppletInfo(Kernel::HLERequestContext& ctx) {
+    void GetAppletInfo(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
         std::vector<u8> out_buffer(ctx.GetWriteBufferSize());
@@ -322,7 +322,7 @@ public:
     }
 };
 
-void IGeneralService::GetClientId(Kernel::HLERequestContext& ctx) {
+void IGeneralService::GetClientId(HLERequestContext& ctx) {
     static constexpr u32 client_id = 1;
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
@@ -331,7 +331,7 @@ void IGeneralService::GetClientId(Kernel::HLERequestContext& ctx) {
     rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
 }
 
-void IGeneralService::CreateScanRequest(Kernel::HLERequestContext& ctx) {
+void IGeneralService::CreateScanRequest(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NIFM, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -340,7 +340,7 @@ void IGeneralService::CreateScanRequest(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IScanRequest>(system);
 }
 
-void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
+void IGeneralService::CreateRequest(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NIFM, "called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -349,7 +349,7 @@ void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IRequest>(system);
 }
 
-void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
+void IGeneralService::GetCurrentNetworkProfile(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     const auto net_iface = Network::GetSelectedNetworkInterface();
@@ -408,14 +408,14 @@ void IGeneralService::GetCurrentNetworkProfile(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
-void IGeneralService::RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
+void IGeneralService::RemoveNetworkProfile(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
 
-void IGeneralService::GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
+void IGeneralService::GetCurrentIpAddress(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     auto ipv4 = Network::GetHostIPv4Address();
@@ -436,7 +436,7 @@ void IGeneralService::GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
     rb.PushRaw(*ipv4);
 }
 
-void IGeneralService::CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
+void IGeneralService::CreateTemporaryNetworkProfile(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NIFM, "called");
 
     ASSERT_MSG(ctx.GetReadBufferSize() == 0x17c, "SfNetworkProfileData is not the correct size");
@@ -451,7 +451,7 @@ void IGeneralService::CreateTemporaryNetworkProfile(Kernel::HLERequestContext& c
     rb.PushRaw<u128>(uuid);
 }
 
-void IGeneralService::GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
+void IGeneralService::GetCurrentIpConfigInfo(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     struct IpConfigInfo {
@@ -495,7 +495,7 @@ void IGeneralService::GetCurrentIpConfigInfo(Kernel::HLERequestContext& ctx) {
     rb.PushRaw<IpConfigInfo>(ip_config_info);
 }
 
-void IGeneralService::IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+void IGeneralService::IsWirelessCommunicationEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -503,7 +503,7 @@ void IGeneralService::IsWirelessCommunicationEnabled(Kernel::HLERequestContext& 
     rb.Push<u8>(1);
 }
 
-void IGeneralService::GetInternetConnectionStatus(Kernel::HLERequestContext& ctx) {
+void IGeneralService::GetInternetConnectionStatus(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     struct Output {
@@ -520,7 +520,7 @@ void IGeneralService::GetInternetConnectionStatus(Kernel::HLERequestContext& ctx
     rb.PushRaw(out);
 }
 
-void IGeneralService::IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+void IGeneralService::IsEthernetCommunicationEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -532,7 +532,7 @@ void IGeneralService::IsEthernetCommunicationEnabled(Kernel::HLERequestContext& 
     }
 }
 
-void IGeneralService::IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
+void IGeneralService::IsAnyInternetRequestAccepted(HLERequestContext& ctx) {
     LOG_ERROR(Service_NIFM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -610,7 +610,7 @@ public:
     }
 
 private:
-    void CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) {
+    void CreateGeneralServiceOld(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -618,7 +618,7 @@ private:
         rb.PushIpcInterface<IGeneralService>(system);
     }
 
-    void CreateGeneralService(Kernel::HLERequestContext& ctx) {
+    void CreateGeneralService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};

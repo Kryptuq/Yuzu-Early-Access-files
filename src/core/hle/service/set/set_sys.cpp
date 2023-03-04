@@ -6,8 +6,8 @@
 #include "common/settings.h"
 #include "core/file_sys/errors.h"
 #include "core/file_sys/system_archive/system_version.h"
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/set/set_sys.h"
 
 namespace Service::Set {
@@ -20,7 +20,7 @@ enum class GetFirmwareVersionType {
     Version2,
 };
 
-void GetFirmwareVersionImpl(Kernel::HLERequestContext& ctx, GetFirmwareVersionType type) {
+void GetFirmwareVersionImpl(HLERequestContext& ctx, GetFirmwareVersionType type) {
     LOG_WARNING(Service_SET, "called - Using hardcoded firmware version '{}'",
                 FileSys::SystemArchive::GetLongDisplayVersion());
 
@@ -73,17 +73,17 @@ void GetFirmwareVersionImpl(Kernel::HLERequestContext& ctx, GetFirmwareVersionTy
 }
 } // Anonymous namespace
 
-void SET_SYS::GetFirmwareVersion(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetFirmwareVersion(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     GetFirmwareVersionImpl(ctx, GetFirmwareVersionType::Version1);
 }
 
-void SET_SYS::GetFirmwareVersion2(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetFirmwareVersion2(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     GetFirmwareVersionImpl(ctx, GetFirmwareVersionType::Version2);
 }
 
-void SET_SYS::GetColorSetId(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetColorSetId(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -92,7 +92,7 @@ void SET_SYS::GetColorSetId(Kernel::HLERequestContext& ctx) {
     rb.PushEnum(color_set);
 }
 
-void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
+void SET_SYS::SetColorSetId(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     IPC::RequestParser rp{ctx};
@@ -126,7 +126,7 @@ static Settings GetSettings() {
     return ret;
 }
 
-void SET_SYS::GetSettingsItemValueSize(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetSettingsItemValueSize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     // The category of the setting. This corresponds to the top-level keys of
@@ -151,7 +151,7 @@ void SET_SYS::GetSettingsItemValueSize(Kernel::HLERequestContext& ctx) {
     rb.Push(response_size);
 }
 
-void SET_SYS::GetSettingsItemValue(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetSettingsItemValue(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
     // The category of the setting. This corresponds to the top-level keys of
@@ -177,7 +177,7 @@ void SET_SYS::GetSettingsItemValue(Kernel::HLERequestContext& ctx) {
     rb.Push(response);
 }
 
-void SET_SYS::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
+void SET_SYS::GetDeviceNickName(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);

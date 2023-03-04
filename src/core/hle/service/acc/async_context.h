@@ -18,10 +18,10 @@ public:
     explicit IAsyncContext(Core::System& system_);
     ~IAsyncContext() override;
 
-    void GetSystemEvent(Kernel::HLERequestContext& ctx);
-    void Cancel(Kernel::HLERequestContext& ctx);
-    void HasDone(Kernel::HLERequestContext& ctx);
-    void GetResult(Kernel::HLERequestContext& ctx);
+    void GetSystemEvent(HLERequestContext& ctx);
+    void Cancel(HLERequestContext& ctx);
+    void HasDone(HLERequestContext& ctx);
+    void GetResult(HLERequestContext& ctx);
 
 protected:
     virtual bool IsComplete() const = 0;

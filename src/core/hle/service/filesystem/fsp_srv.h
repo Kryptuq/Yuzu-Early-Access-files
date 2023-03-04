@@ -35,26 +35,26 @@ public:
     ~FSP_SRV() override;
 
 private:
-    void SetCurrentProcess(Kernel::HLERequestContext& ctx);
-    void OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx);
-    void OpenSdCardFileSystem(Kernel::HLERequestContext& ctx);
-    void CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx);
-    void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);
-    void OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx);
-    void OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext& ctx);
-    void WriteSaveDataFileSystemExtraDataBySaveDataAttribute(Kernel::HLERequestContext& ctx);
-    void ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(Kernel::HLERequestContext& ctx);
-    void OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
-    void OpenDataStorageByDataId(Kernel::HLERequestContext& ctx);
-    void OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
-    void OpenDataStorageWithProgramIndex(Kernel::HLERequestContext& ctx);
-    void DisableAutoSaveDataCreation(Kernel::HLERequestContext& ctx);
-    void SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
-    void GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
-    void OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx);
-    void GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx);
-    void OpenMultiCommitManager(Kernel::HLERequestContext& ctx);
-    void GetCacheStorageSize(Kernel::HLERequestContext& ctx);
+    void SetCurrentProcess(HLERequestContext& ctx);
+    void OpenFileSystemWithPatch(HLERequestContext& ctx);
+    void OpenSdCardFileSystem(HLERequestContext& ctx);
+    void CreateSaveDataFileSystem(HLERequestContext& ctx);
+    void OpenSaveDataFileSystem(HLERequestContext& ctx);
+    void OpenReadOnlySaveDataFileSystem(HLERequestContext& ctx);
+    void OpenSaveDataInfoReaderBySaveDataSpaceId(HLERequestContext& ctx);
+    void WriteSaveDataFileSystemExtraDataBySaveDataAttribute(HLERequestContext& ctx);
+    void ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(HLERequestContext& ctx);
+    void OpenDataStorageByCurrentProcess(HLERequestContext& ctx);
+    void OpenDataStorageByDataId(HLERequestContext& ctx);
+    void OpenPatchDataStorageByCurrentProcess(HLERequestContext& ctx);
+    void OpenDataStorageWithProgramIndex(HLERequestContext& ctx);
+    void DisableAutoSaveDataCreation(HLERequestContext& ctx);
+    void SetGlobalAccessLogMode(HLERequestContext& ctx);
+    void GetGlobalAccessLogMode(HLERequestContext& ctx);
+    void OutputAccessLogToSdCard(HLERequestContext& ctx);
+    void GetProgramIndexForAccessLog(HLERequestContext& ctx);
+    void OpenMultiCommitManager(HLERequestContext& ctx);
+    void GetCacheStorageSize(HLERequestContext& ctx);
 
     FileSystemController& fsc;
     const FileSys::ContentProvider& content_provider;
