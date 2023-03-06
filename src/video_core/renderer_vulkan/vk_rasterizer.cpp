@@ -787,7 +787,7 @@ bool AccelerateDMA::ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info,
 
     const bool is_rescaled = image->IsRescaled();
     if (is_rescaled) {
-        image->ScaleDown(true);
+        image->ScaleDown();
     }
     VkImageSubresourceLayers subresources{
         .aspectMask = image->AspectMask(),
@@ -879,6 +879,9 @@ bool AccelerateDMA::ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info,
         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                0, WRITE_BARRIER, nullptr, post_barriers);
     });
+    if (is_rescaled) {
+        image->ScaleUp(true);
+    }
     return true;
 }
 
@@ -989,6 +992,9 @@ bool AccelerateDMA::BufferToImage(const Tegra::DMA::ImageCopy& copy_info,
         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                0, nullptr, nullptr, post_barriers);
     });
+    if (is_rescaled) {
+        image->ScaleUp();
+    }
     return true;
 }
 

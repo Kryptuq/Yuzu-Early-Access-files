@@ -216,8 +216,7 @@ ImageInfo::ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept {
             .height = config.height,
             .depth = 1,
         };
-        rescaleable = block.depth == 0;
-        rescaleable &= size.height > 256;
+        rescaleable = block.depth == 0 && size.height > 256;
         downscaleable = size.height > 512;
     }
 }
@@ -260,8 +259,7 @@ ImageInfo::ImageInfo(const Tegra::DMA::ImageOperand& config) noexcept {
     resources.layers = 1;
     layer_stride = CalculateLayerStride(*this);
     maybe_unaligned_layer_stride = CalculateLayerSize(*this);
-    rescaleable = block.depth == 0;
-    rescaleable &= size.height > 256;
+    rescaleable = block.depth == 0 && size.height > 256;
     downscaleable = size.height > 512;
 }
 

@@ -15,9 +15,8 @@ namespace Common {
 class StandardWallClock final : public WallClock {
 public:
     explicit StandardWallClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequency_)
-        : WallClock{emulated_cpu_frequency_, emulated_clock_frequency_, false} {
-        start_time = SteadyClock::Now();
-    }
+        : WallClock{emulated_cpu_frequency_, emulated_clock_frequency_, false},
+          start_time{SteadyClock::Now()} {}
 
     std::chrono::nanoseconds GetTimeNS() override {
         return SteadyClock::Now() - start_time;

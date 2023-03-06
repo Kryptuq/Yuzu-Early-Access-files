@@ -1125,10 +1125,9 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
         // Format checking is relaxed, but we still have to check for matching bytes per block.
         // This avoids creating a view for blits on UE4 titles where formats with different bytes
         // per block are aliased.
-        if (BytesPerBlock(existing.format) != BytesPerBlock(candidate.format)) {
-            if (False(options & RelaxedOptions::FormatBpp)) {
-                return std::nullopt;
-            }
+        if (BytesPerBlock(existing.format) != BytesPerBlock(candidate.format) &&
+            False(options & RelaxedOptions::FormatBpp)) {
+            return std::nullopt;
         }
     } else {
         // Format comaptibility is not relaxed, ensure we are creating a view on a compatible format
@@ -1142,10 +1141,8 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
     if (existing.type != candidate.type) {
         return std::nullopt;
     }
-    if (False(options & RelaxedOptions::Samples)) {
-        if (existing.num_samples != candidate.num_samples) {
-            return std::nullopt;
-        }
+    if (False(options & RelaxedOptions::Samples) && existing.num_samples != candidate.num_samples) {
+        return std::nullopt;
     }
     if (existing.resources.levels < candidate.resources.levels + base->level) {
         return std::nullopt;
@@ -1155,10 +1152,8 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
         if (mip_depth < candidate.size.depth + base->layer) {
             return std::nullopt;
         }
-    } else {
-        if (existing.resources.layers < candidate.resources.layers + base->layer) {
-            return std::nullopt;
-        }
+    } else if (existing.resources.layers < candidate.resources.layers + base->layer) {
+        return std::nullopt;
     }
     const bool strict_size = False(options & RelaxedOptions::Size);
     if (!IsBlockLinearSizeCompatible(existing, candidate, base->level, 0, strict_size)) {
