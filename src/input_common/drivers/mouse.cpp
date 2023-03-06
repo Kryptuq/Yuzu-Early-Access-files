@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <fmt/format.h>
+#include <math.h>
 
 #include "common/param_package.h"
 #include "common/settings.h"
@@ -11,8 +12,9 @@
 
 namespace InputCommon {
 constexpr int update_time = 10;
-constexpr float default_stick_sensitivity = 0.022f;
-constexpr float default_motion_sensitivity = 0.008f;
+constexpr float default_stick_sensitivity = 0.0044f;
+constexpr float default_motion_sensitivity = 0.0003f;
+constexpr float maximum_rotation_speed = 1.0f;
 constexpr int mouse_axis_x = 0;
 constexpr int mouse_axis_y = 1;
 constexpr int wheel_axis_x = 2;
@@ -99,11 +101,13 @@ void Mouse::UpdateMotionInput() {
     const float sensitivity =
         Settings::values.mouse_panning_sensitivity.GetValue() * default_motion_sensitivity;
 
-    // Slow movement by 7%
-    if (Settings::values.mouse_panning) {
-        last_motion_change *= 0.93f;
-    } else {
-        last_motion_change.z *= 0.93f;
+    const float rotation_velocity = std::sqrt(last_motion_change.x * last_motion_change.x +
+                                              last_motion_change.y * last_motion_change.y);
+
+    if (rotation_velocity > maximum_rotation_speed / sensitivity) {
+        const float multiplier = maximum_rotation_speed / rotation_velocity / sensitivity;
+        last_motion_change.x = last_motion_change.x * multiplier;
+        last_motion_change.y = last_motion_change.y * multiplier;
     }
 
     const BasicMotion motion_data{
@@ -116,6 +120,12 @@ void Mouse::UpdateMotionInput() {
         .delta_timestamp = update_time * 1000,
     };
 
+    if (Settings::values.mouse_panning) {
+        last_motion_change.x = 0;
+        last_motion_change.y = 0;
+    }
+    last_motion_change.z = 0;
+
     SetMotion(motion_identifier, 0, motion_data);
 }
 
@@ -125,7 +135,7 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
 
         auto mouse_change =
             (Common::MakeVec(x, y) - Common::MakeVec(center_x, center_y)).Cast<float>();
-        Common::Vec3<float> motion_change{-mouse_change.y, -mouse_change.x, last_motion_change.z};
+        last_motion_change += {-mouse_change.y, -mouse_change.x, last_motion_change.z};
 
         const auto move_distance = mouse_change.Length();
         if (move_distance == 0) {
@@ -141,7 +151,6 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
 
         // Average mouse movements
         last_mouse_change = (last_mouse_change * 0.91f) + (mouse_change * 0.09f);
-        last_motion_change = (last_motion_change * 0.69f) + (motion_change * 0.31f);
 
         const auto last_move_distance = last_mouse_change.Length();
 

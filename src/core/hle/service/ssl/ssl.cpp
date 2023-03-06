@@ -8,14 +8,36 @@
 
 namespace Service::SSL {
 
+// This is nn::ssl::sf::CertificateFormat
 enum class CertificateFormat : u32 {
     Pem = 1,
     Der = 2,
 };
 
+// This is nn::ssl::sf::ContextOption
+enum class ContextOption : u32 {
+    None = 0,
+    CrlImportDateCheckEnable = 1,
+};
+
+// This is nn::ssl::sf::SslVersion
+struct SslVersion {
+    union {
+        u32 raw{};
+
+        BitField<0, 1, u32> tls_auto;
+        BitField<3, 1, u32> tls_v10;
+        BitField<4, 1, u32> tls_v11;
+        BitField<5, 1, u32> tls_v12;
+        BitField<6, 1, u32> tls_v13;
+        BitField<24, 7, u32> api_version;
+    };
+};
+
 class ISslConnection final : public ServiceFramework<ISslConnection> {
 public:
-    explicit ISslConnection(Core::System& system_) : ServiceFramework{system_, "ISslConnection"} {
+    explicit ISslConnection(Core::System& system_, SslVersion version)
+        : ServiceFramework{system_, "ISslConnection"}, ssl_version{version} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "SetSocketDescriptor"},
@@ -59,11 +81,15 @@ public:
 
         RegisterHandlers(functions);
     }
+
+private:
+    SslVersion ssl_version;
 };
 
 class ISslContext final : public ServiceFramework<ISslContext> {
 public:
-    explicit ISslContext(Core::System& system_) : ServiceFramework{system_, "ISslContext"} {
+    explicit ISslContext(Core::System& system_, SslVersion version)
+        : ServiceFramework{system_, "ISslContext"}, ssl_version{version} {
         static const FunctionInfo functions[] = {
             {0, &ISslContext::SetOption, "SetOption"},
             {1, nullptr, "GetOption"},
@@ -84,17 +110,20 @@ public:
     }
 
 private:
+    SslVersion ssl_version;
+
     void SetOption(HLERequestContext& ctx) {
         struct Parameters {
-            u8 enable;
-            u32 option;
+            ContextOption option;
+            s32 value;
         };
+        static_assert(sizeof(Parameters) == 0x8, "Parameters is an invalid size");
 
         IPC::RequestParser rp{ctx};
         const auto parameters = rp.PopRaw<Parameters>();
 
-        LOG_WARNING(Service_SSL, "(STUBBED) called. enable={}, option={}", parameters.enable,
-                    parameters.option);
+        LOG_WARNING(Service_SSL, "(STUBBED) called. option={}, value={}", parameters.option,
+                    parameters.value);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -105,7 +134,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
-        rb.PushIpcInterface<ISslConnection>(system);
+        rb.PushIpcInterface<ISslConnection>(system, ssl_version);
     }
 
     void ImportServerPki(HLERequestContext& ctx) {
@@ -142,20 +171,21 @@ private:
     }
 };
 
-class SSL final : public ServiceFramework<SSL> {
+class ISslService final : public ServiceFramework<ISslService> {
 public:
-    explicit SSL(Core::System& system_) : ServiceFramework{system_, "ssl"} {
+    explicit ISslService(Core::System& system_) : ServiceFramework{system_, "ssl"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, &SSL::CreateContext, "CreateContext"},
+            {0, &ISslService::CreateContext, "CreateContext"},
             {1, nullptr, "GetContextCount"},
             {2, nullptr, "GetCertificates"},
             {3, nullptr, "GetCertificateBufSize"},
             {4, nullptr, "DebugIoctl"},
-            {5, &SSL::SetInterfaceVersion, "SetInterfaceVersion"},
+            {5, &ISslService::SetInterfaceVersion, "SetInterfaceVersion"},
             {6, nullptr, "FlushSessionCache"},
             {7, nullptr, "SetDebugOption"},
             {8, nullptr, "GetDebugOption"},
+            {8, nullptr, "ClearTls12FallbackFlag"},
         };
         // clang-format on
 
@@ -163,20 +193,30 @@ public:
     }
 
 private:
-    u32 ssl_version{};
     void CreateContext(HLERequestContext& ctx) {
-        LOG_WARNING(Service_SSL, "(STUBBED) called");
+        struct Parameters {
+            SslVersion ssl_version;
+            INSERT_PADDING_BYTES(0x4);
+            u64 pid_placeholder;
+        };
+        static_assert(sizeof(Parameters) == 0x10, "Parameters is an invalid size");
+
+        IPC::RequestParser rp{ctx};
+        const auto parameters = rp.PopRaw<Parameters>();
+
+        LOG_WARNING(Service_SSL, "(STUBBED) called, api_version={}, pid_placeholder={}",
+                    parameters.ssl_version.api_version, parameters.pid_placeholder);
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(ResultSuccess);
-        rb.PushIpcInterface<ISslContext>(system);
+        rb.PushIpcInterface<ISslContext>(system, parameters.ssl_version);
     }
 
     void SetInterfaceVersion(HLERequestContext& ctx) {
-        LOG_DEBUG(Service_SSL, "called");
-
         IPC::RequestParser rp{ctx};
-        ssl_version = rp.Pop<u32>();
+        u32 ssl_version = rp.Pop<u32>();
+
+        LOG_DEBUG(Service_SSL, "called, ssl_version={}", ssl_version);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
@@ -186,7 +226,7 @@ private:
 void LoopProcess(Core::System& system) {
     auto server_manager = std::make_unique<ServerManager>(system);
 
-    server_manager->RegisterNamedService("ssl", std::make_shared<SSL>(system));
+    server_manager->RegisterNamedService("ssl", std::make_shared<ISslService>(system));
     ServerManager::RunServer(std::move(server_manager));
 }
 

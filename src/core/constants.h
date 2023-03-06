@@ -12,6 +12,6 @@
 namespace Core::Constants {
 
 // ACC Service - Blank JPEG used as user icon in absentia of real one.
-extern const std::array<u8, 107> ACCOUNT_BACKUP_JPEG;
+extern const std::array<u8, 287> ACCOUNT_BACKUP_JPEG;
 
 } // namespace Core::Constants

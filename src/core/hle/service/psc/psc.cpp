@@ -11,9 +11,9 @@
 
 namespace Service::PSC {
 
-class PSC_C final : public ServiceFramework<PSC_C> {
+class IPmControl final : public ServiceFramework<IPmControl> {
 public:
-    explicit PSC_C(Core::System& system_) : ServiceFramework{system_, "psc:c"} {
+    explicit IPmControl(Core::System& system_) : ServiceFramework{system_, "psc:c"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
@@ -23,8 +23,8 @@ public:
             {4, nullptr, "Cancel"},
             {5, nullptr, "PrintModuleInformation"},
             {6, nullptr, "GetModuleInformation"},
-            {10, nullptr, "Unknown10"},
-            {11, nullptr, "Unknown11"},
+            {10, nullptr, "AcquireStateLock"},
+            {11, nullptr, "HasStateLock"},
         };
         // clang-format on
 
@@ -49,12 +49,12 @@ public:
     }
 };
 
-class PSC_M final : public ServiceFramework<PSC_M> {
+class IPmService final : public ServiceFramework<IPmService> {
 public:
-    explicit PSC_M(Core::System& system_) : ServiceFramework{system_, "psc:m"} {
+    explicit IPmService(Core::System& system_) : ServiceFramework{system_, "psc:m"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, &PSC_M::GetPmModule, "GetPmModule"},
+            {0, &IPmService::GetPmModule, "GetPmModule"},
         };
         // clang-format on
 
@@ -74,8 +74,8 @@ private:
 void LoopProcess(Core::System& system) {
     auto server_manager = std::make_unique<ServerManager>(system);
 
-    server_manager->RegisterNamedService("psc:c", std::make_shared<PSC_C>(system));
-    server_manager->RegisterNamedService("psc:m", std::make_shared<PSC_M>(system));
+    server_manager->RegisterNamedService("psc:c", std::make_shared<IPmControl>(system));
+    server_manager->RegisterNamedService("psc:m", std::make_shared<IPmService>(system));
     ServerManager::RunServer(std::move(server_manager));
 }
 

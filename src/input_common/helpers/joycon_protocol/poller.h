@@ -22,7 +22,7 @@ public:
                  JoyStickCalibration right_stick_calibration_,
                  MotionCalibration motion_calibration_);
 
-    void SetCallbacks(const Joycon::JoyconCallbacks& callbacks_);
+    void SetCallbacks(const JoyconCallbacks& callbacks_);
 
     /// Handles data from passive packages
     void ReadPassiveMode(std::span<u8> buffer);
@@ -51,7 +51,10 @@ private:
     void UpdatePasiveProPadInput(const InputReportPassive& buffer);
 
     /// Returns a calibrated joystick axis from raw axis data
-    f32 GetAxisValue(u16 raw_value, Joycon::JoyStickAxisCalibration calibration) const;
+    f32 GetAxisValue(u16 raw_value, JoyStickAxisCalibration calibration) const;
+
+    /// Returns a digital joystick axis from passive axis data
+    std::pair<f32, f32> GetPassiveAxisValue(PasivePadStick raw_value) const;
 
     /// Returns a calibrated accelerometer axis from raw motion data
     f32 GetAccelerometerValue(s16 raw, const MotionSensorCalibration& cal,
@@ -75,7 +78,7 @@ private:
     JoyStickCalibration right_stick_calibration{};
     MotionCalibration motion_calibration{};
 
-    Joycon::JoyconCallbacks callbacks{};
+    JoyconCallbacks callbacks{};
 };
 
 } // namespace InputCommon::Joycon

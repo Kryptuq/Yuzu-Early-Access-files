@@ -128,7 +128,7 @@ public:
     /**
      * Sets a default value, label, and setting value.
      *
-     * @param default_val Intial value of the setting, and default value of the setting
+     * @param default_val Initial value of the setting, and default value of the setting
      * @param name Label for the setting
      */
     explicit Setting(const Type& default_val, const std::string& name)
@@ -139,7 +139,7 @@ public:
     /**
      * Sets a default value, minimum value, maximum value, and label.
      *
-     * @param default_val Intial value of the setting, and default value of the setting
+     * @param default_val Initial value of the setting, and default value of the setting
      * @param min_val Sets the minimum allowed value of the setting
      * @param max_val Sets the maximum allowed value of the setting
      * @param name Label for the setting
@@ -231,7 +231,7 @@ public:
     /**
      * Sets a default value, label, and setting value.
      *
-     * @param default_val Intial value of the setting, and default value of the setting
+     * @param default_val Initial value of the setting, and default value of the setting
      * @param name Label for the setting
      */
     explicit SwitchableSetting(const Type& default_val, const std::string& name)
@@ -242,7 +242,7 @@ public:
     /**
      * Sets a default value, minimum value, maximum value, and label.
      *
-     * @param default_val Intial value of the setting, and default value of the setting
+     * @param default_val Initial value of the setting, and default value of the setting
      * @param min_val Sets the minimum allowed value of the setting
      * @param max_val Sets the maximum allowed value of the setting
      * @param name Label for the setting
@@ -503,7 +503,7 @@ struct Values {
     Setting<bool> tas_loop{false, "tas_loop"};
 
     Setting<bool> mouse_panning{false, "mouse_panning"};
-    Setting<u8, true> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
+    Setting<u8, true> mouse_panning_sensitivity{50, 1, 100, "mouse_panning_sensitivity"};
     Setting<bool> mouse_enabled{false, "mouse_enabled"};
 
     Setting<bool> emulate_analog_keyboard{false, "emulate_analog_keyboard"};

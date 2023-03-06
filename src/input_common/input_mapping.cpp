@@ -146,6 +146,7 @@ void MappingFactory::RegisterMotion(const MappingData& data) {
     if (data.engine == "mouse") {
         new_input.Set("motion", 0);
         new_input.Set("pad", 1);
+        new_input.Set("threshold", 0.001f);
         input_queue.Push(new_input);
         return;
     }

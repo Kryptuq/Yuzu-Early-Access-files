@@ -95,6 +95,18 @@ enum class PasivePadButton : u32 {
     ZL_ZR = 0x8000,
 };
 
+enum class PasivePadStick : u8 {
+    Right = 0x00,
+    RightDown = 0x01,
+    Down = 0x02,
+    DownLeft = 0x03,
+    Left = 0x04,
+    LeftUp = 0x05,
+    Up = 0x06,
+    UpRight = 0x07,
+    Neutral = 0x08,
+};
+
 enum class OutputReport : u8 {
     RUMBLE_AND_SUBCMD = 0x01,
     FW_UPDATE_PKT = 0x03,

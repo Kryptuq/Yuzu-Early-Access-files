@@ -48,19 +48,15 @@ Result ResetSignal(Core::System& system, Handle handle) {
     return ResultInvalidHandle;
 }
 
-/// Wait for the given handles to synchronize, timeout after the specified nanoseconds
-Result WaitSynchronization(Core::System& system, s32* index, VAddr handles_address, s32 num_handles,
-                           s64 nano_seconds) {
-    LOG_TRACE(Kernel_SVC, "called handles_address=0x{:X}, num_handles={}, nano_seconds={}",
-              handles_address, num_handles, nano_seconds);
-
+static Result WaitSynchronization(Core::System& system, int32_t* out_index, const Handle* handles,
+                                  int32_t num_handles, int64_t timeout_ns) {
     // Ensure number of handles is valid.
-    R_UNLESS(0 <= num_handles && num_handles <= ArgumentHandleCountMax, ResultOutOfRange);
+    R_UNLESS(0 <= num_handles && num_handles <= Svc::ArgumentHandleCountMax, ResultOutOfRange);
 
+    // Get the synchronization context.
     auto& kernel = system.Kernel();
+    auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
     std::vector<KSynchronizationObject*> objs(num_handles);
-    const auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
-    Handle* handles = system.Memory().GetPointer<Handle>(handles_address);
 
     // Copy user handles.
     if (num_handles > 0) {
@@ -68,21 +64,38 @@ Result WaitSynchronization(Core::System& system, s32* index, VAddr handles_addre
         R_UNLESS(handle_table.GetMultipleObjects<KSynchronizationObject>(objs.data(), handles,
                                                                          num_handles),
                  ResultInvalidHandle);
-        for (const auto& obj : objs) {
-            kernel.RegisterInUseObject(obj);
-        }
     }
 
     // Ensure handles are closed when we're done.
     SCOPE_EXIT({
-        for (s32 i = 0; i < num_handles; ++i) {
-            kernel.UnregisterInUseObject(objs[i]);
+        for (auto i = 0; i < num_handles; ++i) {
             objs[i]->Close();
         }
     });
 
-    return KSynchronizationObject::Wait(kernel, index, objs.data(), static_cast<s32>(objs.size()),
-                                        nano_seconds);
+    // Wait on the objects.
+    Result res = KSynchronizationObject::Wait(kernel, out_index, objs.data(),
+                                              static_cast<s32>(objs.size()), timeout_ns);
+
+    R_SUCCEED_IF(res == ResultSessionClosed);
+    R_RETURN(res);
+}
+
+/// Wait for the given handles to synchronize, timeout after the specified nanoseconds
+Result WaitSynchronization(Core::System& system, int32_t* out_index, VAddr user_handles,
+                           int32_t num_handles, int64_t timeout_ns) {
+    LOG_TRACE(Kernel_SVC, "called user_handles={:#x}, num_handles={}, timeout_ns={}", user_handles,
+              num_handles, timeout_ns);
+
+    // Ensure number of handles is valid.
+    R_UNLESS(0 <= num_handles && num_handles <= Svc::ArgumentHandleCountMax, ResultOutOfRange);
+
+    std::vector<Handle> handles(num_handles);
+    if (num_handles > 0) {
+        system.Memory().ReadBlock(user_handles, handles.data(), num_handles * sizeof(Handle));
+    }
+
+    R_RETURN(WaitSynchronization(system, out_index, handles.data(), num_handles, timeout_ns));
 }
 
 /// Resumes a thread waiting on WaitSynchronization
