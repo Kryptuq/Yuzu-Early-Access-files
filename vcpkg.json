@@ -1,5 +1,5 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
     "name": "yuzu",
     "builtin-baseline": "9b22b40c6c61bf0da2d46346dd44a11e90972cc9",
     "version": "1.0",
@@ -35,12 +35,21 @@
         "dbghelp": {
             "description": "Compile Windows crash dump (Minidump) support",
             "dependencies": [ "dbghelp" ]
+        },
+        "web-service": {
+            "description": "Enable web services (telemetry, etc.)",
+            "dependencies": [
+                {
+                    "name": "openssl",
+                    "platform": "windows"
+                }
+            ]
         }
     },
     "overrides": [
         {
             "name": "catch2",
-            "version": "2.13.9"
+            "version": "3.0.1"
         },
         {
             "name": "fmt",
