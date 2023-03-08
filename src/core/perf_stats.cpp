@@ -126,8 +126,8 @@ double PerfStats::GetLastFrameTimeScale() const {
 }
 
 void SpeedLimiter::DoSpeedLimiting(microseconds current_system_time_us) {
-    if (!Settings::values.use_speed_limit.GetValue() ||
-        Settings::values.use_multi_core.GetValue()) {
+    if (Settings::values.use_multi_core.GetValue() ||
+        !Settings::values.use_speed_limit.GetValue()) {
         return;
     }
 
