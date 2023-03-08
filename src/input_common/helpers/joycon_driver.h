@@ -44,7 +44,7 @@ public:
     DriverResult SetVibration(const VibrationValue& vibration);
     DriverResult SetLedConfig(u8 led_pattern);
     DriverResult SetIrsConfig(IrsMode mode_, IrsResolution format_);
-    DriverResult SetPasiveMode();
+    DriverResult SetPassiveMode();
     DriverResult SetActiveMode();
     DriverResult SetIrMode();
     DriverResult SetNfcMode();

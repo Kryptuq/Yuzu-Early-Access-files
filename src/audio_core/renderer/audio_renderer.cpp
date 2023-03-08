@@ -22,7 +22,7 @@ Result Renderer::Initialize(const AudioRendererParameterInternal& params,
         if (!manager.AddSystem(system)) {
             LOG_ERROR(Service_Audio,
                       "Both Audio Render sessions are in use, cannot create any more");
-            return Service::Audio::ERR_MAXIMUM_SESSIONS_REACHED;
+            return Service::Audio::ResultOutOfSessions;
         }
         system_registered = true;
     }

@@ -310,10 +310,10 @@ public:
     /// Clears the signaled state of the process if and only if it's signaled.
     ///
     /// @pre The process must not be already terminated. If this is called on a
-    ///      terminated process, then ERR_INVALID_STATE will be returned.
+    ///      terminated process, then ResultInvalidState will be returned.
     ///
     /// @pre The process must be in a signaled state. If this is called on a
-    ///      process instance that is not signaled, ERR_INVALID_STATE will be
+    ///      process instance that is not signaled, ResultInvalidState will be
     ///      returned.
     Result Reset();
 

@@ -6,7 +6,7 @@
 #include "common/uuid.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_event.h"
-#include "core/hle/service/friend/errors.h"
+#include "core/hle/service/acc/errors.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/friend_interface.h"
 #include "core/hle/service/ipc_helpers.h"
@@ -259,7 +259,7 @@ private:
         if (notifications.empty()) {
             LOG_ERROR(Service_Friend, "No notifications in queue!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NO_NOTIFICATIONS);
+            rb.Push(Account::ResultNoNotifications);
             return;
         }
 

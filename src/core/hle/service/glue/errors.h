@@ -7,9 +7,8 @@
 
 namespace Service::Glue {
 
-constexpr Result ERR_INVALID_RESOURCE{ErrorModule::ARP, 30};
-constexpr Result ERR_INVALID_PROCESS_ID{ErrorModule::ARP, 31};
-constexpr Result ERR_INVALID_ACCESS{ErrorModule::ARP, 42};
-constexpr Result ERR_NOT_REGISTERED{ErrorModule::ARP, 102};
+constexpr Result ResultInvalidProcessId{ErrorModule::ARP, 31};
+constexpr Result ResultAlreadyBound{ErrorModule::ARP, 42};
+constexpr Result ResultProcessIdNotRegistered{ErrorModule::ARP, 102};
 
 } // namespace Service::Glue

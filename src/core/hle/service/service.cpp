@@ -176,7 +176,7 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
     case IPC::CommandType::TIPC_Close: {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
-        result = IPC::ERR_REMOTE_PROCESS_DEAD;
+        result = IPC::ResultSessionClosed;
         break;
     }
     case IPC::CommandType::ControlWithContext:

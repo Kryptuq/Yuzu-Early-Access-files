@@ -1315,15 +1315,16 @@ Image::Image(const VideoCommon::NullImageParams& params) : VideoCommon::ImageBas
 
 Image::~Image() = default;
 
-void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
+void Image::UploadMemory(VkBuffer buffer, VkDeviceSize offset,
+                         std::span<const VideoCommon::BufferImageCopy> copies) {
     // TODO: Move this to another API
     const bool is_rescaled = True(flags & ImageFlagBits::Rescaled);
     if (is_rescaled) {
         ScaleDown(true);
     }
     scheduler->RequestOutsideRenderPassOperationContext();
-    std::vector vk_copies = TransformBufferImageCopies(copies, map.offset, aspect_mask);
-    const VkBuffer src_buffer = map.buffer;
+    std::vector vk_copies = TransformBufferImageCopies(copies, offset, aspect_mask);
+    const VkBuffer src_buffer = buffer;
     const VkImage vk_image = *original_image;
     const VkImageAspectFlags vk_aspect_mask = aspect_mask;
     const bool is_initialized = std::exchange(initialized, true);
@@ -1336,14 +1337,19 @@ void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImag
     }
 }
 
-void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
+void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
+    UploadMemory(map.buffer, map.offset, copies);
+}
+
+void Image::DownloadMemory(VkBuffer buffer, VkDeviceSize offset,
+                           std::span<const VideoCommon::BufferImageCopy> copies) {
     const bool is_rescaled = True(flags & ImageFlagBits::Rescaled);
     if (is_rescaled) {
         ScaleDown();
     }
-    std::vector vk_copies = TransformBufferImageCopies(copies, map.offset, aspect_mask);
+    std::vector vk_copies = TransformBufferImageCopies(copies, offset, aspect_mask);
     scheduler->RequestOutsideRenderPassOperationContext();
-    scheduler->Record([buffer = map.buffer, image = *original_image, aspect_mask = aspect_mask,
+    scheduler->Record([buffer, image = *original_image, aspect_mask = aspect_mask,
                        vk_copies](vk::CommandBuffer cmdbuf) {
         const VkImageMemoryBarrier read_barrier{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -1396,6 +1402,10 @@ void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferIm
     if (is_rescaled) {
         ScaleUp(true);
     }
+}
+
+void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
+    DownloadMemory(map.buffer, map.offset, copies);
 }
 
 bool Image::IsRescaled() const noexcept {

@@ -416,14 +416,14 @@ ResultVal<u8> IApplicationManagerInterface::GetApplicationDesiredLanguage(
     if (application_language == std::nullopt) {
         LOG_ERROR(Service_NS, "Could not convert application language! language_code={}",
                   language_code);
-        return ERR_APPLICATION_LANGUAGE_NOT_FOUND;
+        return Service::NS::ResultApplicationLanguageNotFound;
     }
     const auto priority_list = GetApplicationLanguagePriorityList(*application_language);
     if (!priority_list) {
         LOG_ERROR(Service_NS,
                   "Could not find application language priorities! application_language={}",
                   *application_language);
-        return ERR_APPLICATION_LANGUAGE_NOT_FOUND;
+        return Service::NS::ResultApplicationLanguageNotFound;
     }
 
     // Try to find a valid language.
@@ -436,7 +436,7 @@ ResultVal<u8> IApplicationManagerInterface::GetApplicationDesiredLanguage(
 
     LOG_ERROR(Service_NS, "Could not find a valid language! supported_languages={:08X}",
               supported_languages);
-    return ERR_APPLICATION_LANGUAGE_NOT_FOUND;
+    return Service::NS::ResultApplicationLanguageNotFound;
 }
 
 void IApplicationManagerInterface::ConvertApplicationLanguageToLanguageCode(
@@ -461,7 +461,7 @@ ResultVal<u64> IApplicationManagerInterface::ConvertApplicationLanguageToLanguag
         ConvertToLanguageCode(static_cast<ApplicationLanguage>(application_language));
     if (language_code == std::nullopt) {
         LOG_ERROR(Service_NS, "Language not found! application_language={}", application_language);
-        return ERR_APPLICATION_LANGUAGE_NOT_FOUND;
+        return Service::NS::ResultApplicationLanguageNotFound;
     }
 
     return static_cast<u64>(*language_code);

@@ -19,7 +19,7 @@
 
 namespace IPC {
 
-constexpr Result ERR_REMOTE_PROCESS_DEAD{ErrorModule::HIPC, 301};
+constexpr Result ResultSessionClosed{ErrorModule::HIPC, 301};
 
 class RequestHelperBase {
 protected:

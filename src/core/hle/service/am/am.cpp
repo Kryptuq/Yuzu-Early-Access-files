@@ -39,9 +39,9 @@
 
 namespace Service::AM {
 
-constexpr Result ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
-constexpr Result ERR_NO_MESSAGES{ErrorModule::AM, 3};
-constexpr Result ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
+constexpr Result ResultNoDataInChannel{ErrorModule::AM, 2};
+constexpr Result ResultNoMessages{ErrorModule::AM, 3};
+constexpr Result ResultInvalidOffset{ErrorModule::AM, 503};
 
 enum class LaunchParameterKind : u32 {
     ApplicationSpecific = 1,
@@ -758,7 +758,7 @@ void ICommonStateGetter::ReceiveMessage(HLERequestContext& ctx) {
 
     if (message == AppletMessageQueue::AppletMessage::None) {
         LOG_ERROR(Service_AM, "Message queue is empty");
-        rb.Push(ERR_NO_MESSAGES);
+        rb.Push(AM::ResultNoMessages);
         rb.PushEnum<AppletMessageQueue::AppletMessage>(message);
         return;
     }
@@ -1028,7 +1028,7 @@ private:
             LOG_DEBUG(Service_AM,
                       "storage is a nullptr. There is no data in the current normal channel");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NO_DATA_IN_CHANNEL);
+            rb.Push(AM::ResultNoDataInChannel);
             return;
         }
 
@@ -1059,7 +1059,7 @@ private:
             LOG_DEBUG(Service_AM,
                       "storage is a nullptr. There is no data in the current interactive channel");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NO_DATA_IN_CHANNEL);
+            rb.Push(AM::ResultNoDataInChannel);
             return;
         }
 
@@ -1138,7 +1138,7 @@ void IStorageAccessor::Write(HLERequestContext& ctx) {
                   backing.GetSize(), size, offset);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_SIZE_OUT_OF_BOUNDS);
+        rb.Push(AM::ResultInvalidOffset);
         return;
     }
 
@@ -1161,7 +1161,7 @@ void IStorageAccessor::Read(HLERequestContext& ctx) {
                   backing.GetSize(), size, offset);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_SIZE_OUT_OF_BOUNDS);
+        rb.Push(AM::ResultInvalidOffset);
         return;
     }
 
@@ -1502,7 +1502,7 @@ void IApplicationFunctions::PopLaunchParameter(HLERequestContext& ctx) {
 
     LOG_ERROR(Service_AM, "Attempted to load launch parameter but none was found!");
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ERR_NO_DATA_IN_CHANNEL);
+    rb.Push(AM::ResultNoDataInChannel);
 }
 
 void IApplicationFunctions::CreateApplicationAndRequestToStartForQuest(HLERequestContext& ctx) {
@@ -1799,7 +1799,7 @@ void IApplicationFunctions::TryPopFromFriendInvitationStorageChannel(HLERequestC
     LOG_WARNING(Service_AM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(ERR_NO_DATA_IN_CHANNEL);
+    rb.Push(AM::ResultNoDataInChannel);
 }
 
 void IApplicationFunctions::GetNotificationStorageChannelEvent(HLERequestContext& ctx) {

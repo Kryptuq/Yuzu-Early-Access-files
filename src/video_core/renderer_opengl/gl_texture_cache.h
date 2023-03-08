@@ -206,8 +206,14 @@ public:
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
 
+    void UploadMemory(GLuint buffer_handle, size_t buffer_offset,
+                      std::span<const VideoCommon::BufferImageCopy> copies);
+
     void UploadMemory(const ImageBufferMap& map,
                       std::span<const VideoCommon::BufferImageCopy> copies);
+
+    void DownloadMemory(GLuint buffer_handle, size_t buffer_offset,
+                        std::span<const VideoCommon::BufferImageCopy> copies);
 
     void DownloadMemory(ImageBufferMap& map, std::span<const VideoCommon::BufferImageCopy> copies);
 

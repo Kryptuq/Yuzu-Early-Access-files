@@ -7,12 +7,11 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/profile_select.h"
+#include "core/hle/service/acc/errors.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/applet_profile_select.h"
 
 namespace Service::AM::Applets {
-
-constexpr Result ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
 
 ProfileSelect::ProfileSelect(Core::System& system_, LibraryAppletMode applet_mode_,
                              const Core::Frontend::ProfileSelectApplet& frontend_)
@@ -63,8 +62,8 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
         output.result = 0;
         output.uuid_selected = *uuid;
     } else {
-        status = ERR_USER_CANCELLED_SELECTION;
-        output.result = ERR_USER_CANCELLED_SELECTION.raw;
+        status = Account::ResultCancelledByUser;
+        output.result = Account::ResultCancelledByUser.raw;
         output.uuid_selected = Common::InvalidUUID;
     }
 

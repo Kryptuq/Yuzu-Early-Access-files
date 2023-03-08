@@ -32,7 +32,7 @@ void Controller_Touchscreen::OnInit() {}
 void Controller_Touchscreen::OnRelease() {}
 
 void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
-    shared_memory->touch_screen_lifo.timestamp = core_timing.GetCPUTicks();
+    shared_memory->touch_screen_lifo.timestamp = core_timing.GetGlobalTimeNs().count();
 
     if (!IsControllerActivated()) {
         shared_memory->touch_screen_lifo.buffer_count = 0;
@@ -85,7 +85,7 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
     const auto active_fingers_count =
         static_cast<std::size_t>(std::distance(active_fingers.begin(), end_iter));
 
-    const u64 tick = core_timing.GetCPUTicks();
+    const u64 timestamp = static_cast<u64>(core_timing.GetGlobalTimeNs().count());
     const auto& last_entry = shared_memory->touch_screen_lifo.ReadCurrentEntry().state;
 
     next_state.sampling_number = last_entry.sampling_number + 1;
@@ -102,8 +102,8 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
             touch_entry.diameter_x = Settings::values.touchscreen.diameter_x;
             touch_entry.diameter_y = Settings::values.touchscreen.diameter_y;
             touch_entry.rotation_angle = Settings::values.touchscreen.rotation_angle;
-            touch_entry.delta_time = tick - active_fingers[id].last_touch;
-            fingers[active_fingers[id].id].last_touch = tick;
+            touch_entry.delta_time = timestamp - active_fingers[id].last_touch;
+            fingers[active_fingers[id].id].last_touch = timestamp;
             touch_entry.finger = active_fingers[id].id;
             touch_entry.attribute.raw = active_fingers[id].attribute.raw;
         } else {

@@ -209,8 +209,11 @@ public:
     /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
-    [[nodiscard]] std::optional<std::pair<Image*, std::pair<u32, u32>>> ObtainImage(
-        const Tegra::DMA::ImageOperand& operand, bool mark_as_modified);
+    [[nodiscard]] ImageId DmaImageId(const Tegra::DMA::ImageOperand& operand);
+
+    [[nodiscard]] std::pair<Image*, BufferImageCopy> DmaBufferImageCopy(
+        const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::BufferOperand& buffer_operand,
+        const Tegra::DMA::ImageOperand& image_operand, ImageId image_id, bool modifies_image);
 
     /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
@@ -385,6 +388,9 @@ private:
 
     /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
+
+    [[nodiscard]] std::pair<u32, u32> PrepareDmaImage(ImageId dst_id, GPUVAddr base_addr,
+                                                      bool mark_as_modified);
 
     bool ImageCanRescale(ImageBase& image);
     void InvalidateScale(Image& image);

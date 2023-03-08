@@ -745,6 +745,25 @@ void TextureCache<P>::PopAsyncFlushes() {
 }
 
 template <class P>
+ImageId TextureCache<P>::DmaImageId(const Tegra::DMA::ImageOperand& operand) {
+    const ImageInfo dst_info(operand);
+    const ImageId dst_id = FindDMAImage(dst_info, operand.address);
+    if (!dst_id) {
+        return NULL_IMAGE_ID;
+    }
+    const auto& image = slot_images[dst_id];
+    if (False(image.flags & ImageFlagBits::GpuModified)) {
+        // No need to waste time on an image that's synced with guest
+        return NULL_IMAGE_ID;
+    }
+    const auto base = image.TryFindBase(operand.address);
+    if (!base) {
+        return NULL_IMAGE_ID;
+    }
+    return dst_id;
+}
+
+template <class P>
 bool TextureCache<P>::IsRescaling() const noexcept {
     return is_rescaling;
 }
@@ -769,6 +788,49 @@ bool TextureCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
         return true;
     });
     return is_modified;
+}
+
+template <class P>
+std::pair<typename TextureCache<P>::Image*, BufferImageCopy> TextureCache<P>::DmaBufferImageCopy(
+    const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::BufferOperand& buffer_operand,
+    const Tegra::DMA::ImageOperand& image_operand, ImageId image_id, bool modifies_image) {
+    const auto [level, base] = PrepareDmaImage(image_id, image_operand.address, modifies_image);
+    auto* image = &slot_images[image_id];
+    const u32 buffer_size = static_cast<u32>(buffer_operand.pitch * buffer_operand.height);
+    const u32 bpp = VideoCore::Surface::BytesPerBlock(image->info.format);
+    const auto convert = [old_bpp = image_operand.bytes_per_pixel, bpp](u32 value) {
+        return (old_bpp * value) / bpp;
+    };
+    const u32 base_x = convert(image_operand.params.origin.x.Value());
+    const u32 base_y = image_operand.params.origin.y.Value();
+    const u32 length_x = convert(copy_info.length_x);
+    const u32 length_y = copy_info.length_y;
+
+    const BufferImageCopy copy{
+        .buffer_offset = 0,
+        .buffer_size = buffer_size,
+        .buffer_row_length = convert(buffer_operand.pitch),
+        .buffer_image_height = buffer_operand.height,
+        .image_subresource =
+            {
+                .base_level = static_cast<s32>(level),
+                .base_layer = static_cast<s32>(base),
+                .num_layers = 1,
+            },
+        .image_offset =
+            {
+                .x = static_cast<s32>(base_x),
+                .y = static_cast<s32>(base_y),
+                .z = 0,
+            },
+        .image_extent =
+            {
+                .width = length_x,
+                .height = length_y,
+                .depth = 1,
+            },
+    };
+    return {image, copy};
 }
 
 template <class P>
@@ -1405,26 +1467,14 @@ ImageId TextureCache<P>::FindDMAImage(const ImageInfo& info, GPUVAddr gpu_addr) 
 }
 
 template <class P>
-std::optional<std::pair<typename TextureCache<P>::Image*, std::pair<u32, u32>>>
-TextureCache<P>::ObtainImage(const Tegra::DMA::ImageOperand& operand, bool mark_as_modified) {
-    ImageInfo dst_info(operand);
-    ImageId dst_id = FindDMAImage(dst_info, operand.address);
-    if (!dst_id) {
-        return std::nullopt;
-    }
-    auto& image = slot_images[dst_id];
-    auto base = image.TryFindBase(operand.address);
-    if (!base) {
-        return std::nullopt;
-    }
-    if (False(image.flags & ImageFlagBits::GpuModified)) {
-        // No need to waste time on an image that's synced with guest
-        return std::nullopt;
-    }
+std::pair<u32, u32> TextureCache<P>::PrepareDmaImage(ImageId dst_id, GPUVAddr base_addr,
+                                                     bool mark_as_modified) {
+    const auto& image = slot_images[dst_id];
+    const auto base = image.TryFindBase(base_addr);
     PrepareImage(dst_id, mark_as_modified, false);
-    auto& new_image = slot_images[dst_id];
+    const auto& new_image = slot_images[dst_id];
     lru_cache.Touch(new_image.lru_index, frame_tick);
-    return std::make_pair(&new_image, std::make_pair(base->level, base->layer));
+    return std::make_pair(base->level, base->layer);
 }
 
 template <class P>

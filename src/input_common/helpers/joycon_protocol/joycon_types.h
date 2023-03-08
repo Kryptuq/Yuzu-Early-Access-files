@@ -78,7 +78,7 @@ enum class PadButton : u32 {
     Capture = 0x200000,
 };
 
-enum class PasivePadButton : u32 {
+enum class PassivePadButton : u32 {
     Down_A = 0x0001,
     Right_X = 0x0002,
     Left_B = 0x0004,
@@ -95,7 +95,7 @@ enum class PasivePadButton : u32 {
     ZL_ZR = 0x8000,
 };
 
-enum class PasivePadStick : u8 {
+enum class PassivePadStick : u8 {
     Right = 0x00,
     RightDown = 0x01,
     Down = 0x02,

@@ -238,7 +238,7 @@ private:
         return indices;
     }
 
-    void MakeAndUpdateIndices(u8* staging_data, size_t quad_size, u32 quad, u32 first) {
+    void MakeAndUpdateIndices(u8* staging_data, size_t quad_size, u32 quad, u32 first) override {
         switch (index_type) {
         case VK_INDEX_TYPE_UINT8_EXT:
             std::memcpy(staging_data, MakeIndices<u8>(quad, first).data(), quad_size);
@@ -278,7 +278,7 @@ private:
         return indices;
     }
 
-    void MakeAndUpdateIndices(u8* staging_data, size_t quad_size, u32 quad, u32 first) {
+    void MakeAndUpdateIndices(u8* staging_data, size_t quad_size, u32 quad, u32 first) override {
         switch (index_type) {
         case VK_INDEX_TYPE_UINT8_EXT:
             std::memcpy(staging_data, MakeIndices<u8>(quad, first).data(), quad_size);

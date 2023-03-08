@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "common/polyfill_thread.h"
 #include "common/wall_clock.h"
 
 namespace Common {
@@ -28,6 +29,8 @@ public:
 private:
     u64 GetRTSC();
 
+    void CalculateAndSetFactors();
+
     union alignas(16) TimePoint {
         TimePoint() : pack{} {}
         u128 pack{};
@@ -47,6 +50,8 @@ private:
     u64 ms_rtsc_factor{};
 
     u64 rtsc_frequency;
+
+    std::jthread time_sync_thread;
 };
 } // namespace X64
 

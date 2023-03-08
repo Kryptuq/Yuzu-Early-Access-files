@@ -20,4 +20,15 @@ struct SteadyClock {
     [[nodiscard]] static time_point Now() noexcept;
 };
 
+struct RealTimeClock {
+    using rep = s64;
+    using period = std::nano;
+    using duration = std::chrono::nanoseconds;
+    using time_point = std::chrono::time_point<RealTimeClock>;
+
+    static constexpr bool is_steady = false;
+
+    [[nodiscard]] static time_point Now() noexcept;
+};
+
 } // namespace Common

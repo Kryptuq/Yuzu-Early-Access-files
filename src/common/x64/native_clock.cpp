@@ -53,11 +53,11 @@ u64 EstimateRDTSCFrequency() {
     FencedRDTSC();
 
     // Get the current time.
-    const auto start_time = Common::SteadyClock::Now();
+    const auto start_time = Common::RealTimeClock::Now();
     const u64 tsc_start = FencedRDTSC();
     // Wait for 250 milliseconds.
     std::this_thread::sleep_for(std::chrono::milliseconds{250});
-    const auto end_time = Common::SteadyClock::Now();
+    const auto end_time = Common::RealTimeClock::Now();
     const u64 tsc_end = FencedRDTSC();
     // Calculate differences.
     const u64 timer_diff = static_cast<u64>(
@@ -72,13 +72,29 @@ NativeClock::NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequen
                          u64 rtsc_frequency_)
     : WallClock(emulated_cpu_frequency_, emulated_clock_frequency_, true), rtsc_frequency{
                                                                                rtsc_frequency_} {
+    // Thread to re-adjust the RDTSC frequency after 10 seconds has elapsed.
+    time_sync_thread = std::jthread{[this](std::stop_token token) {
+        // Get the current time.
+        const auto start_time = Common::RealTimeClock::Now();
+        const u64 tsc_start = FencedRDTSC();
+        // Wait for 10 seconds.
+        if (!Common::StoppableTimedWait(token, std::chrono::seconds{10})) {
+            return;
+        }
+        const auto end_time = Common::RealTimeClock::Now();
+        const u64 tsc_end = FencedRDTSC();
+        // Calculate differences.
+        const u64 timer_diff = static_cast<u64>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+        const u64 tsc_diff = tsc_end - tsc_start;
+        const u64 tsc_freq = MultiplyAndDivide64(tsc_diff, 1000000000ULL, timer_diff);
+        rtsc_frequency = tsc_freq;
+        CalculateAndSetFactors();
+    }};
+
     time_point.inner.last_measure = FencedRDTSC();
     time_point.inner.accumulated_ticks = 0U;
-    ns_rtsc_factor = GetFixedPoint64Factor(NS_RATIO, rtsc_frequency);
-    us_rtsc_factor = GetFixedPoint64Factor(US_RATIO, rtsc_frequency);
-    ms_rtsc_factor = GetFixedPoint64Factor(MS_RATIO, rtsc_frequency);
-    clock_rtsc_factor = GetFixedPoint64Factor(emulated_clock_frequency, rtsc_frequency);
-    cpu_rtsc_factor = GetFixedPoint64Factor(emulated_cpu_frequency, rtsc_frequency);
+    CalculateAndSetFactors();
 }
 
 u64 NativeClock::GetRTSC() {
@@ -136,6 +152,14 @@ u64 NativeClock::GetClockCycles() {
 u64 NativeClock::GetCPUCycles() {
     const u64 rtsc_value = GetRTSC();
     return MultiplyHigh(rtsc_value, cpu_rtsc_factor);
+}
+
+void NativeClock::CalculateAndSetFactors() {
+    ns_rtsc_factor = GetFixedPoint64Factor(NS_RATIO, rtsc_frequency);
+    us_rtsc_factor = GetFixedPoint64Factor(US_RATIO, rtsc_frequency);
+    ms_rtsc_factor = GetFixedPoint64Factor(MS_RATIO, rtsc_frequency);
+    clock_rtsc_factor = GetFixedPoint64Factor(emulated_clock_frequency, rtsc_frequency);
+    cpu_rtsc_factor = GetFixedPoint64Factor(emulated_cpu_frequency, rtsc_frequency);
 }
 
 } // namespace X64

@@ -45,11 +45,11 @@ Result System::IsConfigValid(const std::string_view device_name,
                              const AudioInParameter& in_params) const {
     if ((device_name.size() > 0) &&
         (device_name != GetDefaultDeviceName() && device_name != GetDefaultUacDeviceName())) {
-        return Service::Audio::ERR_INVALID_DEVICE_NAME;
+        return Service::Audio::ResultNotFound;
     }
 
     if (in_params.sample_rate != TargetSampleRate && in_params.sample_rate > 0) {
-        return Service::Audio::ERR_INVALID_SAMPLE_RATE;
+        return Service::Audio::ResultInvalidSampleRate;
     }
 
     return ResultSuccess;
@@ -80,7 +80,7 @@ Result System::Initialize(std::string device_name, const AudioInParameter& in_pa
 
 Result System::Start() {
     if (state != State::Stopped) {
-        return Service::Audio::ERR_OPERATION_FAILED;
+        return Service::Audio::ResultOperationFailed;
     }
 
     session->Initialize(name, sample_format, channel_count, session_id, handle,

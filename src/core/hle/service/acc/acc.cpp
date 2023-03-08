@@ -30,12 +30,6 @@
 
 namespace Service::Account {
 
-constexpr Result ERR_INVALID_USER_ID{ErrorModule::Account, 20};
-constexpr Result ERR_INVALID_APPLICATION_ID{ErrorModule::Account, 22};
-constexpr Result ERR_INVALID_BUFFER{ErrorModule::Account, 30};
-constexpr Result ERR_INVALID_BUFFER_SIZE{ErrorModule::Account, 31};
-constexpr Result ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
-
 // Thumbnails are hard coded to be at least this size
 constexpr std::size_t THUMBNAIL_SIZE = 0x24000;
 
@@ -384,7 +378,7 @@ protected:
         if (user_data.size() < sizeof(UserData)) {
             LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_BUFFER);
+            rb.Push(Account::ResultInvalidArrayLength);
             return;
         }
 
@@ -394,7 +388,7 @@ protected:
         if (!profile_manager.SetProfileBaseAndData(user_id, base, data)) {
             LOG_ERROR(Service_ACC, "Failed to update user data and base!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_FAILED_SAVE_DATA);
+            rb.Push(Account::ResultAccountUpdateFailed);
             return;
         }
 
@@ -417,7 +411,7 @@ protected:
         if (user_data.size() < sizeof(UserData)) {
             LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_BUFFER);
+            rb.Push(Account::ResultInvalidArrayLength);
             return;
         }
 
@@ -432,7 +426,7 @@ protected:
             !profile_manager.SetProfileBaseAndData(user_id, base, data)) {
             LOG_ERROR(Service_ACC, "Failed to update profile data, base, and image!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_FAILED_SAVE_DATA);
+            rb.Push(Account::ResultAccountUpdateFailed);
             return;
         }
 
@@ -764,7 +758,7 @@ void Module::Interface::InitializeApplicationInfoRestricted(HLERequestContext& c
 Result Module::Interface::InitializeApplicationInfoBase() {
     if (application_info) {
         LOG_ERROR(Service_ACC, "Application already initialized");
-        return ERR_ACCOUNTINFO_ALREADY_INITIALIZED;
+        return Account::ResultApplicationInfoAlreadyInitialized;
     }
 
     // TODO(ogniK): This should be changed to reflect the target process for when we have multiple
@@ -775,7 +769,7 @@ Result Module::Interface::InitializeApplicationInfoBase() {
 
     if (launch_property.Failed()) {
         LOG_ERROR(Service_ACC, "Failed to get launch property");
-        return ERR_ACCOUNTINFO_BAD_APPLICATION;
+        return Account::ResultInvalidApplication;
     }
 
     switch (launch_property->base_game_storage_id) {
@@ -791,7 +785,7 @@ Result Module::Interface::InitializeApplicationInfoBase() {
     default:
         LOG_ERROR(Service_ACC, "Invalid game storage ID! storage_id={}",
                   launch_property->base_game_storage_id);
-        return ERR_ACCOUNTINFO_BAD_APPLICATION;
+        return Account::ResultInvalidApplication;
     }
 
     LOG_WARNING(Service_ACC, "ApplicationInfo init required");
@@ -899,20 +893,20 @@ void Module::Interface::StoreSaveDataThumbnail(HLERequestContext& ctx, const Com
 
     if (tid == 0) {
         LOG_ERROR(Service_ACC, "TitleID is not valid!");
-        rb.Push(ERR_INVALID_APPLICATION_ID);
+        rb.Push(Account::ResultInvalidApplication);
         return;
     }
 
     if (uuid.IsInvalid()) {
         LOG_ERROR(Service_ACC, "User ID is not valid!");
-        rb.Push(ERR_INVALID_USER_ID);
+        rb.Push(Account::ResultInvalidUserId);
         return;
     }
     const auto thumbnail_size = ctx.GetReadBufferSize();
     if (thumbnail_size != THUMBNAIL_SIZE) {
         LOG_ERROR(Service_ACC, "Buffer size is empty! size={:X} expecting {:X}", thumbnail_size,
                   THUMBNAIL_SIZE);
-        rb.Push(ERR_INVALID_BUFFER_SIZE);
+        rb.Push(Account::ResultInvalidArrayLength);
         return;
     }
 

@@ -17,12 +17,12 @@ ARPManager::~ARPManager() = default;
 
 ResultVal<ApplicationLaunchProperty> ARPManager::GetLaunchProperty(u64 title_id) const {
     if (title_id == 0) {
-        return ERR_INVALID_PROCESS_ID;
+        return Glue::ResultInvalidProcessId;
     }
 
     const auto iter = entries.find(title_id);
     if (iter == entries.end()) {
-        return ERR_NOT_REGISTERED;
+        return Glue::ResultProcessIdNotRegistered;
     }
 
     return iter->second.launch;
@@ -30,12 +30,12 @@ ResultVal<ApplicationLaunchProperty> ARPManager::GetLaunchProperty(u64 title_id)
 
 ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
     if (title_id == 0) {
-        return ERR_INVALID_PROCESS_ID;
+        return Glue::ResultInvalidProcessId;
     }
 
     const auto iter = entries.find(title_id);
     if (iter == entries.end()) {
-        return ERR_NOT_REGISTERED;
+        return Glue::ResultProcessIdNotRegistered;
     }
 
     return iter->second.control;
@@ -44,12 +44,12 @@ ResultVal<std::vector<u8>> ARPManager::GetControlProperty(u64 title_id) const {
 Result ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
                             std::vector<u8> control) {
     if (title_id == 0) {
-        return ERR_INVALID_PROCESS_ID;
+        return Glue::ResultInvalidProcessId;
     }
 
     const auto iter = entries.find(title_id);
     if (iter != entries.end()) {
-        return ERR_INVALID_ACCESS;
+        return Glue::ResultAlreadyBound;
     }
 
     entries.insert_or_assign(title_id, MapEntry{launch, std::move(control)});
@@ -58,12 +58,12 @@ Result ARPManager::Register(u64 title_id, ApplicationLaunchProperty launch,
 
 Result ARPManager::Unregister(u64 title_id) {
     if (title_id == 0) {
-        return ERR_INVALID_PROCESS_ID;
+        return Glue::ResultInvalidProcessId;
     }
 
     const auto iter = entries.find(title_id);
     if (iter == entries.end()) {
-        return ERR_NOT_REGISTERED;
+        return Glue::ResultProcessIdNotRegistered;
     }
 
     entries.erase(iter);

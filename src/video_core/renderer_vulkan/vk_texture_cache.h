@@ -132,8 +132,14 @@ public:
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
 
+    void UploadMemory(VkBuffer buffer, VkDeviceSize offset,
+                      std::span<const VideoCommon::BufferImageCopy> copies);
+
     void UploadMemory(const StagingBufferRef& map,
                       std::span<const VideoCommon::BufferImageCopy> copies);
+
+    void DownloadMemory(VkBuffer buffer, VkDeviceSize offset,
+                        std::span<const VideoCommon::BufferImageCopy> copies);
 
     void DownloadMemory(const StagingBufferRef& map,
                         std::span<const VideoCommon::BufferImageCopy> copies);

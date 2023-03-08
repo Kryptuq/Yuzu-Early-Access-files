@@ -19,7 +19,7 @@ void AudioManager::Shutdown() {
 
 Result AudioManager::SetOutManager(BufferEventFunc buffer_func) {
     if (!running) {
-        return Service::Audio::ERR_OPERATION_FAILED;
+        return Service::Audio::ResultOperationFailed;
     }
 
     std::scoped_lock l{lock};
@@ -35,7 +35,7 @@ Result AudioManager::SetOutManager(BufferEventFunc buffer_func) {
 
 Result AudioManager::SetInManager(BufferEventFunc buffer_func) {
     if (!running) {
-        return Service::Audio::ERR_OPERATION_FAILED;
+        return Service::Audio::ResultOperationFailed;
     }
 
     std::scoped_lock l{lock};

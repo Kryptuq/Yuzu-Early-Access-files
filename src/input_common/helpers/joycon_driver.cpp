@@ -410,7 +410,7 @@ DriverResult JoyconDriver::SetIrsConfig(IrsMode mode_, IrsResolution format_) {
     return result;
 }
 
-DriverResult JoyconDriver::SetPasiveMode() {
+DriverResult JoyconDriver::SetPassiveMode() {
     std::scoped_lock lock{mutex};
     motion_enabled = false;
     hidbus_enabled = false;

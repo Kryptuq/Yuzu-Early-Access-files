@@ -20,7 +20,7 @@ Manager::Manager(Core::System& system_) : system{system_} {
 Result Manager::AcquireSessionId(size_t& session_id) {
     if (num_free_sessions == 0) {
         LOG_ERROR(Service_Audio, "All 4 AudioIn sessions are in use, cannot create any more");
-        return Service::Audio::ERR_MAXIMUM_SESSIONS_REACHED;
+        return Service::Audio::ResultOutOfSessions;
     }
     session_id = session_ids[next_session_id];
     next_session_id = (next_session_id + 1) % MaxInSessions;

@@ -7,5 +7,6 @@
 
 namespace Service::NS {
 
-constexpr Result ERR_APPLICATION_LANGUAGE_NOT_FOUND{ErrorModule::NS, 300};
+constexpr Result ResultApplicationLanguageNotFound{ErrorModule::NS, 300};
+
 }

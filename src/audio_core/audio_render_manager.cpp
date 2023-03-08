@@ -28,7 +28,7 @@ SystemManager& Manager::GetSystemManager() {
 Result Manager::GetWorkBufferSize(const AudioRendererParameterInternal& params,
                                   u64& out_count) const {
     if (!CheckValidRevision(params.revision)) {
-        return Service::Audio::ERR_INVALID_REVISION;
+        return Service::Audio::ResultInvalidRevision;
     }
 
     out_count = System::GetWorkBufferSize(params);

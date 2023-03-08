@@ -61,7 +61,7 @@ void ARP_R::GetApplicationLaunchProperty(HLERequestContext& ctx) {
     if (!title_id.has_value()) {
         LOG_ERROR(Service_ARP, "Failed to get title ID for process ID!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_NOT_REGISTERED);
+        rb.Push(Glue::ResultProcessIdNotRegistered);
         return;
     }
 
@@ -109,7 +109,7 @@ void ARP_R::GetApplicationControlProperty(HLERequestContext& ctx) {
     if (!title_id.has_value()) {
         LOG_ERROR(Service_ARP, "Failed to get title ID for process ID!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_NOT_REGISTERED);
+        rb.Push(Glue::ResultProcessIdNotRegistered);
         return;
     }
 
@@ -178,7 +178,7 @@ private:
         if (process_id == 0) {
             LOG_ERROR(Service_ARP, "Must have non-zero process ID!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_PROCESS_ID);
+            rb.Push(Glue::ResultInvalidProcessId);
             return;
         }
 
@@ -186,7 +186,7 @@ private:
             LOG_ERROR(Service_ARP,
                       "Attempted to issue registrar, but registrar is already issued!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_ACCESS);
+            rb.Push(Glue::ResultAlreadyBound);
             return;
         }
 
@@ -205,7 +205,7 @@ private:
                 Service_ARP,
                 "Attempted to set application launch property, but registrar is already issued!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_ACCESS);
+            rb.Push(Glue::ResultAlreadyBound);
             return;
         }
 
@@ -224,7 +224,7 @@ private:
                 Service_ARP,
                 "Attempted to set application control property, but registrar is already issued!");
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_INVALID_ACCESS);
+            rb.Push(Glue::ResultAlreadyBound);
             return;
         }
 
@@ -263,7 +263,7 @@ void ARP_W::AcquireRegistrar(HLERequestContext& ctx) {
         system, [this](u64 process_id, ApplicationLaunchProperty launch, std::vector<u8> control) {
             const auto res = GetTitleIDForProcessID(system, process_id);
             if (!res.has_value()) {
-                return ERR_NOT_REGISTERED;
+                return Glue::ResultProcessIdNotRegistered;
             }
 
             return manager.Register(*res, launch, std::move(control));
@@ -283,7 +283,7 @@ void ARP_W::UnregisterApplicationInstance(HLERequestContext& ctx) {
     if (process_id == 0) {
         LOG_ERROR(Service_ARP, "Must have non-zero process ID!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_INVALID_PROCESS_ID);
+        rb.Push(Glue::ResultInvalidProcessId);
         return;
     }
 
@@ -292,7 +292,7 @@ void ARP_W::UnregisterApplicationInstance(HLERequestContext& ctx) {
     if (!title_id.has_value()) {
         LOG_ERROR(Service_ARP, "No title ID for process ID!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_NOT_REGISTERED);
+        rb.Push(Glue::ResultProcessIdNotRegistered);
         return;
     }
 

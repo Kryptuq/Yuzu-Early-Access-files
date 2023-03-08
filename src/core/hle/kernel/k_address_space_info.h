@@ -18,7 +18,7 @@ struct KAddressSpaceInfo final {
         Count,
     };
 
-    static u64 GetAddressSpaceStart(std::size_t width, Type type);
+    static std::size_t GetAddressSpaceStart(std::size_t width, Type type);
     static std::size_t GetAddressSpaceSize(std::size_t width, Type type);
 
     const std::size_t bit_width{};

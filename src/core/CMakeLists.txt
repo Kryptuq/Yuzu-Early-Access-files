@@ -454,7 +454,6 @@ add_library(core STATIC
     hle/service/filesystem/fsp_srv.h
     hle/service/fgm/fgm.cpp
     hle/service/fgm/fgm.h
-    hle/service/friend/errors.h
     hle/service/friend/friend.cpp
     hle/service/friend/friend.h
     hle/service/friend/friend_interface.cpp

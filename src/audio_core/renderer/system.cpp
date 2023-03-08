@@ -101,15 +101,15 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
                           Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size,
                           u32 process_handle_, u64 applet_resource_user_id_, s32 session_id_) {
     if (!CheckValidRevision(params.revision)) {
-        return Service::Audio::ERR_INVALID_REVISION;
+        return Service::Audio::ResultInvalidRevision;
     }
 
     if (GetWorkBufferSize(params) > transfer_memory_size) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     if (process_handle_ == 0) {
-        return Service::Audio::ERR_INVALID_PROCESS_HANDLE;
+        return Service::Audio::ResultInvalidHandle;
     }
 
     behavior.SetUserLibRevision(params.revision);
@@ -143,19 +143,19 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     samples_workbuffer =
         allocator.Allocate<s32>((voice_channels + mix_buffer_count) * sample_count, 0x10);
     if (samples_workbuffer.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     auto upsampler_workbuffer{allocator.Allocate<s32>(
         (voice_channels + mix_buffer_count) * TargetSampleCount * upsampler_count, 0x10)};
     if (upsampler_workbuffer.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     depop_buffer =
         allocator.Allocate<s32>(Common::AlignUp(static_cast<u32>(mix_buffer_count), 0x40), 0x40);
     if (depop_buffer.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     // invalidate samples_workbuffer DSP cache
@@ -166,12 +166,12 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     }
 
     if (voice_infos.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     auto sorted_voice_infos{allocator.Allocate<VoiceInfo*>(params.voices, 0x10)};
     if (sorted_voice_infos.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     std::memset(sorted_voice_infos.data(), 0, sorted_voice_infos.size_bytes());
@@ -183,12 +183,12 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     }
 
     if (voice_channel_resources.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     auto voice_cpu_states{allocator.Allocate<VoiceState>(params.voices, 0x10)};
     if (voice_cpu_states.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     for (auto& voice_state : voice_cpu_states) {
@@ -198,7 +198,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     auto mix_infos{allocator.Allocate<MixInfo>(params.sub_mixes + 1, 0x10)};
 
     if (mix_infos.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     u32 effect_process_order_count{0};
@@ -208,7 +208,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
         effect_process_order_count = params.effects * (params.sub_mixes + 1);
         effect_process_order_buffer = allocator.Allocate<s32>(effect_process_order_count, 0x10);
         if (effect_process_order_buffer.empty()) {
-            return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+            return Service::Audio::ResultInsufficientBuffer;
         }
     }
 
@@ -222,7 +222,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
 
     auto sorted_mix_infos{allocator.Allocate<MixInfo*>(params.sub_mixes + 1, 0x10)};
     if (sorted_mix_infos.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     std::memset(sorted_mix_infos.data(), 0, sorted_mix_infos.size_bytes());
@@ -235,7 +235,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
         auto edge_matrix_workbuffer{allocator.Allocate<u8>(edge_matrix_size, 1)};
 
         if (node_states_workbuffer.empty() || edge_matrix_workbuffer.size() == 0) {
-            return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+            return Service::Audio::ResultInsufficientBuffer;
         }
 
         mix_context.Initialize(sorted_mix_infos, mix_infos, params.sub_mixes + 1,
@@ -250,7 +250,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
 
     upsampler_manager = allocator.Allocate<UpsamplerManager>(1, 0x10).data();
     if (upsampler_manager == nullptr) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     memory_pool_workbuffer = allocator.Allocate<MemoryPoolInfo>(memory_pool_count, 0x10);
@@ -259,18 +259,18 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     }
 
     if (memory_pool_workbuffer.empty() && memory_pool_count > 0) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     if (!splitter_context.Initialize(behavior, params, allocator)) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     std::span<EffectResultState> effect_result_states_cpu{};
     if (behavior.IsEffectInfoVersion2Supported() && params.effects > 0) {
         effect_result_states_cpu = allocator.Allocate<EffectResultState>(params.effects, 0x10);
         if (effect_result_states_cpu.empty()) {
-            return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+            return Service::Audio::ResultInsufficientBuffer;
         }
         std::memset(effect_result_states_cpu.data(), 0, effect_result_states_cpu.size_bytes());
     }
@@ -289,7 +289,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
                                         upsampler_workbuffer);
 
     if (upsampler_infos.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     auto effect_infos{allocator.Allocate<EffectInfoBase>(params.effects, 0x40)};
@@ -298,14 +298,14 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     }
 
     if (effect_infos.empty() && params.effects > 0) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     std::span<EffectResultState> effect_result_states_dsp{};
     if (behavior.IsEffectInfoVersion2Supported() && params.effects > 0) {
         effect_result_states_dsp = allocator.Allocate<EffectResultState>(params.effects, 0x40);
         if (effect_result_states_dsp.empty()) {
-            return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+            return Service::Audio::ResultInsufficientBuffer;
         }
         std::memset(effect_result_states_dsp.data(), 0, effect_result_states_dsp.size_bytes());
     }
@@ -319,14 +319,14 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     }
 
     if (sinks.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     sink_context.Initialize(sinks, params.sinks);
 
     auto voice_dsp_states{allocator.Allocate<VoiceState>(params.voices, 0x40)};
     if (voice_dsp_states.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     for (auto& voice_state : voice_dsp_states) {
@@ -344,7 +344,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
             0xC};
         performance_workbuffer = allocator.Allocate<u8>(perf_workbuffer_size, 0x40);
         if (performance_workbuffer.empty()) {
-            return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+            return Service::Audio::ResultInsufficientBuffer;
         }
         std::memset(performance_workbuffer.data(), 0, performance_workbuffer.size_bytes());
         performance_manager.Initialize(performance_workbuffer, performance_workbuffer.size_bytes(),
@@ -360,7 +360,7 @@ Result System::Initialize(const AudioRendererParameterInternal& params,
     command_workbuffer_size = allocator.GetRemainingSize();
     command_workbuffer = allocator.Allocate<u8>(command_workbuffer_size, 0x40);
     if (command_workbuffer.empty()) {
-        return Service::Audio::ERR_INSUFFICIENT_BUFFER_SIZE;
+        return Service::Audio::ResultInsufficientBuffer;
     }
 
     command_buffer_size = 0;

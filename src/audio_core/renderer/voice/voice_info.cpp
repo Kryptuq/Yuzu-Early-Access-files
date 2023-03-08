@@ -181,7 +181,7 @@ void VoiceInfo::UpdateWaveBuffer(std::span<BehaviorInfo::ErrorInfo> error_info,
         if (wave_buffer_internal.start_offset * byte_size > wave_buffer_internal.size ||
             wave_buffer_internal.end_offset * byte_size > wave_buffer_internal.size) {
             LOG_ERROR(Service_Audio, "Invalid PCM16 start/end wavebuffer sizes!");
-            error_info[0].error_code = Service::Audio::ERR_INVALID_UPDATE_DATA;
+            error_info[0].error_code = Service::Audio::ResultInvalidUpdateInfo;
             error_info[0].address = wave_buffer_internal.address;
             return;
         }
@@ -192,7 +192,7 @@ void VoiceInfo::UpdateWaveBuffer(std::span<BehaviorInfo::ErrorInfo> error_info,
         if (wave_buffer_internal.start_offset * byte_size > wave_buffer_internal.size ||
             wave_buffer_internal.end_offset * byte_size > wave_buffer_internal.size) {
             LOG_ERROR(Service_Audio, "Invalid PCMFloat start/end wavebuffer sizes!");
-            error_info[0].error_code = Service::Audio::ERR_INVALID_UPDATE_DATA;
+            error_info[0].error_code = Service::Audio::ResultInvalidUpdateInfo;
             error_info[0].address = wave_buffer_internal.address;
             return;
         }
@@ -216,7 +216,7 @@ void VoiceInfo::UpdateWaveBuffer(std::span<BehaviorInfo::ErrorInfo> error_info,
         if (start > static_cast<s64>(wave_buffer_internal.size) ||
             end > static_cast<s64>(wave_buffer_internal.size)) {
             LOG_ERROR(Service_Audio, "Invalid ADPCM start/end wavebuffer sizes!");
-            error_info[0].error_code = Service::Audio::ERR_INVALID_UPDATE_DATA;
+            error_info[0].error_code = Service::Audio::ResultInvalidUpdateInfo;
             error_info[0].address = wave_buffer_internal.address;
             return;
         }
@@ -228,7 +228,7 @@ void VoiceInfo::UpdateWaveBuffer(std::span<BehaviorInfo::ErrorInfo> error_info,
 
     if (wave_buffer_internal.start_offset < 0 || wave_buffer_internal.end_offset < 0) {
         LOG_ERROR(Service_Audio, "Invalid input start/end wavebuffer sizes!");
-        error_info[0].error_code = Service::Audio::ERR_INVALID_UPDATE_DATA;
+        error_info[0].error_code = Service::Audio::ResultInvalidUpdateInfo;
         error_info[0].address = wave_buffer_internal.address;
         return;
     }

@@ -25,7 +25,7 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
     SCOPE_EXIT({ MicroProfileOnThreadExit(); });
 
     Common::SetCurrentThreadName(name.c_str());
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
+    Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
     system.RegisterHostThread();
 
     auto current_context = context.Acquire();

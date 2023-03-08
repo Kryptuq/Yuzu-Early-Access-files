@@ -307,8 +307,8 @@ Common::Input::DriverResult Joycons::SetPollingMode(const PadIdentifier& identif
     switch (polling_mode) {
     case Common::Input::PollingMode::Active:
         return static_cast<Common::Input::DriverResult>(handle->SetActiveMode());
-    case Common::Input::PollingMode::Pasive:
-        return static_cast<Common::Input::DriverResult>(handle->SetPasiveMode());
+    case Common::Input::PollingMode::Passive:
+        return static_cast<Common::Input::DriverResult>(handle->SetPassiveMode());
     case Common::Input::PollingMode::IR:
         return static_cast<Common::Input::DriverResult>(handle->SetIrMode());
     case Common::Input::PollingMode::NFC:

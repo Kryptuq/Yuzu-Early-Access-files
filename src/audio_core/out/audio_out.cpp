@@ -46,7 +46,7 @@ Result Out::AppendBuffer(const AudioOutBuffer& buffer, const u64 tag) {
     if (system.AppendBuffer(buffer, tag)) {
         return ResultSuccess;
     }
-    return Service::Audio::ERR_BUFFER_COUNT_EXCEEDED;
+    return Service::Audio::ResultBufferCountReached;
 }
 
 void Out::ReleaseAndRegisterBuffers() {

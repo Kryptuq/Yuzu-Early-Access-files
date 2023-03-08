@@ -404,7 +404,7 @@ Result ServerManager::CompleteSyncRequest(RequestState&& request) {
     rc = request.session->SendReplyHLE();
 
     // If the session has been closed, we're done.
-    if (rc == Kernel::ResultSessionClosed || service_rc == IPC::ERR_REMOTE_PROCESS_DEAD) {
+    if (rc == Kernel::ResultSessionClosed || service_rc == IPC::ResultSessionClosed) {
         // Close the session.
         request.session->Close();
 

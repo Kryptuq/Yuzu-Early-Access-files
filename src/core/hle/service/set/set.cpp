@@ -74,7 +74,7 @@ constexpr std::array<std::pair<LanguageCode, KeyboardLayout>, 18> language_to_la
 constexpr std::size_t PRE_4_0_0_MAX_ENTRIES = 0xF;
 constexpr std::size_t POST_4_0_0_MAX_ENTRIES = 0x40;
 
-constexpr Result ERR_INVALID_LANGUAGE{ErrorModule::Settings, 625};
+constexpr Result ResultInvalidLanguage{ErrorModule::Settings, 625};
 
 void PushResponseLanguageCode(HLERequestContext& ctx, std::size_t num_language_codes) {
     IPC::ResponseBuilder rb{ctx, 3};
@@ -130,7 +130,7 @@ void SET::MakeLanguageCode(HLERequestContext& ctx) {
     if (index >= available_language_codes.size()) {
         LOG_ERROR(Service_SET, "Invalid language code index! index={}", index);
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_INVALID_LANGUAGE);
+        rb.Push(Set::ResultInvalidLanguage);
         return;
     }
 

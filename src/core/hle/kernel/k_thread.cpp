@@ -49,6 +49,7 @@ static void ResetThreadContext32(Core::ARM_Interface::ThreadContext32& context, 
     context.cpu_registers[0] = arg;
     context.cpu_registers[15] = entry_point;
     context.cpu_registers[13] = stack_top;
+    context.fpscr = 0;
 }
 
 static void ResetThreadContext64(Core::ARM_Interface::ThreadContext64& context, VAddr stack_top,
@@ -58,8 +59,8 @@ static void ResetThreadContext64(Core::ARM_Interface::ThreadContext64& context, 
     context.cpu_registers[18] = Kernel::KSystemControl::GenerateRandomU64() | 1;
     context.pc = entry_point;
     context.sp = stack_top;
-    // TODO(merry): Perform a hardware test to determine the below value.
     context.fpcr = 0;
+    context.fpsr = 0;
 }
 } // namespace
 
@@ -813,6 +814,27 @@ void KThread::Continue() {
 
     // Note the state change in scheduler.
     KScheduler::OnThreadStateChanged(kernel, this, old_state);
+}
+
+void KThread::CloneFpuStatus() {
+    // We shouldn't reach here when starting kernel threads.
+    ASSERT(this->GetOwnerProcess() != nullptr);
+    ASSERT(this->GetOwnerProcess() == GetCurrentProcessPointer(kernel));
+
+    if (this->GetOwnerProcess()->Is64BitProcess()) {
+        // Clone FPSR and FPCR.
+        ThreadContext64 cur_ctx{};
+        kernel.System().CurrentArmInterface().SaveContext(cur_ctx);
+
+        this->GetContext64().fpcr = cur_ctx.fpcr;
+        this->GetContext64().fpsr = cur_ctx.fpsr;
+    } else {
+        // Clone FPSCR.
+        ThreadContext32 cur_ctx{};
+        kernel.System().CurrentArmInterface().SaveContext(cur_ctx);
+
+        this->GetContext32().fpscr = cur_ctx.fpscr;
+    }
 }
 
 Result KThread::SetActivity(Svc::ThreadActivity activity) {

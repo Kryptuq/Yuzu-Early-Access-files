@@ -48,7 +48,7 @@ Result InfoUpdater::UpdateVoiceChannelResources(VoiceContext& voice_context) {
         LOG_ERROR(Service_Audio,
                   "Consumed an incorrect voice resource size, header size={}, consumed={}",
                   in_header->voice_resources_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += consumed_input_size;
@@ -123,7 +123,7 @@ Result InfoUpdater::UpdateVoices(VoiceContext& voice_context,
     if (consumed_input_size != in_header->voices_size) {
         LOG_ERROR(Service_Audio, "Consumed an incorrect voices size, header size={}, consumed={}",
                   in_header->voices_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     out_header->voices_size = consumed_output_size;
@@ -184,7 +184,7 @@ Result InfoUpdater::UpdateEffectsVersion1(EffectContext& effect_context, const b
     if (consumed_input_size != in_header->effects_size) {
         LOG_ERROR(Service_Audio, "Consumed an incorrect effects size, header size={}, consumed={}",
                   in_header->effects_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     out_header->effects_size = consumed_output_size;
@@ -239,7 +239,7 @@ Result InfoUpdater::UpdateEffectsVersion2(EffectContext& effect_context, const b
     if (consumed_input_size != in_header->effects_size) {
         LOG_ERROR(Service_Audio, "Consumed an incorrect effects size, header size={}, consumed={}",
                   in_header->effects_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     out_header->effects_size = consumed_output_size;
@@ -267,7 +267,7 @@ Result InfoUpdater::UpdateMixes(MixContext& mix_context, const u32 mix_buffer_co
     }
 
     if (mix_buffer_count == 0) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     std::span<const MixInfo::InParameter> in_params{
@@ -281,13 +281,13 @@ Result InfoUpdater::UpdateMixes(MixContext& mix_context, const u32 mix_buffer_co
             total_buffer_count += params.buffer_count;
             if (params.dest_mix_id > static_cast<s32>(mix_context.GetCount()) &&
                 params.dest_mix_id != UnusedMixId && params.mix_id != FinalMixId) {
-                return Service::Audio::ERR_INVALID_UPDATE_DATA;
+                return Service::Audio::ResultInvalidUpdateInfo;
             }
         }
     }
 
     if (total_buffer_count > mix_buffer_count) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     bool mix_dirty{false};
@@ -317,7 +317,7 @@ Result InfoUpdater::UpdateMixes(MixContext& mix_context, const u32 mix_buffer_co
     if (mix_dirty) {
         if (behaviour.IsSplitterSupported() && splitter_context.UsingSplitter()) {
             if (!mix_context.TSortInfo(splitter_context)) {
-                return Service::Audio::ERR_INVALID_UPDATE_DATA;
+                return Service::Audio::ResultInvalidUpdateInfo;
             }
         } else {
             mix_context.SortInfo();
@@ -327,7 +327,7 @@ Result InfoUpdater::UpdateMixes(MixContext& mix_context, const u32 mix_buffer_co
     if (consumed_input_size != in_header->mix_size) {
         LOG_ERROR(Service_Audio, "Consumed an incorrect mixes size, header size={}, consumed={}",
                   in_header->mix_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += mix_count * sizeof(MixInfo::InParameter);
@@ -384,7 +384,7 @@ Result InfoUpdater::UpdateSinks(SinkContext& sink_context, std::span<MemoryPoolI
     if (consumed_input_size != in_header->sinks_size) {
         LOG_ERROR(Service_Audio, "Consumed an incorrect sinks size, header size={}, consumed={}",
                   in_header->sinks_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += consumed_input_size;
@@ -411,7 +411,7 @@ Result InfoUpdater::UpdateMemoryPools(std::span<MemoryPoolInfo> memory_pools,
             state != MemoryPoolInfo::ResultState::MapFailed &&
             state != MemoryPoolInfo::ResultState::InUse) {
             LOG_WARNING(Service_Audio, "Invalid ResultState from updating memory pools");
-            return Service::Audio::ERR_INVALID_UPDATE_DATA;
+            return Service::Audio::ResultInvalidUpdateInfo;
         }
     }
 
@@ -423,7 +423,7 @@ Result InfoUpdater::UpdateMemoryPools(std::span<MemoryPoolInfo> memory_pools,
         LOG_ERROR(Service_Audio,
                   "Consumed an incorrect memory pool size, header size={}, consumed={}",
                   in_header->memory_pool_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += consumed_input_size;
@@ -453,7 +453,7 @@ Result InfoUpdater::UpdatePerformanceBuffer(std::span<u8> performance_output,
         LOG_ERROR(Service_Audio,
                   "Consumed an incorrect performance size, header size={}, consumed={}",
                   in_header->performance_buffer_size, consumed_input_size);
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += consumed_input_size;
@@ -467,18 +467,18 @@ Result InfoUpdater::UpdateBehaviorInfo(BehaviorInfo& behaviour_) {
     const auto in_params{reinterpret_cast<const BehaviorInfo::InParameter*>(input)};
 
     if (!CheckValidRevision(in_params->revision)) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     if (in_params->revision != behaviour_.GetUserRevision()) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     behaviour_.ClearError();
     behaviour_.UpdateFlags(in_params->flags);
 
     if (in_header->behaviour_size != sizeof(BehaviorInfo::InParameter)) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += sizeof(BehaviorInfo::InParameter);
@@ -500,7 +500,7 @@ Result InfoUpdater::UpdateErrorInfo(const BehaviorInfo& behaviour_) {
 Result InfoUpdater::UpdateSplitterInfo(SplitterContext& splitter_context) {
     u32 consumed_size{0};
     if (!splitter_context.Update(input, consumed_size)) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
 
     input += consumed_size;
@@ -529,9 +529,9 @@ Result InfoUpdater::UpdateRendererInfo(const u64 elapsed_frames) {
 
 Result InfoUpdater::CheckConsumedSize() {
     if (CpuAddr(input) - CpuAddr(input_origin.data()) != expected_input_size) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     } else if (CpuAddr(output) - CpuAddr(output_origin.data()) != expected_output_size) {
-        return Service::Audio::ERR_INVALID_UPDATE_DATA;
+        return Service::Audio::ResultInvalidUpdateInfo;
     }
     return ResultSuccess;
 }

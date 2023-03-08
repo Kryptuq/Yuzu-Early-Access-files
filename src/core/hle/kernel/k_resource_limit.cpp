@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/assert.h"
+#include "common/overflow.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_resource_limit.h"
@@ -104,7 +105,7 @@ bool KResourceLimit::Reserve(LimitableResource which, s64 value, s64 timeout) {
         ASSERT(current_hints[index] <= current_values[index]);
 
         // If we would overflow, don't allow to succeed.
-        if (current_values[index] + value <= current_values[index]) {
+        if (Common::WrappingAdd(current_values[index], value) <= current_values[index]) {
             break;
         }
 

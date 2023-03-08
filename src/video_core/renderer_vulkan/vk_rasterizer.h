@@ -59,6 +59,11 @@ public:
                        const Tegra::DMA::ImageOperand& dst) override;
 
 private:
+    template <bool IS_IMAGE_UPLOAD>
+    bool DmaBufferImageCopy(const Tegra::DMA::ImageCopy& copy_info,
+                            const Tegra::DMA::BufferOperand& src,
+                            const Tegra::DMA::ImageOperand& dst);
+
     BufferCache& buffer_cache;
     TextureCache& texture_cache;
     Scheduler& scheduler;

@@ -60,6 +60,6 @@ private:
     std::string file_path{};
     State state{State::Initialized};
     std::vector<u8> nfc_data;
-    Common::Input::PollingMode polling_mode{Common::Input::PollingMode::Pasive};
+    Common::Input::PollingMode polling_mode{Common::Input::PollingMode::Passive};
 };
 } // namespace InputCommon

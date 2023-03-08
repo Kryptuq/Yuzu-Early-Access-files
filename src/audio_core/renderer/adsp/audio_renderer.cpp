@@ -135,7 +135,7 @@ void AudioRenderer::ThreadFunc() {
     static constexpr char name[]{"AudioRenderer"};
     MicroProfileOnThreadCreate(name);
     Common::SetCurrentThreadName(name);
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
+    Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     if (mailbox->ADSPWaitMessage() != RenderMessage::AudioRenderer_InitializeOK) {
         LOG_ERROR(Service_Audio,
                   "ADSP Audio Renderer -- Failed to receive initialize message from host!");

@@ -82,6 +82,9 @@ Result CreateThread(Core::System& system, Handle* out_handle, VAddr entry_point,
     // Commit the thread reservation.
     thread_reservation.Commit();
 
+    // Clone the current fpu status to the new thread.
+    thread->CloneFpuStatus();
+
     // Register the new thread.
     KThread::Register(kernel, thread);
 

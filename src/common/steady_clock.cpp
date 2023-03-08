@@ -23,6 +23,19 @@ static s64 WindowsQueryPerformanceCounter() {
     QueryPerformanceCounter(&counter);
     return counter.QuadPart;
 }
+
+static s64 GetSystemTimeNS() {
+    // GetSystemTimePreciseAsFileTime returns the file time in 100ns units.
+    static constexpr s64 Multiplier = 100;
+    // Convert Windows epoch to Unix epoch.
+    static constexpr s64 WindowsEpochToUnixEpochNS = 0x19DB1DED53E8000LL;
+
+    FILETIME filetime;
+    GetSystemTimePreciseAsFileTime(&filetime);
+    return Multiplier * ((static_cast<s64>(filetime.dwHighDateTime) << 32) +
+                         static_cast<s64>(filetime.dwLowDateTime)) -
+           WindowsEpochToUnixEpochNS;
+}
 #endif
 
 SteadyClock::time_point SteadyClock::Now() noexcept {
@@ -49,6 +62,18 @@ SteadyClock::time_point SteadyClock::Now() noexcept {
 #else
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
+    return time_point{std::chrono::seconds{ts.tv_sec} + std::chrono::nanoseconds{ts.tv_nsec}};
+#endif
+}
+
+RealTimeClock::time_point RealTimeClock::Now() noexcept {
+#if defined(_WIN32)
+    return time_point{duration{GetSystemTimeNS()}};
+#elif defined(__APPLE__)
+    return time_point{duration{clock_gettime_nsec_np(CLOCK_REALTIME)}};
+#else
+    timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
     return time_point{std::chrono::seconds{ts.tv_sec} + std::chrono::nanoseconds{ts.tv_nsec}};
 #endif
 }

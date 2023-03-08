@@ -26,7 +26,7 @@ void Controller_Stubbed::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
     }
 
     CommonHeader header{};
-    header.timestamp = core_timing.GetCPUTicks();
+    header.timestamp = core_timing.GetGlobalTimeNs().count();
     header.total_entry_count = 17;
     header.entry_count = 0;
     header.last_entry_index = 0;

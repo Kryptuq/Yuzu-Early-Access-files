@@ -254,6 +254,8 @@ public:
         thread_context_32.tpidr = static_cast<u32>(value);
     }
 
+    void CloneFpuStatus();
+
     [[nodiscard]] ThreadContext32& GetContext32() {
         return thread_context_32;
     }

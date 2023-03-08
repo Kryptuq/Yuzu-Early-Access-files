@@ -21,9 +21,9 @@ public:
     ~KDeviceAddressSpace();
 
     Result Initialize(u64 address, u64 size);
-    void Finalize();
+    void Finalize() override;
 
-    bool IsInitialized() const {
+    bool IsInitialized() const override {
         return m_is_initialized;
     }
     static void PostDestroy(uintptr_t arg) {}

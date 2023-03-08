@@ -63,7 +63,7 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache(*this, cpu_memory_, buffer_cache_runtime),
       shader_cache(*this, emu_window_, device, texture_cache, buffer_cache, program_manager,
                    state_tracker, gpu.ShaderNotify()),
-      query_cache(*this), accelerate_dma(buffer_cache),
+      query_cache(*this), accelerate_dma(buffer_cache, texture_cache),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache),
       blit_image(program_manager_) {}
 
@@ -1262,7 +1262,8 @@ void RasterizerOpenGL::ReleaseChannel(s32 channel_id) {
     query_cache.EraseChannel(channel_id);
 }
 
-AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}
+AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_, TextureCache& texture_cache_)
+    : buffer_cache{buffer_cache_}, texture_cache{texture_cache_} {}
 
 bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
     std::scoped_lock lock{buffer_cache.mutex};
@@ -1272,6 +1273,46 @@ bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 
 bool AccelerateDMA::BufferClear(GPUVAddr src_address, u64 amount, u32 value) {
     std::scoped_lock lock{buffer_cache.mutex};
     return buffer_cache.DMAClear(src_address, amount, value);
+}
+
+template <bool IS_IMAGE_UPLOAD>
+bool AccelerateDMA::DmaBufferImageCopy(const Tegra::DMA::ImageCopy& copy_info,
+                                       const Tegra::DMA::BufferOperand& buffer_operand,
+                                       const Tegra::DMA::ImageOperand& image_operand) {
+    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    const auto image_id = texture_cache.DmaImageId(image_operand);
+    if (image_id == VideoCommon::NULL_IMAGE_ID) {
+        return false;
+    }
+    const u32 buffer_size = static_cast<u32>(buffer_operand.pitch * buffer_operand.height);
+    static constexpr auto sync_info = VideoCommon::ObtainBufferSynchronize::FullSynchronize;
+    const auto post_op = IS_IMAGE_UPLOAD ? VideoCommon::ObtainBufferOperation::DoNothing
+                                         : VideoCommon::ObtainBufferOperation::MarkAsWritten;
+    const auto [buffer, offset] =
+        buffer_cache.ObtainBuffer(buffer_operand.address, buffer_size, sync_info, post_op);
+
+    const auto [image, copy] = texture_cache.DmaBufferImageCopy(
+        copy_info, buffer_operand, image_operand, image_id, IS_IMAGE_UPLOAD);
+    const std::span copy_span{&copy, 1};
+
+    if constexpr (IS_IMAGE_UPLOAD) {
+        image->UploadMemory(buffer->Handle(), offset, copy_span);
+    } else {
+        image->DownloadMemory(buffer->Handle(), offset, copy_span);
+    }
+    return true;
+}
+
+bool AccelerateDMA::ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info,
+                                  const Tegra::DMA::ImageOperand& image_operand,
+                                  const Tegra::DMA::BufferOperand& buffer_operand) {
+    return DmaBufferImageCopy<false>(copy_info, buffer_operand, image_operand);
+}
+
+bool AccelerateDMA::BufferToImage(const Tegra::DMA::ImageCopy& copy_info,
+                                  const Tegra::DMA::BufferOperand& buffer_operand,
+                                  const Tegra::DMA::ImageOperand& image_operand) {
+    return DmaBufferImageCopy<true>(copy_info, buffer_operand, image_operand);
 }
 
 } // namespace OpenGL

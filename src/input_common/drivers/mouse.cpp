@@ -14,7 +14,7 @@ namespace InputCommon {
 constexpr int update_time = 10;
 constexpr float default_stick_sensitivity = 0.0044f;
 constexpr float default_motion_sensitivity = 0.0003f;
-constexpr float maximum_rotation_speed = 1.0f;
+constexpr float maximum_rotation_speed = 2.0f;
 constexpr int mouse_axis_x = 0;
 constexpr int mouse_axis_y = 1;
 constexpr int wheel_axis_x = 2;

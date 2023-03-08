@@ -30,23 +30,23 @@ public:
     ~ARPManager();
 
     // Returns the ApplicationLaunchProperty corresponding to the provided title ID if it was
-    // previously registered, otherwise ERR_NOT_REGISTERED if it was never registered or
-    // ERR_INVALID_PROCESS_ID if the title ID is 0.
+    // previously registered, otherwise ResultProcessIdNotRegistered if it was never registered or
+    // ResultInvalidProcessId if the title ID is 0.
     ResultVal<ApplicationLaunchProperty> GetLaunchProperty(u64 title_id) const;
 
     // Returns a vector of the raw bytes of NACP data (necessarily 0x4000 in size) corresponding to
-    // the provided title ID if it was previously registered, otherwise ERR_NOT_REGISTERED if it was
-    // never registered or ERR_INVALID_PROCESS_ID if the title ID is 0.
+    // the provided title ID if it was previously registered, otherwise ResultProcessIdNotRegistered
+    // if it was never registered or ResultInvalidProcessId if the title ID is 0.
     ResultVal<std::vector<u8>> GetControlProperty(u64 title_id) const;
 
     // Adds a new entry to the internal database with the provided parameters, returning
-    // ERR_INVALID_ACCESS if attempting to re-register a title ID without an intermediate Unregister
-    // step, and ERR_INVALID_PROCESS_ID if the title ID is 0.
+    // ResultProcessIdNotRegistered if attempting to re-register a title ID without an intermediate
+    // Unregister step, and ResultInvalidProcessId if the title ID is 0.
     Result Register(u64 title_id, ApplicationLaunchProperty launch, std::vector<u8> control);
 
     // Removes the registration for the provided title ID from the database, returning
-    // ERR_NOT_REGISTERED if it doesn't exist in the database and ERR_INVALID_PROCESS_ID if the
-    // title ID is 0.
+    // ResultProcessIdNotRegistered if it doesn't exist in the database and ResultInvalidProcessId
+    // if the title ID is 0.
     Result Unregister(u64 title_id);
 
     // Removes all entries from the database, always succeeds. Should only be used when resetting

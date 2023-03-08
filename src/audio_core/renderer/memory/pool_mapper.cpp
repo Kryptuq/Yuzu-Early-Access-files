@@ -92,7 +92,7 @@ bool PoolMapper::TryAttachBuffer(BehaviorInfo::ErrorInfo& error_info, AddressInf
     address_info.Setup(address, size);
 
     if (!FillDspAddr(address_info)) {
-        error_info.error_code = Service::Audio::ERR_POOL_MAPPING_FAILED;
+        error_info.error_code = Service::Audio::ResultInvalidAddressInfo;
         error_info.address = address;
         return force_map;
     }

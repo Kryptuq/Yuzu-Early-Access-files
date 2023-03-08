@@ -170,7 +170,7 @@ private:
 
         if (impl->GetSystem().GetExecutionMode() == AudioCore::ExecutionMode::Manual) {
             IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERR_NOT_SUPPORTED);
+            rb.Push(Audio::ResultNotSupported);
             return;
         }
 
@@ -448,7 +448,7 @@ void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
     if (impl->GetSessionCount() + 1 > AudioCore::MaxRendererSessions) {
         LOG_ERROR(Service_Audio, "Too many AudioRenderer sessions open!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_MAXIMUM_SESSIONS_REACHED);
+        rb.Push(Audio::ResultOutOfSessions);
         return;
     }
 
@@ -461,7 +461,7 @@ void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
     if (session_id == -1) {
         LOG_ERROR(Service_Audio, "Tried to open a session that's already in use!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ERR_MAXIMUM_SESSIONS_REACHED);
+        rb.Push(Audio::ResultOutOfSessions);
         return;
     }
 

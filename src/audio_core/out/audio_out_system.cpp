@@ -33,11 +33,11 @@ std::string_view System::GetDefaultOutputDeviceName() const {
 Result System::IsConfigValid(std::string_view device_name,
                              const AudioOutParameter& in_params) const {
     if ((device_name.size() > 0) && (device_name != GetDefaultOutputDeviceName())) {
-        return Service::Audio::ERR_INVALID_DEVICE_NAME;
+        return Service::Audio::ResultNotFound;
     }
 
     if (in_params.sample_rate != TargetSampleRate && in_params.sample_rate > 0) {
-        return Service::Audio::ERR_INVALID_SAMPLE_RATE;
+        return Service::Audio::ResultInvalidSampleRate;
     }
 
     if (in_params.channel_count == 0 || in_params.channel_count == 2 ||
@@ -45,7 +45,7 @@ Result System::IsConfigValid(std::string_view device_name,
         return ResultSuccess;
     }
 
-    return Service::Audio::ERR_INVALID_CHANNEL_COUNT;
+    return Service::Audio::ResultInvalidChannelCount;
 }
 
 Result System::Initialize(std::string device_name, const AudioOutParameter& in_params, u32 handle_,
@@ -80,7 +80,7 @@ size_t System::GetSessionId() const {
 
 Result System::Start() {
     if (state != State::Stopped) {
-        return Service::Audio::ERR_OPERATION_FAILED;
+        return Service::Audio::ResultOperationFailed;
     }
 
     session->Initialize(name, sample_format, channel_count, session_id, handle,

@@ -46,7 +46,7 @@ enum class PollingMode {
     // Constant polling of buttons, analogs and motion data
     Active,
     // Only update on button change, digital analogs
-    Pasive,
+    Passive,
     // Enable near field communication polling
     NFC,
     // Enable infrared camera polling

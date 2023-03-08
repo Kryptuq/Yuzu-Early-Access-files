@@ -46,15 +46,15 @@ private:
                                    const MotionStatus& motion_status);
     void UpdateActiveProPadInput(const InputReportActive& input, const MotionStatus& motion_status);
 
-    void UpdatePasiveLeftPadInput(const InputReportPassive& buffer);
-    void UpdatePasiveRightPadInput(const InputReportPassive& buffer);
-    void UpdatePasiveProPadInput(const InputReportPassive& buffer);
+    void UpdatePassiveLeftPadInput(const InputReportPassive& buffer);
+    void UpdatePassiveRightPadInput(const InputReportPassive& buffer);
+    void UpdatePassiveProPadInput(const InputReportPassive& buffer);
 
     /// Returns a calibrated joystick axis from raw axis data
     f32 GetAxisValue(u16 raw_value, JoyStickAxisCalibration calibration) const;
 
     /// Returns a digital joystick axis from passive axis data
-    std::pair<f32, f32> GetPassiveAxisValue(PasivePadStick raw_value) const;
+    std::pair<f32, f32> GetPassiveAxisValue(PassivePadStick raw_value) const;
 
     /// Returns a calibrated accelerometer axis from raw motion data
     f32 GetAccelerometerValue(s16 raw, const MotionSensorCalibration& cal,

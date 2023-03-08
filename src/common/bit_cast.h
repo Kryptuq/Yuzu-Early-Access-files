@@ -3,19 +3,21 @@
 
 #pragma once
 
-#include <cstring>
-#include <type_traits>
+#include <version>
+
+#ifdef __cpp_lib_bit_cast
+#include <bit>
+#endif
 
 namespace Common {
 
 template <typename To, typename From>
-[[nodiscard]] std::enable_if_t<sizeof(To) == sizeof(From) && std::is_trivially_copyable_v<From> &&
-                                   std::is_trivially_copyable_v<To>,
-                               To>
-BitCast(const From& src) noexcept {
-    To dst;
-    std::memcpy(&dst, &src, sizeof(To));
-    return dst;
+constexpr inline To BitCast(const From& from) {
+#ifdef __cpp_lib_bit_cast
+    return std::bit_cast<To>(from);
+#else
+    return __builtin_bit_cast(To, from);
+#endif
 }
 
 } // namespace Common

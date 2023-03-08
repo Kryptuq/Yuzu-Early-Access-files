@@ -18,10 +18,10 @@
 
 namespace Service::SM {
 
-constexpr Result ERR_NOT_INITIALIZED(ErrorModule::SM, 2);
-constexpr Result ERR_ALREADY_REGISTERED(ErrorModule::SM, 4);
-constexpr Result ERR_INVALID_NAME(ErrorModule::SM, 6);
-constexpr Result ERR_SERVICE_NOT_REGISTERED(ErrorModule::SM, 7);
+constexpr Result ResultInvalidClient(ErrorModule::SM, 2);
+constexpr Result ResultAlreadyRegistered(ErrorModule::SM, 4);
+constexpr Result ResultInvalidServiceName(ErrorModule::SM, 6);
+constexpr Result ResultNotRegistered(ErrorModule::SM, 7);
 
 ServiceManager::ServiceManager(Kernel::KernelCore& kernel_) : kernel{kernel_} {
     controller_interface = std::make_unique<Controller>(kernel.System());
@@ -45,7 +45,7 @@ void ServiceManager::InvokeControlRequest(HLERequestContext& context) {
 static Result ValidateServiceName(const std::string& name) {
     if (name.empty() || name.size() > 8) {
         LOG_ERROR(Service_SM, "Invalid service name! service={}", name);
-        return ERR_INVALID_NAME;
+        return Service::SM::ResultInvalidServiceName;
     }
     return ResultSuccess;
 }
@@ -58,7 +58,7 @@ Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
     std::scoped_lock lk{lock};
     if (registered_services.find(name) != registered_services.end()) {
         LOG_ERROR(Service_SM, "Service is already registered! service={}", name);
-        return ERR_ALREADY_REGISTERED;
+        return Service::SM::ResultAlreadyRegistered;
     }
 
     auto* port = Kernel::KPort::Create(kernel);
@@ -80,7 +80,7 @@ Result ServiceManager::UnregisterService(const std::string& name) {
     const auto iter = registered_services.find(name);
     if (iter == registered_services.end()) {
         LOG_ERROR(Service_SM, "Server is not registered! service={}", name);
-        return ERR_SERVICE_NOT_REGISTERED;
+        return Service::SM::ResultNotRegistered;
     }
 
     registered_services.erase(iter);
@@ -96,7 +96,7 @@ ResultVal<Kernel::KPort*> ServiceManager::GetServicePort(const std::string& name
     auto it = service_ports.find(name);
     if (it == service_ports.end()) {
         LOG_WARNING(Service_SM, "Server is not registered! service={}", name);
-        return ERR_SERVICE_NOT_REGISTERED;
+        return Service::SM::ResultNotRegistered;
     }
 
     return it->second;
@@ -160,7 +160,7 @@ static std::string PopServiceName(IPC::RequestParser& rp) {
 
 ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(HLERequestContext& ctx) {
     if (!ctx.GetManager()->GetIsInitializedForSm()) {
-        return ERR_NOT_INITIALIZED;
+        return Service::SM::ResultInvalidClient;
     }
 
     IPC::RequestParser rp{ctx};
@@ -168,15 +168,15 @@ ResultVal<Kernel::KClientSession*> SM::GetServiceImpl(HLERequestContext& ctx) {
 
     // Find the named port.
     auto port_result = service_manager.GetServicePort(name);
-    if (port_result.Code() == ERR_INVALID_NAME) {
+    if (port_result.Code() == Service::SM::ResultInvalidServiceName) {
         LOG_ERROR(Service_SM, "Invalid service name '{}'", name);
-        return ERR_INVALID_NAME;
+        return Service::SM::ResultInvalidServiceName;
     }
 
     if (port_result.Failed()) {
         LOG_INFO(Service_SM, "Waiting for service {} to become available", name);
         ctx.SetIsDeferred();
-        return ERR_SERVICE_NOT_REGISTERED;
+        return Service::SM::ResultNotRegistered;
     }
     auto& port = port_result.Unwrap();
 

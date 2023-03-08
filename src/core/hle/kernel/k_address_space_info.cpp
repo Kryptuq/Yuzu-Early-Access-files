@@ -44,11 +44,11 @@ const KAddressSpaceInfo& GetAddressSpaceInfo(size_t width, KAddressSpaceInfo::Ty
 
 } // namespace
 
-uintptr_t KAddressSpaceInfo::GetAddressSpaceStart(size_t width, KAddressSpaceInfo::Type type) {
+std::size_t KAddressSpaceInfo::GetAddressSpaceStart(size_t width, KAddressSpaceInfo::Type type) {
     return GetAddressSpaceInfo(width, type).address;
 }
 
-size_t KAddressSpaceInfo::GetAddressSpaceSize(size_t width, KAddressSpaceInfo::Type type) {
+std::size_t KAddressSpaceInfo::GetAddressSpaceSize(size_t width, KAddressSpaceInfo::Type type) {
     return GetAddressSpaceInfo(width, type).size;
 }
 

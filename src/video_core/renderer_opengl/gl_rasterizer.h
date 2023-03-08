@@ -50,24 +50,26 @@ static_assert(sizeof(BindlessSSBO) * CHAR_BIT == 128);
 
 class AccelerateDMA : public Tegra::Engines::AccelerateDMAInterface {
 public:
-    explicit AccelerateDMA(BufferCache& buffer_cache);
+    explicit AccelerateDMA(BufferCache& buffer_cache, TextureCache& texture_cache);
 
     bool BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) override;
 
     bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) override;
 
     bool ImageToBuffer(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::ImageOperand& src,
-                       const Tegra::DMA::BufferOperand& dst) override {
-        return false;
-    }
+                       const Tegra::DMA::BufferOperand& dst) override;
 
     bool BufferToImage(const Tegra::DMA::ImageCopy& copy_info, const Tegra::DMA::BufferOperand& src,
-                       const Tegra::DMA::ImageOperand& dst) override {
-        return false;
-    }
+                       const Tegra::DMA::ImageOperand& dst) override;
 
 private:
+    template <bool IS_IMAGE_UPLOAD>
+    bool DmaBufferImageCopy(const Tegra::DMA::ImageCopy& copy_info,
+                            const Tegra::DMA::BufferOperand& src,
+                            const Tegra::DMA::ImageOperand& dst);
+
     BufferCache& buffer_cache;
+    TextureCache& texture_cache;
 };
 
 class RasterizerOpenGL : public VideoCore::RasterizerAccelerated,
