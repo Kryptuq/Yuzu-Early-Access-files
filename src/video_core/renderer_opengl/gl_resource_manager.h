@@ -263,6 +263,9 @@ public:
     /// Deletes the internal OpenGL resource
     void Release();
 
+    /// Checks if the sync has been signaled
+    bool IsSignaled() const noexcept;
+
     GLsync handle = 0;
 };
 

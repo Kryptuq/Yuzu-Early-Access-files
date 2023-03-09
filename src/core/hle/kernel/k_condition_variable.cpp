@@ -266,11 +266,12 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
 Result KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KHardwareTimer* timer{};
     ThreadQueueImplForKConditionVariableWaitConditionVariable wait_queue(
         kernel, std::addressof(thread_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp(kernel, cur_thread, timeout);
+        KScopedSchedulerLockAndSleep slp(kernel, std::addressof(timer), cur_thread, timeout);
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
@@ -320,6 +321,7 @@ Result KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
         thread_tree.insert(*cur_thread);
 
         // Begin waiting.
+        wait_queue.SetHardwareTimer(timer);
         cur_thread->BeginWait(std::addressof(wait_queue));
         cur_thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::ConditionVar);
         cur_thread->SetMutexWaitAddressForDebugging(addr);

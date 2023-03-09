@@ -22,7 +22,9 @@ void KThreadQueue::EndWait(KThread* waiting_thread, Result wait_result) {
     waiting_thread->ClearWaitQueue();
 
     // Cancel the thread task.
-    kernel.HardwareTimer().CancelTask(waiting_thread);
+    if (m_hardware_timer != nullptr) {
+        m_hardware_timer->CancelTask(waiting_thread);
+    }
 }
 
 void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) {
@@ -36,8 +38,8 @@ void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool 
     waiting_thread->ClearWaitQueue();
 
     // Cancel the thread task.
-    if (cancel_timer_task) {
-        kernel.HardwareTimer().CancelTask(waiting_thread);
+    if (cancel_timer_task && m_hardware_timer != nullptr) {
+        m_hardware_timer->CancelTask(waiting_thread);
     }
 }
 

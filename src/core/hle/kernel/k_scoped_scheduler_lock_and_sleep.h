@@ -13,16 +13,22 @@ namespace Kernel {
 
 class [[nodiscard]] KScopedSchedulerLockAndSleep {
 public:
-    explicit KScopedSchedulerLockAndSleep(KernelCore& kernel_, KThread* t, s64 timeout)
-        : kernel(kernel_), thread(t), timeout_tick(timeout) {
+    explicit KScopedSchedulerLockAndSleep(KernelCore& kernel_, KHardwareTimer** out_timer,
+                                          KThread* t, s64 timeout)
+        : kernel(kernel_), timeout_tick(timeout), thread(t), timer() {
         // Lock the scheduler.
         kernel.GlobalSchedulerContext().scheduler_lock.Lock();
+
+        // Set our timer only if the time is positive.
+        timer = (timeout_tick > 0) ? std::addressof(kernel.HardwareTimer()) : nullptr;
+
+        *out_timer = timer;
     }
 
     ~KScopedSchedulerLockAndSleep() {
         // Register the sleep.
         if (timeout_tick > 0) {
-            kernel.HardwareTimer().RegisterTask(thread, timeout_tick);
+            timer->RegisterTask(thread, timeout_tick);
         }
 
         // Unlock the scheduler.
@@ -35,8 +41,9 @@ public:
 
 private:
     KernelCore& kernel;
-    KThread* thread{};
     s64 timeout_tick{};
+    KThread* thread{};
+    KHardwareTimer* timer{};
 };
 
 } // namespace Kernel

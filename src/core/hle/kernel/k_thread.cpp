@@ -1290,9 +1290,10 @@ Result KThread::Sleep(s64 timeout) {
     ASSERT(timeout > 0);
 
     ThreadQueueImplForKThreadSleep wait_queue_(kernel);
+    KHardwareTimer* timer{};
     {
         // Setup the scheduling lock and sleep.
-        KScopedSchedulerLockAndSleep slp(kernel, this, timeout);
+        KScopedSchedulerLockAndSleep slp(kernel, std::addressof(timer), this, timeout);
 
         // Check if the thread should terminate.
         if (this->IsTerminationRequested()) {
@@ -1301,6 +1302,7 @@ Result KThread::Sleep(s64 timeout) {
         }
 
         // Wait for the sleep to end.
+        wait_queue_.SetHardwareTimer(timer);
         this->BeginWait(std::addressof(wait_queue_));
         SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Sleep);
     }

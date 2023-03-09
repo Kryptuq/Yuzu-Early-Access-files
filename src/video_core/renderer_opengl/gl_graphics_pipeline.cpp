@@ -621,10 +621,7 @@ bool GraphicsPipeline::IsBuilt() noexcept {
     if (built_fence.handle == 0) {
         return false;
     }
-    // Timeout of zero means this is non-blocking
-    const auto sync_status = glClientWaitSync(built_fence.handle, 0, 0);
-    ASSERT(sync_status != GL_WAIT_FAILED);
-    is_built = sync_status != GL_TIMEOUT_EXPIRED;
+    is_built = built_fence.IsSignaled();
     return is_built;
 }
 

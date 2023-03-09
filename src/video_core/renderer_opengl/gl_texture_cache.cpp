@@ -717,9 +717,7 @@ std::optional<size_t> TextureCacheRuntime::StagingBuffers::FindBuffer(size_t req
             continue;
         }
         if (syncs[index].handle != 0) {
-            GLint status;
-            glGetSynciv(syncs[index].handle, GL_SYNC_STATUS, 1, nullptr, &status);
-            if (status != GL_SIGNALED) {
+            if (!syncs[index].IsSignaled()) {
                 continue;
             }
             syncs[index].Release();

@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <glad/glad.h>
+#include "common/assert.h"
 #include "common/microprofile.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
@@ -156,6 +157,15 @@ void OGLSync::Release() {
     // Don't profile here, this one is expected to happen ingame.
     glDeleteSync(handle);
     handle = 0;
+}
+
+bool OGLSync::IsSignaled() const noexcept {
+    // At least on Nvidia, glClientWaitSync with a timeout of 0
+    // is faster than glGetSynciv of GL_SYNC_STATUS.
+    // Timeout of 0 means this check is non-blocking.
+    const auto sync_status = glClientWaitSync(handle, 0, 0);
+    ASSERT(sync_status != GL_WAIT_FAILED);
+    return sync_status != GL_TIMEOUT_EXPIRED;
 }
 
 void OGLFramebuffer::Create() {

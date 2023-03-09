@@ -40,13 +40,14 @@ private:
 void KLightConditionVariable::Wait(KLightLock* lock, s64 timeout, bool allow_terminating_thread) {
     // Create thread queue.
     KThread* owner = GetCurrentThreadPointer(kernel);
+    KHardwareTimer* timer{};
 
     ThreadQueueImplForKLightConditionVariable wait_queue(kernel, std::addressof(wait_list),
                                                          allow_terminating_thread);
 
     // Sleep the thread.
     {
-        KScopedSchedulerLockAndSleep lk(kernel, owner, timeout);
+        KScopedSchedulerLockAndSleep lk(kernel, std::addressof(timer), owner, timeout);
 
         if (!allow_terminating_thread && owner->IsTerminationRequested()) {
             lk.CancelSleep();
@@ -59,6 +60,7 @@ void KLightConditionVariable::Wait(KLightLock* lock, s64 timeout, bool allow_ter
         wait_list.push_back(*owner);
 
         // Begin waiting.
+        wait_queue.SetHardwareTimer(timer);
         owner->BeginWait(std::addressof(wait_queue));
     }
 

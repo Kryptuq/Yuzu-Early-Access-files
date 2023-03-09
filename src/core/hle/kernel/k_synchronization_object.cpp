@@ -79,12 +79,13 @@ Result KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
 
     // Prepare for wait.
     KThread* thread = GetCurrentThreadPointer(kernel_ctx);
+    KHardwareTimer* timer{};
     ThreadQueueImplForKSynchronizationObjectWait wait_queue(kernel_ctx, objects,
                                                             thread_nodes.data(), num_objects);
 
     {
         // Setup the scheduling lock and sleep.
-        KScopedSchedulerLockAndSleep slp(kernel_ctx, thread, timeout);
+        KScopedSchedulerLockAndSleep slp(kernel_ctx, std::addressof(timer), thread, timeout);
 
         // Check if the thread should terminate.
         if (thread->IsTerminationRequested()) {
@@ -131,6 +132,7 @@ Result KSynchronizationObject::Wait(KernelCore& kernel_ctx, s32* out_index,
         thread->SetSyncedIndex(-1);
 
         // Wait for an object to be signaled.
+        wait_queue.SetHardwareTimer(timer);
         thread->BeginWait(std::addressof(wait_queue));
         thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Synchronization);
     }

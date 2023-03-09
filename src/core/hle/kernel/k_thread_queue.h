@@ -8,10 +8,16 @@
 
 namespace Kernel {
 
+class KHardwareTimer;
+
 class KThreadQueue {
 public:
-    explicit KThreadQueue(KernelCore& kernel_) : kernel{kernel_} {}
+    explicit KThreadQueue(KernelCore& kernel_) : kernel{kernel_}, m_hardware_timer{} {}
     virtual ~KThreadQueue() = default;
+
+    void SetHardwareTimer(KHardwareTimer* timer) {
+        m_hardware_timer = timer;
+    }
 
     virtual void NotifyAvailable(KThread* waiting_thread, KSynchronizationObject* signaled_object,
                                  Result wait_result);
@@ -20,7 +26,7 @@ public:
 
 private:
     KernelCore& kernel;
-    KThread::WaiterList wait_list{};
+    KHardwareTimer* m_hardware_timer{};
 };
 
 class KThreadQueueWithoutEndWait : public KThreadQueue {

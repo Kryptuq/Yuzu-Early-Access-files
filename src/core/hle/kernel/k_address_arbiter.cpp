@@ -237,10 +237,11 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 val
 Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KHardwareTimer* timer{};
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{kernel, cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{kernel, std::addressof(timer), cur_thread, timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
@@ -279,6 +280,7 @@ Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s6
         thread_tree.insert(*cur_thread);
 
         // Wait for the thread to finish.
+        wait_queue.SetHardwareTimer(timer);
         cur_thread->BeginWait(std::addressof(wait_queue));
         cur_thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Arbitration);
     }
@@ -290,10 +292,11 @@ Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s6
 Result KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KHardwareTimer* timer{};
     ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{kernel, cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{kernel, std::addressof(timer), cur_thread, timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
@@ -325,6 +328,7 @@ Result KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
         thread_tree.insert(*cur_thread);
 
         // Wait for the thread to finish.
+        wait_queue.SetHardwareTimer(timer);
         cur_thread->BeginWait(std::addressof(wait_queue));
         cur_thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Arbitration);
     }
