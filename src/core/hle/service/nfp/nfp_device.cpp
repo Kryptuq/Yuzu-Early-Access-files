@@ -174,8 +174,8 @@ Result NfpDevice::StopDetection() {
 
     if (device_state == DeviceState::TagFound || device_state == DeviceState::TagMounted) {
         CloseAmiibo();
-        return ResultSuccess;
     }
+
     if (device_state == DeviceState::SearchingForTag || device_state == DeviceState::TagRemoved) {
         device_state = DeviceState::Initialized;
         return ResultSuccess;
@@ -204,9 +204,7 @@ Result NfpDevice::Flush() {
     const auto& current_date = GetAmiiboDate(current_posix_time);
     if (settings.write_date.raw_date != current_date.raw_date) {
         settings.write_date = current_date;
-        settings.crc_counter++;
-        // TODO: Find how to calculate the crc check
-        // settings.crc = CalculateCRC(settings);
+        UpdateSettingsCrc();
     }
 
     tag_data.write_counter++;
@@ -318,7 +316,7 @@ Result NfpDevice::GetCommonInfo(CommonInfo& common_info) const {
     common_info = {
         .last_write_date = settings.write_date.GetWriteDate(),
         .write_counter = tag_data.write_counter,
-        .version = 0,
+        .version = tag_data.amiibo_version,
         .application_area_size = sizeof(ApplicationArea),
     };
     return ResultSuccess;
@@ -370,7 +368,57 @@ Result NfpDevice::GetRegisterInfo(RegisterInfo& register_info) const {
         .mii_char_info = manager.ConvertV3ToCharInfo(tag_data.owner_mii),
         .creation_date = settings.init_date.GetWriteDate(),
         .amiibo_name = GetAmiiboName(settings),
-        .font_region = {},
+        .font_region = settings.settings.font_region,
+    };
+
+    return ResultSuccess;
+}
+
+Result NfpDevice::GetAdminInfo(AdminInfo& admin_info) const {
+    if (device_state != DeviceState::TagMounted) {
+        LOG_ERROR(Service_NFC, "Wrong device state {}", device_state);
+        if (device_state == DeviceState::TagRemoved) {
+            return TagRemoved;
+        }
+        return WrongDeviceState;
+    }
+
+    if (mount_target == MountTarget::None || mount_target == MountTarget::Rom) {
+        LOG_ERROR(Service_NFC, "Amiibo is read only", device_state);
+        return WrongDeviceState;
+    }
+
+    u8 flags = static_cast<u8>(tag_data.settings.settings.raw >> 0x4);
+    if (tag_data.settings.settings.amiibo_initialized == 0) {
+        flags = flags & 0xfe;
+    }
+
+    u64 application_id = 0;
+    u32 application_area_id = 0;
+    AppAreaVersion app_area_version = AppAreaVersion::NotSet;
+    if (tag_data.settings.settings.appdata_initialized != 0) {
+        application_id = tag_data.application_id;
+        app_area_version =
+            static_cast<AppAreaVersion>(application_id >> application_id_version_offset & 0xf);
+
+        // Restore application id to original value
+        if (application_id >> 0x38 != 0) {
+            const u8 application_byte = tag_data.application_id_byte & 0xf;
+            application_id &= ~(0xfULL << application_id_version_offset);
+            application_id |= static_cast<u64>(application_byte) << application_id_version_offset;
+        }
+
+        application_area_id = tag_data.application_area_id;
+    }
+
+    // TODO: Validate this data
+    admin_info = {
+        .application_id = application_id,
+        .application_area_id = application_area_id,
+        .crc_change_counter = tag_data.settings.crc_counter,
+        .flags = flags,
+        .tag_type = PackedTagType::Type2,
+        .app_area_version = app_area_version,
     };
 
     return ResultSuccess;
@@ -395,9 +443,7 @@ Result NfpDevice::SetNicknameAndOwner(const AmiiboName& amiibo_name) {
 
     settings.init_date = GetAmiiboDate(current_posix_time);
     settings.write_date = GetAmiiboDate(current_posix_time);
-    settings.crc_counter++;
-    // TODO: Find how to calculate the crc check
-    // settings.crc = CalculateCRC(settings);
+    UpdateSettingsCrc();
 
     SetAmiiboName(settings, amiibo_name);
     tag_data.owner_mii = manager.ConvertCharInfoToV3(manager.BuildDefault(0));
@@ -569,7 +615,10 @@ Result NfpDevice::SetApplicationArea(std::span<const u8> data) {
     rng.GenerateRandomBytes(tag_data.application_area.data() + data.size(),
                             sizeof(ApplicationArea) - data.size());
 
-    tag_data.applicaton_write_counter++;
+    if (tag_data.application_write_counter != counter_limit) {
+        tag_data.application_write_counter++;
+    }
+
     is_data_moddified = true;
 
     return ResultSuccess;
@@ -617,13 +666,26 @@ Result NfpDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
     rng.GenerateRandomBytes(tag_data.application_area.data() + data.size(),
                             sizeof(ApplicationArea) - data.size());
 
-    // TODO: Investigate why the title id needs to be moddified
-    tag_data.title_id = system.GetApplicationProcessProgramID();
-    tag_data.title_id = tag_data.title_id | 0x30000000ULL;
+    if (tag_data.application_write_counter != counter_limit) {
+        tag_data.application_write_counter++;
+    }
+
+    const u64 application_id = system.GetApplicationProcessProgramID();
+    const u64 application_id_without_version_byte =
+        application_id & ~(0xfULL << application_id_version_offset);
+
+    tag_data.application_id_byte =
+        static_cast<u8>(application_id >> application_id_version_offset & 0xf);
+    tag_data.application_id =
+        application_id_without_version_byte |
+        (static_cast<u64>(AppAreaVersion::NintendoSwitch) << application_id_version_offset);
     tag_data.settings.settings.appdata_initialized.Assign(1);
     tag_data.application_area_id = access_id;
-    tag_data.applicaton_write_counter++;
     tag_data.unknown = {};
+
+    // TODO: this is a mix of tag_data input
+    std::array<u8, 0x7e> unknown_input{};
+    tag_data.application_area_crc = CalculateCrc(unknown_input);
 
     return Flush();
 }
@@ -644,10 +706,10 @@ Result NfpDevice::DeleteApplicationArea() {
 
     Common::TinyMT rng{};
     rng.GenerateRandomBytes(tag_data.application_area.data(), sizeof(ApplicationArea));
-    rng.GenerateRandomBytes(&tag_data.title_id, sizeof(u64));
+    rng.GenerateRandomBytes(&tag_data.application_id, sizeof(u64));
     rng.GenerateRandomBytes(&tag_data.application_area_id, sizeof(u32));
     tag_data.settings.settings.appdata_initialized.Assign(0);
-    tag_data.applicaton_write_counter++;
+    tag_data.application_write_counter++;
     tag_data.unknown = {};
 
     return Flush();
@@ -717,6 +779,43 @@ AmiiboDate NfpDevice::GetAmiiboDate(s64 posix_time) const {
     }
 
     return amiibo_date;
+}
+
+void NfpDevice::UpdateSettingsCrc() {
+    auto& settings = tag_data.settings;
+
+    if (settings.crc_counter != counter_limit) {
+        settings.crc_counter++;
+    }
+
+    // TODO: this reads data from a global, find what it is
+    std::array<u8, 8> unknown_input{};
+    settings.crc = CalculateCrc(unknown_input);
+}
+
+u32 NfpDevice::CalculateCrc(std::span<u8> data) {
+    constexpr u32 magic = 0xedb88320;
+    u32 crc = 0xffffffff;
+
+    if (data.size() == 0) {
+        return 0;
+    }
+
+    for (u8 input : data) {
+        u32 temp = (crc ^ input) >> 1;
+        if (((crc ^ input) & 1) != 0) {
+            temp = temp ^ magic;
+        }
+
+        for (std::size_t step = 0; step < 7; ++step) {
+            crc = temp >> 1;
+            if ((temp & 1) != 0) {
+                crc = temp >> 1 ^ magic;
+            }
+        }
+    }
+
+    return ~crc;
 }
 
 } // namespace Service::NFP
