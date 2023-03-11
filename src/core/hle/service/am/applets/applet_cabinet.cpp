@@ -119,7 +119,7 @@ void Cabinet::DisplayCompleted(bool apply_changes, std::string_view amiibo_name)
     case Service::NFP::CabinetMode::StartNicknameAndOwnerSettings: {
         Service::NFP::AmiiboName name{};
         std::memcpy(name.data(), amiibo_name.data(), std::min(amiibo_name.size(), name.size() - 1));
-        nfp_device->SetNicknameAndOwner(name);
+        nfp_device->SetRegisterInfoPrivate(name);
         break;
     }
     case Service::NFP::CabinetMode::StartGameDataEraser:
@@ -129,7 +129,7 @@ void Cabinet::DisplayCompleted(bool apply_changes, std::string_view amiibo_name)
         nfp_device->RestoreAmiibo();
         break;
     case Service::NFP::CabinetMode::StartFormatter:
-        nfp_device->DeleteAllData();
+        nfp_device->Format();
         break;
     default:
         UNIMPLEMENTED_MSG("Unknown CabinetMode={}", applet_input_common.applet_mode);
