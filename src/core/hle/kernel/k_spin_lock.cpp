@@ -6,15 +6,15 @@
 namespace Kernel {
 
 void KSpinLock::Lock() {
-    lck.lock();
+    m_lock.lock();
 }
 
 void KSpinLock::Unlock() {
-    lck.unlock();
+    m_lock.unlock();
 }
 
 bool KSpinLock::TryLock() {
-    return lck.try_lock();
+    return m_lock.try_lock();
 }
 
 } // namespace Kernel

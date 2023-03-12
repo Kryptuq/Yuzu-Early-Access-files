@@ -44,7 +44,7 @@ void Controller::CloneCurrentObject(HLERequestContext& ctx) {
     ASSERT(session != nullptr);
 
     // Initialize the session.
-    session->Initialize(nullptr, "");
+    session->Initialize(nullptr, 0);
 
     // Commit the session reservation.
     session_reservation.Commit();

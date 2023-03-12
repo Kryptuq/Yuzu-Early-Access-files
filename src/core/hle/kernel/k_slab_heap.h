@@ -89,7 +89,8 @@ private:
             if (alloc_peak <= cur_peak) {
                 break;
             }
-        } while (!Common::AtomicCompareAndSwap(&m_peak, alloc_peak, cur_peak, cur_peak));
+        } while (
+            !Common::AtomicCompareAndSwap(std::addressof(m_peak), alloc_peak, cur_peak, cur_peak));
     }
 
 public:

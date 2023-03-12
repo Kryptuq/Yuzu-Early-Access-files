@@ -18,25 +18,28 @@ public:
     explicit KSharedMemoryInfo(KernelCore&) {}
     KSharedMemoryInfo() = default;
 
-    constexpr void Initialize(KSharedMemory* shmem) {
-        shared_memory = shmem;
+    constexpr void Initialize(KSharedMemory* m) {
+        m_shared_memory = m;
+        m_reference_count = 0;
     }
 
     constexpr KSharedMemory* GetSharedMemory() const {
-        return shared_memory;
+        return m_shared_memory;
     }
 
     constexpr void Open() {
-        ++reference_count;
+        ++m_reference_count;
+        ASSERT(m_reference_count > 0);
     }
 
     constexpr bool Close() {
-        return (--reference_count) == 0;
+        ASSERT(m_reference_count > 0);
+        return (--m_reference_count) == 0;
     }
 
 private:
-    KSharedMemory* shared_memory{};
-    size_t reference_count{};
+    KSharedMemory* m_shared_memory{};
+    size_t m_reference_count{};
 };
 
 } // namespace Kernel

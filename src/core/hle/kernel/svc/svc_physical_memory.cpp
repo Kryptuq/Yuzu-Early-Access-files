@@ -16,9 +16,7 @@ Result SetHeapSize(Core::System& system, VAddr* out_address, u64 size) {
     R_UNLESS(size < MainMemorySizeMax, ResultInvalidSize);
 
     // Set the heap size.
-    R_TRY(GetCurrentProcess(system.Kernel()).PageTable().SetHeapSize(out_address, size));
-
-    return ResultSuccess;
+    R_RETURN(GetCurrentProcess(system.Kernel()).PageTable().SetHeapSize(out_address, size));
 }
 
 /// Maps memory at a desired address
@@ -27,22 +25,22 @@ Result MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
 
     if (!Common::Is4KBAligned(addr)) {
         LOG_ERROR(Kernel_SVC, "Address is not aligned to 4KB, 0x{:016X}", addr);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (!Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is not aligned to 4KB, 0x{:X}", size);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (size == 0) {
         LOG_ERROR(Kernel_SVC, "Size is zero");
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!(addr < addr + size)) {
         LOG_ERROR(Kernel_SVC, "Size causes 64-bit overflow of address");
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     KProcess* const current_process{GetCurrentProcessPointer(system.Kernel())};
@@ -50,24 +48,24 @@ Result MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
 
     if (current_process->GetSystemResourceSize() == 0) {
         LOG_ERROR(Kernel_SVC, "System Resource Size is zero");
-        return ResultInvalidState;
+        R_THROW(ResultInvalidState);
     }
 
     if (!page_table.IsInsideAddressSpace(addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Address is not within the address space, addr=0x{:016X}, size=0x{:016X}", addr,
                   size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     if (page_table.IsOutsideAliasRegion(addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Address is not within the alias region, addr=0x{:016X}, size=0x{:016X}", addr,
                   size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
-    return page_table.MapPhysicalMemory(addr, size);
+    R_RETURN(page_table.MapPhysicalMemory(addr, size));
 }
 
 /// Unmaps memory previously mapped via MapPhysicalMemory
@@ -76,22 +74,22 @@ Result UnmapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
 
     if (!Common::Is4KBAligned(addr)) {
         LOG_ERROR(Kernel_SVC, "Address is not aligned to 4KB, 0x{:016X}", addr);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (!Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is not aligned to 4KB, 0x{:X}", size);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (size == 0) {
         LOG_ERROR(Kernel_SVC, "Size is zero");
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!(addr < addr + size)) {
         LOG_ERROR(Kernel_SVC, "Size causes 64-bit overflow of address");
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     KProcess* const current_process{GetCurrentProcessPointer(system.Kernel())};
@@ -99,24 +97,24 @@ Result UnmapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
 
     if (current_process->GetSystemResourceSize() == 0) {
         LOG_ERROR(Kernel_SVC, "System Resource Size is zero");
-        return ResultInvalidState;
+        R_THROW(ResultInvalidState);
     }
 
     if (!page_table.IsInsideAddressSpace(addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Address is not within the address space, addr=0x{:016X}, size=0x{:016X}", addr,
                   size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     if (page_table.IsOutsideAliasRegion(addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Address is not within the alias region, addr=0x{:016X}, size=0x{:016X}", addr,
                   size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
-    return page_table.UnmapPhysicalMemory(addr, size);
+    R_RETURN(page_table.UnmapPhysicalMemory(addr, size));
 }
 
 Result MapPhysicalMemoryUnsafe(Core::System& system, uint64_t address, uint64_t size) {

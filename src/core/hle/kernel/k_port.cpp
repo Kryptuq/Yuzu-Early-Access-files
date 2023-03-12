@@ -7,56 +7,55 @@
 
 namespace Kernel {
 
-KPort::KPort(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_}, server{kernel_}, client{kernel_} {}
+KPort::KPort(KernelCore& kernel)
+    : KAutoObjectWithSlabHeapAndContainer{kernel}, m_server{kernel}, m_client{kernel} {}
 
 KPort::~KPort() = default;
 
-void KPort::Initialize(s32 max_sessions_, bool is_light_, const std::string& name_) {
+void KPort::Initialize(s32 max_sessions, bool is_light, uintptr_t name) {
     // Open a new reference count to the initialized port.
-    Open();
+    this->Open();
 
     // Create and initialize our server/client pair.
-    KAutoObject::Create(std::addressof(server));
-    KAutoObject::Create(std::addressof(client));
-    server.Initialize(this, name_ + ":Server");
-    client.Initialize(this, max_sessions_, name_ + ":Client");
+    KAutoObject::Create(std::addressof(m_server));
+    KAutoObject::Create(std::addressof(m_client));
+    m_server.Initialize(this);
+    m_client.Initialize(this, max_sessions);
 
     // Set our member variables.
-    is_light = is_light_;
-    name = name_;
-    state = State::Normal;
+    m_is_light = is_light;
+    m_name = name;
+    m_state = State::Normal;
 }
 
 void KPort::OnClientClosed() {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
-    if (state == State::Normal) {
-        state = State::ClientClosed;
+    if (m_state == State::Normal) {
+        m_state = State::ClientClosed;
     }
 }
 
 void KPort::OnServerClosed() {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
-    if (state == State::Normal) {
-        state = State::ServerClosed;
+    if (m_state == State::Normal) {
+        m_state = State::ServerClosed;
     }
 }
 
 bool KPort::IsServerClosed() const {
-    KScopedSchedulerLock sl{kernel};
-    return state == State::ServerClosed;
+    KScopedSchedulerLock sl{m_kernel};
+    return m_state == State::ServerClosed;
 }
 
 Result KPort::EnqueueSession(KServerSession* session) {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
-    R_UNLESS(state == State::Normal, ResultPortClosed);
+    R_UNLESS(m_state == State::Normal, ResultPortClosed);
 
-    server.EnqueueSession(session);
-
-    return ResultSuccess;
+    m_server.EnqueueSession(session);
+    R_SUCCEED();
 }
 
 } // namespace Kernel

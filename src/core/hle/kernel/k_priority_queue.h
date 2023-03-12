@@ -77,11 +77,11 @@ private:
 public:
     class KPerCoreQueue {
     private:
-        std::array<Entry, NumCores> root{};
+        std::array<Entry, NumCores> m_root{};
 
     public:
         constexpr KPerCoreQueue() {
-            for (auto& per_core_root : root) {
+            for (auto& per_core_root : m_root) {
                 per_core_root.Initialize();
             }
         }
@@ -91,15 +91,15 @@ public:
             Entry& member_entry = member->GetPriorityQueueEntry(core);
 
             // Get the entry associated with the end of the queue.
-            Member* tail = this->root[core].GetPrev();
+            Member* tail = m_root[core].GetPrev();
             Entry& tail_entry =
-                (tail != nullptr) ? tail->GetPriorityQueueEntry(core) : this->root[core];
+                (tail != nullptr) ? tail->GetPriorityQueueEntry(core) : m_root[core];
 
             // Link the entries.
             member_entry.SetPrev(tail);
             member_entry.SetNext(nullptr);
             tail_entry.SetNext(member);
-            this->root[core].SetPrev(member);
+            m_root[core].SetPrev(member);
 
             return tail == nullptr;
         }
@@ -109,15 +109,15 @@ public:
             Entry& member_entry = member->GetPriorityQueueEntry(core);
 
             // Get the entry associated with the front of the queue.
-            Member* head = this->root[core].GetNext();
+            Member* head = m_root[core].GetNext();
             Entry& head_entry =
-                (head != nullptr) ? head->GetPriorityQueueEntry(core) : this->root[core];
+                (head != nullptr) ? head->GetPriorityQueueEntry(core) : m_root[core];
 
             // Link the entries.
             member_entry.SetPrev(nullptr);
             member_entry.SetNext(head);
             head_entry.SetPrev(member);
-            this->root[core].SetNext(member);
+            m_root[core].SetNext(member);
 
             return (head == nullptr);
         }
@@ -130,9 +130,9 @@ public:
             Member* prev = member_entry.GetPrev();
             Member* next = member_entry.GetNext();
             Entry& prev_entry =
-                (prev != nullptr) ? prev->GetPriorityQueueEntry(core) : this->root[core];
+                (prev != nullptr) ? prev->GetPriorityQueueEntry(core) : m_root[core];
             Entry& next_entry =
-                (next != nullptr) ? next->GetPriorityQueueEntry(core) : this->root[core];
+                (next != nullptr) ? next->GetPriorityQueueEntry(core) : m_root[core];
 
             // Unlink.
             prev_entry.SetNext(next);
@@ -142,7 +142,7 @@ public:
         }
 
         constexpr Member* GetFront(s32 core) const {
-            return this->root[core].GetNext();
+            return m_root[core].GetNext();
         }
     };
 
@@ -158,8 +158,8 @@ public:
                 return;
             }
 
-            if (this->queues[priority].PushBack(core, member)) {
-                this->available_priorities[core].SetBit(priority);
+            if (m_queues[priority].PushBack(core, member)) {
+                m_available_priorities[core].SetBit(priority);
             }
         }
 
@@ -171,8 +171,8 @@ public:
                 return;
             }
 
-            if (this->queues[priority].PushFront(core, member)) {
-                this->available_priorities[core].SetBit(priority);
+            if (m_queues[priority].PushFront(core, member)) {
+                m_available_priorities[core].SetBit(priority);
             }
         }
 
@@ -184,18 +184,17 @@ public:
                 return;
             }
 
-            if (this->queues[priority].Remove(core, member)) {
-                this->available_priorities[core].ClearBit(priority);
+            if (m_queues[priority].Remove(core, member)) {
+                m_available_priorities[core].ClearBit(priority);
             }
         }
 
         constexpr Member* GetFront(s32 core) const {
             ASSERT(IsValidCore(core));
 
-            const s32 priority =
-                static_cast<s32>(this->available_priorities[core].CountLeadingZero());
+            const s32 priority = static_cast<s32>(m_available_priorities[core].CountLeadingZero());
             if (priority <= LowestPriority) {
-                return this->queues[priority].GetFront(core);
+                return m_queues[priority].GetFront(core);
             } else {
                 return nullptr;
             }
@@ -206,7 +205,7 @@ public:
             ASSERT(IsValidPriority(priority));
 
             if (priority <= LowestPriority) {
-                return this->queues[priority].GetFront(core);
+                return m_queues[priority].GetFront(core);
             } else {
                 return nullptr;
             }
@@ -218,9 +217,9 @@ public:
             Member* next = member->GetPriorityQueueEntry(core).GetNext();
             if (next == nullptr) {
                 const s32 priority = static_cast<s32>(
-                    this->available_priorities[core].GetNextSet(member->GetPriority()));
+                    m_available_priorities[core].GetNextSet(member->GetPriority()));
                 if (priority <= LowestPriority) {
-                    next = this->queues[priority].GetFront(core);
+                    next = m_queues[priority].GetFront(core);
                 }
             }
             return next;
@@ -231,8 +230,8 @@ public:
             ASSERT(IsValidPriority(priority));
 
             if (priority <= LowestPriority) {
-                this->queues[priority].Remove(core, member);
-                this->queues[priority].PushFront(core, member);
+                m_queues[priority].Remove(core, member);
+                m_queues[priority].PushFront(core, member);
             }
         }
 
@@ -241,29 +240,29 @@ public:
             ASSERT(IsValidPriority(priority));
 
             if (priority <= LowestPriority) {
-                this->queues[priority].Remove(core, member);
-                this->queues[priority].PushBack(core, member);
-                return this->queues[priority].GetFront(core);
+                m_queues[priority].Remove(core, member);
+                m_queues[priority].PushBack(core, member);
+                return m_queues[priority].GetFront(core);
             } else {
                 return nullptr;
             }
         }
 
     private:
-        std::array<KPerCoreQueue, NumPriority> queues{};
-        std::array<Common::BitSet64<NumPriority>, NumCores> available_priorities{};
+        std::array<KPerCoreQueue, NumPriority> m_queues{};
+        std::array<Common::BitSet64<NumPriority>, NumCores> m_available_priorities{};
     };
 
 private:
-    KPriorityQueueImpl scheduled_queue;
-    KPriorityQueueImpl suggested_queue;
+    KPriorityQueueImpl m_scheduled_queue;
+    KPriorityQueueImpl m_suggested_queue;
 
 private:
-    constexpr void ClearAffinityBit(u64& affinity, s32 core) {
+    static constexpr void ClearAffinityBit(u64& affinity, s32 core) {
         affinity &= ~(UINT64_C(1) << core);
     }
 
-    constexpr s32 GetNextCore(u64& affinity) {
+    static constexpr s32 GetNextCore(u64& affinity) {
         const s32 core = std::countr_zero(affinity);
         ClearAffinityBit(affinity, core);
         return core;
@@ -275,13 +274,13 @@ private:
         // Push onto the scheduled queue for its core, if we can.
         u64 affinity = member->GetAffinityMask().GetAffinityMask();
         if (const s32 core = member->GetActiveCore(); core >= 0) {
-            this->scheduled_queue.PushBack(priority, core, member);
+            m_scheduled_queue.PushBack(priority, core, member);
             ClearAffinityBit(affinity, core);
         }
 
         // And suggest the thread for all other cores.
         while (affinity) {
-            this->suggested_queue.PushBack(priority, GetNextCore(affinity), member);
+            m_suggested_queue.PushBack(priority, GetNextCore(affinity), member);
         }
     }
 
@@ -291,14 +290,14 @@ private:
         // Push onto the scheduled queue for its core, if we can.
         u64 affinity = member->GetAffinityMask().GetAffinityMask();
         if (const s32 core = member->GetActiveCore(); core >= 0) {
-            this->scheduled_queue.PushFront(priority, core, member);
+            m_scheduled_queue.PushFront(priority, core, member);
             ClearAffinityBit(affinity, core);
         }
 
         // And suggest the thread for all other cores.
         // Note: Nintendo pushes onto the back of the suggested queue, not the front.
         while (affinity) {
-            this->suggested_queue.PushBack(priority, GetNextCore(affinity), member);
+            m_suggested_queue.PushBack(priority, GetNextCore(affinity), member);
         }
     }
 
@@ -308,13 +307,13 @@ private:
         // Remove from the scheduled queue for its core.
         u64 affinity = member->GetAffinityMask().GetAffinityMask();
         if (const s32 core = member->GetActiveCore(); core >= 0) {
-            this->scheduled_queue.Remove(priority, core, member);
+            m_scheduled_queue.Remove(priority, core, member);
             ClearAffinityBit(affinity, core);
         }
 
         // Remove from the suggested queue for all other cores.
         while (affinity) {
-            this->suggested_queue.Remove(priority, GetNextCore(affinity), member);
+            m_suggested_queue.Remove(priority, GetNextCore(affinity), member);
         }
     }
 
@@ -323,27 +322,27 @@ public:
 
     // Getters.
     constexpr Member* GetScheduledFront(s32 core) const {
-        return this->scheduled_queue.GetFront(core);
+        return m_scheduled_queue.GetFront(core);
     }
 
     constexpr Member* GetScheduledFront(s32 core, s32 priority) const {
-        return this->scheduled_queue.GetFront(priority, core);
+        return m_scheduled_queue.GetFront(priority, core);
     }
 
     constexpr Member* GetSuggestedFront(s32 core) const {
-        return this->suggested_queue.GetFront(core);
+        return m_suggested_queue.GetFront(core);
     }
 
     constexpr Member* GetSuggestedFront(s32 core, s32 priority) const {
-        return this->suggested_queue.GetFront(priority, core);
+        return m_suggested_queue.GetFront(priority, core);
     }
 
     constexpr Member* GetScheduledNext(s32 core, const Member* member) const {
-        return this->scheduled_queue.GetNext(core, member);
+        return m_scheduled_queue.GetNext(core, member);
     }
 
     constexpr Member* GetSuggestedNext(s32 core, const Member* member) const {
-        return this->suggested_queue.GetNext(core, member);
+        return m_suggested_queue.GetNext(core, member);
     }
 
     constexpr Member* GetSamePriorityNext(s32 core, const Member* member) const {
@@ -375,7 +374,7 @@ public:
             return;
         }
 
-        this->scheduled_queue.MoveToFront(member->GetPriority(), member->GetActiveCore(), member);
+        m_scheduled_queue.MoveToFront(member->GetPriority(), member->GetActiveCore(), member);
     }
 
     constexpr KThread* MoveToScheduledBack(Member* member) {
@@ -384,8 +383,7 @@ public:
             return {};
         }
 
-        return this->scheduled_queue.MoveToBack(member->GetPriority(), member->GetActiveCore(),
-                                                member);
+        return m_scheduled_queue.MoveToBack(member->GetPriority(), member->GetActiveCore(), member);
     }
 
     // First class fancy operations.
@@ -425,9 +423,9 @@ public:
         for (s32 core = 0; core < static_cast<s32>(NumCores); core++) {
             if (prev_affinity.GetAffinity(core)) {
                 if (core == prev_core) {
-                    this->scheduled_queue.Remove(priority, core, member);
+                    m_scheduled_queue.Remove(priority, core, member);
                 } else {
-                    this->suggested_queue.Remove(priority, core, member);
+                    m_suggested_queue.Remove(priority, core, member);
                 }
             }
         }
@@ -436,9 +434,9 @@ public:
         for (s32 core = 0; core < static_cast<s32>(NumCores); core++) {
             if (new_affinity.GetAffinity(core)) {
                 if (core == new_core) {
-                    this->scheduled_queue.PushBack(priority, core, member);
+                    m_scheduled_queue.PushBack(priority, core, member);
                 } else {
-                    this->suggested_queue.PushBack(priority, core, member);
+                    m_suggested_queue.PushBack(priority, core, member);
                 }
             }
         }
@@ -458,22 +456,22 @@ public:
         if (prev_core != new_core) {
             // Remove from the scheduled queue for the previous core.
             if (prev_core >= 0) {
-                this->scheduled_queue.Remove(priority, prev_core, member);
+                m_scheduled_queue.Remove(priority, prev_core, member);
             }
 
             // Remove from the suggested queue and add to the scheduled queue for the new core.
             if (new_core >= 0) {
-                this->suggested_queue.Remove(priority, new_core, member);
+                m_suggested_queue.Remove(priority, new_core, member);
                 if (to_front) {
-                    this->scheduled_queue.PushFront(priority, new_core, member);
+                    m_scheduled_queue.PushFront(priority, new_core, member);
                 } else {
-                    this->scheduled_queue.PushBack(priority, new_core, member);
+                    m_scheduled_queue.PushBack(priority, new_core, member);
                 }
             }
 
             // Add to the suggested queue for the previous core.
             if (prev_core >= 0) {
-                this->suggested_queue.PushBack(priority, prev_core, member);
+                m_suggested_queue.PushBack(priority, prev_core, member);
             }
         }
     }

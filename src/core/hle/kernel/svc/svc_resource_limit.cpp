@@ -21,15 +21,13 @@ Result CreateResourceLimit(Core::System& system, Handle* out_handle) {
     SCOPE_EXIT({ resource_limit->Close(); });
 
     // Initialize the resource limit.
-    resource_limit->Initialize(&system.CoreTiming());
+    resource_limit->Initialize(std::addressof(system.CoreTiming()));
 
     // Register the limit.
     KResourceLimit::Register(kernel, resource_limit);
 
     // Add the limit to the handle table.
-    R_TRY(GetCurrentProcess(kernel).GetHandleTable().Add(out_handle, resource_limit));
-
-    return ResultSuccess;
+    R_RETURN(GetCurrentProcess(kernel).GetHandleTable().Add(out_handle, resource_limit));
 }
 
 Result GetResourceLimitLimitValue(Core::System& system, s64* out_limit_value,
@@ -49,7 +47,7 @@ Result GetResourceLimitLimitValue(Core::System& system, s64* out_limit_value,
     // Get the limit value.
     *out_limit_value = resource_limit->GetLimitValue(which);
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result GetResourceLimitCurrentValue(Core::System& system, s64* out_current_value,
@@ -69,7 +67,7 @@ Result GetResourceLimitCurrentValue(Core::System& system, s64* out_current_value
     // Get the current value.
     *out_current_value = resource_limit->GetCurrentValue(which);
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result SetResourceLimitLimitValue(Core::System& system, Handle resource_limit_handle,
@@ -87,9 +85,7 @@ Result SetResourceLimitLimitValue(Core::System& system, Handle resource_limit_ha
     R_UNLESS(resource_limit.IsNotNull(), ResultInvalidHandle);
 
     // Set the limit value.
-    R_TRY(resource_limit->SetLimitValue(which, limit_value));
-
-    return ResultSuccess;
+    R_RETURN(resource_limit->SetLimitValue(which, limit_value));
 }
 
 Result GetResourceLimitPeakValue(Core::System& system, int64_t* out_peak_value,

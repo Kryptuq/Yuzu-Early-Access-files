@@ -38,126 +38,110 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
     case InfoType::UsedNonSystemMemorySize:
     case InfoType::IsApplication:
     case InfoType::FreeThreadCount: {
-        if (info_sub_id != 0) {
-            LOG_ERROR(Kernel_SVC, "Info sub id is non zero! info_id={}, info_sub_id={}", info_id,
-                      info_sub_id);
-            return ResultInvalidEnumValue;
-        }
+        R_UNLESS(info_sub_id == 0, ResultInvalidEnumValue);
 
         const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
         KScopedAutoObject process = handle_table.GetObject<KProcess>(handle);
-        if (process.IsNull()) {
-            LOG_ERROR(Kernel_SVC, "Process is not valid! info_id={}, info_sub_id={}, handle={:08X}",
-                      info_id, info_sub_id, handle);
-            return ResultInvalidHandle;
-        }
+        R_UNLESS(process.IsNotNull(), ResultInvalidHandle);
 
         switch (info_id_type) {
         case InfoType::CoreMask:
             *result = process->GetCoreMask();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::PriorityMask:
             *result = process->GetPriorityMask();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::AliasRegionAddress:
             *result = process->PageTable().GetAliasRegionStart();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::AliasRegionSize:
             *result = process->PageTable().GetAliasRegionSize();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::HeapRegionAddress:
             *result = process->PageTable().GetHeapRegionStart();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::HeapRegionSize:
             *result = process->PageTable().GetHeapRegionSize();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::AslrRegionAddress:
             *result = process->PageTable().GetAliasCodeRegionStart();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::AslrRegionSize:
             *result = process->PageTable().GetAliasCodeRegionSize();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::StackRegionAddress:
             *result = process->PageTable().GetStackRegionStart();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::StackRegionSize:
             *result = process->PageTable().GetStackRegionSize();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::TotalMemorySize:
             *result = process->GetTotalPhysicalMemoryAvailable();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::UsedMemorySize:
             *result = process->GetTotalPhysicalMemoryUsed();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::SystemResourceSizeTotal:
             *result = process->GetSystemResourceSize();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::SystemResourceSizeUsed:
             LOG_WARNING(Kernel_SVC, "(STUBBED) Attempted to query system resource usage");
             *result = process->GetSystemResourceUsage();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::ProgramId:
-            *result = process->GetProgramID();
-            return ResultSuccess;
+            *result = process->GetProgramId();
+            R_SUCCEED();
 
         case InfoType::UserExceptionContextAddress:
             *result = process->GetProcessLocalRegionAddress();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::TotalNonSystemMemorySize:
             *result = process->GetTotalPhysicalMemoryAvailableWithoutSystemResource();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::UsedNonSystemMemorySize:
             *result = process->GetTotalPhysicalMemoryUsedWithoutSystemResource();
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::IsApplication:
             LOG_WARNING(Kernel_SVC, "(STUBBED) Assuming process is application");
             *result = true;
-            return ResultSuccess;
+            R_SUCCEED();
 
         case InfoType::FreeThreadCount:
             *result = process->GetFreeThreadCount();
-            return ResultSuccess;
+            R_SUCCEED();
 
         default:
             break;
         }
 
         LOG_ERROR(Kernel_SVC, "Unimplemented svcGetInfo id=0x{:016X}", info_id);
-        return ResultInvalidEnumValue;
+        R_THROW(ResultInvalidEnumValue);
     }
 
     case InfoType::DebuggerAttached:
         *result = 0;
-        return ResultSuccess;
+        R_SUCCEED();
 
     case InfoType::ResourceLimit: {
-        if (handle != 0) {
-            LOG_ERROR(Kernel, "Handle is non zero! handle={:08X}", handle);
-            return ResultInvalidHandle;
-        }
-
-        if (info_sub_id != 0) {
-            LOG_ERROR(Kernel, "Info sub id is non zero! info_id={}, info_sub_id={}", info_id,
-                      info_sub_id);
-            return ResultInvalidCombination;
-        }
+        R_UNLESS(handle == 0, ResultInvalidHandle);
+        R_UNLESS(info_sub_id == 0, ResultInvalidCombination);
 
         KProcess* const current_process = GetCurrentProcessPointer(system.Kernel());
         KHandleTable& handle_table = current_process->GetHandleTable();
@@ -165,44 +149,35 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
         if (!resource_limit) {
             *result = Svc::InvalidHandle;
             // Yes, the kernel considers this a successful operation.
-            return ResultSuccess;
+            R_SUCCEED();
         }
 
         Handle resource_handle{};
-        R_TRY(handle_table.Add(&resource_handle, resource_limit));
+        R_TRY(handle_table.Add(std::addressof(resource_handle), resource_limit));
 
         *result = resource_handle;
-        return ResultSuccess;
+        R_SUCCEED();
     }
 
     case InfoType::RandomEntropy:
-        if (handle != 0) {
-            LOG_ERROR(Kernel_SVC, "Process Handle is non zero, expected 0 result but got {:016X}",
-                      handle);
-            return ResultInvalidHandle;
-        }
-
-        if (info_sub_id >= KProcess::RANDOM_ENTROPY_SIZE) {
-            LOG_ERROR(Kernel_SVC, "Entropy size is out of range, expected {} but got {}",
-                      KProcess::RANDOM_ENTROPY_SIZE, info_sub_id);
-            return ResultInvalidCombination;
-        }
+        R_UNLESS(handle == 0, ResultInvalidHandle);
+        R_UNLESS(info_sub_id < KProcess::RANDOM_ENTROPY_SIZE, ResultInvalidCombination);
 
         *result = GetCurrentProcess(system.Kernel()).GetRandomEntropy(info_sub_id);
-        return ResultSuccess;
+        R_SUCCEED();
 
     case InfoType::InitialProcessIdRange:
         LOG_WARNING(Kernel_SVC,
                     "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
-        return ResultSuccess;
+        R_SUCCEED();
 
     case InfoType::ThreadTickCount: {
         constexpr u64 num_cpus = 4;
         if (info_sub_id != 0xFFFFFFFFFFFFFFFF && info_sub_id >= num_cpus) {
             LOG_ERROR(Kernel_SVC, "Core count is out of range, expected {} but got {}", num_cpus,
                       info_sub_id);
-            return ResultInvalidCombination;
+            R_THROW(ResultInvalidCombination);
         }
 
         KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
@@ -211,7 +186,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
         if (thread.IsNull()) {
             LOG_ERROR(Kernel_SVC, "Thread handle does not exist, handle=0x{:08X}",
                       static_cast<Handle>(handle));
-            return ResultInvalidHandle;
+            R_THROW(ResultInvalidHandle);
         }
 
         const auto& core_timing = system.CoreTiming();
@@ -230,7 +205,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
         }
 
         *result = out_ticks;
-        return ResultSuccess;
+        R_SUCCEED();
     }
     case InfoType::IdleTickCount: {
         // Verify the input handle is invalid.
@@ -244,7 +219,7 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
 
         // Get the idle tick count.
         *result = system.Kernel().CurrentScheduler()->GetIdleThread()->GetCpuTime();
-        return ResultSuccess;
+        R_SUCCEED();
     }
     case InfoType::MesosphereCurrentProcess: {
         // Verify the input handle is invalid.
@@ -259,17 +234,17 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
 
         // Get a new handle for the current process.
         Handle tmp;
-        R_TRY(handle_table.Add(&tmp, current_process));
+        R_TRY(handle_table.Add(std::addressof(tmp), current_process));
 
         // Set the output.
         *result = tmp;
 
         // We succeeded.
-        return ResultSuccess;
+        R_SUCCEED();
     }
     default:
         LOG_ERROR(Kernel_SVC, "Unimplemented svcGetInfo id=0x{:016X}", info_id);
-        return ResultInvalidEnumValue;
+        R_THROW(ResultInvalidEnumValue);
     }
 }
 

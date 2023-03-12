@@ -37,12 +37,12 @@ std::optional<Kernel::KProcess*> SearchProcessList(
 void GetApplicationPidGeneric(HLERequestContext& ctx,
                               const std::vector<Kernel::KProcess*>& process_list) {
     const auto process = SearchProcessList(process_list, [](const auto& proc) {
-        return proc->GetProcessID() == Kernel::KProcess::ProcessIDMin;
+        return proc->GetProcessId() == Kernel::KProcess::ProcessIDMin;
     });
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
-    rb.Push(process.has_value() ? (*process)->GetProcessID() : NO_PROCESS_FOUND_PID);
+    rb.Push(process.has_value() ? (*process)->GetProcessId() : NO_PROCESS_FOUND_PID);
 }
 
 } // Anonymous namespace
@@ -108,7 +108,7 @@ private:
 
         const auto process =
             SearchProcessList(kernel.GetProcessList(), [program_id](const auto& proc) {
-                return proc->GetProgramID() == program_id;
+                return proc->GetProgramId() == program_id;
             });
 
         if (!process.has_value()) {
@@ -119,7 +119,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.Push((*process)->GetProcessID());
+        rb.Push((*process)->GetProcessId());
     }
 
     void GetApplicationProcessId(HLERequestContext& ctx) {
@@ -136,7 +136,7 @@ private:
         LOG_WARNING(Service_PM, "(Partial Implementation) called, pid={:016X}", pid);
 
         const auto process = SearchProcessList(kernel.GetProcessList(), [pid](const auto& proc) {
-            return proc->GetProcessID() == pid;
+            return proc->GetProcessId() == pid;
         });
 
         if (!process.has_value()) {
@@ -159,7 +159,7 @@ private:
 
         OverrideStatus override_status{};
         ProgramLocation program_location{
-            .program_id = (*process)->GetProgramID(),
+            .program_id = (*process)->GetProgramId(),
             .storage_id = 0,
         };
 
@@ -194,7 +194,7 @@ private:
         LOG_DEBUG(Service_PM, "called, process_id={:016X}", process_id);
 
         const auto process = SearchProcessList(process_list, [process_id](const auto& proc) {
-            return proc->GetProcessID() == process_id;
+            return proc->GetProcessId() == process_id;
         });
 
         if (!process.has_value()) {
@@ -205,7 +205,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.Push((*process)->GetProgramID());
+        rb.Push((*process)->GetProgramId());
     }
 
     void AtmosphereGetProcessId(HLERequestContext& ctx) {
@@ -215,7 +215,7 @@ private:
         LOG_DEBUG(Service_PM, "called, program_id={:016X}", program_id);
 
         const auto process = SearchProcessList(process_list, [program_id](const auto& proc) {
-            return proc->GetProgramID() == program_id;
+            return proc->GetProgramId() == program_id;
         });
 
         if (!process.has_value()) {
@@ -226,7 +226,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
-        rb.Push((*process)->GetProcessID());
+        rb.Push((*process)->GetProcessId());
     }
 
     const std::vector<Kernel::KProcess*>& process_list;

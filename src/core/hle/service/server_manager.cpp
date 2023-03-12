@@ -124,7 +124,7 @@ Result ServerManager::ManageNamedPort(const std::string& service_name,
 
     // Create a new port.
     auto* port = Kernel::KPort::Create(m_system.Kernel());
-    port->Initialize(max_sessions, false, service_name);
+    port->Initialize(max_sessions, false, 0);
 
     // Register the port.
     Kernel::KPort::Register(m_system.Kernel(), port);

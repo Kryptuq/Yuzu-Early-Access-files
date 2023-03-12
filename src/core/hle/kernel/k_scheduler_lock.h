@@ -14,74 +14,67 @@
 namespace Kernel {
 
 class KernelCore;
+class GlobalSchedulerContext;
 
 template <typename SchedulerType>
 class KAbstractSchedulerLock {
 public:
-    explicit KAbstractSchedulerLock(KernelCore& kernel_) : kernel{kernel_} {}
+    explicit KAbstractSchedulerLock(KernelCore& kernel) : m_kernel{kernel} {}
 
     bool IsLockedByCurrentThread() const {
-        return owner_thread == GetCurrentThreadPointer(kernel);
+        return m_owner_thread == GetCurrentThreadPointer(m_kernel);
     }
 
     void Lock() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
-            return;
-        }
-
-        if (IsLockedByCurrentThread()) {
+        if (this->IsLockedByCurrentThread()) {
             // If we already own the lock, the lock count should be > 0.
             // For debug, ensure this is true.
-            ASSERT(lock_count > 0);
+            ASSERT(m_lock_count > 0);
         } else {
             // Otherwise, we want to disable scheduling and acquire the spinlock.
-            SchedulerType::DisableScheduling(kernel);
-            spin_lock.Lock();
+            SchedulerType::DisableScheduling(m_kernel);
+            m_spin_lock.Lock();
 
-            ASSERT(lock_count == 0);
-            ASSERT(owner_thread == nullptr);
+            ASSERT(m_lock_count == 0);
+            ASSERT(m_owner_thread == nullptr);
 
             // Take ownership of the lock.
-            owner_thread = GetCurrentThreadPointer(kernel);
+            m_owner_thread = GetCurrentThreadPointer(m_kernel);
         }
 
         // Increment the lock count.
-        lock_count++;
+        m_lock_count++;
     }
 
     void Unlock() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
-            return;
-        }
-
-        ASSERT(IsLockedByCurrentThread());
-        ASSERT(lock_count > 0);
+        ASSERT(this->IsLockedByCurrentThread());
+        ASSERT(m_lock_count > 0);
 
         // Release an instance of the lock.
-        if ((--lock_count) == 0) {
+        if ((--m_lock_count) == 0) {
             // Perform a memory barrier here.
             std::atomic_thread_fence(std::memory_order_seq_cst);
 
             // We're no longer going to hold the lock. Take note of what cores need scheduling.
             const u64 cores_needing_scheduling =
-                SchedulerType::UpdateHighestPriorityThreads(kernel);
+                SchedulerType::UpdateHighestPriorityThreads(m_kernel);
 
             // Note that we no longer hold the lock, and unlock the spinlock.
-            owner_thread = nullptr;
-            spin_lock.Unlock();
+            m_owner_thread = nullptr;
+            m_spin_lock.Unlock();
 
             // Enable scheduling, and perform a rescheduling operation.
-            SchedulerType::EnableScheduling(kernel, cores_needing_scheduling);
+            SchedulerType::EnableScheduling(m_kernel, cores_needing_scheduling);
         }
     }
 
 private:
-    KernelCore& kernel;
-    KAlignedSpinLock spin_lock{};
-    s32 lock_count{};
-    std::atomic<KThread*> owner_thread{};
+    friend class GlobalSchedulerContext;
+
+    KernelCore& m_kernel;
+    KAlignedSpinLock m_spin_lock{};
+    s32 m_lock_count{};
+    std::atomic<KThread*> m_owner_thread{};
 };
 
 } // namespace Kernel

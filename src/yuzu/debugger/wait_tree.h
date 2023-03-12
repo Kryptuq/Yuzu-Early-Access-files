@@ -74,25 +74,6 @@ public:
     bool IsExpandable() const override;
 };
 
-class WaitTreeMutexInfo : public WaitTreeExpandableItem {
-    Q_OBJECT
-public:
-    explicit WaitTreeMutexInfo(VAddr mutex_address_, const Kernel::KHandleTable& handle_table,
-                               Core::System& system_);
-    ~WaitTreeMutexInfo() override;
-
-    QString GetText() const override;
-    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-
-private:
-    VAddr mutex_address{};
-    u32 mutex_value{};
-    Kernel::Handle owner_handle{};
-    Kernel::KThread* owner{};
-
-    Core::System& system;
-};
-
 class WaitTreeCallstack : public WaitTreeExpandableItem {
     Q_OBJECT
 public:
@@ -124,23 +105,6 @@ protected:
     const Kernel::KSynchronizationObject& object;
 
 private:
-    Core::System& system;
-};
-
-class WaitTreeObjectList : public WaitTreeExpandableItem {
-    Q_OBJECT
-public:
-    WaitTreeObjectList(const std::vector<Kernel::KSynchronizationObject*>& list, bool wait_all,
-                       Core::System& system_);
-    ~WaitTreeObjectList() override;
-
-    QString GetText() const override;
-    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-
-private:
-    const std::vector<Kernel::KSynchronizationObject*>& object_list;
-    bool wait_all;
-
     Core::System& system;
 };
 

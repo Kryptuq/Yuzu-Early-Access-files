@@ -10,7 +10,7 @@
 
 namespace Kernel {
 
-KWorkerTask::KWorkerTask(KernelCore& kernel_) : KSynchronizationObject{kernel_} {}
+KWorkerTask::KWorkerTask(KernelCore& kernel) : KSynchronizationObject{kernel} {}
 
 void KWorkerTask::DoWorkerTask() {
     if (auto* const thread = this->DynamicCast<KThread*>(); thread != nullptr) {

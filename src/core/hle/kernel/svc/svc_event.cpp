@@ -21,7 +21,7 @@ Result SignalEvent(Core::System& system, Handle event_handle) {
     KScopedAutoObject event = handle_table.GetObject<KEvent>(event_handle);
     R_UNLESS(event.IsNotNull(), ResultInvalidHandle);
 
-    return event->Signal();
+    R_RETURN(event->Signal());
 }
 
 Result ClearEvent(Core::System& system, Handle event_handle) {
@@ -34,7 +34,7 @@ Result ClearEvent(Core::System& system, Handle event_handle) {
     {
         KScopedAutoObject event = handle_table.GetObject<KEvent>(event_handle);
         if (event.IsNotNull()) {
-            return event->Clear();
+            R_RETURN(event->Clear());
         }
     }
 
@@ -42,13 +42,11 @@ Result ClearEvent(Core::System& system, Handle event_handle) {
     {
         KScopedAutoObject readable_event = handle_table.GetObject<KReadableEvent>(event_handle);
         if (readable_event.IsNotNull()) {
-            return readable_event->Clear();
+            R_RETURN(readable_event->Clear());
         }
     }
 
-    LOG_ERROR(Kernel_SVC, "Event handle does not exist, event_handle=0x{:08X}", event_handle);
-
-    return ResultInvalidHandle;
+    R_THROW(ResultInvalidHandle);
 }
 
 Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
@@ -85,15 +83,13 @@ Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
     // Add the event to the handle table.
     R_TRY(handle_table.Add(out_write, event));
 
-    // Ensure that we maintaing a clean handle state on exit.
-    auto handle_guard = SCOPE_GUARD({ handle_table.Remove(*out_write); });
+    // Ensure that we maintain a clean handle state on exit.
+    ON_RESULT_FAILURE {
+        handle_table.Remove(*out_write);
+    };
 
     // Add the readable event to the handle table.
-    R_TRY(handle_table.Add(out_read, std::addressof(event->GetReadableEvent())));
-
-    // We succeeded.
-    handle_guard.Cancel();
-    return ResultSuccess;
+    R_RETURN(handle_table.Add(out_read, std::addressof(event->GetReadableEvent())));
 }
 
 Result SignalEvent64(Core::System& system, Handle event_handle) {

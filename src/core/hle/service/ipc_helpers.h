@@ -155,7 +155,7 @@ public:
                 Kernel::LimitableResource::SessionCountMax, 1);
 
             auto* session = Kernel::KSession::Create(kernel);
-            session->Initialize(nullptr, iface->GetServiceName());
+            session->Initialize(nullptr, 0);
 
             auto next_manager = std::make_shared<Service::SessionRequestManager>(
                 kernel, manager->GetServerManager());

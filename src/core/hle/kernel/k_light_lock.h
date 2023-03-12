@@ -13,7 +13,7 @@ class KernelCore;
 
 class KLightLock {
 public:
-    explicit KLightLock(KernelCore& kernel_) : kernel{kernel_} {}
+    explicit KLightLock(KernelCore& kernel) : m_kernel{kernel} {}
 
     void Lock();
 
@@ -24,14 +24,14 @@ public:
     void UnlockSlowPath(uintptr_t cur_thread);
 
     bool IsLocked() const {
-        return tag != 0;
+        return m_tag.load() != 0;
     }
 
     bool IsLockedByCurrentThread() const;
 
 private:
-    std::atomic<uintptr_t> tag{};
-    KernelCore& kernel;
+    std::atomic<uintptr_t> m_tag{};
+    KernelCore& m_kernel;
 };
 
 using KScopedLightLock = KScopedLock<KLightLock>;

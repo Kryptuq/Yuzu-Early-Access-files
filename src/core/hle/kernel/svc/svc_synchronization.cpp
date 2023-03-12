@@ -17,7 +17,7 @@ Result CloseHandle(Core::System& system, Handle handle) {
     R_UNLESS(GetCurrentProcess(system.Kernel()).GetHandleTable().Remove(handle),
              ResultInvalidHandle);
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 /// Clears the signaled state of an event or process.
@@ -31,7 +31,7 @@ Result ResetSignal(Core::System& system, Handle handle) {
     {
         KScopedAutoObject readable_event = handle_table.GetObject<KReadableEvent>(handle);
         if (readable_event.IsNotNull()) {
-            return readable_event->Reset();
+            R_RETURN(readable_event->Reset());
         }
     }
 
@@ -39,13 +39,11 @@ Result ResetSignal(Core::System& system, Handle handle) {
     {
         KScopedAutoObject process = handle_table.GetObject<KProcess>(handle);
         if (process.IsNotNull()) {
-            return process->Reset();
+            R_RETURN(process->Reset());
         }
     }
 
-    LOG_ERROR(Kernel_SVC, "invalid handle (0x{:08X})", handle);
-
-    return ResultInvalidHandle;
+    R_THROW(ResultInvalidHandle);
 }
 
 static Result WaitSynchronization(Core::System& system, int32_t* out_index, const Handle* handles,
@@ -109,7 +107,7 @@ Result CancelSynchronization(Core::System& system, Handle handle) {
 
     // Cancel the thread's wait.
     thread->WaitCancel();
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 void SynchronizePreemptionState(Core::System& system) {

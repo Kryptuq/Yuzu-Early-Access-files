@@ -19,17 +19,20 @@ class KPort final : public KAutoObjectWithSlabHeapAndContainer<KPort, KAutoObjec
     KERNEL_AUTOOBJECT_TRAITS(KPort, KAutoObject);
 
 public:
-    explicit KPort(KernelCore& kernel_);
+    explicit KPort(KernelCore& kernel);
     ~KPort() override;
 
-    static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
+    static void PostDestroy(uintptr_t arg) {}
 
-    void Initialize(s32 max_sessions_, bool is_light_, const std::string& name_);
+    void Initialize(s32 max_sessions, bool is_light, uintptr_t name);
     void OnClientClosed();
     void OnServerClosed();
 
+    uintptr_t GetName() const {
+        return m_name;
+    }
     bool IsLight() const {
-        return is_light;
+        return m_is_light;
     }
 
     bool IsServerClosed() const;
@@ -37,16 +40,16 @@ public:
     Result EnqueueSession(KServerSession* session);
 
     KClientPort& GetClientPort() {
-        return client;
+        return m_client;
     }
     KServerPort& GetServerPort() {
-        return server;
+        return m_server;
     }
     const KClientPort& GetClientPort() const {
-        return client;
+        return m_client;
     }
     const KServerPort& GetServerPort() const {
-        return server;
+        return m_server;
     }
 
 private:
@@ -57,10 +60,11 @@ private:
         ServerClosed = 3,
     };
 
-    KServerPort server;
-    KClientPort client;
-    State state{State::Invalid};
-    bool is_light{};
+    KServerPort m_server;
+    KClientPort m_client;
+    uintptr_t m_name;
+    State m_state{State::Invalid};
+    bool m_is_light{};
 };
 
 } // namespace Kernel

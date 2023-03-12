@@ -33,49 +33,49 @@ Result MapUnmapMemorySanityChecks(const KPageTable& manager, VAddr dst_addr, VAd
                                   u64 size) {
     if (!Common::Is4KBAligned(dst_addr)) {
         LOG_ERROR(Kernel_SVC, "Destination address is not aligned to 4KB, 0x{:016X}", dst_addr);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (!Common::Is4KBAligned(src_addr)) {
         LOG_ERROR(Kernel_SVC, "Source address is not aligned to 4KB, 0x{:016X}", src_addr);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (size == 0) {
         LOG_ERROR(Kernel_SVC, "Size is 0");
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is not aligned to 4KB, 0x{:016X}", size);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!IsValidAddressRange(dst_addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Destination is not a valid address range, addr=0x{:016X}, size=0x{:016X}",
                   dst_addr, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!IsValidAddressRange(src_addr, size)) {
         LOG_ERROR(Kernel_SVC, "Source is not a valid address range, addr=0x{:016X}, size=0x{:016X}",
                   src_addr, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!manager.IsInsideAddressSpace(src_addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Source is not within the address space, addr=0x{:016X}, size=0x{:016X}",
                   src_addr, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (manager.IsOutsideStackRegion(dst_addr, size)) {
         LOG_ERROR(Kernel_SVC,
                   "Destination is not within the stack region, addr=0x{:016X}, size=0x{:016X}",
                   dst_addr, size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     if (manager.IsInsideHeapRegion(dst_addr, size)) {
@@ -83,7 +83,7 @@ Result MapUnmapMemorySanityChecks(const KPageTable& manager, VAddr dst_addr, VAd
                   "Destination does not fit within the heap region, addr=0x{:016X}, "
                   "size=0x{:016X}",
                   dst_addr, size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
     if (manager.IsInsideAliasRegion(dst_addr, size)) {
@@ -91,10 +91,10 @@ Result MapUnmapMemorySanityChecks(const KPageTable& manager, VAddr dst_addr, VAd
                   "Destination does not fit within the map region, addr=0x{:016X}, "
                   "size=0x{:016X}",
                   dst_addr, size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 } // namespace
@@ -117,7 +117,7 @@ Result SetMemoryPermission(Core::System& system, VAddr address, u64 size, Memory
     R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
 
     // Set the memory attribute.
-    return page_table.SetMemoryPermission(address, size, perm);
+    R_RETURN(page_table.SetMemoryPermission(address, size, perm));
 }
 
 Result SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mask, u32 attr) {
@@ -141,7 +141,7 @@ Result SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mas
     R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
 
     // Set the memory attribute.
-    return page_table.SetMemoryAttribute(address, size, mask, attr);
+    R_RETURN(page_table.SetMemoryAttribute(address, size, mask, attr));
 }
 
 /// Maps a memory range into a different range.
@@ -156,7 +156,7 @@ Result MapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size)
         return result;
     }
 
-    return page_table.MapMemory(dst_addr, src_addr, size);
+    R_RETURN(page_table.MapMemory(dst_addr, src_addr, size));
 }
 
 /// Unmaps a region that was previously mapped with svcMapMemory
@@ -171,7 +171,7 @@ Result UnmapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 siz
         return result;
     }
 
-    return page_table.UnmapMemory(dst_addr, src_addr, size);
+    R_RETURN(page_table.UnmapMemory(dst_addr, src_addr, size));
 }
 
 Result SetMemoryPermission64(Core::System& system, uint64_t address, uint64_t size,

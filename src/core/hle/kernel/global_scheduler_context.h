@@ -33,7 +33,7 @@ class GlobalSchedulerContext final {
 public:
     using LockType = KAbstractSchedulerLock<KScheduler>;
 
-    explicit GlobalSchedulerContext(KernelCore& kernel_);
+    explicit GlobalSchedulerContext(KernelCore& kernel);
     ~GlobalSchedulerContext();
 
     /// Adds a new thread to the scheduler
@@ -43,8 +43,9 @@ public:
     void RemoveThread(KThread* thread);
 
     /// Returns a list of all threads managed by the scheduler
-    [[nodiscard]] const std::vector<KThread*>& GetThreadList() const {
-        return thread_list;
+    /// This is only safe to iterate while holding the scheduler lock
+    const std::vector<KThread*>& GetThreadList() const {
+        return m_thread_list;
     }
 
     /**
@@ -63,30 +64,26 @@ public:
     void RegisterDummyThreadForWakeup(KThread* thread);
     void WakeupWaitingDummyThreads();
 
-    [[nodiscard]] LockType& SchedulerLock() {
-        return scheduler_lock;
-    }
-
-    [[nodiscard]] const LockType& SchedulerLock() const {
-        return scheduler_lock;
+    LockType& SchedulerLock() {
+        return m_scheduler_lock;
     }
 
 private:
     friend class KScopedSchedulerLock;
     friend class KScopedSchedulerLockAndSleep;
 
-    KernelCore& kernel;
+    KernelCore& m_kernel;
 
-    std::atomic_bool scheduler_update_needed{};
-    KSchedulerPriorityQueue priority_queue;
-    LockType scheduler_lock;
+    std::atomic_bool m_scheduler_update_needed{};
+    KSchedulerPriorityQueue m_priority_queue;
+    LockType m_scheduler_lock;
 
     /// Lists dummy threads pending wakeup on lock release
-    std::set<KThread*> woken_dummy_threads;
+    std::set<KThread*> m_woken_dummy_threads;
 
     /// Lists all thread ids that aren't deleted/etc.
-    std::vector<KThread*> thread_list;
-    std::mutex global_list_guard;
+    std::vector<KThread*> m_thread_list;
+    std::mutex m_global_list_guard;
 };
 
 } // namespace Kernel

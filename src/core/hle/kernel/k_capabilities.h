@@ -22,7 +22,7 @@ class KCapabilities {
 public:
     constexpr explicit KCapabilities() = default;
 
-    Result InitializeForKIP(std::span<const u32> kern_caps, KPageTable* page_table);
+    Result InitializeForKip(std::span<const u32> kern_caps, KPageTable* page_table);
     Result InitializeForUser(std::span<const u32> user_caps, KPageTable* page_table);
 
     static Result CheckCapabilities(KernelCore& kernel, std::span<const u32> user_caps);

@@ -34,50 +34,30 @@ Result CreateThread(Core::System& system, Handle* out_handle, VAddr entry_point,
     }
 
     // Validate arguments.
-    if (!IsValidVirtualCoreId(core_id)) {
-        LOG_ERROR(Kernel_SVC, "Invalid Core ID specified (id={})", core_id);
-        return ResultInvalidCoreId;
-    }
-    if (((1ULL << core_id) & process.GetCoreMask()) == 0) {
-        LOG_ERROR(Kernel_SVC, "Core ID doesn't fall within allowable cores (id={})", core_id);
-        return ResultInvalidCoreId;
-    }
+    R_UNLESS(IsValidVirtualCoreId(core_id), ResultInvalidCoreId);
+    R_UNLESS(((1ull << core_id) & process.GetCoreMask()) != 0, ResultInvalidCoreId);
 
-    if (HighestThreadPriority > priority || priority > LowestThreadPriority) {
-        LOG_ERROR(Kernel_SVC, "Invalid priority specified (priority={})", priority);
-        return ResultInvalidPriority;
-    }
-    if (!process.CheckThreadPriority(priority)) {
-        LOG_ERROR(Kernel_SVC, "Invalid allowable thread priority (priority={})", priority);
-        return ResultInvalidPriority;
-    }
+    R_UNLESS(HighestThreadPriority <= priority && priority <= LowestThreadPriority,
+             ResultInvalidPriority);
+    R_UNLESS(process.CheckThreadPriority(priority), ResultInvalidPriority);
 
     // Reserve a new thread from the process resource limit (waiting up to 100ms).
-    KScopedResourceReservation thread_reservation(&process, LimitableResource::ThreadCountMax, 1,
-                                                  system.CoreTiming().GetGlobalTimeNs().count() +
-                                                      100000000);
-    if (!thread_reservation.Succeeded()) {
-        LOG_ERROR(Kernel_SVC, "Could not reserve a new thread");
-        return ResultLimitReached;
-    }
+    KScopedResourceReservation thread_reservation(
+        std::addressof(process), LimitableResource::ThreadCountMax, 1,
+        system.CoreTiming().GetGlobalTimeNs().count() + 100000000);
+    R_UNLESS(thread_reservation.Succeeded(), ResultLimitReached);
 
     // Create the thread.
     KThread* thread = KThread::Create(kernel);
-    if (!thread) {
-        LOG_ERROR(Kernel_SVC, "Unable to create new threads. Thread creation limit reached.");
-        return ResultOutOfResource;
-    }
+    R_UNLESS(thread != nullptr, ResultOutOfResource)
     SCOPE_EXIT({ thread->Close(); });
 
     // Initialize the thread.
     {
         KScopedLightLock lk{process.GetStateLock()};
         R_TRY(KThread::InitializeUserThread(system, thread, entry_point, arg, stack_bottom,
-                                            priority, core_id, &process));
+                                            priority, core_id, std::addressof(process)));
     }
-
-    // Set the thread name for debugging purposes.
-    thread->SetName(fmt::format("thread[entry_point={:X}, handle={:X}]", entry_point, *out_handle));
 
     // Commit the thread reservation.
     thread_reservation.Commit();
@@ -89,9 +69,7 @@ Result CreateThread(Core::System& system, Handle* out_handle, VAddr entry_point,
     KThread::Register(kernel, thread);
 
     // Add the thread to the handle table.
-    R_TRY(process.GetHandleTable().Add(out_handle, thread));
-
-    return ResultSuccess;
+    R_RETURN(process.GetHandleTable().Add(out_handle, thread));
 }
 
 /// Starts the thread for the provided handle
@@ -110,7 +88,7 @@ Result StartThread(Core::System& system, Handle thread_handle) {
     thread->Open();
     system.Kernel().RegisterInUseObject(thread.GetPointerUnsafe());
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 /// Called when a thread exits
@@ -202,10 +180,8 @@ Result GetThreadContext3(Core::System& system, VAddr out_context, Handle thread_
         // Copy the thread context to user space.
         system.Memory().WriteBlock(out_context, context.data(), context.size());
 
-        return ResultSuccess;
+        R_SUCCEED();
     }
-
-    return ResultSuccess;
 }
 
 /// Gets the priority for the specified thread
@@ -219,7 +195,7 @@ Result GetThreadPriority(Core::System& system, s32* out_priority, Handle handle)
 
     // Get the thread's priority.
     *out_priority = thread->GetPriority();
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 /// Sets the priority for the specified thread
@@ -238,7 +214,7 @@ Result SetThreadPriority(Core::System& system, Handle thread_handle, s32 priorit
 
     // Set the thread priority.
     thread->SetBasePriority(priority);
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result GetThreadList(Core::System& system, s32* out_num_threads, VAddr out_thread_ids,
@@ -253,7 +229,7 @@ Result GetThreadList(Core::System& system, s32* out_num_threads, VAddr out_threa
     if ((out_thread_ids_size & 0xF0000000) != 0) {
         LOG_ERROR(Kernel_SVC, "Supplied size outside [0, 0x0FFFFFFF] range. size={}",
                   out_thread_ids_size);
-        return ResultOutOfRange;
+        R_THROW(ResultOutOfRange);
     }
 
     auto* const current_process = GetCurrentProcessPointer(system.Kernel());
@@ -263,7 +239,7 @@ Result GetThreadList(Core::System& system, s32* out_num_threads, VAddr out_threa
         !current_process->PageTable().IsInsideAddressSpace(out_thread_ids, total_copy_size)) {
         LOG_ERROR(Kernel_SVC, "Address range outside address space. begin=0x{:016X}, end=0x{:016X}",
                   out_thread_ids, out_thread_ids + total_copy_size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     auto& memory = system.Memory();
@@ -273,12 +249,12 @@ Result GetThreadList(Core::System& system, s32* out_num_threads, VAddr out_threa
 
     auto list_iter = thread_list.cbegin();
     for (std::size_t i = 0; i < copy_amount; ++i, ++list_iter) {
-        memory.Write64(out_thread_ids, (*list_iter)->GetThreadID());
+        memory.Write64(out_thread_ids, (*list_iter)->GetThreadId());
         out_thread_ids += sizeof(u64);
     }
 
     *out_num_threads = static_cast<u32>(num_threads);
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result GetThreadCoreMask(Core::System& system, s32* out_core_id, u64* out_affinity_mask,
@@ -291,9 +267,7 @@ Result GetThreadCoreMask(Core::System& system, s32* out_core_id, u64* out_affini
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Get the core mask.
-    R_TRY(thread->GetCoreMask(out_core_id, out_affinity_mask));
-
-    return ResultSuccess;
+    R_RETURN(thread->GetCoreMask(out_core_id, out_affinity_mask));
 }
 
 Result SetThreadCoreMask(Core::System& system, Handle thread_handle, s32 core_id,
@@ -323,9 +297,7 @@ Result SetThreadCoreMask(Core::System& system, Handle thread_handle, s32 core_id
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Set the core mask.
-    R_TRY(thread->SetCoreMask(core_id, affinity_mask));
-
-    return ResultSuccess;
+    R_RETURN(thread->SetCoreMask(core_id, affinity_mask));
 }
 
 /// Get the ID for the specified thread.
@@ -337,7 +309,7 @@ Result GetThreadId(Core::System& system, u64* out_thread_id, Handle thread_handl
 
     // Get the thread's id.
     *out_thread_id = thread->GetId();
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result CreateThread64(Core::System& system, Handle* out_handle, uint64_t func, uint64_t arg,

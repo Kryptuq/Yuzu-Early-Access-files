@@ -108,11 +108,11 @@ enum class StepState : u32 {
 };
 
 void SetCurrentThread(KernelCore& kernel, KThread* thread);
-[[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
-[[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
-[[nodiscard]] KProcess* GetCurrentProcessPointer(KernelCore& kernel);
-[[nodiscard]] KProcess& GetCurrentProcess(KernelCore& kernel);
-[[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
+KThread* GetCurrentThreadPointer(KernelCore& kernel);
+KThread& GetCurrentThread(KernelCore& kernel);
+KProcess* GetCurrentProcessPointer(KernelCore& kernel);
+KProcess& GetCurrentProcess(KernelCore& kernel);
+s32 GetCurrentCoreId(KernelCore& kernel);
 
 class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,
                       public boost::intrusive::list_base_hook<>,
@@ -128,7 +128,7 @@ public:
     static constexpr s32 IdleThreadPriority = Svc::LowestThreadPriority + 1;
     static constexpr s32 DummyThreadPriority = Svc::LowestThreadPriority + 2;
 
-    explicit KThread(KernelCore& kernel_);
+    explicit KThread(KernelCore& kernel);
     ~KThread() override;
 
 public:
@@ -136,16 +136,12 @@ public:
     using ThreadContext64 = Core::ARM_Interface::ThreadContext64;
     using WaiterList = boost::intrusive::list<KThread>;
 
-    void SetName(std::string new_name) {
-        name = std::move(new_name);
-    }
-
     /**
      * Gets the thread's current priority
      * @return The current thread's priority
      */
-    [[nodiscard]] s32 GetPriority() const {
-        return priority;
+    s32 GetPriority() const {
+        return m_priority;
     }
 
     /**
@@ -153,23 +149,23 @@ public:
      * @param priority The new priority.
      */
     void SetPriority(s32 value) {
-        priority = value;
+        m_priority = value;
     }
 
     /**
      * Gets the thread's nominal priority.
      * @return The current thread's nominal priority.
      */
-    [[nodiscard]] s32 GetBasePriority() const {
-        return base_priority;
+    s32 GetBasePriority() const {
+        return m_base_priority;
     }
 
     /**
      * Gets the thread's thread ID
      * @return The thread's ID
      */
-    [[nodiscard]] u64 GetThreadID() const {
-        return thread_id;
+    u64 GetThreadId() const {
+        return m_thread_id;
     }
 
     void ContinueIfHasKernelWaiters() {
@@ -180,7 +176,7 @@ public:
 
     void SetBasePriority(s32 value);
 
-    [[nodiscard]] Result Run();
+    Result Run();
 
     void Exit();
 
@@ -188,22 +184,22 @@ public:
 
     ThreadState RequestTerminate();
 
-    [[nodiscard]] u32 GetSuspendFlags() const {
-        return suspend_allowed_flags & suspend_request_flags;
+    u32 GetSuspendFlags() const {
+        return m_suspend_allowed_flags & m_suspend_request_flags;
     }
 
-    [[nodiscard]] bool IsSuspended() const {
+    bool IsSuspended() const {
         return GetSuspendFlags() != 0;
     }
 
-    [[nodiscard]] bool IsSuspendRequested(SuspendType type) const {
-        return (suspend_request_flags &
-                (1u << (static_cast<u32>(ThreadState::SuspendShift) + static_cast<u32>(type)))) !=
+    bool IsSuspendRequested(SuspendType type) const {
+        return (m_suspend_request_flags &
+                (1U << (static_cast<u32>(ThreadState::SuspendShift) + static_cast<u32>(type)))) !=
                0;
     }
 
-    [[nodiscard]] bool IsSuspendRequested() const {
-        return suspend_request_flags != 0;
+    bool IsSuspendRequested() const {
+        return m_suspend_request_flags != 0;
     }
 
     void RequestSuspend(SuspendType type);
@@ -217,124 +213,124 @@ public:
     void Continue();
 
     constexpr void SetSyncedIndex(s32 index) {
-        synced_index = index;
+        m_synced_index = index;
     }
 
-    [[nodiscard]] constexpr s32 GetSyncedIndex() const {
-        return synced_index;
+    constexpr s32 GetSyncedIndex() const {
+        return m_synced_index;
     }
 
     constexpr void SetWaitResult(Result wait_res) {
-        wait_result = wait_res;
+        m_wait_result = wait_res;
     }
 
-    [[nodiscard]] constexpr Result GetWaitResult() const {
-        return wait_result;
+    constexpr Result GetWaitResult() const {
+        return m_wait_result;
     }
 
     /*
      * Returns the Thread Local Storage address of the current thread
      * @returns VAddr of the thread's TLS
      */
-    [[nodiscard]] VAddr GetTLSAddress() const {
-        return tls_address;
+    VAddr GetTlsAddress() const {
+        return m_tls_address;
     }
 
     /*
      * Returns the value of the TPIDR_EL0 Read/Write system register for this thread.
      * @returns The value of the TPIDR_EL0 register.
      */
-    [[nodiscard]] u64 GetTPIDR_EL0() const {
-        return thread_context_64.tpidr;
+    u64 GetTpidrEl0() const {
+        return m_thread_context_64.tpidr;
     }
 
     /// Sets the value of the TPIDR_EL0 Read/Write system register for this thread.
-    void SetTPIDR_EL0(u64 value) {
-        thread_context_64.tpidr = value;
-        thread_context_32.tpidr = static_cast<u32>(value);
+    void SetTpidrEl0(u64 value) {
+        m_thread_context_64.tpidr = value;
+        m_thread_context_32.tpidr = static_cast<u32>(value);
     }
 
     void CloneFpuStatus();
 
-    [[nodiscard]] ThreadContext32& GetContext32() {
-        return thread_context_32;
+    ThreadContext32& GetContext32() {
+        return m_thread_context_32;
     }
 
-    [[nodiscard]] const ThreadContext32& GetContext32() const {
-        return thread_context_32;
+    const ThreadContext32& GetContext32() const {
+        return m_thread_context_32;
     }
 
-    [[nodiscard]] ThreadContext64& GetContext64() {
-        return thread_context_64;
+    ThreadContext64& GetContext64() {
+        return m_thread_context_64;
     }
 
-    [[nodiscard]] const ThreadContext64& GetContext64() const {
-        return thread_context_64;
+    const ThreadContext64& GetContext64() const {
+        return m_thread_context_64;
     }
 
-    [[nodiscard]] std::shared_ptr<Common::Fiber>& GetHostContext();
+    std::shared_ptr<Common::Fiber>& GetHostContext();
 
-    [[nodiscard]] ThreadState GetState() const {
-        return thread_state.load(std::memory_order_relaxed) & ThreadState::Mask;
+    ThreadState GetState() const {
+        return m_thread_state.load(std::memory_order_relaxed) & ThreadState::Mask;
     }
 
-    [[nodiscard]] ThreadState GetRawState() const {
-        return thread_state.load(std::memory_order_relaxed);
+    ThreadState GetRawState() const {
+        return m_thread_state.load(std::memory_order_relaxed);
     }
 
     void SetState(ThreadState state);
 
-    [[nodiscard]] StepState GetStepState() const {
-        return step_state;
+    StepState GetStepState() const {
+        return m_step_state;
     }
 
     void SetStepState(StepState state) {
-        step_state = state;
+        m_step_state = state;
     }
 
-    [[nodiscard]] s64 GetLastScheduledTick() const {
-        return last_scheduled_tick;
+    s64 GetLastScheduledTick() const {
+        return m_last_scheduled_tick;
     }
 
     void SetLastScheduledTick(s64 tick) {
-        last_scheduled_tick = tick;
+        m_last_scheduled_tick = tick;
     }
 
-    void AddCpuTime([[maybe_unused]] s32 core_id_, s64 amount) {
-        cpu_time += amount;
+    void AddCpuTime(s32 core_id, s64 amount) {
+        m_cpu_time += amount;
         // TODO(bunnei): Debug kernels track per-core tick counts. Should we?
     }
 
-    [[nodiscard]] s64 GetCpuTime() const {
-        return cpu_time;
+    s64 GetCpuTime() const {
+        return m_cpu_time;
     }
 
-    [[nodiscard]] s32 GetActiveCore() const {
-        return core_id;
+    s32 GetActiveCore() const {
+        return m_core_id;
     }
 
     void SetActiveCore(s32 core) {
-        core_id = core;
+        m_core_id = core;
     }
 
-    [[nodiscard]] s32 GetCurrentCore() const {
-        return current_core_id;
+    s32 GetCurrentCore() const {
+        return m_current_core_id;
     }
 
     void SetCurrentCore(s32 core) {
-        current_core_id = core;
+        m_current_core_id = core;
     }
 
-    [[nodiscard]] KProcess* GetOwnerProcess() {
-        return parent;
+    KProcess* GetOwnerProcess() {
+        return m_parent;
     }
 
-    [[nodiscard]] const KProcess* GetOwnerProcess() const {
-        return parent;
+    const KProcess* GetOwnerProcess() const {
+        return m_parent;
     }
 
-    [[nodiscard]] bool IsUserThread() const {
-        return parent != nullptr;
+    bool IsUserThread() const {
+        return m_parent != nullptr;
     }
 
     u16 GetUserDisableCount() const;
@@ -343,69 +339,69 @@ public:
 
     KThread* GetLockOwner() const;
 
-    [[nodiscard]] const KAffinityMask& GetAffinityMask() const {
-        return physical_affinity_mask;
+    const KAffinityMask& GetAffinityMask() const {
+        return m_physical_affinity_mask;
     }
 
-    [[nodiscard]] Result GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    Result GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] Result GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    Result GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] Result SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
+    Result SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
 
-    [[nodiscard]] Result SetActivity(Svc::ThreadActivity activity);
+    Result SetActivity(Svc::ThreadActivity activity);
 
-    [[nodiscard]] Result Sleep(s64 timeout);
+    Result Sleep(s64 timeout);
 
-    [[nodiscard]] s64 GetYieldScheduleCount() const {
-        return schedule_count;
+    s64 GetYieldScheduleCount() const {
+        return m_schedule_count;
     }
 
     void SetYieldScheduleCount(s64 count) {
-        schedule_count = count;
+        m_schedule_count = count;
     }
 
     void WaitCancel();
 
-    [[nodiscard]] bool IsWaitCancelled() const {
-        return wait_cancelled;
+    bool IsWaitCancelled() const {
+        return m_wait_cancelled;
     }
 
     void ClearWaitCancelled() {
-        wait_cancelled = false;
+        m_wait_cancelled = false;
     }
 
-    [[nodiscard]] bool IsCancellable() const {
-        return cancellable;
+    bool IsCancellable() const {
+        return m_cancellable;
     }
 
     void SetCancellable() {
-        cancellable = true;
+        m_cancellable = true;
     }
 
     void ClearCancellable() {
-        cancellable = false;
+        m_cancellable = false;
     }
 
-    [[nodiscard]] bool IsTerminationRequested() const {
-        return termination_requested || GetRawState() == ThreadState::Terminated;
+    bool IsTerminationRequested() const {
+        return m_termination_requested || GetRawState() == ThreadState::Terminated;
     }
 
-    [[nodiscard]] u64 GetId() const override {
-        return this->GetThreadID();
+    u64 GetId() const override {
+        return this->GetThreadId();
     }
 
-    [[nodiscard]] bool IsInitialized() const override {
-        return initialized;
+    bool IsInitialized() const override {
+        return m_initialized;
     }
 
-    [[nodiscard]] uintptr_t GetPostDestroyArgument() const override {
-        return reinterpret_cast<uintptr_t>(parent) | (resource_limit_release_hint ? 1 : 0);
+    uintptr_t GetPostDestroyArgument() const override {
+        return reinterpret_cast<uintptr_t>(m_parent) | (m_resource_limit_release_hint ? 1 : 0);
     }
 
     void Finalize() override;
 
-    [[nodiscard]] bool IsSignaled() const override;
+    bool IsSignaled() const override;
 
     void OnTimer();
 
@@ -413,26 +409,22 @@ public:
 
     static void PostDestroy(uintptr_t arg);
 
-    [[nodiscard]] static Result InitializeDummyThread(KThread* thread, KProcess* owner);
+    static Result InitializeDummyThread(KThread* thread, KProcess* owner);
 
-    [[nodiscard]] static Result InitializeMainThread(Core::System& system, KThread* thread,
-                                                     s32 virt_core);
+    static Result InitializeMainThread(Core::System& system, KThread* thread, s32 virt_core);
 
-    [[nodiscard]] static Result InitializeIdleThread(Core::System& system, KThread* thread,
-                                                     s32 virt_core);
+    static Result InitializeIdleThread(Core::System& system, KThread* thread, s32 virt_core);
 
-    [[nodiscard]] static Result InitializeHighPriorityThread(Core::System& system, KThread* thread,
-                                                             KThreadFunction func, uintptr_t arg,
-                                                             s32 virt_core);
+    static Result InitializeHighPriorityThread(Core::System& system, KThread* thread,
+                                               KThreadFunction func, uintptr_t arg, s32 virt_core);
 
-    [[nodiscard]] static Result InitializeUserThread(Core::System& system, KThread* thread,
-                                                     KThreadFunction func, uintptr_t arg,
-                                                     VAddr user_stack_top, s32 prio, s32 virt_core,
-                                                     KProcess* owner);
+    static Result InitializeUserThread(Core::System& system, KThread* thread, KThreadFunction func,
+                                       uintptr_t arg, VAddr user_stack_top, s32 prio, s32 virt_core,
+                                       KProcess* owner);
 
-    [[nodiscard]] static Result InitializeServiceThread(Core::System& system, KThread* thread,
-                                                        std::function<void()>&& thread_func,
-                                                        s32 prio, s32 virt_core, KProcess* owner);
+    static Result InitializeServiceThread(Core::System& system, KThread* thread,
+                                          std::function<void()>&& thread_func, s32 prio,
+                                          s32 virt_core, KProcess* owner);
 
 public:
     struct StackParameters {
@@ -446,12 +438,12 @@ public:
         KThread* cur_thread;
     };
 
-    [[nodiscard]] StackParameters& GetStackParameters() {
-        return stack_parameters;
+    StackParameters& GetStackParameters() {
+        return m_stack_parameters;
     }
 
-    [[nodiscard]] const StackParameters& GetStackParameters() const {
-        return stack_parameters;
+    const StackParameters& GetStackParameters() const {
+        return m_stack_parameters;
     }
 
     class QueueEntry {
@@ -459,47 +451,47 @@ public:
         constexpr QueueEntry() = default;
 
         constexpr void Initialize() {
-            prev = nullptr;
-            next = nullptr;
+            m_prev = nullptr;
+            m_next = nullptr;
         }
 
         constexpr KThread* GetPrev() const {
-            return prev;
+            return m_prev;
         }
         constexpr KThread* GetNext() const {
-            return next;
+            return m_next;
         }
         constexpr void SetPrev(KThread* thread) {
-            prev = thread;
+            m_prev = thread;
         }
         constexpr void SetNext(KThread* thread) {
-            next = thread;
+            m_next = thread;
         }
 
     private:
-        KThread* prev{};
-        KThread* next{};
+        KThread* m_prev{};
+        KThread* m_next{};
     };
 
-    [[nodiscard]] QueueEntry& GetPriorityQueueEntry(s32 core) {
-        return per_core_priority_queue_entry[core];
+    QueueEntry& GetPriorityQueueEntry(s32 core) {
+        return m_per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] const QueueEntry& GetPriorityQueueEntry(s32 core) const {
-        return per_core_priority_queue_entry[core];
+    const QueueEntry& GetPriorityQueueEntry(s32 core) const {
+        return m_per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] s32 GetDisableDispatchCount() const {
+    s32 GetDisableDispatchCount() const {
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
+        ASSERT(GetCurrentThread(m_kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
+        ASSERT(GetCurrentThread(m_kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }
 
@@ -515,7 +507,7 @@ public:
         this->GetStackParameters().is_in_exception_handler = false;
     }
 
-    [[nodiscard]] bool IsInExceptionHandler() const {
+    bool IsInExceptionHandler() const {
         return this->GetStackParameters().is_in_exception_handler;
     }
 
@@ -527,11 +519,11 @@ public:
         this->GetStackParameters().is_calling_svc = false;
     }
 
-    [[nodiscard]] bool IsCallingSvc() const {
+    bool IsCallingSvc() const {
         return this->GetStackParameters().is_calling_svc;
     }
 
-    [[nodiscard]] u8 GetSvcId() const {
+    u8 GetSvcId() const {
         return this->GetStackParameters().current_svc_id;
     }
 
@@ -543,78 +535,54 @@ public:
         this->GetStackParameters().dpc_flags &= ~static_cast<u8>(flag);
     }
 
-    [[nodiscard]] u8 GetDpc() const {
+    u8 GetDpc() const {
         return this->GetStackParameters().dpc_flags;
     }
 
-    [[nodiscard]] bool HasDpc() const {
+    bool HasDpc() const {
         return this->GetDpc() != 0;
     }
 
     void SetWaitReasonForDebugging(ThreadWaitReasonForDebugging reason) {
-        wait_reason_for_debugging = reason;
+        m_wait_reason_for_debugging = reason;
     }
 
-    [[nodiscard]] ThreadWaitReasonForDebugging GetWaitReasonForDebugging() const {
-        return wait_reason_for_debugging;
+    ThreadWaitReasonForDebugging GetWaitReasonForDebugging() const {
+        return m_wait_reason_for_debugging;
     }
 
-    [[nodiscard]] ThreadType GetThreadType() const {
-        return thread_type;
+    ThreadType GetThreadType() const {
+        return m_thread_type;
     }
 
-    [[nodiscard]] bool IsDummyThread() const {
-        return GetThreadType() == ThreadType::Dummy;
-    }
-
-    void SetWaitObjectsForDebugging(const std::span<KSynchronizationObject*>& objects) {
-        wait_objects_for_debugging.clear();
-        wait_objects_for_debugging.reserve(objects.size());
-        for (const auto& object : objects) {
-            wait_objects_for_debugging.emplace_back(object);
-        }
-    }
-
-    [[nodiscard]] const std::vector<KSynchronizationObject*>& GetWaitObjectsForDebugging() const {
-        return wait_objects_for_debugging;
-    }
-
-    void SetMutexWaitAddressForDebugging(VAddr address) {
-        mutex_wait_address_for_debugging = address;
-    }
-
-    [[nodiscard]] VAddr GetMutexWaitAddressForDebugging() const {
-        return mutex_wait_address_for_debugging;
-    }
-
-    [[nodiscard]] s32 GetIdealCoreForDebugging() const {
-        return virtual_ideal_core_id;
+    bool IsDummyThread() const {
+        return this->GetThreadType() == ThreadType::Dummy;
     }
 
     void AddWaiter(KThread* thread);
 
     void RemoveWaiter(KThread* thread);
 
-    [[nodiscard]] Result GetThreadContext3(std::vector<u8>& out);
+    Result GetThreadContext3(std::vector<u8>& out);
 
-    [[nodiscard]] KThread* RemoveUserWaiterByKey(bool* out_has_waiters, VAddr key) {
+    KThread* RemoveUserWaiterByKey(bool* out_has_waiters, VAddr key) {
         return this->RemoveWaiterByKey(out_has_waiters, key, false);
     }
 
-    [[nodiscard]] KThread* RemoveKernelWaiterByKey(bool* out_has_waiters, VAddr key) {
+    KThread* RemoveKernelWaiterByKey(bool* out_has_waiters, VAddr key) {
         return this->RemoveWaiterByKey(out_has_waiters, key, true);
     }
 
-    [[nodiscard]] VAddr GetAddressKey() const {
-        return address_key;
+    VAddr GetAddressKey() const {
+        return m_address_key;
     }
 
-    [[nodiscard]] u32 GetAddressKeyValue() const {
-        return address_key_value;
+    u32 GetAddressKeyValue() const {
+        return m_address_key_value;
     }
 
-    [[nodiscard]] bool GetIsKernelAddressKey() const {
-        return is_kernel_address_key;
+    bool GetIsKernelAddressKey() const {
+        return m_is_kernel_address_key;
     }
 
     //! NB: intentional deviation from official kernel.
@@ -624,37 +592,37 @@ public:
     // into things.
 
     void SetUserAddressKey(VAddr key, u32 val) {
-        ASSERT(waiting_lock_info == nullptr);
-        address_key = key;
-        address_key_value = val;
-        is_kernel_address_key = false;
+        ASSERT(m_waiting_lock_info == nullptr);
+        m_address_key = key;
+        m_address_key_value = val;
+        m_is_kernel_address_key = false;
     }
 
     void SetKernelAddressKey(VAddr key) {
-        ASSERT(waiting_lock_info == nullptr);
-        address_key = key;
-        is_kernel_address_key = true;
+        ASSERT(m_waiting_lock_info == nullptr);
+        m_address_key = key;
+        m_is_kernel_address_key = true;
     }
 
     void ClearWaitQueue() {
-        wait_queue = nullptr;
+        m_wait_queue = nullptr;
     }
 
     void BeginWait(KThreadQueue* queue);
-    void NotifyAvailable(KSynchronizationObject* signaled_object, Result wait_result_);
-    void EndWait(Result wait_result_);
-    void CancelWait(Result wait_result_, bool cancel_timer_task);
+    void NotifyAvailable(KSynchronizationObject* signaled_object, Result wait_result);
+    void EndWait(Result wait_result);
+    void CancelWait(Result wait_result, bool cancel_timer_task);
 
-    [[nodiscard]] s32 GetNumKernelWaiters() const {
-        return num_kernel_waiters;
+    s32 GetNumKernelWaiters() const {
+        return m_num_kernel_waiters;
     }
 
-    [[nodiscard]] u64 GetConditionVariableKey() const {
-        return condvar_key;
+    u64 GetConditionVariableKey() const {
+        return m_condvar_key;
     }
 
-    [[nodiscard]] u64 GetAddressArbiterKey() const {
-        return condvar_key;
+    u64 GetAddressArbiterKey() const {
+        return m_condvar_key;
     }
 
     // Dummy threads (used for HLE host threads) cannot wait based on the guest scheduler, and
@@ -665,17 +633,16 @@ public:
     void DummyThreadBeginWait();
     void DummyThreadEndWait();
 
-    [[nodiscard]] uintptr_t GetArgument() const {
-        return argument;
+    uintptr_t GetArgument() const {
+        return m_argument;
     }
 
-    [[nodiscard]] VAddr GetUserStackTop() const {
-        return stack_top;
+    VAddr GetUserStackTop() const {
+        return m_stack_top;
     }
 
 private:
-    [[nodiscard]] KThread* RemoveWaiterByKey(bool* out_has_waiters, VAddr key,
-                                             bool is_kernel_address_key);
+    KThread* RemoveWaiterByKey(bool* out_has_waiters, VAddr key, bool is_kernel_address_key);
 
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
@@ -692,11 +659,11 @@ private:
             u64 cv_key{};
             s32 priority{};
 
-            [[nodiscard]] constexpr u64 GetConditionVariableKey() const {
+            constexpr u64 GetConditionVariableKey() const {
                 return cv_key;
             }
 
-            [[nodiscard]] constexpr s32 GetPriority() const {
+            constexpr s32 GetPriority() const {
                 return priority;
             }
         };
@@ -728,22 +695,21 @@ private:
 
     void IncreaseBasePriority(s32 priority);
 
-    [[nodiscard]] Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
-                                    s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
+    Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top, s32 prio,
+                      s32 virt_core, KProcess* owner, ThreadType type);
 
-    [[nodiscard]] static Result InitializeThread(KThread* thread, KThreadFunction func,
-                                                 uintptr_t arg, VAddr user_stack_top, s32 prio,
-                                                 s32 core, KProcess* owner, ThreadType type,
-                                                 std::function<void()>&& init_func);
+    static Result InitializeThread(KThread* thread, KThreadFunction func, uintptr_t arg,
+                                   VAddr user_stack_top, s32 prio, s32 core, KProcess* owner,
+                                   ThreadType type, std::function<void()>&& init_func);
 
     // For core KThread implementation
-    ThreadContext32 thread_context_32{};
-    ThreadContext64 thread_context_64{};
-    Common::IntrusiveRedBlackTreeNode condvar_arbiter_tree_node{};
-    s32 priority{};
+    ThreadContext32 m_thread_context_32{};
+    ThreadContext64 m_thread_context_64{};
+    Common::IntrusiveRedBlackTreeNode m_condvar_arbiter_tree_node{};
+    s32 m_priority{};
     using ConditionVariableThreadTreeTraits =
         Common::IntrusiveRedBlackTreeMemberTraitsDeferredAssert<
-            &KThread::condvar_arbiter_tree_node>;
+            &KThread::m_condvar_arbiter_tree_node>;
     using ConditionVariableThreadTree =
         ConditionVariableThreadTreeTraits::TreeType<ConditionVariableComparator>;
 
@@ -773,7 +739,7 @@ private:
 
     using LockWithPriorityInheritanceThreadTreeTraits =
         Common::IntrusiveRedBlackTreeMemberTraitsDeferredAssert<
-            &KThread::condvar_arbiter_tree_node>;
+            &KThread::m_condvar_arbiter_tree_node>;
     using LockWithPriorityInheritanceThreadTree =
         ConditionVariableThreadTreeTraits::TreeType<LockWithPriorityInheritanceComparator>;
 
@@ -809,7 +775,7 @@ public:
             waiter->SetWaitingLockInfo(this);
         }
 
-        [[nodiscard]] bool RemoveWaiter(KThread* waiter) {
+        bool RemoveWaiter(KThread* waiter) {
             m_tree.erase(m_tree.iterator_to(*waiter));
 
             waiter->SetWaitingLockInfo(nullptr);
@@ -853,11 +819,11 @@ public:
     };
 
     void SetWaitingLockInfo(LockWithPriorityInheritanceInfo* lock) {
-        waiting_lock_info = lock;
+        m_waiting_lock_info = lock;
     }
 
     LockWithPriorityInheritanceInfo* GetWaitingLockInfo() {
-        return waiting_lock_info;
+        return m_waiting_lock_info;
     }
 
     void AddHeldLock(LockWithPriorityInheritanceInfo* lock_info);
@@ -867,111 +833,110 @@ private:
     using LockWithPriorityInheritanceInfoList =
         boost::intrusive::list<LockWithPriorityInheritanceInfo>;
 
-    ConditionVariableThreadTree* condvar_tree{};
-    u64 condvar_key{};
-    u64 virtual_affinity_mask{};
-    KAffinityMask physical_affinity_mask{};
-    u64 thread_id{};
-    std::atomic<s64> cpu_time{};
-    VAddr address_key{};
-    KProcess* parent{};
-    VAddr kernel_stack_top{};
-    u32* light_ipc_data{};
-    VAddr tls_address{};
-    KLightLock activity_pause_lock;
-    s64 schedule_count{};
-    s64 last_scheduled_tick{};
-    std::array<QueueEntry, Core::Hardware::NUM_CPU_CORES> per_core_priority_queue_entry{};
-    KThreadQueue* wait_queue{};
-    LockWithPriorityInheritanceInfoList held_lock_info_list{};
-    LockWithPriorityInheritanceInfo* waiting_lock_info{};
-    WaiterList pinned_waiter_list{};
-    u32 address_key_value{};
-    u32 suspend_request_flags{};
-    u32 suspend_allowed_flags{};
-    s32 synced_index{};
-    Result wait_result{ResultSuccess};
-    s32 base_priority{};
-    s32 physical_ideal_core_id{};
-    s32 virtual_ideal_core_id{};
-    s32 num_kernel_waiters{};
-    s32 current_core_id{};
-    s32 core_id{};
-    KAffinityMask original_physical_affinity_mask{};
-    s32 original_physical_ideal_core_id{};
-    s32 num_core_migration_disables{};
-    std::atomic<ThreadState> thread_state{};
-    std::atomic<bool> termination_requested{};
-    bool wait_cancelled{};
-    bool cancellable{};
-    bool signaled{};
-    bool initialized{};
-    bool debug_attached{};
-    s8 priority_inheritance_count{};
-    bool resource_limit_release_hint{};
-    bool is_kernel_address_key{};
-    StackParameters stack_parameters{};
-    Common::SpinLock context_guard{};
+    ConditionVariableThreadTree* m_condvar_tree{};
+    u64 m_condvar_key{};
+    u64 m_virtual_affinity_mask{};
+    KAffinityMask m_physical_affinity_mask{};
+    u64 m_thread_id{};
+    std::atomic<s64> m_cpu_time{};
+    VAddr m_address_key{};
+    KProcess* m_parent{};
+    VAddr m_kernel_stack_top{};
+    u32* m_light_ipc_data{};
+    VAddr m_tls_address{};
+    KLightLock m_activity_pause_lock;
+    s64 m_schedule_count{};
+    s64 m_last_scheduled_tick{};
+    std::array<QueueEntry, Core::Hardware::NUM_CPU_CORES> m_per_core_priority_queue_entry{};
+    KThreadQueue* m_wait_queue{};
+    LockWithPriorityInheritanceInfoList m_held_lock_info_list{};
+    LockWithPriorityInheritanceInfo* m_waiting_lock_info{};
+    WaiterList m_pinned_waiter_list{};
+    u32 m_address_key_value{};
+    u32 m_suspend_request_flags{};
+    u32 m_suspend_allowed_flags{};
+    s32 m_synced_index{};
+    Result m_wait_result{ResultSuccess};
+    s32 m_base_priority{};
+    s32 m_physical_ideal_core_id{};
+    s32 m_virtual_ideal_core_id{};
+    s32 m_num_kernel_waiters{};
+    s32 m_current_core_id{};
+    s32 m_core_id{};
+    KAffinityMask m_original_physical_affinity_mask{};
+    s32 m_original_physical_ideal_core_id{};
+    s32 m_num_core_migration_disables{};
+    std::atomic<ThreadState> m_thread_state{};
+    std::atomic<bool> m_termination_requested{};
+    bool m_wait_cancelled{};
+    bool m_cancellable{};
+    bool m_signaled{};
+    bool m_initialized{};
+    bool m_debug_attached{};
+    s8 m_priority_inheritance_count{};
+    bool m_resource_limit_release_hint{};
+    bool m_is_kernel_address_key{};
+    StackParameters m_stack_parameters{};
+    Common::SpinLock m_context_guard{};
 
     // For emulation
-    std::shared_ptr<Common::Fiber> host_context{};
-    bool is_single_core{};
-    ThreadType thread_type{};
-    StepState step_state{};
-    std::atomic<bool> dummy_thread_runnable{true};
+    std::shared_ptr<Common::Fiber> m_host_context{};
+    ThreadType m_thread_type{};
+    StepState m_step_state{};
+    std::atomic<bool> m_dummy_thread_runnable{true};
 
     // For debugging
-    std::vector<KSynchronizationObject*> wait_objects_for_debugging;
-    VAddr mutex_wait_address_for_debugging{};
-    ThreadWaitReasonForDebugging wait_reason_for_debugging{};
-    uintptr_t argument{};
-    VAddr stack_top{};
+    std::vector<KSynchronizationObject*> m_wait_objects_for_debugging{};
+    VAddr m_mutex_wait_address_for_debugging{};
+    ThreadWaitReasonForDebugging m_wait_reason_for_debugging{};
+    uintptr_t m_argument{};
+    VAddr m_stack_top{};
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;
 
     void SetConditionVariable(ConditionVariableThreadTree* tree, VAddr address, u64 cv_key,
                               u32 value) {
-        ASSERT(waiting_lock_info == nullptr);
-        condvar_tree = tree;
-        condvar_key = cv_key;
-        address_key = address;
-        address_key_value = value;
-        is_kernel_address_key = false;
+        ASSERT(m_waiting_lock_info == nullptr);
+        m_condvar_tree = tree;
+        m_condvar_key = cv_key;
+        m_address_key = address;
+        m_address_key_value = value;
+        m_is_kernel_address_key = false;
     }
 
     void ClearConditionVariable() {
-        condvar_tree = nullptr;
+        m_condvar_tree = nullptr;
     }
 
-    [[nodiscard]] bool IsWaitingForConditionVariable() const {
-        return condvar_tree != nullptr;
+    bool IsWaitingForConditionVariable() const {
+        return m_condvar_tree != nullptr;
     }
 
     void SetAddressArbiter(ConditionVariableThreadTree* tree, u64 address) {
-        ASSERT(waiting_lock_info == nullptr);
-        condvar_tree = tree;
-        condvar_key = address;
+        ASSERT(m_waiting_lock_info == nullptr);
+        m_condvar_tree = tree;
+        m_condvar_key = address;
     }
 
     void ClearAddressArbiter() {
-        condvar_tree = nullptr;
+        m_condvar_tree = nullptr;
     }
 
-    [[nodiscard]] bool IsWaitingForAddressArbiter() const {
-        return condvar_tree != nullptr;
+    bool IsWaitingForAddressArbiter() const {
+        return m_condvar_tree != nullptr;
     }
 
-    [[nodiscard]] ConditionVariableThreadTree* GetConditionVariableTree() const {
-        return condvar_tree;
+    ConditionVariableThreadTree* GetConditionVariableTree() const {
+        return m_condvar_tree;
     }
 };
 
 class KScopedDisableDispatch {
 public:
-    [[nodiscard]] explicit KScopedDisableDispatch(KernelCore& kernel_) : kernel{kernel_} {
+    explicit KScopedDisableDispatch(KernelCore& kernel) : m_kernel{kernel} {
         // If we are shutting down the kernel, none of this is relevant anymore.
-        if (kernel.IsShuttingDown()) {
+        if (m_kernel.IsShuttingDown()) {
             return;
         }
         GetCurrentThread(kernel).DisableDispatch();
@@ -980,7 +945,7 @@ public:
     ~KScopedDisableDispatch();
 
 private:
-    KernelCore& kernel;
+    KernelCore& m_kernel;
 };
 
 inline void KTimerTask::OnTimer() {

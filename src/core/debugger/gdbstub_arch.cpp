@@ -259,7 +259,7 @@ void GDBStubA64::WriteRegisters(Kernel::KThread* thread, std::string_view regist
 std::string GDBStubA64::ThreadStatus(const Kernel::KThread* thread, u8 signal) const {
     return fmt::format("T{:02x}{:02x}:{};{:02x}:{};{:02x}:{};thread:{:x};", signal, PC_REGISTER,
                        RegRead(thread, PC_REGISTER), SP_REGISTER, RegRead(thread, SP_REGISTER),
-                       LR_REGISTER, RegRead(thread, LR_REGISTER), thread->GetThreadID());
+                       LR_REGISTER, RegRead(thread, LR_REGISTER), thread->GetThreadId());
 }
 
 u32 GDBStubA64::BreakpointInstruction() const {
@@ -469,7 +469,7 @@ void GDBStubA32::WriteRegisters(Kernel::KThread* thread, std::string_view regist
 std::string GDBStubA32::ThreadStatus(const Kernel::KThread* thread, u8 signal) const {
     return fmt::format("T{:02x}{:02x}:{};{:02x}:{};{:02x}:{};thread:{:x};", signal, PC_REGISTER,
                        RegRead(thread, PC_REGISTER), SP_REGISTER, RegRead(thread, SP_REGISTER),
-                       LR_REGISTER, RegRead(thread, LR_REGISTER), thread->GetThreadID());
+                       LR_REGISTER, RegRead(thread, LR_REGISTER), thread->GetThreadId());
 }
 
 u32 GDBStubA32::BreakpointInstruction() const {

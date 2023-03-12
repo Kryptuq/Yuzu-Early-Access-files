@@ -7,8 +7,8 @@
 
 namespace Kernel {
 
-KEvent::KEvent(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_}, m_readable_event{kernel_} {}
+KEvent::KEvent(KernelCore& kernel)
+    : KAutoObjectWithSlabHeapAndContainer{kernel}, m_readable_event{kernel} {}
 
 KEvent::~KEvent() = default;
 
@@ -36,7 +36,7 @@ void KEvent::Finalize() {
 }
 
 Result KEvent::Signal() {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
     R_SUCCEED_IF(m_readable_event_destroyed);
 
@@ -44,7 +44,7 @@ Result KEvent::Signal() {
 }
 
 Result KEvent::Clear() {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
     R_SUCCEED_IF(m_readable_event_destroyed);
 

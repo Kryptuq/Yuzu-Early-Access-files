@@ -5,26 +5,24 @@
 
 #include <mutex>
 
+#include "common/common_funcs.h"
 #include "core/hle/kernel/k_scoped_lock.h"
 
 namespace Kernel {
 
 class KSpinLock {
 public:
-    KSpinLock() = default;
+    explicit KSpinLock() = default;
 
-    KSpinLock(const KSpinLock&) = delete;
-    KSpinLock& operator=(const KSpinLock&) = delete;
-
-    KSpinLock(KSpinLock&&) = delete;
-    KSpinLock& operator=(KSpinLock&&) = delete;
+    YUZU_NON_COPYABLE(KSpinLock);
+    YUZU_NON_MOVEABLE(KSpinLock);
 
     void Lock();
     void Unlock();
-    [[nodiscard]] bool TryLock();
+    bool TryLock();
 
 private:
-    std::mutex lck;
+    std::mutex m_lock;
 };
 
 // TODO(bunnei): Alias for now, in case we want to implement these accurately in the future.

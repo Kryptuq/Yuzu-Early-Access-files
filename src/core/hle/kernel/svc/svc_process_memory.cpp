@@ -53,7 +53,7 @@ Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, V
     R_UNLESS(page_table.Contains(address, size), ResultInvalidCurrentMemory);
 
     // Set the memory permission.
-    return page_table.SetProcessMemoryPermission(address, size, perm);
+    R_RETURN(page_table.SetProcessMemoryPermission(address, size, perm));
 }
 
 Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
@@ -93,10 +93,8 @@ Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_
         KMemoryAttribute::All, KMemoryAttribute::None));
 
     // Map the group.
-    R_TRY(dst_pt.MapPageGroup(dst_address, pg, KMemoryState::SharedCode,
-                              KMemoryPermission::UserReadWrite));
-
-    return ResultSuccess;
+    R_RETURN(dst_pt.MapPageGroup(dst_address, pg, KMemoryState::SharedCode,
+                                 KMemoryPermission::UserReadWrite));
 }
 
 Result UnmapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
@@ -129,9 +127,7 @@ Result UnmapProcessMemory(Core::System& system, VAddr dst_address, Handle proces
              ResultInvalidMemoryRegion);
 
     // Unmap the memory.
-    R_TRY(dst_pt.UnmapProcessMemory(dst_address, size, src_pt, src_address));
-
-    return ResultSuccess;
+    R_RETURN(dst_pt.UnmapProcessMemory(dst_address, size, src_pt, src_address));
 }
 
 Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst_address,
@@ -144,18 +140,18 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
     if (!Common::Is4KBAligned(src_address)) {
         LOG_ERROR(Kernel_SVC, "src_address is not page-aligned (src_address=0x{:016X}).",
                   src_address);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (!Common::Is4KBAligned(dst_address)) {
         LOG_ERROR(Kernel_SVC, "dst_address is not page-aligned (dst_address=0x{:016X}).",
                   dst_address);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (size == 0 || !Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is zero or not page-aligned (size=0x{:016X})", size);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!IsValidAddressRange(dst_address, size)) {
@@ -163,7 +159,7 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
                   "Destination address range overflows the address space (dst_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   dst_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!IsValidAddressRange(src_address, size)) {
@@ -171,7 +167,7 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
                   "Source address range overflows the address space (src_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   src_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
@@ -179,7 +175,7 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Invalid process handle specified (handle=0x{:08X}).",
                   process_handle);
-        return ResultInvalidHandle;
+        R_THROW(ResultInvalidHandle);
     }
 
     auto& page_table = process->PageTable();
@@ -188,7 +184,7 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
                   "Source address range is not within the address space (src_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   src_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!page_table.IsInsideASLRRegion(dst_address, size)) {
@@ -196,10 +192,10 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
                   "Destination address range is not within the ASLR region (dst_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   dst_address, size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
-    return page_table.MapCodeMemory(dst_address, src_address, size);
+    R_RETURN(page_table.MapCodeMemory(dst_address, src_address, size));
 }
 
 Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst_address,
@@ -212,18 +208,18 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
     if (!Common::Is4KBAligned(dst_address)) {
         LOG_ERROR(Kernel_SVC, "dst_address is not page-aligned (dst_address=0x{:016X}).",
                   dst_address);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (!Common::Is4KBAligned(src_address)) {
         LOG_ERROR(Kernel_SVC, "src_address is not page-aligned (src_address=0x{:016X}).",
                   src_address);
-        return ResultInvalidAddress;
+        R_THROW(ResultInvalidAddress);
     }
 
     if (size == 0 || !Common::Is4KBAligned(size)) {
         LOG_ERROR(Kernel_SVC, "Size is zero or not page-aligned (size=0x{:016X}).", size);
-        return ResultInvalidSize;
+        R_THROW(ResultInvalidSize);
     }
 
     if (!IsValidAddressRange(dst_address, size)) {
@@ -231,7 +227,7 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
                   "Destination address range overflows the address space (dst_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   dst_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!IsValidAddressRange(src_address, size)) {
@@ -239,7 +235,7 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
                   "Source address range overflows the address space (src_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   src_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     const auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
@@ -247,7 +243,7 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
     if (process.IsNull()) {
         LOG_ERROR(Kernel_SVC, "Invalid process handle specified (handle=0x{:08X}).",
                   process_handle);
-        return ResultInvalidHandle;
+        R_THROW(ResultInvalidHandle);
     }
 
     auto& page_table = process->PageTable();
@@ -256,7 +252,7 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
                   "Source address range is not within the address space (src_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   src_address, size);
-        return ResultInvalidCurrentMemory;
+        R_THROW(ResultInvalidCurrentMemory);
     }
 
     if (!page_table.IsInsideASLRRegion(dst_address, size)) {
@@ -264,11 +260,11 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
                   "Destination address range is not within the ASLR region (dst_address=0x{:016X}, "
                   "size=0x{:016X}).",
                   dst_address, size);
-        return ResultInvalidMemoryRegion;
+        R_THROW(ResultInvalidMemoryRegion);
     }
 
-    return page_table.UnmapCodeMemory(dst_address, src_address, size,
-                                      KPageTable::ICacheInvalidationStrategy::InvalidateAll);
+    R_RETURN(page_table.UnmapCodeMemory(dst_address, src_address, size,
+                                        KPageTable::ICacheInvalidationStrategy::InvalidateAll));
 }
 
 Result SetProcessMemoryPermission64(Core::System& system, Handle process_handle, uint64_t address,

@@ -30,20 +30,19 @@ class KClientSession final
     KERNEL_AUTOOBJECT_TRAITS(KClientSession, KAutoObject);
 
 public:
-    explicit KClientSession(KernelCore& kernel_);
+    explicit KClientSession(KernelCore& kernel);
     ~KClientSession() override;
 
-    void Initialize(KSession* parent_session_, std::string&& name_) {
+    void Initialize(KSession* parent) {
         // Set member variables.
-        parent = parent_session_;
-        name = std::move(name_);
+        m_parent = parent;
     }
 
     void Destroy() override;
-    static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
+    static void PostDestroy(uintptr_t arg) {}
 
     KSession* GetParent() const {
-        return parent;
+        return m_parent;
     }
 
     Result SendSyncRequest();
@@ -51,7 +50,7 @@ public:
     void OnServerClosed();
 
 private:
-    KSession* parent{};
+    KSession* m_parent{};
 };
 
 } // namespace Kernel

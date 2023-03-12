@@ -12,20 +12,20 @@ namespace Kernel {
 class KScopedResourceReservation {
 public:
     explicit KScopedResourceReservation(KResourceLimit* l, LimitableResource r, s64 v, s64 timeout)
-        : resource_limit(std::move(l)), value(v), resource(r) {
-        if (resource_limit && value) {
-            success = resource_limit->Reserve(resource, value, timeout);
+        : m_limit(l), m_value(v), m_resource(r) {
+        if (m_limit && m_value) {
+            m_succeeded = m_limit->Reserve(m_resource, m_value, timeout);
         } else {
-            success = true;
+            m_succeeded = true;
         }
     }
 
     explicit KScopedResourceReservation(KResourceLimit* l, LimitableResource r, s64 v = 1)
-        : resource_limit(std::move(l)), value(v), resource(r) {
-        if (resource_limit && value) {
-            success = resource_limit->Reserve(resource, value);
+        : m_limit(l), m_value(v), m_resource(r) {
+        if (m_limit && m_value) {
+            m_succeeded = m_limit->Reserve(m_resource, m_value);
         } else {
-            success = true;
+            m_succeeded = true;
         }
     }
 
@@ -36,26 +36,26 @@ public:
         : KScopedResourceReservation(p->GetResourceLimit(), r, v) {}
 
     ~KScopedResourceReservation() noexcept {
-        if (resource_limit && value && success) {
-            // resource was not committed, release the reservation.
-            resource_limit->Release(resource, value);
+        if (m_limit && m_value && m_succeeded) {
+            // Resource was not committed, release the reservation.
+            m_limit->Release(m_resource, m_value);
         }
     }
 
     /// Commit the resource reservation, destruction of this object does not release the resource
     void Commit() {
-        resource_limit = nullptr;
+        m_limit = nullptr;
     }
 
-    [[nodiscard]] bool Succeeded() const {
-        return success;
+    bool Succeeded() const {
+        return m_succeeded;
     }
 
 private:
-    KResourceLimit* resource_limit{};
-    s64 value;
-    LimitableResource resource;
-    bool success;
+    KResourceLimit* m_limit{};
+    s64 m_value{};
+    LimitableResource m_resource{};
+    bool m_succeeded{};
 };
 
 } // namespace Kernel

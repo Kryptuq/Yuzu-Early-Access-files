@@ -62,7 +62,7 @@ Result ServiceManager::RegisterService(std::string name, u32 max_sessions,
     }
 
     auto* port = Kernel::KPort::Create(kernel);
-    port->Initialize(ServerSessionCountMax, false, name);
+    port->Initialize(ServerSessionCountMax, false, 0);
 
     service_ports.emplace(name, port);
     registered_services.emplace(name, handler);
@@ -211,7 +211,7 @@ void SM::RegisterService(HLERequestContext& ctx) {
     }
 
     auto* port = Kernel::KPort::Create(kernel);
-    port->Initialize(ServerSessionCountMax, is_light, name);
+    port->Initialize(ServerSessionCountMax, is_light, 0);
     SCOPE_EXIT({ port->GetClientPort().Close(); });
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};

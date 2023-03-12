@@ -16,7 +16,7 @@ class KEvent final : public KAutoObjectWithSlabHeapAndContainer<KEvent, KAutoObj
     KERNEL_AUTOOBJECT_TRAITS(KEvent, KAutoObject);
 
 public:
-    explicit KEvent(KernelCore& kernel_);
+    explicit KEvent(KernelCore& kernel);
     ~KEvent() override;
 
     void Initialize(KProcess* owner);

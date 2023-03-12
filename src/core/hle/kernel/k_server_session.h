@@ -33,19 +33,17 @@ class KServerSession final : public KSynchronizationObject,
     friend class ServiceThread;
 
 public:
-    explicit KServerSession(KernelCore& kernel_);
+    explicit KServerSession(KernelCore& kernel);
     ~KServerSession() override;
 
     void Destroy() override;
 
-    void Initialize(KSession* parent_session_, std::string&& name_);
-
-    KSession* GetParent() {
-        return parent;
+    void Initialize(KSession* p) {
+        m_parent = p;
     }
 
     const KSession* GetParent() const {
-        return parent;
+        return m_parent;
     }
 
     bool IsSignaled() const override;
@@ -66,10 +64,10 @@ private:
     void CleanupRequests();
 
     /// KSession that owns this KServerSession
-    KSession* parent{};
+    KSession* m_parent{};
 
     /// List of threads which are pending a reply.
-    boost::intrusive::list<KSessionRequest> m_request_list;
+    boost::intrusive::list<KSessionRequest> m_request_list{};
     KSessionRequest* m_current_request{};
 
     KLightLock m_lock;

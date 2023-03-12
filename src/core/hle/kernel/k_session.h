@@ -18,19 +18,18 @@ class KSession final : public KAutoObjectWithSlabHeapAndContainer<KSession, KAut
     KERNEL_AUTOOBJECT_TRAITS(KSession, KAutoObject);
 
 public:
-    explicit KSession(KernelCore& kernel_);
+    explicit KSession(KernelCore& kernel);
     ~KSession() override;
 
-    void Initialize(KClientPort* port_, const std::string& name_);
-
+    void Initialize(KClientPort* port, uintptr_t name);
     void Finalize() override;
 
     bool IsInitialized() const override {
-        return initialized;
+        return m_initialized;
     }
 
     uintptr_t GetPostDestroyArgument() const override {
-        return reinterpret_cast<uintptr_t>(process);
+        return reinterpret_cast<uintptr_t>(m_process);
     }
 
     static void PostDestroy(uintptr_t arg);
@@ -48,27 +47,23 @@ public:
     }
 
     KClientSession& GetClientSession() {
-        return client;
+        return m_client;
     }
 
     KServerSession& GetServerSession() {
-        return server;
+        return m_server;
     }
 
     const KClientSession& GetClientSession() const {
-        return client;
+        return m_client;
     }
 
     const KServerSession& GetServerSession() const {
-        return server;
+        return m_server;
     }
 
     const KClientPort* GetParent() const {
-        return port;
-    }
-
-    KClientPort* GetParent() {
-        return port;
+        return m_port;
     }
 
 private:
@@ -80,20 +75,20 @@ private:
     };
 
     void SetState(State state) {
-        atomic_state = static_cast<u8>(state);
+        m_atomic_state = static_cast<u8>(state);
     }
 
     State GetState() const {
-        return static_cast<State>(atomic_state.load(std::memory_order_relaxed));
+        return static_cast<State>(m_atomic_state.load());
     }
 
-    KServerSession server;
-    KClientSession client;
-    std::atomic<std::underlying_type_t<State>> atomic_state{
-        static_cast<std::underlying_type_t<State>>(State::Invalid)};
-    KClientPort* port{};
-    KProcess* process{};
-    bool initialized{};
+    KServerSession m_server;
+    KClientSession m_client;
+    KClientPort* m_port{};
+    uintptr_t m_name{};
+    KProcess* m_process{};
+    std::atomic<u8> m_atomic_state{static_cast<u8>(State::Invalid)};
+    bool m_initialized{};
 };
 
 } // namespace Kernel

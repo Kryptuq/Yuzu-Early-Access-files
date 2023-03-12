@@ -43,7 +43,7 @@ Result CreateTransferMemory(Core::System& system, Handle* out, VAddr address, u6
     auto& handle_table = process.GetHandleTable();
 
     // Reserve a new transfer memory from the process resource limit.
-    KScopedResourceReservation trmem_reservation(&process,
+    KScopedResourceReservation trmem_reservation(std::addressof(process),
                                                  LimitableResource::TransferMemoryCountMax);
     R_UNLESS(trmem_reservation.Succeeded(), ResultLimitReached);
 
@@ -67,9 +67,7 @@ Result CreateTransferMemory(Core::System& system, Handle* out, VAddr address, u6
     KTransferMemory::Register(kernel, trmem);
 
     // Add the transfer memory to the handle table.
-    R_TRY(handle_table.Add(out, trmem));
-
-    return ResultSuccess;
+    R_RETURN(handle_table.Add(out, trmem));
 }
 
 Result MapTransferMemory(Core::System& system, Handle trmem_handle, uint64_t address, uint64_t size,

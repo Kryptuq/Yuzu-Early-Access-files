@@ -12,11 +12,11 @@ KAutoObject* KAutoObject::Create(KAutoObject* obj) {
 }
 
 void KAutoObject::RegisterWithKernel() {
-    kernel.RegisterKernelObject(this);
+    m_kernel.RegisterKernelObject(this);
 }
 
 void KAutoObject::UnregisterWithKernel() {
-    kernel.UnregisterKernelObject(this);
+    m_kernel.UnregisterKernelObject(this);
 }
 
 } // namespace Kernel

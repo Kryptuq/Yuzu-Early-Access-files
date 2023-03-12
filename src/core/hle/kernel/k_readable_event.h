@@ -17,7 +17,7 @@ class KReadableEvent : public KSynchronizationObject {
     KERNEL_AUTOOBJECT_TRAITS(KReadableEvent, KSynchronizationObject);
 
 public:
-    explicit KReadableEvent(KernelCore& kernel_);
+    explicit KReadableEvent(KernelCore& kernel);
     ~KReadableEvent() override;
 
     void Initialize(KEvent* parent);

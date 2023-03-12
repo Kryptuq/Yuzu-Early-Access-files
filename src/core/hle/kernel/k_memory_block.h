@@ -471,8 +471,8 @@ public:
             m_disable_merge_attribute & KMemoryBlockDisableMergeAttribute::AllRight);
     }
 
-    constexpr void UpdateDeviceDisableMergeStateForShareLeft(
-        [[maybe_unused]] KMemoryPermission new_perm, bool left, [[maybe_unused]] bool right) {
+    constexpr void UpdateDeviceDisableMergeStateForShareLeft(KMemoryPermission new_perm, bool left,
+                                                             bool right) {
         // New permission/right aren't used.
         if (left) {
             m_disable_merge_attribute = static_cast<KMemoryBlockDisableMergeAttribute>(
@@ -482,8 +482,8 @@ public:
         }
     }
 
-    constexpr void UpdateDeviceDisableMergeStateForShareRight(
-        [[maybe_unused]] KMemoryPermission new_perm, [[maybe_unused]] bool left, bool right) {
+    constexpr void UpdateDeviceDisableMergeStateForShareRight(KMemoryPermission new_perm, bool left,
+                                                              bool right) {
         // New permission/left aren't used.
         if (right) {
             m_disable_merge_attribute = static_cast<KMemoryBlockDisableMergeAttribute>(
@@ -499,8 +499,7 @@ public:
         this->UpdateDeviceDisableMergeStateForShareRight(new_perm, left, right);
     }
 
-    constexpr void ShareToDevice([[maybe_unused]] KMemoryPermission new_perm, bool left,
-                                 bool right) {
+    constexpr void ShareToDevice(KMemoryPermission new_perm, bool left, bool right) {
         // New permission isn't used.
 
         // We must either be shared or have a zero lock count.
@@ -516,8 +515,8 @@ public:
         this->UpdateDeviceDisableMergeStateForShare(new_perm, left, right);
     }
 
-    constexpr void UpdateDeviceDisableMergeStateForUnshareLeft(
-        [[maybe_unused]] KMemoryPermission new_perm, bool left, [[maybe_unused]] bool right) {
+    constexpr void UpdateDeviceDisableMergeStateForUnshareLeft(KMemoryPermission new_perm,
+                                                               bool left, bool right) {
         // New permission/right aren't used.
 
         if (left) {
@@ -536,8 +535,8 @@ public:
         }
     }
 
-    constexpr void UpdateDeviceDisableMergeStateForUnshareRight(
-        [[maybe_unused]] KMemoryPermission new_perm, [[maybe_unused]] bool left, bool right) {
+    constexpr void UpdateDeviceDisableMergeStateForUnshareRight(KMemoryPermission new_perm,
+                                                                bool left, bool right) {
         // New permission/left aren't used.
 
         if (right) {
@@ -556,8 +555,7 @@ public:
         this->UpdateDeviceDisableMergeStateForUnshareRight(new_perm, left, right);
     }
 
-    constexpr void UnshareToDevice([[maybe_unused]] KMemoryPermission new_perm, bool left,
-                                   bool right) {
+    constexpr void UnshareToDevice(KMemoryPermission new_perm, bool left, bool right) {
         // New permission isn't used.
 
         // We must be shared.
@@ -575,8 +573,7 @@ public:
         this->UpdateDeviceDisableMergeStateForUnshare(new_perm, left, right);
     }
 
-    constexpr void UnshareToDeviceRight([[maybe_unused]] KMemoryPermission new_perm, bool left,
-                                        bool right) {
+    constexpr void UnshareToDeviceRight(KMemoryPermission new_perm, bool left, bool right) {
         // New permission isn't used.
 
         // We must be shared.
@@ -594,7 +591,7 @@ public:
         this->UpdateDeviceDisableMergeStateForUnshareRight(new_perm, left, right);
     }
 
-    constexpr void LockForIpc(KMemoryPermission new_perm, bool left, [[maybe_unused]] bool right) {
+    constexpr void LockForIpc(KMemoryPermission new_perm, bool left, bool right) {
         // We must either be locked or have a zero lock count.
         ASSERT((m_attribute & KMemoryAttribute::IpcLocked) == KMemoryAttribute::IpcLocked ||
                m_ipc_lock_count == 0);
@@ -626,8 +623,7 @@ public:
         }
     }
 
-    constexpr void UnlockForIpc([[maybe_unused]] KMemoryPermission new_perm, bool left,
-                                [[maybe_unused]] bool right) {
+    constexpr void UnlockForIpc(KMemoryPermission new_perm, bool left, bool right) {
         // New permission isn't used.
 
         // We must be locked.

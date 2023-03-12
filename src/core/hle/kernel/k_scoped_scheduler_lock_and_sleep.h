@@ -11,39 +11,39 @@
 
 namespace Kernel {
 
-class [[nodiscard]] KScopedSchedulerLockAndSleep {
+class KScopedSchedulerLockAndSleep {
 public:
-    explicit KScopedSchedulerLockAndSleep(KernelCore& kernel_, KHardwareTimer** out_timer,
-                                          KThread* t, s64 timeout)
-        : kernel(kernel_), timeout_tick(timeout), thread(t), timer() {
+    explicit KScopedSchedulerLockAndSleep(KernelCore& kernel, KHardwareTimer** out_timer,
+                                          KThread* thread, s64 timeout_tick)
+        : m_kernel(kernel), m_timeout_tick(timeout_tick), m_thread(thread), m_timer() {
         // Lock the scheduler.
-        kernel.GlobalSchedulerContext().scheduler_lock.Lock();
+        kernel.GlobalSchedulerContext().m_scheduler_lock.Lock();
 
         // Set our timer only if the time is positive.
-        timer = (timeout_tick > 0) ? std::addressof(kernel.HardwareTimer()) : nullptr;
+        m_timer = (timeout_tick > 0) ? std::addressof(kernel.HardwareTimer()) : nullptr;
 
-        *out_timer = timer;
+        *out_timer = m_timer;
     }
 
     ~KScopedSchedulerLockAndSleep() {
         // Register the sleep.
-        if (timeout_tick > 0) {
-            timer->RegisterTask(thread, timeout_tick);
+        if (m_timeout_tick > 0) {
+            m_timer->RegisterTask(m_thread, m_timeout_tick);
         }
 
         // Unlock the scheduler.
-        kernel.GlobalSchedulerContext().scheduler_lock.Unlock();
+        m_kernel.GlobalSchedulerContext().m_scheduler_lock.Unlock();
     }
 
     void CancelSleep() {
-        timeout_tick = 0;
+        m_timeout_tick = 0;
     }
 
 private:
-    KernelCore& kernel;
-    s64 timeout_tick{};
-    KThread* thread{};
-    KHardwareTimer* timer{};
+    KernelCore& m_kernel;
+    s64 m_timeout_tick{};
+    KThread* m_thread{};
+    KHardwareTimer* m_timer{};
 };
 
 } // namespace Kernel

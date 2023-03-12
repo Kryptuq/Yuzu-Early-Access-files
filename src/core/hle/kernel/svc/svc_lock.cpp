@@ -14,17 +14,10 @@ Result ArbitrateLock(Core::System& system, Handle thread_handle, VAddr address, 
               thread_handle, address, tag);
 
     // Validate the input address.
-    if (IsKernelAddress(address)) {
-        LOG_ERROR(Kernel_SVC, "Attempting to arbitrate a lock on a kernel address (address={:08X})",
-                  address);
-        return ResultInvalidCurrentMemory;
-    }
-    if (!Common::IsAligned(address, sizeof(u32))) {
-        LOG_ERROR(Kernel_SVC, "Input address must be 4 byte aligned (address: {:08X})", address);
-        return ResultInvalidAddress;
-    }
+    R_UNLESS(!IsKernelAddress(address), ResultInvalidCurrentMemory);
+    R_UNLESS(Common::IsAligned(address, sizeof(u32)), ResultInvalidAddress);
 
-    return GetCurrentProcess(system.Kernel()).WaitForAddress(thread_handle, address, tag);
+    R_RETURN(GetCurrentProcess(system.Kernel()).WaitForAddress(thread_handle, address, tag));
 }
 
 /// Unlock a mutex
@@ -32,18 +25,10 @@ Result ArbitrateUnlock(Core::System& system, VAddr address) {
     LOG_TRACE(Kernel_SVC, "called address=0x{:X}", address);
 
     // Validate the input address.
-    if (IsKernelAddress(address)) {
-        LOG_ERROR(Kernel_SVC,
-                  "Attempting to arbitrate an unlock on a kernel address (address={:08X})",
-                  address);
-        return ResultInvalidCurrentMemory;
-    }
-    if (!Common::IsAligned(address, sizeof(u32))) {
-        LOG_ERROR(Kernel_SVC, "Input address must be 4 byte aligned (address: {:08X})", address);
-        return ResultInvalidAddress;
-    }
+    R_UNLESS(!IsKernelAddress(address), ResultInvalidCurrentMemory);
+    R_UNLESS(Common::IsAligned(address, sizeof(u32)), ResultInvalidAddress);
 
-    return GetCurrentProcess(system.Kernel()).SignalToAddress(address);
+    R_RETURN(GetCurrentProcess(system.Kernel()).SignalToAddress(address));
 }
 
 Result ArbitrateLock64(Core::System& system, Handle thread_handle, uint64_t address, uint32_t tag) {

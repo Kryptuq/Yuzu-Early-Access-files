@@ -41,7 +41,7 @@ public:
         // Check that the object is closed.
         R_UNLESS(derived->IsServerClosed(), ResultInvalidState);
 
-        return Delete(kernel, obj.GetPointerUnsafe(), name);
+        R_RETURN(Delete(kernel, obj.GetPointerUnsafe(), name));
     }
 
     template <typename Derived>

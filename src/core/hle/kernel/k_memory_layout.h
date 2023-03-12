@@ -80,35 +80,35 @@ public:
     KMemoryLayout();
 
     KMemoryRegionTree& GetVirtualMemoryRegionTree() {
-        return virtual_tree;
+        return m_virtual_tree;
     }
     const KMemoryRegionTree& GetVirtualMemoryRegionTree() const {
-        return virtual_tree;
+        return m_virtual_tree;
     }
     KMemoryRegionTree& GetPhysicalMemoryRegionTree() {
-        return physical_tree;
+        return m_physical_tree;
     }
     const KMemoryRegionTree& GetPhysicalMemoryRegionTree() const {
-        return physical_tree;
+        return m_physical_tree;
     }
     KMemoryRegionTree& GetVirtualLinearMemoryRegionTree() {
-        return virtual_linear_tree;
+        return m_virtual_linear_tree;
     }
     const KMemoryRegionTree& GetVirtualLinearMemoryRegionTree() const {
-        return virtual_linear_tree;
+        return m_virtual_linear_tree;
     }
     KMemoryRegionTree& GetPhysicalLinearMemoryRegionTree() {
-        return physical_linear_tree;
+        return m_physical_linear_tree;
     }
     const KMemoryRegionTree& GetPhysicalLinearMemoryRegionTree() const {
-        return physical_linear_tree;
+        return m_physical_linear_tree;
     }
 
     VAddr GetLinearVirtualAddress(PAddr address) const {
-        return address + linear_phys_to_virt_diff;
+        return address + m_linear_phys_to_virt_diff;
     }
     PAddr GetLinearPhysicalAddress(VAddr address) const {
-        return address + linear_virt_to_phys_diff;
+        return address + m_linear_virt_to_phys_diff;
     }
 
     const KMemoryRegion* FindVirtual(VAddr address) const {
@@ -391,13 +391,13 @@ private:
     }
 
 private:
-    u64 linear_phys_to_virt_diff{};
-    u64 linear_virt_to_phys_diff{};
-    KMemoryRegionAllocator memory_region_allocator;
-    KMemoryRegionTree virtual_tree;
-    KMemoryRegionTree physical_tree;
-    KMemoryRegionTree virtual_linear_tree;
-    KMemoryRegionTree physical_linear_tree;
+    u64 m_linear_phys_to_virt_diff{};
+    u64 m_linear_virt_to_phys_diff{};
+    KMemoryRegionAllocator m_memory_region_allocator;
+    KMemoryRegionTree m_virtual_tree;
+    KMemoryRegionTree m_physical_tree;
+    KMemoryRegionTree m_virtual_linear_tree;
+    KMemoryRegionTree m_physical_linear_tree;
 };
 
 namespace Init {

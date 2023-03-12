@@ -16,18 +16,18 @@
 
 namespace Kernel {
 
-KCodeMemory::KCodeMemory(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_}, m_lock(kernel_) {}
+KCodeMemory::KCodeMemory(KernelCore& kernel)
+    : KAutoObjectWithSlabHeapAndContainer{kernel}, m_lock(kernel) {}
 
 Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
     // Set members.
-    m_owner = GetCurrentProcessPointer(kernel);
+    m_owner = GetCurrentProcessPointer(m_kernel);
 
     // Get the owner page table.
     auto& page_table = m_owner->PageTable();
 
     // Construct the page group.
-    m_page_group.emplace(kernel, page_table.GetBlockInfoManager());
+    m_page_group.emplace(m_kernel, page_table.GetBlockInfoManager());
 
     // Lock the memory.
     R_TRY(page_table.LockForCodeMemory(std::addressof(*m_page_group), addr, size))
@@ -45,7 +45,7 @@ Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, si
     m_is_mapped = false;
 
     // We succeeded.
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 void KCodeMemory::Finalize() {
@@ -74,13 +74,13 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
     R_UNLESS(!m_is_mapped, ResultInvalidState);
 
     // Map the memory.
-    R_TRY(GetCurrentProcess(kernel).PageTable().MapPageGroup(
+    R_TRY(GetCurrentProcess(m_kernel).PageTable().MapPageGroup(
         address, *m_page_group, KMemoryState::CodeOut, KMemoryPermission::UserReadWrite));
 
     // Mark ourselves as mapped.
     m_is_mapped = true;
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KCodeMemory::Unmap(VAddr address, size_t size) {
@@ -91,13 +91,13 @@ Result KCodeMemory::Unmap(VAddr address, size_t size) {
     KScopedLightLock lk(m_lock);
 
     // Unmap the memory.
-    R_TRY(GetCurrentProcess(kernel).PageTable().UnmapPageGroup(address, *m_page_group,
-                                                               KMemoryState::CodeOut));
+    R_TRY(GetCurrentProcess(m_kernel).PageTable().UnmapPageGroup(address, *m_page_group,
+                                                                 KMemoryState::CodeOut));
 
     // Mark ourselves as unmapped.
     m_is_mapped = false;
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
@@ -131,7 +131,7 @@ Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission
     // Mark ourselves as mapped.
     m_is_owner_mapped = true;
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
@@ -147,7 +147,7 @@ Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
     // Mark ourselves as unmapped.
     m_is_owner_mapped = false;
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 } // namespace Kernel

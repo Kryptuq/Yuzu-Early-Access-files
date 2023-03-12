@@ -196,7 +196,7 @@ void CheatEngine::Initialize() {
         });
     core_timing.ScheduleLoopingEvent(CHEAT_ENGINE_NS, CHEAT_ENGINE_NS, event);
 
-    metadata.process_id = system.ApplicationProcess()->GetProcessID();
+    metadata.process_id = system.ApplicationProcess()->GetProcessId();
     metadata.title_id = system.GetApplicationProcessProgramID();
 
     const auto& page_table = system.ApplicationProcess()->PageTable();

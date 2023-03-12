@@ -11,26 +11,21 @@
 
 namespace Kernel {
 
-KClientPort::KClientPort(KernelCore& kernel_) : KSynchronizationObject{kernel_} {}
+KClientPort::KClientPort(KernelCore& kernel) : KSynchronizationObject{kernel} {}
 KClientPort::~KClientPort() = default;
 
-void KClientPort::Initialize(KPort* parent_port_, s32 max_sessions_, std::string&& name_) {
+void KClientPort::Initialize(KPort* parent, s32 max_sessions) {
     // Set member variables.
-    num_sessions = 0;
-    peak_sessions = 0;
-    parent = parent_port_;
-    max_sessions = max_sessions_;
-    name = std::move(name_);
+    m_num_sessions = 0;
+    m_peak_sessions = 0;
+    m_parent = parent;
+    m_max_sessions = max_sessions;
 }
 
 void KClientPort::OnSessionFinalized() {
-    KScopedSchedulerLock sl{kernel};
+    KScopedSchedulerLock sl{m_kernel};
 
-    // This might happen if a session was improperly used with this port.
-    ASSERT_MSG(num_sessions > 0, "num_sessions is invalid");
-
-    const auto prev = num_sessions--;
-    if (prev == max_sessions) {
+    if (const auto prev = m_num_sessions--; prev == m_max_sessions) {
         this->NotifyAvailable();
     }
 }
@@ -47,81 +42,81 @@ bool KClientPort::IsServerClosed() const {
 
 void KClientPort::Destroy() {
     // Note with our parent that we're closed.
-    parent->OnClientClosed();
+    m_parent->OnClientClosed();
 
     // Close our reference to our parent.
-    parent->Close();
+    m_parent->Close();
 }
 
 bool KClientPort::IsSignaled() const {
-    return num_sessions < max_sessions;
+    return m_num_sessions.load() < m_max_sessions;
 }
 
 Result KClientPort::CreateSession(KClientSession** out) {
+    // Declare the session we're going to allocate.
+    KSession* session{};
+
     // Reserve a new session from the resource limit.
     //! FIXME: we are reserving this from the wrong resource limit!
-    KScopedResourceReservation session_reservation(kernel.ApplicationProcess()->GetResourceLimit(),
-                                                   LimitableResource::SessionCountMax);
+    KScopedResourceReservation session_reservation(
+        m_kernel.ApplicationProcess()->GetResourceLimit(), LimitableResource::SessionCountMax);
     R_UNLESS(session_reservation.Succeeded(), ResultLimitReached);
+
+    // Allocate a session normally.
+    session = KSession::Create(m_kernel);
+
+    // Check that we successfully created a session.
+    R_UNLESS(session != nullptr, ResultOutOfResource);
 
     // Update the session counts.
     {
+        ON_RESULT_FAILURE {
+            session->Close();
+        };
+
         // Atomically increment the number of sessions.
         s32 new_sessions{};
         {
-            const auto max = max_sessions;
-            auto cur_sessions = num_sessions.load(std::memory_order_acquire);
+            const auto max = m_max_sessions;
+            auto cur_sessions = m_num_sessions.load(std::memory_order_acquire);
             do {
                 R_UNLESS(cur_sessions < max, ResultOutOfSessions);
                 new_sessions = cur_sessions + 1;
-            } while (!num_sessions.compare_exchange_weak(cur_sessions, new_sessions,
-                                                         std::memory_order_relaxed));
+            } while (!m_num_sessions.compare_exchange_weak(cur_sessions, new_sessions,
+                                                           std::memory_order_relaxed));
         }
 
         // Atomically update the peak session tracking.
         {
-            auto peak = peak_sessions.load(std::memory_order_acquire);
+            auto peak = m_peak_sessions.load(std::memory_order_acquire);
             do {
                 if (peak >= new_sessions) {
                     break;
                 }
-            } while (!peak_sessions.compare_exchange_weak(peak, new_sessions,
-                                                          std::memory_order_relaxed));
+            } while (!m_peak_sessions.compare_exchange_weak(peak, new_sessions,
+                                                            std::memory_order_relaxed));
         }
-    }
-
-    // Create a new session.
-    KSession* session = KSession::Create(kernel);
-    if (session == nullptr) {
-        // Decrement the session count.
-        const auto prev = num_sessions--;
-        if (prev == max_sessions) {
-            this->NotifyAvailable();
-        }
-
-        return ResultOutOfResource;
     }
 
     // Initialize the session.
-    session->Initialize(this, parent->GetName());
+    session->Initialize(this, m_parent->GetName());
 
     // Commit the session reservation.
     session_reservation.Commit();
 
     // Register the session.
-    KSession::Register(kernel, session);
-    auto session_guard = SCOPE_GUARD({
+    KSession::Register(m_kernel, session);
+    ON_RESULT_FAILURE {
         session->GetClientSession().Close();
         session->GetServerSession().Close();
-    });
+    };
 
     // Enqueue the session with our parent.
-    R_TRY(parent->EnqueueSession(std::addressof(session->GetServerSession())));
+    R_TRY(m_parent->EnqueueSession(std::addressof(session->GetServerSession())));
 
     // We succeeded, so set the output.
-    session_guard.Cancel();
     *out = std::addressof(session->GetClientSession());
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 } // namespace Kernel

@@ -24,31 +24,30 @@ public:
         KThread* thread{};
     };
 
-    [[nodiscard]] static Result Wait(KernelCore& kernel, s32* out_index,
-                                     KSynchronizationObject** objects, const s32 num_objects,
-                                     s64 timeout);
+    static Result Wait(KernelCore& kernel, s32* out_index, KSynchronizationObject** objects,
+                       const s32 num_objects, s64 timeout);
 
     void Finalize() override;
 
-    [[nodiscard]] virtual bool IsSignaled() const = 0;
+    virtual bool IsSignaled() const = 0;
 
-    [[nodiscard]] std::vector<KThread*> GetWaitingThreadsForDebugging() const;
+    std::vector<KThread*> GetWaitingThreadsForDebugging() const;
 
     void LinkNode(ThreadListNode* node_) {
         // Link the node to the list.
-        if (thread_list_tail == nullptr) {
-            thread_list_head = node_;
+        if (m_thread_list_tail == nullptr) {
+            m_thread_list_head = node_;
         } else {
-            thread_list_tail->next = node_;
+            m_thread_list_tail->next = node_;
         }
 
-        thread_list_tail = node_;
+        m_thread_list_tail = node_;
     }
 
     void UnlinkNode(ThreadListNode* node_) {
         // Unlink the node from the list.
         ThreadListNode* prev_ptr =
-            reinterpret_cast<ThreadListNode*>(std::addressof(thread_list_head));
+            reinterpret_cast<ThreadListNode*>(std::addressof(m_thread_list_head));
         ThreadListNode* prev_val = nullptr;
         ThreadListNode *prev, *tail_prev;
 
@@ -59,8 +58,8 @@ public:
             prev_val = prev_ptr;
         } while (prev_ptr != node_);
 
-        if (thread_list_tail == node_) {
-            thread_list_tail = tail_prev;
+        if (m_thread_list_tail == node_) {
+            m_thread_list_tail = tail_prev;
         }
 
         prev->next = node_->next;
@@ -78,8 +77,8 @@ protected:
     }
 
 private:
-    ThreadListNode* thread_list_head{};
-    ThreadListNode* thread_list_tail{};
+    ThreadListNode* m_thread_list_head{};
+    ThreadListNode* m_thread_list_tail{};
 };
 
 } // namespace Kernel

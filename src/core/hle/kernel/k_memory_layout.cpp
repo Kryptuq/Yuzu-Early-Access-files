@@ -18,11 +18,11 @@ KMemoryRegion* AllocateRegion(KMemoryRegionAllocator& memory_region_allocator, A
 
 } // namespace
 
-KMemoryRegionTree::KMemoryRegionTree(KMemoryRegionAllocator& memory_region_allocator_)
-    : memory_region_allocator{memory_region_allocator_} {}
+KMemoryRegionTree::KMemoryRegionTree(KMemoryRegionAllocator& memory_region_allocator)
+    : m_memory_region_allocator{memory_region_allocator} {}
 
 void KMemoryRegionTree::InsertDirectly(u64 address, u64 last_address, u32 attr, u32 type_id) {
-    this->insert(*AllocateRegion(memory_region_allocator, address, last_address, attr, type_id));
+    this->insert(*AllocateRegion(m_memory_region_allocator, address, last_address, attr, type_id));
 }
 
 bool KMemoryRegionTree::Insert(u64 address, size_t size, u32 type_id, u32 new_attr, u32 old_attr) {
@@ -69,7 +69,7 @@ bool KMemoryRegionTree::Insert(u64 address, size_t size, u32 type_id, u32 new_at
         const u64 new_pair = (old_pair != std::numeric_limits<u64>::max())
                                  ? old_pair + (address - old_address)
                                  : old_pair;
-        this->insert(*AllocateRegion(memory_region_allocator, address, inserted_region_last,
+        this->insert(*AllocateRegion(m_memory_region_allocator, address, inserted_region_last,
                                      new_pair, new_attr, type_id));
     }
 
@@ -78,7 +78,7 @@ bool KMemoryRegionTree::Insert(u64 address, size_t size, u32 type_id, u32 new_at
         const u64 after_pair = (old_pair != std::numeric_limits<u64>::max())
                                    ? old_pair + (inserted_region_end - old_address)
                                    : old_pair;
-        this->insert(*AllocateRegion(memory_region_allocator, inserted_region_end, old_last,
+        this->insert(*AllocateRegion(m_memory_region_allocator, inserted_region_end, old_last,
                                      after_pair, old_attr, old_type));
     }
 
@@ -126,14 +126,15 @@ VAddr KMemoryRegionTree::GetRandomAlignedRegion(size_t size, size_t alignment, u
 }
 
 KMemoryLayout::KMemoryLayout()
-    : virtual_tree{memory_region_allocator}, physical_tree{memory_region_allocator},
-      virtual_linear_tree{memory_region_allocator}, physical_linear_tree{memory_region_allocator} {}
+    : m_virtual_tree{m_memory_region_allocator}, m_physical_tree{m_memory_region_allocator},
+      m_virtual_linear_tree{m_memory_region_allocator}, m_physical_linear_tree{
+                                                            m_memory_region_allocator} {}
 
 void KMemoryLayout::InitializeLinearMemoryRegionTrees(PAddr aligned_linear_phys_start,
                                                       VAddr linear_virtual_start) {
     // Set static differences.
-    linear_phys_to_virt_diff = linear_virtual_start - aligned_linear_phys_start;
-    linear_virt_to_phys_diff = aligned_linear_phys_start - linear_virtual_start;
+    m_linear_phys_to_virt_diff = linear_virtual_start - aligned_linear_phys_start;
+    m_linear_virt_to_phys_diff = aligned_linear_phys_start - linear_virtual_start;
 
     // Initialize linear trees.
     for (auto& region : GetPhysicalMemoryRegionTree()) {

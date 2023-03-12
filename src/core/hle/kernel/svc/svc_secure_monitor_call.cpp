@@ -29,7 +29,7 @@ void SvcWrap_CallSecureMonitor64(Core::System& system) {
         args.r[i] = core.GetReg(i);
     }
 
-    CallSecureMonitor64(system, &args);
+    CallSecureMonitor64(system, std::addressof(args));
 
     for (int i = 0; i < 8; i++) {
         core.SetReg(i, args.r[i]);
@@ -43,7 +43,7 @@ void SvcWrap_CallSecureMonitor64From32(Core::System& system) {
         args.r[i] = static_cast<u32>(core.GetReg(i));
     }
 
-    CallSecureMonitor64From32(system, &args);
+    CallSecureMonitor64From32(system, std::addressof(args));
 
     for (int i = 0; i < 8; i++) {
         core.SetReg(i, args.r[i]);

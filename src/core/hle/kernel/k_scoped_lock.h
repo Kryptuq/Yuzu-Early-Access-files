@@ -18,15 +18,15 @@ std::is_reference_v<T>&& requires(T& t) {
 
 template <typename T>
     requires KLockable<T>
-class [[nodiscard]] KScopedLock {
+class KScopedLock {
 public:
-    explicit KScopedLock(T* l) : lock_ptr(l) {
-        this->lock_ptr->Lock();
+    explicit KScopedLock(T* l) : m_lock(*l) {}
+    explicit KScopedLock(T& l) : m_lock(l) {
+        m_lock.Lock();
     }
-    explicit KScopedLock(T& l) : KScopedLock(std::addressof(l)) {}
 
     ~KScopedLock() {
-        this->lock_ptr->Unlock();
+        m_lock.Unlock();
     }
 
     KScopedLock(const KScopedLock&) = delete;
@@ -36,7 +36,7 @@ public:
     KScopedLock& operator=(KScopedLock&&) = delete;
 
 private:
-    T* lock_ptr;
+    T& m_lock;
 };
 
 } // namespace Kernel

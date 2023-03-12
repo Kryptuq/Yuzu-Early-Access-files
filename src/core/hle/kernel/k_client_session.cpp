@@ -12,28 +12,27 @@ namespace Kernel {
 
 static constexpr u32 MessageBufferSize = 0x100;
 
-KClientSession::KClientSession(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_} {}
+KClientSession::KClientSession(KernelCore& kernel) : KAutoObjectWithSlabHeapAndContainer{kernel} {}
 KClientSession::~KClientSession() = default;
 
 void KClientSession::Destroy() {
-    parent->OnClientClosed();
-    parent->Close();
+    m_parent->OnClientClosed();
+    m_parent->Close();
 }
 
 void KClientSession::OnServerClosed() {}
 
 Result KClientSession::SendSyncRequest() {
     // Create a session request.
-    KSessionRequest* request = KSessionRequest::Create(kernel);
+    KSessionRequest* request = KSessionRequest::Create(m_kernel);
     R_UNLESS(request != nullptr, ResultOutOfResource);
     SCOPE_EXIT({ request->Close(); });
 
     // Initialize the request.
-    request->Initialize(nullptr, GetCurrentThread(kernel).GetTLSAddress(), MessageBufferSize);
+    request->Initialize(nullptr, GetCurrentThread(m_kernel).GetTlsAddress(), MessageBufferSize);
 
     // Send the request.
-    return parent->GetServerSession().OnRequest(request);
+    R_RETURN(m_parent->GetServerSession().OnRequest(request));
 }
 
 } // namespace Kernel

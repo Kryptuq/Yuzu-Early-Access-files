@@ -47,14 +47,14 @@ public:
             }
 
         private:
-            VAddr m_client_address;
-            VAddr m_server_address;
-            size_t m_size;
-            KMemoryState m_state;
+            VAddr m_client_address{};
+            VAddr m_server_address{};
+            size_t m_size{};
+            KMemoryState m_state{};
         };
 
     public:
-        explicit SessionMappings(KernelCore& kernel_) : kernel(kernel_) {}
+        explicit SessionMappings(KernelCore& kernel) : m_kernel(kernel) {}
 
         void Initialize() {}
         void Finalize();
@@ -149,8 +149,8 @@ public:
         }
 
     private:
-        KernelCore& kernel;
-        std::array<Mapping, NumStaticMappings> m_static_mappings;
+        KernelCore& m_kernel;
+        std::array<Mapping, NumStaticMappings> m_static_mappings{};
         Mapping* m_mappings{};
         u8 m_num_send{};
         u8 m_num_recv{};
@@ -158,7 +158,7 @@ public:
     };
 
 public:
-    explicit KSessionRequest(KernelCore& kernel_) : KAutoObject(kernel_), m_mappings(kernel_) {}
+    explicit KSessionRequest(KernelCore& kernel) : KAutoObject(kernel), m_mappings(kernel) {}
 
     static KSessionRequest* Create(KernelCore& kernel) {
         KSessionRequest* req = KSessionRequest::Allocate(kernel);
@@ -170,13 +170,13 @@ public:
 
     void Destroy() override {
         this->Finalize();
-        KSessionRequest::Free(kernel, this);
+        KSessionRequest::Free(m_kernel, this);
     }
 
     void Initialize(KEvent* event, uintptr_t address, size_t size) {
         m_mappings.Initialize();
 
-        m_thread = GetCurrentThreadPointer(kernel);
+        m_thread = GetCurrentThreadPointer(m_kernel);
         m_event = event;
         m_address = address;
         m_size = size;

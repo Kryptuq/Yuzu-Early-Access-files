@@ -20,7 +20,8 @@ public:
     PageTablePage() = default;
 
 private:
-    std::array<u8, PageSize> m_buffer{};
+    // Initializer intentionally skipped
+    std::array<u8, PageSize> m_buffer;
 };
 static_assert(sizeof(PageTablePage) == PageSize);
 

@@ -484,7 +484,7 @@ private:
         }
 
         PageLinkedList* GetPageList() {
-            return &m_ll;
+            return std::addressof(m_ll);
         }
     };
 

@@ -12,9 +12,9 @@ class KDebug final : public KAutoObjectWithSlabHeapAndContainer<KDebug, KAutoObj
     KERNEL_AUTOOBJECT_TRAITS(KDebug, KAutoObject);
 
 public:
-    explicit KDebug(KernelCore& kernel_) : KAutoObjectWithSlabHeapAndContainer{kernel_} {}
+    explicit KDebug(KernelCore& kernel) : KAutoObjectWithSlabHeapAndContainer{kernel} {}
 
-    static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
+    static void PostDestroy(uintptr_t arg) {}
 };
 
 } // namespace Kernel

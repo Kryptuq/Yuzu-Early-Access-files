@@ -460,7 +460,7 @@ def emit_wrapper(wrapped_fn, suffix, register_info, arguments, byte_size):
     call_arguments = ["system"]
     for arg in arguments:
         if arg.is_output and not arg.is_outptr:
-            call_arguments.append(f"&{arg.var_name}")
+            call_arguments.append(f"std::addressof({arg.var_name})")
         else:
             call_arguments.append(arg.var_name)
 
@@ -574,9 +574,9 @@ static To Convert(const From& from) {
     To to{};
 
     if constexpr (sizeof(To) >= sizeof(From)) {
-        std::memcpy(&to, &from, sizeof(From));
+        std::memcpy(std::addressof(to), std::addressof(from), sizeof(From));
     } else {
-        std::memcpy(&to, &from, sizeof(To));
+        std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
     }
 
     return to;

@@ -22,47 +22,46 @@ class KAddressArbiter {
 public:
     using ThreadTree = KConditionVariable::ThreadTree;
 
-    explicit KAddressArbiter(Core::System& system_);
+    explicit KAddressArbiter(Core::System& system);
     ~KAddressArbiter();
 
-    [[nodiscard]] Result SignalToAddress(VAddr addr, Svc::SignalType type, s32 value, s32 count) {
+    Result SignalToAddress(VAddr addr, Svc::SignalType type, s32 value, s32 count) {
         switch (type) {
         case Svc::SignalType::Signal:
-            return Signal(addr, count);
+            R_RETURN(this->Signal(addr, count));
         case Svc::SignalType::SignalAndIncrementIfEqual:
-            return SignalAndIncrementIfEqual(addr, value, count);
+            R_RETURN(this->SignalAndIncrementIfEqual(addr, value, count));
         case Svc::SignalType::SignalAndModifyByWaitingCountIfEqual:
-            return SignalAndModifyByWaitingCountIfEqual(addr, value, count);
+            R_RETURN(this->SignalAndModifyByWaitingCountIfEqual(addr, value, count));
+        default:
+            UNREACHABLE();
         }
-        ASSERT(false);
-        return ResultUnknown;
     }
 
-    [[nodiscard]] Result WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value,
-                                        s64 timeout) {
+    Result WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value, s64 timeout) {
         switch (type) {
         case Svc::ArbitrationType::WaitIfLessThan:
-            return WaitIfLessThan(addr, value, false, timeout);
+            R_RETURN(WaitIfLessThan(addr, value, false, timeout));
         case Svc::ArbitrationType::DecrementAndWaitIfLessThan:
-            return WaitIfLessThan(addr, value, true, timeout);
+            R_RETURN(WaitIfLessThan(addr, value, true, timeout));
         case Svc::ArbitrationType::WaitIfEqual:
-            return WaitIfEqual(addr, value, timeout);
+            R_RETURN(WaitIfEqual(addr, value, timeout));
+        default:
+            UNREACHABLE();
         }
-        ASSERT(false);
-        return ResultUnknown;
     }
 
 private:
-    [[nodiscard]] Result Signal(VAddr addr, s32 count);
-    [[nodiscard]] Result SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] Result SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
-    [[nodiscard]] Result WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
-    [[nodiscard]] Result WaitIfEqual(VAddr addr, s32 value, s64 timeout);
+    Result Signal(VAddr addr, s32 count);
+    Result SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
+    Result SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
+    Result WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
+    Result WaitIfEqual(VAddr addr, s32 value, s64 timeout);
 
-    ThreadTree thread_tree;
-
-    Core::System& system;
-    KernelCore& kernel;
+private:
+    ThreadTree m_tree;
+    Core::System& m_system;
+    KernelCore& m_kernel;
 };
 
 } // namespace Kernel

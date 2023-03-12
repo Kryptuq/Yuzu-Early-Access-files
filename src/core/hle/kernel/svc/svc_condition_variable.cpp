@@ -17,14 +17,8 @@ Result WaitProcessWideKeyAtomic(Core::System& system, VAddr address, VAddr cv_ke
               cv_key, tag, timeout_ns);
 
     // Validate input.
-    if (IsKernelAddress(address)) {
-        LOG_ERROR(Kernel_SVC, "Attempted to wait on kernel address (address={:08X})", address);
-        return ResultInvalidCurrentMemory;
-    }
-    if (!Common::IsAligned(address, sizeof(s32))) {
-        LOG_ERROR(Kernel_SVC, "Address must be 4 byte aligned (address={:08X})", address);
-        return ResultInvalidAddress;
-    }
+    R_UNLESS(!IsKernelAddress(address), ResultInvalidCurrentMemory);
+    R_UNLESS(Common::IsAligned(address, sizeof(s32)), ResultInvalidAddress);
 
     // Convert timeout from nanoseconds to ticks.
     s64 timeout{};
@@ -43,8 +37,9 @@ Result WaitProcessWideKeyAtomic(Core::System& system, VAddr address, VAddr cv_ke
     }
 
     // Wait on the condition variable.
-    return GetCurrentProcess(system.Kernel())
-        .WaitConditionVariable(address, Common::AlignDown(cv_key, sizeof(u32)), tag, timeout);
+    R_RETURN(
+        GetCurrentProcess(system.Kernel())
+            .WaitConditionVariable(address, Common::AlignDown(cv_key, sizeof(u32)), tag, timeout));
 }
 
 /// Signal process wide key

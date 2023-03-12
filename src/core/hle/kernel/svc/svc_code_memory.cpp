@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_process.h"
@@ -44,6 +45,7 @@ Result CreateCodeMemory(Core::System& system, Handle* out, VAddr address, uint64
 
     KCodeMemory* code_mem = KCodeMemory::Create(kernel);
     R_UNLESS(code_mem != nullptr, ResultOutOfResource);
+    SCOPE_EXIT({ code_mem->Close(); });
 
     // Verify that the region is in range.
     R_UNLESS(GetCurrentProcess(system.Kernel()).PageTable().Contains(address, size),
@@ -58,9 +60,7 @@ Result CreateCodeMemory(Core::System& system, Handle* out, VAddr address, uint64
     // Add the code memory to the handle table.
     R_TRY(GetCurrentProcess(system.Kernel()).GetHandleTable().Add(out, code_mem));
 
-    code_mem->Close();
-
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
@@ -140,10 +140,10 @@ Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
         R_TRY(code_mem->UnmapFromOwner(address, size));
     } break;
     default:
-        return ResultInvalidEnumValue;
+        R_THROW(ResultInvalidEnumValue);
     }
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result CreateCodeMemory64(Core::System& system, Handle* out_handle, uint64_t address,

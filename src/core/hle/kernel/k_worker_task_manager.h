@@ -20,7 +20,7 @@ public:
 
     KWorkerTaskManager();
 
-    static void AddTask(KernelCore& kernel_, WorkerType type, KWorkerTask* task);
+    static void AddTask(KernelCore& kernel, WorkerType type, KWorkerTask* task);
 
 private:
     void AddTask(KernelCore& kernel, KWorkerTask* task);

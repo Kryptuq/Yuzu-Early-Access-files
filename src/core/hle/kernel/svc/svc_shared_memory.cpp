@@ -56,15 +56,12 @@ Result MapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address,
     R_TRY(process.AddSharedMemory(shmem.GetPointerUnsafe(), address, size));
 
     // Ensure that we clean up the shared memory if we fail to map it.
-    auto guard =
-        SCOPE_GUARD({ process.RemoveSharedMemory(shmem.GetPointerUnsafe(), address, size); });
+    ON_RESULT_FAILURE {
+        process.RemoveSharedMemory(shmem.GetPointerUnsafe(), address, size);
+    };
 
     // Map the shared memory.
-    R_TRY(shmem->Map(process, address, size, map_perm));
-
-    // We succeeded.
-    guard.Cancel();
-    return ResultSuccess;
+    R_RETURN(shmem->Map(process, address, size, map_perm));
 }
 
 Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address, u64 size) {
@@ -91,7 +88,7 @@ Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, VAddr addres
     // Remove the shared memory from the process.
     process.RemoveSharedMemory(shmem.GetPointerUnsafe(), address, size);
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result CreateSharedMemory(Core::System& system, Handle* out_handle, uint64_t size,

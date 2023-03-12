@@ -22,17 +22,17 @@ class KServerPort final : public KSynchronizationObject {
     KERNEL_AUTOOBJECT_TRAITS(KServerPort, KSynchronizationObject);
 
 public:
-    explicit KServerPort(KernelCore& kernel_);
+    explicit KServerPort(KernelCore& kernel);
     ~KServerPort() override;
 
-    void Initialize(KPort* parent_port_, std::string&& name_);
+    void Initialize(KPort* parent);
 
-    void EnqueueSession(KServerSession* pending_session);
+    void EnqueueSession(KServerSession* session);
 
     KServerSession* AcceptSession();
 
     const KPort* GetParent() const {
-        return parent;
+        return m_parent;
     }
 
     bool IsLight() const;
@@ -46,8 +46,8 @@ private:
 
     void CleanupSessions();
 
-    SessionList session_list;
-    KPort* parent{};
+    SessionList m_session_list{};
+    KPort* m_parent{};
 };
 
 } // namespace Kernel

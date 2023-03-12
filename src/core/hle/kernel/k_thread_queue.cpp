@@ -7,9 +7,10 @@
 
 namespace Kernel {
 
-void KThreadQueue::NotifyAvailable([[maybe_unused]] KThread* waiting_thread,
-                                   [[maybe_unused]] KSynchronizationObject* signaled_object,
-                                   [[maybe_unused]] Result wait_result) {}
+void KThreadQueue::NotifyAvailable(KThread* waiting_thread, KSynchronizationObject* signaled_object,
+                                   Result wait_result) {
+    UNREACHABLE();
+}
 
 void KThreadQueue::EndWait(KThread* waiting_thread, Result wait_result) {
     // Set the thread's wait result.
@@ -43,7 +44,8 @@ void KThreadQueue::CancelWait(KThread* waiting_thread, Result wait_result, bool 
     }
 }
 
-void KThreadQueueWithoutEndWait::EndWait([[maybe_unused]] KThread* waiting_thread,
-                                         [[maybe_unused]] Result wait_result) {}
+void KThreadQueueWithoutEndWait::EndWait(KThread* waiting_thread, Result wait_result) {
+    UNREACHABLE();
+}
 
 } // namespace Kernel

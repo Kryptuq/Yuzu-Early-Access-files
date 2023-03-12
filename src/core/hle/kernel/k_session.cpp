@@ -9,69 +9,63 @@
 
 namespace Kernel {
 
-KSession::KSession(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer{kernel_}, server{kernel_}, client{kernel_} {}
+KSession::KSession(KernelCore& kernel)
+    : KAutoObjectWithSlabHeapAndContainer{kernel}, m_server{kernel}, m_client{kernel} {}
 KSession::~KSession() = default;
 
-void KSession::Initialize(KClientPort* port_, const std::string& name_) {
+void KSession::Initialize(KClientPort* client_port, uintptr_t name) {
     // Increment reference count.
     // Because reference count is one on creation, this will result
     // in a reference count of two. Thus, when both server and client are closed
     // this object will be destroyed.
-    Open();
+    this->Open();
 
     // Create our sub sessions.
-    KAutoObject::Create(std::addressof(server));
-    KAutoObject::Create(std::addressof(client));
+    KAutoObject::Create(std::addressof(m_server));
+    KAutoObject::Create(std::addressof(m_client));
 
     // Initialize our sub sessions.
-    server.Initialize(this, name_ + ":Server");
-    client.Initialize(this, name_ + ":Client");
+    m_server.Initialize(this);
+    m_client.Initialize(this);
 
     // Set state and name.
-    SetState(State::Normal);
-    name = name_;
+    this->SetState(State::Normal);
+    m_name = name;
 
     // Set our owner process.
     //! FIXME: this is the wrong process!
-    process = kernel.ApplicationProcess();
-    process->Open();
+    m_process = m_kernel.ApplicationProcess();
+    m_process->Open();
 
     // Set our port.
-    port = port_;
-    if (port != nullptr) {
-        port->Open();
+    m_port = client_port;
+    if (m_port != nullptr) {
+        m_port->Open();
     }
 
     // Mark initialized.
-    initialized = true;
+    m_initialized = true;
 }
 
 void KSession::Finalize() {
-    if (port == nullptr) {
-        return;
+    if (m_port != nullptr) {
+        m_port->OnSessionFinalized();
+        m_port->Close();
     }
-
-    port->OnSessionFinalized();
-    port->Close();
 }
 
 void KSession::OnServerClosed() {
-    if (GetState() != State::Normal) {
-        return;
+    if (this->GetState() == State::Normal) {
+        this->SetState(State::ServerClosed);
+        m_client.OnServerClosed();
     }
-
-    SetState(State::ServerClosed);
-    client.OnServerClosed();
 }
 
 void KSession::OnClientClosed() {
-    if (GetState() != State::Normal) {
-        return;
+    if (this->GetState() == State::Normal) {
+        SetState(State::ClientClosed);
+        m_server.OnClientClosed();
     }
-
-    SetState(State::ClientClosed);
-    server.OnClientClosed();
 }
 
 void KSession::PostDestroy(uintptr_t arg) {

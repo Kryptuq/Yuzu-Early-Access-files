@@ -434,7 +434,7 @@ struct System::Impl {
         }
 
         Service::Glue::ApplicationLaunchProperty launch{};
-        launch.title_id = process.GetProgramID();
+        launch.title_id = process.GetProgramId();
 
         FileSys::PatchManager pm{launch.title_id, fs_controller, *content_provider};
         launch.version = pm.GetGameVersion().value_or(0);
@@ -762,7 +762,7 @@ const Core::SpeedLimiter& System::SpeedLimiter() const {
 }
 
 u64 System::GetApplicationProcessProgramID() const {
-    return impl->kernel.ApplicationProcess()->GetProgramID();
+    return impl->kernel.ApplicationProcess()->GetProgramId();
 }
 
 Loader::ResultStatus System::GetGameName(std::string& out) const {

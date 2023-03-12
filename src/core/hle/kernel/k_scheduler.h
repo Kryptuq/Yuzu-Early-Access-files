@@ -80,17 +80,17 @@ public:
         return GetCurrentThread(kernel).GetDisableDispatchCount() == 0;
     }
     static bool IsSchedulerLockedByCurrentThread(KernelCore& kernel) {
-        return kernel.GlobalSchedulerContext().scheduler_lock.IsLockedByCurrentThread();
+        return kernel.GlobalSchedulerContext().m_scheduler_lock.IsLockedByCurrentThread();
     }
 
     static bool IsSchedulerUpdateNeeded(KernelCore& kernel) {
-        return kernel.GlobalSchedulerContext().scheduler_update_needed;
+        return kernel.GlobalSchedulerContext().m_scheduler_update_needed;
     }
     static void SetSchedulerUpdateNeeded(KernelCore& kernel) {
-        kernel.GlobalSchedulerContext().scheduler_update_needed = true;
+        kernel.GlobalSchedulerContext().m_scheduler_update_needed = true;
     }
     static void ClearSchedulerUpdateNeeded(KernelCore& kernel) {
-        kernel.GlobalSchedulerContext().scheduler_update_needed = false;
+        kernel.GlobalSchedulerContext().m_scheduler_update_needed = false;
     }
 
     static void DisableScheduling(KernelCore& kernel);
@@ -115,7 +115,7 @@ public:
 private:
     // Static private API.
     static KSchedulerPriorityQueue& GetPriorityQueue(KernelCore& kernel) {
-        return kernel.GlobalSchedulerContext().priority_queue;
+        return kernel.GlobalSchedulerContext().m_priority_queue;
     }
     static u64 UpdateHighestPriorityThreadsImpl(KernelCore& kernel);
 
@@ -149,7 +149,7 @@ private:
         KInterruptTaskManager* interrupt_task_manager{nullptr};
     };
 
-    KernelCore& kernel;
+    KernelCore& m_kernel;
     SchedulingState m_state;
     bool m_is_active{false};
     s32 m_core_id{0};
@@ -166,7 +166,7 @@ private:
 class KScopedSchedulerLock : public KScopedLock<KScheduler::LockType> {
 public:
     explicit KScopedSchedulerLock(KernelCore& kernel)
-        : KScopedLock(kernel.GlobalSchedulerContext().scheduler_lock) {}
+        : KScopedLock(kernel.GlobalSchedulerContext().m_scheduler_lock) {}
     ~KScopedSchedulerLock() = default;
 };
 

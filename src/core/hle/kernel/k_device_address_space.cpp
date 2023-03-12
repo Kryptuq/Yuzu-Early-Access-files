@@ -9,8 +9,8 @@
 
 namespace Kernel {
 
-KDeviceAddressSpace::KDeviceAddressSpace(KernelCore& kernel_)
-    : KAutoObjectWithSlabHeapAndContainer(kernel_), m_lock(kernel_), m_is_initialized(false) {}
+KDeviceAddressSpace::KDeviceAddressSpace(KernelCore& kernel)
+    : KAutoObjectWithSlabHeapAndContainer(kernel), m_lock(kernel), m_is_initialized(false) {}
 KDeviceAddressSpace::~KDeviceAddressSpace() = default;
 
 void KDeviceAddressSpace::Initialize() {

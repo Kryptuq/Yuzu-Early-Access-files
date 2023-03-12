@@ -81,7 +81,7 @@ Result ManageNamedPort(Core::System& system, Handle* out_server_handle, uint64_t
         R_UNLESS(port != nullptr, ResultOutOfResource);
 
         // Initialize the new port.
-        port->Initialize(max_sessions, false, "");
+        port->Initialize(max_sessions, false, 0);
 
         // Register the port.
         KPort::Register(system.Kernel(), port);

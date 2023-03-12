@@ -12,20 +12,19 @@
 
 namespace Kernel {
 
-GlobalSchedulerContext::GlobalSchedulerContext(KernelCore& kernel_)
-    : kernel{kernel_}, scheduler_lock{kernel_} {}
+GlobalSchedulerContext::GlobalSchedulerContext(KernelCore& kernel)
+    : m_kernel{kernel}, m_scheduler_lock{kernel} {}
 
 GlobalSchedulerContext::~GlobalSchedulerContext() = default;
 
 void GlobalSchedulerContext::AddThread(KThread* thread) {
-    std::scoped_lock lock{global_list_guard};
-    thread_list.push_back(thread);
+    std::scoped_lock lock{m_global_list_guard};
+    m_thread_list.push_back(thread);
 }
 
 void GlobalSchedulerContext::RemoveThread(KThread* thread) {
-    std::scoped_lock lock{global_list_guard};
-    thread_list.erase(std::remove(thread_list.begin(), thread_list.end(), thread),
-                      thread_list.end());
+    std::scoped_lock lock{m_global_list_guard};
+    std::erase(m_thread_list, thread);
 }
 
 void GlobalSchedulerContext::PreemptThreads() {
@@ -38,37 +37,37 @@ void GlobalSchedulerContext::PreemptThreads() {
         63,
     };
 
-    ASSERT(IsLocked());
+    ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(m_kernel));
     for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
         const u32 priority = preemption_priorities[core_id];
-        KScheduler::RotateScheduledQueue(kernel, core_id, priority);
+        KScheduler::RotateScheduledQueue(m_kernel, core_id, priority);
     }
 }
 
 bool GlobalSchedulerContext::IsLocked() const {
-    return scheduler_lock.IsLockedByCurrentThread();
+    return m_scheduler_lock.IsLockedByCurrentThread();
 }
 
 void GlobalSchedulerContext::RegisterDummyThreadForWakeup(KThread* thread) {
-    ASSERT(IsLocked());
+    ASSERT(this->IsLocked());
 
-    woken_dummy_threads.insert(thread);
+    m_woken_dummy_threads.insert(thread);
 }
 
 void GlobalSchedulerContext::UnregisterDummyThreadForWakeup(KThread* thread) {
-    ASSERT(IsLocked());
+    ASSERT(this->IsLocked());
 
-    woken_dummy_threads.erase(thread);
+    m_woken_dummy_threads.erase(thread);
 }
 
 void GlobalSchedulerContext::WakeupWaitingDummyThreads() {
-    ASSERT(IsLocked());
+    ASSERT(this->IsLocked());
 
-    for (auto* thread : woken_dummy_threads) {
+    for (auto* thread : m_woken_dummy_threads) {
         thread->DummyThreadEndWait();
     }
 
-    woken_dummy_threads.clear();
+    m_woken_dummy_threads.clear();
 }
 
 } // namespace Kernel

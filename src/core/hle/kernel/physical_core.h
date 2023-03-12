@@ -47,46 +47,38 @@ public:
     bool IsInterrupted() const;
 
     bool IsInitialized() const {
-        return arm_interface != nullptr;
+        return m_arm_interface != nullptr;
     }
 
     Core::ARM_Interface& ArmInterface() {
-        return *arm_interface;
+        return *m_arm_interface;
     }
 
     const Core::ARM_Interface& ArmInterface() const {
-        return *arm_interface;
-    }
-
-    bool IsMainCore() const {
-        return core_index == 0;
-    }
-
-    bool IsSystemCore() const {
-        return core_index == 3;
+        return *m_arm_interface;
     }
 
     std::size_t CoreIndex() const {
-        return core_index;
+        return m_core_index;
     }
 
     Kernel::KScheduler& Scheduler() {
-        return scheduler;
+        return m_scheduler;
     }
 
     const Kernel::KScheduler& Scheduler() const {
-        return scheduler;
+        return m_scheduler;
     }
 
 private:
-    const std::size_t core_index;
-    Core::System& system;
-    Kernel::KScheduler& scheduler;
+    const std::size_t m_core_index;
+    Core::System& m_system;
+    Kernel::KScheduler& m_scheduler;
 
-    std::mutex guard;
-    std::condition_variable on_interrupt;
-    std::unique_ptr<Core::ARM_Interface> arm_interface;
-    bool is_interrupted{};
+    std::mutex m_guard;
+    std::condition_variable m_on_interrupt;
+    std::unique_ptr<Core::ARM_Interface> m_arm_interface;
+    bool m_is_interrupted{};
 };
 
 } // namespace Kernel

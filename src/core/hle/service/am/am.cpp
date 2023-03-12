@@ -79,7 +79,7 @@ IWindowController::IWindowController(Core::System& system_)
 IWindowController::~IWindowController() = default;
 
 void IWindowController::GetAppletResourceUserId(HLERequestContext& ctx) {
-    const u64 process_id = system.ApplicationProcess()->GetProcessID();
+    const u64 process_id = system.ApplicationProcess()->GetProcessId();
 
     LOG_DEBUG(Service_AM, "called. Process ID=0x{:016X}", process_id);
 

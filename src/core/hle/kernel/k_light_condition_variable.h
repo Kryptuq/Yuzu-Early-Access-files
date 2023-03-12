@@ -13,13 +13,13 @@ class KLightLock;
 
 class KLightConditionVariable {
 public:
-    explicit KLightConditionVariable(KernelCore& kernel_) : kernel{kernel_} {}
+    explicit KLightConditionVariable(KernelCore& kernel) : m_kernel{kernel} {}
 
     void Wait(KLightLock* lock, s64 timeout = -1, bool allow_terminating_thread = true);
     void Broadcast();
 
 private:
-    KernelCore& kernel;
-    KThread::WaiterList wait_list{};
+    KernelCore& m_kernel;
+    KThread::WaiterList m_wait_list{};
 };
 } // namespace Kernel

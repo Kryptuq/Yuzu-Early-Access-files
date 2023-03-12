@@ -214,7 +214,6 @@ struct KernelCore::Impl {
             cores[i] = std::make_unique<Kernel::PhysicalCore>(i, system, *schedulers[i]);
 
             auto* main_thread{Kernel::KThread::Create(system.Kernel())};
-            main_thread->SetName(fmt::format("MainThread:{}", core));
             main_thread->SetCurrentCore(core);
             ASSERT(Kernel::KThread::InitializeMainThread(system, main_thread, core).IsSuccess());
 
@@ -356,7 +355,6 @@ struct KernelCore::Impl {
             ASSERT(KThread::InitializeHighPriorityThread(system, shutdown_threads[core_id], {}, {},
                                                          core_id)
                        .IsSuccess());
-            shutdown_threads[core_id]->SetName(fmt::format("SuspendThread:{}", core_id));
         }
     }
 
@@ -388,11 +386,10 @@ struct KernelCore::Impl {
 
     // Gets the dummy KThread for the caller, allocating a new one if this is the first time
     KThread* GetHostDummyThread(KThread* existing_thread) {
-        auto initialize = [this](KThread* thread) {
+        const auto initialize{[](KThread* thread) {
             ASSERT(KThread::InitializeDummyThread(thread, nullptr).IsSuccess());
-            thread->SetName(fmt::format("DummyThread:{}", next_host_thread_id++));
             return thread;
-        };
+        }};
 
         thread_local KThread raw_thread{system.Kernel()};
         thread_local KThread* thread = existing_thread ? existing_thread : initialize(&raw_thread);
@@ -742,16 +739,15 @@ struct KernelCore::Impl {
         hidbus_shared_mem = KSharedMemory::Create(system.Kernel());
 
         hid_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                   Svc::MemoryPermission::Read, hid_size, "HID:SharedMemory");
+                                   Svc::MemoryPermission::Read, hid_size);
         font_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                    Svc::MemoryPermission::Read, font_size, "Font:SharedMemory");
+                                    Svc::MemoryPermission::Read, font_size);
         irs_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                   Svc::MemoryPermission::Read, irs_size, "IRS:SharedMemory");
+                                   Svc::MemoryPermission::Read, irs_size);
         time_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                    Svc::MemoryPermission::Read, time_size, "Time:SharedMemory");
+                                    Svc::MemoryPermission::Read, time_size);
         hidbus_shared_mem->Initialize(system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                      Svc::MemoryPermission::Read, hidbus_size,
-                                      "HidBus:SharedMemory");
+                                      Svc::MemoryPermission::Read, hidbus_size);
     }
 
     std::mutex registered_objects_lock;
@@ -1321,7 +1317,6 @@ const Core::System& KernelCore::System() const {
 struct KernelCore::SlabHeapContainer {
     KSlabHeap<KClientSession> client_session;
     KSlabHeap<KEvent> event;
-    KSlabHeap<KLinkedListNode> linked_list_node;
     KSlabHeap<KPort> port;
     KSlabHeap<KProcess> process;
     KSlabHeap<KResourceLimit> resource_limit;
@@ -1348,8 +1343,6 @@ KSlabHeap<T>& KernelCore::SlabHeap() {
         return slab_heap_container->client_session;
     } else if constexpr (std::is_same_v<T, KEvent>) {
         return slab_heap_container->event;
-    } else if constexpr (std::is_same_v<T, KLinkedListNode>) {
-        return slab_heap_container->linked_list_node;
     } else if constexpr (std::is_same_v<T, KPort>) {
         return slab_heap_container->port;
     } else if constexpr (std::is_same_v<T, KProcess>) {
@@ -1391,7 +1384,6 @@ KSlabHeap<T>& KernelCore::SlabHeap() {
 
 template KSlabHeap<KClientSession>& KernelCore::SlabHeap();
 template KSlabHeap<KEvent>& KernelCore::SlabHeap();
-template KSlabHeap<KLinkedListNode>& KernelCore::SlabHeap();
 template KSlabHeap<KPort>& KernelCore::SlabHeap();
 template KSlabHeap<KProcess>& KernelCore::SlabHeap();
 template KSlabHeap<KResourceLimit>& KernelCore::SlabHeap();

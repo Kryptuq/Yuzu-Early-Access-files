@@ -11,7 +11,7 @@
 
 namespace Kernel {
 
-Result KCapabilities::InitializeForKIP(std::span<const u32> kern_caps, KPageTable* page_table) {
+Result KCapabilities::InitializeForKip(std::span<const u32> kern_caps, KPageTable* page_table) {
     // We're initializing an initial process.
     m_svc_access_flags.reset();
     m_irq_access_flags.reset();

@@ -9,7 +9,7 @@ namespace Kernel {
 
 class KWorkerTask : public KSynchronizationObject {
 public:
-    explicit KWorkerTask(KernelCore& kernel_);
+    explicit KWorkerTask(KernelCore& kernel);
 
     void DoWorkerTask();
 };

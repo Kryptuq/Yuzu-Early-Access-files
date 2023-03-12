@@ -80,7 +80,7 @@ private:
     KERNEL_AUTOOBJECT_TRAITS_IMPL(KAutoObject, KAutoObject, const);
 
 public:
-    explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {
+    explicit KAutoObject(KernelCore& kernel) : m_kernel(kernel) {
         RegisterWithKernel();
     }
     virtual ~KAutoObject() = default;
@@ -164,17 +164,12 @@ public:
         }
     }
 
-    const std::string& GetName() const {
-        return name;
-    }
-
 private:
     void RegisterWithKernel();
     void UnregisterWithKernel();
 
 protected:
-    KernelCore& kernel;
-    std::string name;
+    KernelCore& m_kernel;
 
 private:
     std::atomic<u32> m_ref_count{};
@@ -184,7 +179,7 @@ class KAutoObjectWithListContainer;
 
 class KAutoObjectWithList : public KAutoObject, public boost::intrusive::set_base_hook<> {
 public:
-    explicit KAutoObjectWithList(KernelCore& kernel_) : KAutoObject(kernel_) {}
+    explicit KAutoObjectWithList(KernelCore& kernel) : KAutoObject(kernel) {}
 
     static int Compare(const KAutoObjectWithList& lhs, const KAutoObjectWithList& rhs) {
         const u64 lid = lhs.GetId();
@@ -200,16 +195,12 @@ public:
     }
 
     friend bool operator<(const KAutoObjectWithList& left, const KAutoObjectWithList& right) {
-        return &left < &right;
+        return KAutoObjectWithList::Compare(left, right) < 0;
     }
 
 public:
     virtual u64 GetId() const {
         return reinterpret_cast<u64>(this);
-    }
-
-    virtual const std::string& GetName() const {
-        return name;
     }
 
 private:

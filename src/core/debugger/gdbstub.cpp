@@ -421,7 +421,7 @@ void GDBStub::HandleBreakpointRemove(std::string_view command) {
 static std::optional<std::string> GetNameFromThreadType32(Core::Memory::Memory& memory,
                                                           const Kernel::KThread* thread) {
     // Read thread type from TLS
-    const VAddr tls_thread_type{memory.Read32(thread->GetTLSAddress() + 0x1fc)};
+    const VAddr tls_thread_type{memory.Read32(thread->GetTlsAddress() + 0x1fc)};
     const VAddr argument_thread_type{thread->GetArgument()};
 
     if (argument_thread_type && tls_thread_type != argument_thread_type) {
@@ -452,7 +452,7 @@ static std::optional<std::string> GetNameFromThreadType32(Core::Memory::Memory& 
 static std::optional<std::string> GetNameFromThreadType64(Core::Memory::Memory& memory,
                                                           const Kernel::KThread* thread) {
     // Read thread type from TLS
-    const VAddr tls_thread_type{memory.Read64(thread->GetTLSAddress() + 0x1f8)};
+    const VAddr tls_thread_type{memory.Read64(thread->GetTlsAddress() + 0x1f8)};
     const VAddr argument_thread_type{thread->GetArgument()};
 
     if (argument_thread_type && tls_thread_type != argument_thread_type) {
@@ -576,7 +576,7 @@ void GDBStub::HandleQuery(std::string_view command) {
         const auto& threads = system.ApplicationProcess()->GetThreadList();
         std::vector<std::string> thread_ids;
         for (const auto& thread : threads) {
-            thread_ids.push_back(fmt::format("{:x}", thread->GetThreadID()));
+            thread_ids.push_back(fmt::format("{:x}", thread->GetThreadId()));
         }
         SendReply(fmt::format("m{}", fmt::join(thread_ids, ",")));
     } else if (command.starts_with("sThreadInfo")) {
@@ -591,11 +591,11 @@ void GDBStub::HandleQuery(std::string_view command) {
         for (const auto* thread : threads) {
             auto thread_name{GetThreadName(system, thread)};
             if (!thread_name) {
-                thread_name = fmt::format("Thread {:d}", thread->GetThreadID());
+                thread_name = fmt::format("Thread {:d}", thread->GetThreadId());
             }
 
             buffer += fmt::format(R"(<thread id="{:x}" core="{:d}" name="{}">{}</thread>)",
-                                  thread->GetThreadID(), thread->GetActiveCore(),
+                                  thread->GetThreadId(), thread->GetActiveCore(),
                                   EscapeXML(*thread_name), GetThreadState(thread));
         }
 
@@ -756,7 +756,7 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
 
         reply = fmt::format("Process:     {:#x} ({})\n"
                             "Program Id:  {:#018x}\n",
-                            process->GetProcessID(), process->GetName(), process->GetProgramID());
+                            process->GetProcessId(), process->GetName(), process->GetProgramId());
         reply +=
             fmt::format("Layout:\n"
                         "  Alias: {:#012x} - {:#012x}\n"
@@ -819,7 +819,7 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
 Kernel::KThread* GDBStub::GetThreadByID(u64 thread_id) {
     const auto& threads{system.ApplicationProcess()->GetThreadList()};
     for (auto* thread : threads) {
-        if (thread->GetThreadID() == thread_id) {
+        if (thread->GetThreadId() == thread_id) {
             return thread;
         }
     }

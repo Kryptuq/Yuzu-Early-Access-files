@@ -16,7 +16,7 @@ namespace Kernel {
 Result KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
     // Set that this process owns us.
     m_owner = process;
-    m_kernel = &kernel;
+    m_kernel = std::addressof(kernel);
 
     // Allocate a new page.
     KPageBuffer* page_buf = KPageBuffer::Allocate(kernel);

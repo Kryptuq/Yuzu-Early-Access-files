@@ -29,7 +29,7 @@ public:
     static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr);
 
 private:
-    [[maybe_unused]] alignas(PageSize) std::array<u8, PageSize> m_buffer{};
+    alignas(PageSize) std::array<u8, PageSize> m_buffer{};
 };
 static_assert(sizeof(KPageBuffer) == KPageBufferSlabHeap::BufferSize);
 

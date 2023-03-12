@@ -29,7 +29,7 @@ class KCodeMemory final
     KERNEL_AUTOOBJECT_TRAITS(KCodeMemory, KAutoObject);
 
 public:
-    explicit KCodeMemory(KernelCore& kernel_);
+    explicit KCodeMemory(KernelCore& kernel);
 
     Result Initialize(Core::DeviceMemory& device_memory, VAddr address, size_t size);
     void Finalize() override;
@@ -42,7 +42,7 @@ public:
     bool IsInitialized() const override {
         return m_is_initialized;
     }
-    static void PostDestroy([[maybe_unused]] uintptr_t arg) {}
+    static void PostDestroy(uintptr_t arg) {}
 
     KProcess* GetOwner() const override {
         return m_owner;

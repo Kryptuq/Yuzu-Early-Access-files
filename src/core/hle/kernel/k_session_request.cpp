@@ -14,46 +14,46 @@ Result KSessionRequest::SessionMappings::PushMap(VAddr client, VAddr server, siz
     // Get the mapping.
     Mapping* mapping;
     if (index < NumStaticMappings) {
-        mapping = &m_static_mappings[index];
+        mapping = std::addressof(m_static_mappings[index]);
     } else {
         // Allocate a page for the extra mappings.
         if (m_mappings == nullptr) {
-            KPageBuffer* page_buffer = KPageBuffer::Allocate(kernel);
+            KPageBuffer* page_buffer = KPageBuffer::Allocate(m_kernel);
             R_UNLESS(page_buffer != nullptr, ResultOutOfMemory);
 
             m_mappings = reinterpret_cast<Mapping*>(page_buffer);
         }
 
-        mapping = &m_mappings[index - NumStaticMappings];
+        mapping = std::addressof(m_mappings[index - NumStaticMappings]);
     }
 
     // Set the mapping.
     mapping->Set(client, server, size, state);
 
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KSessionRequest::SessionMappings::PushSend(VAddr client, VAddr server, size_t size,
                                                   KMemoryState state) {
     ASSERT(m_num_recv == 0);
     ASSERT(m_num_exch == 0);
-    return this->PushMap(client, server, size, state, m_num_send++);
+    R_RETURN(this->PushMap(client, server, size, state, m_num_send++));
 }
 
 Result KSessionRequest::SessionMappings::PushReceive(VAddr client, VAddr server, size_t size,
                                                      KMemoryState state) {
     ASSERT(m_num_exch == 0);
-    return this->PushMap(client, server, size, state, m_num_send + m_num_recv++);
+    R_RETURN(this->PushMap(client, server, size, state, m_num_send + m_num_recv++));
 }
 
 Result KSessionRequest::SessionMappings::PushExchange(VAddr client, VAddr server, size_t size,
                                                       KMemoryState state) {
-    return this->PushMap(client, server, size, state, m_num_send + m_num_recv + m_num_exch++);
+    R_RETURN(this->PushMap(client, server, size, state, m_num_send + m_num_recv + m_num_exch++));
 }
 
 void KSessionRequest::SessionMappings::Finalize() {
     if (m_mappings) {
-        KPageBuffer::Free(kernel, reinterpret_cast<KPageBuffer*>(m_mappings));
+        KPageBuffer::Free(m_kernel, reinterpret_cast<KPageBuffer*>(m_mappings));
         m_mappings = nullptr;
     }
 }

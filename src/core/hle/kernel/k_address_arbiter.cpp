@@ -14,8 +14,8 @@
 
 namespace Kernel {
 
-KAddressArbiter::KAddressArbiter(Core::System& system_)
-    : system{system_}, kernel{system.Kernel()} {}
+KAddressArbiter::KAddressArbiter(Core::System& system)
+    : m_system{system}, m_kernel{system.Kernel()} {}
 KAddressArbiter::~KAddressArbiter() = default;
 
 namespace {
@@ -90,8 +90,8 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
 
 class ThreadQueueImplForKAddressArbiter final : public KThreadQueue {
 public:
-    explicit ThreadQueueImplForKAddressArbiter(KernelCore& kernel_, KAddressArbiter::ThreadTree* t)
-        : KThreadQueue(kernel_), m_tree(t) {}
+    explicit ThreadQueueImplForKAddressArbiter(KernelCore& kernel, KAddressArbiter::ThreadTree* t)
+        : KThreadQueue(kernel), m_tree(t) {}
 
     void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // If the thread is waiting on an address arbiter, remove it from the tree.
@@ -105,7 +105,7 @@ public:
     }
 
 private:
-    KAddressArbiter::ThreadTree* m_tree;
+    KAddressArbiter::ThreadTree* m_tree{};
 };
 
 } // namespace
@@ -114,10 +114,10 @@ Result KAddressArbiter::Signal(VAddr addr, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
-        KScopedSchedulerLock sl(kernel);
+        KScopedSchedulerLock sl(m_kernel);
 
-        auto it = thread_tree.nfind_key({addr, -1});
-        while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
+        auto it = m_tree.nfind_key({addr, -1});
+        while ((it != m_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
@@ -126,31 +126,27 @@ Result KAddressArbiter::Signal(VAddr addr, s32 count) {
             ASSERT(target_thread->IsWaitingForAddressArbiter());
             target_thread->ClearAddressArbiter();
 
-            it = thread_tree.erase(it);
+            it = m_tree.erase(it);
             ++num_waiters;
         }
     }
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
-        KScopedSchedulerLock sl(kernel);
+        KScopedSchedulerLock sl(m_kernel);
 
         // Check the userspace value.
         s32 user_value{};
-        if (!UpdateIfEqual(system, &user_value, addr, value, value + 1)) {
-            LOG_ERROR(Kernel, "Invalid current memory!");
-            return ResultInvalidCurrentMemory;
-        }
-        if (user_value != value) {
-            return ResultInvalidState;
-        }
+        R_UNLESS(UpdateIfEqual(m_system, std::addressof(user_value), addr, value, value + 1),
+                 ResultInvalidCurrentMemory);
+        R_UNLESS(user_value == value, ResultInvalidState);
 
-        auto it = thread_tree.nfind_key({addr, -1});
-        while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
+        auto it = m_tree.nfind_key({addr, -1});
+        while ((it != m_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
@@ -159,33 +155,33 @@ Result KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 cou
             ASSERT(target_thread->IsWaitingForAddressArbiter());
             target_thread->ClearAddressArbiter();
 
-            it = thread_tree.erase(it);
+            it = m_tree.erase(it);
             ++num_waiters;
         }
     }
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
-        [[maybe_unused]] const KScopedSchedulerLock sl(kernel);
+        KScopedSchedulerLock sl(m_kernel);
 
-        auto it = thread_tree.nfind_key({addr, -1});
+        auto it = m_tree.nfind_key({addr, -1});
         // Determine the updated value.
         s32 new_value{};
         if (count <= 0) {
-            if (it != thread_tree.end() && it->GetAddressArbiterKey() == addr) {
+            if (it != m_tree.end() && it->GetAddressArbiterKey() == addr) {
                 new_value = value - 2;
             } else {
                 new_value = value + 1;
             }
         } else {
-            if (it != thread_tree.end() && it->GetAddressArbiterKey() == addr) {
+            if (it != m_tree.end() && it->GetAddressArbiterKey() == addr) {
                 auto tmp_it = it;
                 s32 tmp_num_waiters{};
-                while (++tmp_it != thread_tree.end() && tmp_it->GetAddressArbiterKey() == addr) {
+                while (++tmp_it != m_tree.end() && tmp_it->GetAddressArbiterKey() == addr) {
                     if (tmp_num_waiters++ >= count) {
                         break;
                     }
@@ -205,20 +201,15 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 val
         s32 user_value{};
         bool succeeded{};
         if (value != new_value) {
-            succeeded = UpdateIfEqual(system, &user_value, addr, value, new_value);
+            succeeded = UpdateIfEqual(m_system, std::addressof(user_value), addr, value, new_value);
         } else {
-            succeeded = ReadFromUser(system, &user_value, addr);
+            succeeded = ReadFromUser(m_system, std::addressof(user_value), addr);
         }
 
-        if (!succeeded) {
-            LOG_ERROR(Kernel, "Invalid current memory!");
-            return ResultInvalidCurrentMemory;
-        }
-        if (user_value != value) {
-            return ResultInvalidState;
-        }
+        R_UNLESS(succeeded, ResultInvalidCurrentMemory);
+        R_UNLESS(user_value == value, ResultInvalidState);
 
-        while ((it != thread_tree.end()) && (count <= 0 || num_waiters < count) &&
+        while ((it != m_tree.end()) && (count <= 0 || num_waiters < count) &&
                (it->GetAddressArbiterKey() == addr)) {
             // End the thread's wait.
             KThread* target_thread = std::addressof(*it);
@@ -227,57 +218,57 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 val
             ASSERT(target_thread->IsWaitingForAddressArbiter());
             target_thread->ClearAddressArbiter();
 
-            it = thread_tree.erase(it);
+            it = m_tree.erase(it);
             ++num_waiters;
         }
     }
-    return ResultSuccess;
+    R_SUCCEED();
 }
 
 Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};
-    ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
+    ThreadQueueImplForKAddressArbiter wait_queue(m_kernel, std::addressof(m_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{kernel, std::addressof(timer), cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{m_kernel, std::addressof(timer), cur_thread, timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
             slp.CancelSleep();
-            return ResultTerminationRequested;
+            R_THROW(ResultTerminationRequested);
         }
 
         // Read the value from userspace.
         s32 user_value{};
         bool succeeded{};
         if (decrement) {
-            succeeded = DecrementIfLessThan(system, &user_value, addr, value);
+            succeeded = DecrementIfLessThan(m_system, std::addressof(user_value), addr, value);
         } else {
-            succeeded = ReadFromUser(system, &user_value, addr);
+            succeeded = ReadFromUser(m_system, std::addressof(user_value), addr);
         }
 
         if (!succeeded) {
             slp.CancelSleep();
-            return ResultInvalidCurrentMemory;
+            R_THROW(ResultInvalidCurrentMemory);
         }
 
         // Check that the value is less than the specified one.
         if (user_value >= value) {
             slp.CancelSleep();
-            return ResultInvalidState;
+            R_THROW(ResultInvalidState);
         }
 
         // Check that the timeout is non-zero.
         if (timeout == 0) {
             slp.CancelSleep();
-            return ResultTimedOut;
+            R_THROW(ResultTimedOut);
         }
 
         // Set the arbiter.
-        cur_thread->SetAddressArbiter(&thread_tree, addr);
-        thread_tree.insert(*cur_thread);
+        cur_thread->SetAddressArbiter(std::addressof(m_tree), addr);
+        m_tree.insert(*cur_thread);
 
         // Wait for the thread to finish.
         wait_queue.SetHardwareTimer(timer);
@@ -291,41 +282,41 @@ Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s6
 
 Result KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
     // Prepare to wait.
-    KThread* cur_thread = GetCurrentThreadPointer(kernel);
+    KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};
-    ThreadQueueImplForKAddressArbiter wait_queue(kernel, std::addressof(thread_tree));
+    ThreadQueueImplForKAddressArbiter wait_queue(m_kernel, std::addressof(m_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{kernel, std::addressof(timer), cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{m_kernel, std::addressof(timer), cur_thread, timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
             slp.CancelSleep();
-            return ResultTerminationRequested;
+            R_THROW(ResultTerminationRequested);
         }
 
         // Read the value from userspace.
         s32 user_value{};
-        if (!ReadFromUser(system, &user_value, addr)) {
+        if (!ReadFromUser(m_system, std::addressof(user_value), addr)) {
             slp.CancelSleep();
-            return ResultInvalidCurrentMemory;
+            R_THROW(ResultInvalidCurrentMemory);
         }
 
         // Check that the value is equal.
         if (value != user_value) {
             slp.CancelSleep();
-            return ResultInvalidState;
+            R_THROW(ResultInvalidState);
         }
 
         // Check that the timeout is non-zero.
         if (timeout == 0) {
             slp.CancelSleep();
-            return ResultTimedOut;
+            R_THROW(ResultTimedOut);
         }
 
         // Set the arbiter.
-        cur_thread->SetAddressArbiter(&thread_tree, addr);
-        thread_tree.insert(*cur_thread);
+        cur_thread->SetAddressArbiter(std::addressof(m_tree), addr);
+        m_tree.insert(*cur_thread);
 
         // Wait for the thread to finish.
         wait_queue.SetHardwareTimer(timer);

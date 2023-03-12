@@ -12,7 +12,7 @@ namespace Kernel::Svc {
 namespace {
 
 template <typename T>
-Result CreateSession(Core::System& system, Handle* out_server, Handle* out_client, u64 name) {
+Result CreateSession(Core::System& system, Handle* out_server, Handle* out_client, uint64_t name) {
     auto& process = GetCurrentProcess(system.Kernel());
     auto& handle_table = process.GetHandleTable();
 
@@ -21,16 +21,17 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
 
     // Reserve a new session from the process resource limit.
     // FIXME: LimitableResource_SessionCountMax
-    KScopedResourceReservation session_reservation(&process, LimitableResource::SessionCountMax);
+    KScopedResourceReservation session_reservation(std::addressof(process),
+                                                   LimitableResource::SessionCountMax);
     if (session_reservation.Succeeded()) {
         session = T::Create(system.Kernel());
     } else {
-        return ResultLimitReached;
+        R_THROW(ResultLimitReached);
 
         // // We couldn't reserve a session. Check that we support dynamically expanding the
         // // resource limit.
         // R_UNLESS(process.GetResourceLimit() ==
-        //          &system.Kernel().GetSystemResourceLimit(), ResultLimitReached);
+        //          std::addressof(system.Kernel().GetSystemResourceLimit()), ResultLimitReached);
         // R_UNLESS(KTargetSystem::IsDynamicResourceLimitsEnabled(), ResultLimitReached());
 
         // // Try to allocate a session from unused slab memory.
@@ -59,7 +60,7 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
     R_UNLESS(session != nullptr, ResultOutOfResource);
 
     // Initialize the session.
-    session->Initialize(nullptr, fmt::format("{}", name));
+    session->Initialize(nullptr, name);
 
     // Commit the session reservation.
     session_reservation.Commit();
@@ -75,17 +76,15 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
     T::Register(system.Kernel(), session);
 
     // Add the server session to the handle table.
-    R_TRY(handle_table.Add(out_server, &session->GetServerSession()));
+    R_TRY(handle_table.Add(out_server, std::addressof(session->GetServerSession())));
+
+    // Ensure that we maintain a clean handle state on exit.
+    ON_RESULT_FAILURE {
+        handle_table.Remove(*out_server);
+    };
 
     // Add the client session to the handle table.
-    const auto result = handle_table.Add(out_client, &session->GetClientSession());
-
-    if (!R_SUCCEEDED(result)) {
-        // Ensure that we maintaing a clean handle state on exit.
-        handle_table.Remove(*out_server);
-    }
-
-    return result;
+    R_RETURN(handle_table.Add(out_client, std::addressof(session->GetClientSession())));
 }
 
 } // namespace
@@ -94,9 +93,9 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
                      u64 name) {
     if (is_light) {
         // return CreateSession<KLightSession>(system, out_server, out_client, name);
-        return ResultNotImplemented;
+        R_THROW(ResultNotImplemented);
     } else {
-        return CreateSession<KSession>(system, out_server, out_client, name);
+        R_RETURN(CreateSession<KSession>(system, out_server, out_client, name));
     }
 }
 

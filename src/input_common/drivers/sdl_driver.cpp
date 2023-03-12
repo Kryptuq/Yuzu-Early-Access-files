@@ -652,12 +652,27 @@ bool SDLDriver::IsVibrationEnabled(const PadIdentifier& identifier) {
 }
 
 void SDLDriver::SendVibrations() {
+    std::vector<VibrationRequest> filtered_virations{};
     while (!vibration_queue.Empty()) {
         VibrationRequest request;
         vibration_queue.Pop(request);
         const auto joystick = GetSDLJoystickByGUID(request.identifier.guid.RawString(),
                                                    static_cast<int>(request.identifier.port));
-        joystick->RumblePlay(request.vibration);
+        const auto it = std::find_if(filtered_virations.begin(), filtered_virations.end(),
+                                     [request](VibrationRequest vibration) {
+                                         return vibration.identifier == request.identifier;
+                                     });
+        if (it == filtered_virations.end()) {
+            filtered_virations.push_back(std::move(request));
+            continue;
+        }
+        *it = request;
+    }
+
+    for (const auto& vibration : filtered_virations) {
+        const auto joystick = GetSDLJoystickByGUID(vibration.identifier.guid.RawString(),
+                                                   static_cast<int>(vibration.identifier.port));
+        joystick->RumblePlay(vibration.vibration);
     }
 }
 

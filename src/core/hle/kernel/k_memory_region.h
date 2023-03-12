@@ -21,15 +21,15 @@ public:
     YUZU_NON_MOVEABLE(KMemoryRegion);
 
     constexpr KMemoryRegion() = default;
-    constexpr KMemoryRegion(u64 address_, u64 last_address_)
-        : address{address_}, last_address{last_address_} {}
-    constexpr KMemoryRegion(u64 address_, u64 last_address_, u64 pair_address_, u32 attributes_,
-                            u32 type_id_)
-        : address(address_), last_address(last_address_), pair_address(pair_address_),
-          attributes(attributes_), type_id(type_id_) {}
-    constexpr KMemoryRegion(u64 address_, u64 last_address_, u32 attributes_, u32 type_id_)
-        : KMemoryRegion(address_, last_address_, std::numeric_limits<u64>::max(), attributes_,
-                        type_id_) {}
+    constexpr KMemoryRegion(u64 address, u64 last_address)
+        : m_address{address}, m_last_address{last_address} {}
+    constexpr KMemoryRegion(u64 address, u64 last_address, u64 pair_address, u32 attributes,
+                            u32 type_id)
+        : m_address(address), m_last_address(last_address), m_pair_address(pair_address),
+          m_attributes(attributes), m_type_id(type_id) {}
+    constexpr KMemoryRegion(u64 address, u64 last_address, u32 attributes, u32 type_id)
+        : KMemoryRegion(address, last_address, std::numeric_limits<u64>::max(), attributes,
+                        type_id) {}
 
     ~KMemoryRegion() = default;
 
@@ -44,15 +44,15 @@ public:
     }
 
     constexpr u64 GetAddress() const {
-        return address;
+        return m_address;
     }
 
     constexpr u64 GetPairAddress() const {
-        return pair_address;
+        return m_pair_address;
     }
 
     constexpr u64 GetLastAddress() const {
-        return last_address;
+        return m_last_address;
     }
 
     constexpr u64 GetEndAddress() const {
@@ -64,16 +64,16 @@ public:
     }
 
     constexpr u32 GetAttributes() const {
-        return attributes;
+        return m_attributes;
     }
 
     constexpr u32 GetType() const {
-        return type_id;
+        return m_type_id;
     }
 
     constexpr void SetType(u32 type) {
         ASSERT(this->CanDerive(type));
-        type_id = type;
+        m_type_id = type;
     }
 
     constexpr bool Contains(u64 addr) const {
@@ -94,27 +94,27 @@ public:
     }
 
     constexpr void SetPairAddress(u64 a) {
-        pair_address = a;
+        m_pair_address = a;
     }
 
     constexpr void SetTypeAttribute(u32 attr) {
-        type_id |= attr;
+        m_type_id |= attr;
     }
 
 private:
     constexpr void Reset(u64 a, u64 la, u64 p, u32 r, u32 t) {
-        address = a;
-        pair_address = p;
-        last_address = la;
-        attributes = r;
-        type_id = t;
+        m_address = a;
+        m_pair_address = p;
+        m_last_address = la;
+        m_attributes = r;
+        m_type_id = t;
     }
 
-    u64 address{};
-    u64 last_address{};
-    u64 pair_address{};
-    u32 attributes{};
-    u32 type_id{};
+    u64 m_address{};
+    u64 m_last_address{};
+    u64 m_pair_address{};
+    u32 m_attributes{};
+    u32 m_type_id{};
 };
 
 class KMemoryRegionTree final {
@@ -322,7 +322,7 @@ public:
 
 private:
     TreeType m_tree{};
-    KMemoryRegionAllocator& memory_region_allocator;
+    KMemoryRegionAllocator& m_memory_region_allocator;
 };
 
 class KMemoryRegionAllocator final {
@@ -338,18 +338,18 @@ public:
     template <typename... Args>
     KMemoryRegion* Allocate(Args&&... args) {
         // Ensure we stay within the bounds of our heap.
-        ASSERT(this->num_regions < MaxMemoryRegions);
+        ASSERT(m_num_regions < MaxMemoryRegions);
 
         // Create the new region.
-        KMemoryRegion* region = std::addressof(this->region_heap[this->num_regions++]);
-        new (region) KMemoryRegion(std::forward<Args>(args)...);
+        KMemoryRegion* region = std::addressof(m_region_heap[m_num_regions++]);
+        std::construct_at(region, std::forward<Args>(args)...);
 
         return region;
     }
 
 private:
-    std::array<KMemoryRegion, MaxMemoryRegions> region_heap{};
-    size_t num_regions{};
+    std::array<KMemoryRegion, MaxMemoryRegions> m_region_heap{};
+    size_t m_num_regions{};
 };
 
 } // namespace Kernel

@@ -13,9 +13,9 @@ namespace {
 
 class ThreadQueueImplForKLightConditionVariable final : public KThreadQueue {
 public:
-    ThreadQueueImplForKLightConditionVariable(KernelCore& kernel_, KThread::WaiterList* wl,
+    ThreadQueueImplForKLightConditionVariable(KernelCore& kernel, KThread::WaiterList* wl,
                                               bool term)
-        : KThreadQueue(kernel_), m_wait_list(wl), m_allow_terminating_thread(term) {}
+        : KThreadQueue(kernel), m_wait_list(wl), m_allow_terminating_thread(term) {}
 
     void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Only process waits if we're allowed to.
@@ -39,15 +39,15 @@ private:
 
 void KLightConditionVariable::Wait(KLightLock* lock, s64 timeout, bool allow_terminating_thread) {
     // Create thread queue.
-    KThread* owner = GetCurrentThreadPointer(kernel);
+    KThread* owner = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};
 
-    ThreadQueueImplForKLightConditionVariable wait_queue(kernel, std::addressof(wait_list),
+    ThreadQueueImplForKLightConditionVariable wait_queue(m_kernel, std::addressof(m_wait_list),
                                                          allow_terminating_thread);
 
     // Sleep the thread.
     {
-        KScopedSchedulerLockAndSleep lk(kernel, std::addressof(timer), owner, timeout);
+        KScopedSchedulerLockAndSleep lk(m_kernel, std::addressof(timer), owner, timeout);
 
         if (!allow_terminating_thread && owner->IsTerminationRequested()) {
             lk.CancelSleep();
@@ -57,7 +57,7 @@ void KLightConditionVariable::Wait(KLightLock* lock, s64 timeout, bool allow_ter
         lock->Unlock();
 
         // Add the thread to the queue.
-        wait_list.push_back(*owner);
+        m_wait_list.push_back(*owner);
 
         // Begin waiting.
         wait_queue.SetHardwareTimer(timer);
@@ -69,10 +69,10 @@ void KLightConditionVariable::Wait(KLightLock* lock, s64 timeout, bool allow_ter
 }
 
 void KLightConditionVariable::Broadcast() {
-    KScopedSchedulerLock lk(kernel);
+    KScopedSchedulerLock lk(m_kernel);
 
     // Signal all threads.
-    for (auto it = wait_list.begin(); it != wait_list.end(); it = wait_list.erase(it)) {
+    for (auto it = m_wait_list.begin(); it != m_wait_list.end(); it = m_wait_list.erase(it)) {
         it->EndWait(ResultSuccess);
     }
 }

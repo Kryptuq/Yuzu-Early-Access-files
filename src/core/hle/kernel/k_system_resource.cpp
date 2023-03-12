@@ -5,9 +5,8 @@
 
 namespace Kernel {
 
-Result KSecureSystemResource::Initialize([[maybe_unused]] size_t size,
-                                         [[maybe_unused]] KResourceLimit* resource_limit,
-                                         [[maybe_unused]] KMemoryManager::Pool pool) {
+Result KSecureSystemResource::Initialize(size_t size, KResourceLimit* resource_limit,
+                                         KMemoryManager::Pool pool) {
     // Unimplemented
     UNREACHABLE();
 }
@@ -17,8 +16,8 @@ void KSecureSystemResource::Finalize() {
     UNREACHABLE();
 }
 
-size_t KSecureSystemResource::CalculateRequiredSecureMemorySize(
-    [[maybe_unused]] size_t size, [[maybe_unused]] KMemoryManager::Pool pool) {
+size_t KSecureSystemResource::CalculateRequiredSecureMemorySize(size_t size,
+                                                                KMemoryManager::Pool pool) {
     // Unimplemented
     UNREACHABLE();
 }

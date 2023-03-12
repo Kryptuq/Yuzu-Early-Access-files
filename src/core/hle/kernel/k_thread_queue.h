@@ -12,7 +12,7 @@ class KHardwareTimer;
 
 class KThreadQueue {
 public:
-    explicit KThreadQueue(KernelCore& kernel_) : kernel{kernel_}, m_hardware_timer{} {}
+    explicit KThreadQueue(KernelCore& kernel) : m_kernel{kernel}, m_hardware_timer{} {}
     virtual ~KThreadQueue() = default;
 
     void SetHardwareTimer(KHardwareTimer* timer) {
@@ -25,13 +25,13 @@ public:
     virtual void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task);
 
 private:
-    KernelCore& kernel;
+    KernelCore& m_kernel;
     KHardwareTimer* m_hardware_timer{};
 };
 
 class KThreadQueueWithoutEndWait : public KThreadQueue {
 public:
-    explicit KThreadQueueWithoutEndWait(KernelCore& kernel_) : KThreadQueue(kernel_) {}
+    explicit KThreadQueueWithoutEndWait(KernelCore& kernel) : KThreadQueue(kernel) {}
 
     void EndWait(KThread* waiting_thread, Result wait_result) override final;
 };

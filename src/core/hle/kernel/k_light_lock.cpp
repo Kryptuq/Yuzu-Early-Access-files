@@ -13,7 +13,7 @@ namespace {
 
 class ThreadQueueImplForKLightLock final : public KThreadQueue {
 public:
-    explicit ThreadQueueImplForKLightLock(KernelCore& kernel_) : KThreadQueue(kernel_) {}
+    explicit ThreadQueueImplForKLightLock(KernelCore& kernel) : KThreadQueue(kernel) {}
 
     void CancelWait(KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
         // Remove the thread as a waiter from its owner.
@@ -29,13 +29,13 @@ public:
 } // namespace
 
 void KLightLock::Lock() {
-    const uintptr_t cur_thread = reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(kernel));
+    const uintptr_t cur_thread = reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(m_kernel));
 
     while (true) {
-        uintptr_t old_tag = tag.load(std::memory_order_relaxed);
+        uintptr_t old_tag = m_tag.load(std::memory_order_relaxed);
 
-        while (!tag.compare_exchange_weak(old_tag, (old_tag == 0) ? cur_thread : (old_tag | 1),
-                                          std::memory_order_acquire)) {
+        while (!m_tag.compare_exchange_weak(old_tag, (old_tag == 0) ? cur_thread : (old_tag | 1),
+                                            std::memory_order_acquire)) {
         }
 
         if (old_tag == 0 || this->LockSlowPath(old_tag | 1, cur_thread)) {
@@ -45,30 +45,30 @@ void KLightLock::Lock() {
 }
 
 void KLightLock::Unlock() {
-    const uintptr_t cur_thread = reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(kernel));
+    const uintptr_t cur_thread = reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(m_kernel));
 
     uintptr_t expected = cur_thread;
-    if (!tag.compare_exchange_strong(expected, 0, std::memory_order_release)) {
+    if (!m_tag.compare_exchange_strong(expected, 0, std::memory_order_release)) {
         this->UnlockSlowPath(cur_thread);
     }
 }
 
 bool KLightLock::LockSlowPath(uintptr_t _owner, uintptr_t _cur_thread) {
     KThread* cur_thread = reinterpret_cast<KThread*>(_cur_thread);
-    ThreadQueueImplForKLightLock wait_queue(kernel);
+    ThreadQueueImplForKLightLock wait_queue(m_kernel);
 
     // Pend the current thread waiting on the owner thread.
     {
-        KScopedSchedulerLock sl{kernel};
+        KScopedSchedulerLock sl{m_kernel};
 
         // Ensure we actually have locking to do.
-        if (tag.load(std::memory_order_relaxed) != _owner) {
+        if (m_tag.load(std::memory_order_relaxed) != _owner) {
             return false;
         }
 
         // Add the current thread as a waiter on the owner.
         KThread* owner_thread = reinterpret_cast<KThread*>(_owner & ~1ULL);
-        cur_thread->SetKernelAddressKey(reinterpret_cast<uintptr_t>(std::addressof(tag)));
+        cur_thread->SetKernelAddressKey(reinterpret_cast<uintptr_t>(std::addressof(m_tag)));
         owner_thread->AddWaiter(cur_thread);
 
         // Begin waiting to hold the lock.
@@ -87,12 +87,12 @@ void KLightLock::UnlockSlowPath(uintptr_t _cur_thread) {
 
     // Unlock.
     {
-        KScopedSchedulerLock sl(kernel);
+        KScopedSchedulerLock sl(m_kernel);
 
         // Get the next owner.
         bool has_waiters;
         KThread* next_owner = owner_thread->RemoveKernelWaiterByKey(
-            std::addressof(has_waiters), reinterpret_cast<uintptr_t>(std::addressof(tag)));
+            std::addressof(has_waiters), reinterpret_cast<uintptr_t>(std::addressof(m_tag)));
 
         // Pass the lock to the next owner.
         uintptr_t next_tag = 0;
@@ -114,12 +114,13 @@ void KLightLock::UnlockSlowPath(uintptr_t _cur_thread) {
         }
 
         // Write the new tag value.
-        tag.store(next_tag, std::memory_order_release);
+        m_tag.store(next_tag, std::memory_order_release);
     }
 }
 
 bool KLightLock::IsLockedByCurrentThread() const {
-    return (tag | 1ULL) == (reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(kernel)) | 1ULL);
+    return (m_tag.load() | 1ULL) ==
+           (reinterpret_cast<uintptr_t>(GetCurrentThreadPointer(m_kernel)) | 1ULL);
 }
 
 } // namespace Kernel

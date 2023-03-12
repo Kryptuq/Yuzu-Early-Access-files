@@ -158,6 +158,7 @@ add_library(core STATIC
     hid/motion_input.h
     hle/api_version.h
     hle/ipc.h
+    hle/kernel/board/nintendo/nx/k_memory_layout.cpp
     hle/kernel/board/nintendo/nx/k_memory_layout.h
     hle/kernel/board/nintendo/nx/k_system_control.cpp
     hle/kernel/board/nintendo/nx/k_system_control.h
@@ -211,12 +212,10 @@ add_library(core STATIC
     hle/kernel/k_light_condition_variable.h
     hle/kernel/k_light_lock.cpp
     hle/kernel/k_light_lock.h
-    hle/kernel/k_linked_list.h
     hle/kernel/k_memory_block.h
     hle/kernel/k_memory_block_manager.cpp
     hle/kernel/k_memory_block_manager.h
     hle/kernel/k_memory_layout.cpp
-    hle/kernel/k_memory_layout.board.nintendo_nx.cpp
     hle/kernel/k_memory_layout.h
     hle/kernel/k_memory_manager.cpp
     hle/kernel/k_memory_manager.h

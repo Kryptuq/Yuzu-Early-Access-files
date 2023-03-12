@@ -47,7 +47,6 @@ class KEvent;
 class KEventInfo;
 class KHandleTable;
 class KHardwareTimer;
-class KLinkedListNode;
 class KMemoryLayout;
 class KMemoryManager;
 class KObjectName;

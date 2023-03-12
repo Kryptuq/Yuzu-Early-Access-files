@@ -36,9 +36,9 @@ static To Convert(const From& from) {
     To to{};
 
     if constexpr (sizeof(To) >= sizeof(From)) {
-        std::memcpy(&to, &from, sizeof(From));
+        std::memcpy(std::addressof(to), std::addressof(from), sizeof(From));
     } else {
-        std::memcpy(&to, &from, sizeof(To));
+        std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
     }
 
     return to;
@@ -87,7 +87,7 @@ static void SvcWrap_SetHeapSize64From32(Core::System& system) {
 
     size = Convert<uint32_t>(GetReg32(system, 1));
 
-    ret = SetHeapSize64From32(system, &out_address, size);
+    ret = SetHeapSize64From32(system, std::addressof(out_address), size);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_address));
@@ -169,7 +169,7 @@ static void SvcWrap_QueryMemory64From32(Core::System& system) {
     out_memory_info = Convert<uint32_t>(GetReg32(system, 0));
     address = Convert<uint32_t>(GetReg32(system, 2));
 
-    ret = QueryMemory64From32(system, out_memory_info, &out_page_info, address);
+    ret = QueryMemory64From32(system, out_memory_info, std::addressof(out_page_info), address);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_page_info));
@@ -195,7 +195,7 @@ static void SvcWrap_CreateThread64From32(Core::System& system) {
     priority = Convert<int32_t>(GetReg32(system, 0));
     core_id = Convert<int32_t>(GetReg32(system, 4));
 
-    ret = CreateThread64From32(system, &out_handle, func, arg, stack_bottom, priority, core_id);
+    ret = CreateThread64From32(system, std::addressof(out_handle), func, arg, stack_bottom, priority, core_id);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -236,7 +236,7 @@ static void SvcWrap_GetThreadPriority64From32(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg32(system, 1));
 
-    ret = GetThreadPriority64From32(system, &out_priority, thread_handle);
+    ret = GetThreadPriority64From32(system, std::addressof(out_priority), thread_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_priority));
@@ -265,7 +265,7 @@ static void SvcWrap_GetThreadCoreMask64From32(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg32(system, 2));
 
-    ret = GetThreadCoreMask64From32(system, &out_core_id, &out_affinity_mask, thread_handle);
+    ret = GetThreadCoreMask64From32(system, std::addressof(out_core_id), std::addressof(out_affinity_mask), thread_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_core_id));
@@ -371,7 +371,7 @@ static void SvcWrap_CreateTransferMemory64From32(Core::System& system) {
     size = Convert<uint32_t>(GetReg32(system, 2));
     map_perm = Convert<MemoryPermission>(GetReg32(system, 3));
 
-    ret = CreateTransferMemory64From32(system, &out_handle, address, size, map_perm);
+    ret = CreateTransferMemory64From32(system, std::addressof(out_handle), address, size, map_perm);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -416,7 +416,7 @@ static void SvcWrap_WaitSynchronization64From32(Core::System& system) {
     timeout_ns_gather[1] = GetReg32(system, 3);
     timeout_ns = Convert<int64_t>(timeout_ns_gather);
 
-    ret = WaitSynchronization64From32(system, &out_index, handles, num_handles, timeout_ns);
+    ret = WaitSynchronization64From32(system, std::addressof(out_index), handles, num_handles, timeout_ns);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_index));
@@ -511,7 +511,7 @@ static void SvcWrap_ConnectToNamedPort64From32(Core::System& system) {
 
     name = Convert<uint32_t>(GetReg32(system, 1));
 
-    ret = ConnectToNamedPort64From32(system, &out_handle, name);
+    ret = ConnectToNamedPort64From32(system, std::addressof(out_handle), name);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -557,7 +557,7 @@ static void SvcWrap_SendAsyncRequestWithUserBuffer64From32(Core::System& system)
     message_buffer_size = Convert<uint32_t>(GetReg32(system, 2));
     session_handle = Convert<Handle>(GetReg32(system, 3));
 
-    ret = SendAsyncRequestWithUserBuffer64From32(system, &out_event_handle, message_buffer, message_buffer_size, session_handle);
+    ret = SendAsyncRequestWithUserBuffer64From32(system, std::addressof(out_event_handle), message_buffer, message_buffer_size, session_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_event_handle));
@@ -571,7 +571,7 @@ static void SvcWrap_GetProcessId64From32(Core::System& system) {
 
     process_handle = Convert<Handle>(GetReg32(system, 1));
 
-    ret = GetProcessId64From32(system, &out_process_id, process_handle);
+    ret = GetProcessId64From32(system, std::addressof(out_process_id), process_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_process_id_scatter = Convert<std::array<uint32_t, 2>>(out_process_id);
@@ -587,7 +587,7 @@ static void SvcWrap_GetThreadId64From32(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg32(system, 1));
 
-    ret = GetThreadId64From32(system, &out_thread_id, thread_handle);
+    ret = GetThreadId64From32(system, std::addressof(out_thread_id), thread_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_thread_id_scatter = Convert<std::array<uint32_t, 2>>(out_thread_id);
@@ -644,7 +644,7 @@ static void SvcWrap_GetInfo64From32(Core::System& system) {
     info_subtype_gather[1] = GetReg32(system, 3);
     info_subtype = Convert<uint64_t>(info_subtype_gather);
 
-    ret = GetInfo64From32(system, &out, info_type, handle, info_subtype);
+    ret = GetInfo64From32(system, std::addressof(out), info_type, handle, info_subtype);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_scatter = Convert<std::array<uint32_t, 2>>(out);
@@ -712,7 +712,7 @@ static void SvcWrap_GetDebugFutureThreadInfo64From32(Core::System& system) {
     ns_gather[1] = GetReg32(system, 1);
     ns = Convert<int64_t>(ns_gather);
 
-    ret = GetDebugFutureThreadInfo64From32(system, &out_context, &out_thread_id, debug_handle, ns);
+    ret = GetDebugFutureThreadInfo64From32(system, std::addressof(out_context), std::addressof(out_thread_id), debug_handle, ns);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_context_scatter = Convert<std::array<uint32_t, 4>>(out_context);
@@ -732,7 +732,7 @@ static void SvcWrap_GetLastThreadInfo64From32(Core::System& system) {
     uint64_t out_tls_address{};
     uint32_t out_flags{};
 
-    ret = GetLastThreadInfo64From32(system, &out_context, &out_tls_address, &out_flags);
+    ret = GetLastThreadInfo64From32(system, std::addressof(out_context), std::addressof(out_tls_address), std::addressof(out_flags));
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_context_scatter = Convert<std::array<uint32_t, 4>>(out_context);
@@ -754,7 +754,7 @@ static void SvcWrap_GetResourceLimitLimitValue64From32(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg32(system, 1));
     which = Convert<LimitableResource>(GetReg32(system, 2));
 
-    ret = GetResourceLimitLimitValue64From32(system, &out_limit_value, resource_limit_handle, which);
+    ret = GetResourceLimitLimitValue64From32(system, std::addressof(out_limit_value), resource_limit_handle, which);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_limit_value_scatter = Convert<std::array<uint32_t, 2>>(out_limit_value);
@@ -772,7 +772,7 @@ static void SvcWrap_GetResourceLimitCurrentValue64From32(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg32(system, 1));
     which = Convert<LimitableResource>(GetReg32(system, 2));
 
-    ret = GetResourceLimitCurrentValue64From32(system, &out_current_value, resource_limit_handle, which);
+    ret = GetResourceLimitCurrentValue64From32(system, std::addressof(out_current_value), resource_limit_handle, which);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_current_value_scatter = Convert<std::array<uint32_t, 2>>(out_current_value);
@@ -861,7 +861,7 @@ static void SvcWrap_GetResourceLimitPeakValue64From32(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg32(system, 1));
     which = Convert<LimitableResource>(GetReg32(system, 2));
 
-    ret = GetResourceLimitPeakValue64From32(system, &out_peak_value, resource_limit_handle, which);
+    ret = GetResourceLimitPeakValue64From32(system, std::addressof(out_peak_value), resource_limit_handle, which);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_peak_value_scatter = Convert<std::array<uint32_t, 2>>(out_peak_value);
@@ -877,7 +877,7 @@ static void SvcWrap_CreateIoPool64From32(Core::System& system) {
 
     which = Convert<IoPoolType>(GetReg32(system, 1));
 
-    ret = CreateIoPool64From32(system, &out_handle, which);
+    ret = CreateIoPool64From32(system, std::addressof(out_handle), which);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -902,7 +902,7 @@ static void SvcWrap_CreateIoRegion64From32(Core::System& system) {
     mapping = Convert<MemoryMapping>(GetReg32(system, 4));
     perm = Convert<MemoryPermission>(GetReg32(system, 5));
 
-    ret = CreateIoRegion64From32(system, &out_handle, io_pool, physical_address, size, mapping, perm);
+    ret = CreateIoRegion64From32(system, std::addressof(out_handle), io_pool, physical_address, size, mapping, perm);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -950,7 +950,7 @@ static void SvcWrap_CreateSession64From32(Core::System& system) {
     is_light = Convert<bool>(GetReg32(system, 2));
     name = Convert<uint32_t>(GetReg32(system, 3));
 
-    ret = CreateSession64From32(system, &out_server_session_handle, &out_client_session_handle, is_light, name);
+    ret = CreateSession64From32(system, std::addressof(out_server_session_handle), std::addressof(out_client_session_handle), is_light, name);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_server_session_handle));
@@ -965,7 +965,7 @@ static void SvcWrap_AcceptSession64From32(Core::System& system) {
 
     port = Convert<Handle>(GetReg32(system, 1));
 
-    ret = AcceptSession64From32(system, &out_handle, port);
+    ret = AcceptSession64From32(system, std::addressof(out_handle), port);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -988,7 +988,7 @@ static void SvcWrap_ReplyAndReceive64From32(Core::System& system) {
     timeout_ns_gather[1] = GetReg32(system, 4);
     timeout_ns = Convert<int64_t>(timeout_ns_gather);
 
-    ret = ReplyAndReceive64From32(system, &out_index, handles, num_handles, reply_target, timeout_ns);
+    ret = ReplyAndReceive64From32(system, std::addressof(out_index), handles, num_handles, reply_target, timeout_ns);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_index));
@@ -1015,7 +1015,7 @@ static void SvcWrap_ReplyAndReceiveWithUserBuffer64From32(Core::System& system) 
     timeout_ns_gather[1] = GetReg32(system, 6);
     timeout_ns = Convert<int64_t>(timeout_ns_gather);
 
-    ret = ReplyAndReceiveWithUserBuffer64From32(system, &out_index, message_buffer, message_buffer_size, handles, num_handles, reply_target, timeout_ns);
+    ret = ReplyAndReceiveWithUserBuffer64From32(system, std::addressof(out_index), message_buffer, message_buffer_size, handles, num_handles, reply_target, timeout_ns);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_index));
@@ -1027,7 +1027,7 @@ static void SvcWrap_CreateEvent64From32(Core::System& system) {
     Handle out_write_handle{};
     Handle out_read_handle{};
 
-    ret = CreateEvent64From32(system, &out_write_handle, &out_read_handle);
+    ret = CreateEvent64From32(system, std::addressof(out_write_handle), std::addressof(out_read_handle));
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_write_handle));
@@ -1118,7 +1118,7 @@ static void SvcWrap_CreateCodeMemory64From32(Core::System& system) {
     address = Convert<uint32_t>(GetReg32(system, 1));
     size = Convert<uint32_t>(GetReg32(system, 2));
 
-    ret = CreateCodeMemory64From32(system, &out_handle, address, size);
+    ret = CreateCodeMemory64From32(system, std::addressof(out_handle), address, size);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -1169,7 +1169,7 @@ static void SvcWrap_ReadWriteRegister64From32(Core::System& system) {
     mask = Convert<uint32_t>(GetReg32(system, 0));
     value = Convert<uint32_t>(GetReg32(system, 1));
 
-    ret = ReadWriteRegister64From32(system, &out_value, address, mask, value);
+    ret = ReadWriteRegister64From32(system, std::addressof(out_value), address, mask, value);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_value));
@@ -1201,7 +1201,7 @@ static void SvcWrap_CreateSharedMemory64From32(Core::System& system) {
     owner_perm = Convert<MemoryPermission>(GetReg32(system, 2));
     remote_perm = Convert<MemoryPermission>(GetReg32(system, 3));
 
-    ret = CreateSharedMemory64From32(system, &out_handle, size, owner_perm, remote_perm);
+    ret = CreateSharedMemory64From32(system, std::addressof(out_handle), size, owner_perm, remote_perm);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -1251,7 +1251,7 @@ static void SvcWrap_CreateInterruptEvent64From32(Core::System& system) {
     interrupt_id = Convert<int32_t>(GetReg32(system, 1));
     interrupt_type = Convert<InterruptType>(GetReg32(system, 2));
 
-    ret = CreateInterruptEvent64From32(system, &out_read_handle, interrupt_id, interrupt_type);
+    ret = CreateInterruptEvent64From32(system, std::addressof(out_read_handle), interrupt_id, interrupt_type);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_read_handle));
@@ -1265,7 +1265,7 @@ static void SvcWrap_QueryPhysicalAddress64From32(Core::System& system) {
 
     address = Convert<uint32_t>(GetReg32(system, 1));
 
-    ret = QueryPhysicalAddress64From32(system, &out_info, address);
+    ret = QueryPhysicalAddress64From32(system, std::addressof(out_info), address);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_info_scatter = Convert<std::array<uint32_t, 4>>(out_info);
@@ -1289,7 +1289,7 @@ static void SvcWrap_QueryIoMapping64From32(Core::System& system) {
     physical_address = Convert<uint64_t>(physical_address_gather);
     size = Convert<uint32_t>(GetReg32(system, 0));
 
-    ret = QueryIoMapping64From32(system, &out_address, &out_size, physical_address, size);
+    ret = QueryIoMapping64From32(system, std::addressof(out_address), std::addressof(out_size), physical_address, size);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_address));
@@ -1312,7 +1312,7 @@ static void SvcWrap_CreateDeviceAddressSpace64From32(Core::System& system) {
     das_size_gather[1] = GetReg32(system, 1);
     das_size = Convert<uint64_t>(das_size_gather);
 
-    ret = CreateDeviceAddressSpace64From32(system, &out_handle, das_address, das_size);
+    ret = CreateDeviceAddressSpace64From32(system, std::addressof(out_handle), das_address, das_size);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -1505,7 +1505,7 @@ static void SvcWrap_DebugActiveProcess64From32(Core::System& system) {
     process_id_gather[1] = GetReg32(system, 3);
     process_id = Convert<uint64_t>(process_id_gather);
 
-    ret = DebugActiveProcess64From32(system, &out_handle, process_id);
+    ret = DebugActiveProcess64From32(system, std::addressof(out_handle), process_id);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -1577,7 +1577,7 @@ static void SvcWrap_GetProcessList64From32(Core::System& system) {
     out_process_ids = Convert<uint32_t>(GetReg32(system, 1));
     max_out_count = Convert<int32_t>(GetReg32(system, 2));
 
-    ret = GetProcessList64From32(system, &out_num_processes, out_process_ids, max_out_count);
+    ret = GetProcessList64From32(system, std::addressof(out_num_processes), out_process_ids, max_out_count);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_num_processes));
@@ -1595,7 +1595,7 @@ static void SvcWrap_GetThreadList64From32(Core::System& system) {
     max_out_count = Convert<int32_t>(GetReg32(system, 2));
     debug_handle = Convert<Handle>(GetReg32(system, 3));
 
-    ret = GetThreadList64From32(system, &out_num_threads, out_thread_ids, max_out_count, debug_handle);
+    ret = GetThreadList64From32(system, std::addressof(out_num_threads), out_thread_ids, max_out_count, debug_handle);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_num_threads));
@@ -1655,7 +1655,7 @@ static void SvcWrap_QueryDebugProcessMemory64From32(Core::System& system) {
     process_handle = Convert<Handle>(GetReg32(system, 2));
     address = Convert<uint32_t>(GetReg32(system, 3));
 
-    ret = QueryDebugProcessMemory64From32(system, out_memory_info, &out_page_info, process_handle, address);
+    ret = QueryDebugProcessMemory64From32(system, out_memory_info, std::addressof(out_page_info), process_handle, address);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_page_info));
@@ -1735,7 +1735,7 @@ static void SvcWrap_GetDebugThreadParam64From32(Core::System& system) {
     thread_id = Convert<uint64_t>(thread_id_gather);
     param = Convert<DebugThreadParam>(GetReg32(system, 3));
 
-    ret = GetDebugThreadParam64From32(system, &out_64, &out_32, debug_handle, thread_id, param);
+    ret = GetDebugThreadParam64From32(system, std::addressof(out_64), std::addressof(out_32), debug_handle, thread_id, param);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_64_scatter = Convert<std::array<uint32_t, 2>>(out_64);
@@ -1759,7 +1759,7 @@ static void SvcWrap_GetSystemInfo64From32(Core::System& system) {
     info_subtype_gather[1] = GetReg32(system, 3);
     info_subtype = Convert<uint64_t>(info_subtype_gather);
 
-    ret = GetSystemInfo64From32(system, &out, info_type, handle, info_subtype);
+    ret = GetSystemInfo64From32(system, std::addressof(out), info_type, handle, info_subtype);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_scatter = Convert<std::array<uint32_t, 2>>(out);
@@ -1780,7 +1780,7 @@ static void SvcWrap_CreatePort64From32(Core::System& system) {
     is_light = Convert<bool>(GetReg32(system, 3));
     name = Convert<uint32_t>(GetReg32(system, 0));
 
-    ret = CreatePort64From32(system, &out_server_handle, &out_client_handle, max_sessions, is_light, name);
+    ret = CreatePort64From32(system, std::addressof(out_server_handle), std::addressof(out_client_handle), max_sessions, is_light, name);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_server_handle));
@@ -1797,7 +1797,7 @@ static void SvcWrap_ManageNamedPort64From32(Core::System& system) {
     name = Convert<uint32_t>(GetReg32(system, 1));
     max_sessions = Convert<int32_t>(GetReg32(system, 2));
 
-    ret = ManageNamedPort64From32(system, &out_server_handle, name, max_sessions);
+    ret = ManageNamedPort64From32(system, std::addressof(out_server_handle), name, max_sessions);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_server_handle));
@@ -1811,7 +1811,7 @@ static void SvcWrap_ConnectToPort64From32(Core::System& system) {
 
     port = Convert<Handle>(GetReg32(system, 1));
 
-    ret = ConnectToPort64From32(system, &out_handle, port);
+    ret = ConnectToPort64From32(system, std::addressof(out_handle), port);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -1898,7 +1898,7 @@ static void SvcWrap_QueryProcessMemory64From32(Core::System& system) {
     address_gather[1] = GetReg32(system, 3);
     address = Convert<uint64_t>(address_gather);
 
-    ret = QueryProcessMemory64From32(system, out_memory_info, &out_page_info, process_handle, address);
+    ret = QueryProcessMemory64From32(system, out_memory_info, std::addressof(out_page_info), process_handle, address);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_page_info));
@@ -1970,7 +1970,7 @@ static void SvcWrap_CreateProcess64From32(Core::System& system) {
     caps = Convert<uint32_t>(GetReg32(system, 2));
     num_caps = Convert<int32_t>(GetReg32(system, 3));
 
-    ret = CreateProcess64From32(system, &out_handle, parameters, caps, num_caps);
+    ret = CreateProcess64From32(system, std::addressof(out_handle), parameters, caps, num_caps);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -2019,7 +2019,7 @@ static void SvcWrap_GetProcessInfo64From32(Core::System& system) {
     process_handle = Convert<Handle>(GetReg32(system, 1));
     info_type = Convert<ProcessInfoType>(GetReg32(system, 2));
 
-    ret = GetProcessInfo64From32(system, &out_info, process_handle, info_type);
+    ret = GetProcessInfo64From32(system, std::addressof(out_info), process_handle, info_type);
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     auto out_info_scatter = Convert<std::array<uint32_t, 2>>(out_info);
@@ -2032,7 +2032,7 @@ static void SvcWrap_CreateResourceLimit64From32(Core::System& system) {
 
     Handle out_handle{};
 
-    ret = CreateResourceLimit64From32(system, &out_handle);
+    ret = CreateResourceLimit64From32(system, std::addressof(out_handle));
 
     SetReg32(system, 0, Convert<uint32_t>(ret));
     SetReg32(system, 1, Convert<uint32_t>(out_handle));
@@ -2093,7 +2093,7 @@ static void SvcWrap_SetHeapSize64(Core::System& system) {
 
     size = Convert<uint64_t>(GetReg64(system, 1));
 
-    ret = SetHeapSize64(system, &out_address, size);
+    ret = SetHeapSize64(system, std::addressof(out_address), size);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_address));
@@ -2175,7 +2175,7 @@ static void SvcWrap_QueryMemory64(Core::System& system) {
     out_memory_info = Convert<uint64_t>(GetReg64(system, 0));
     address = Convert<uint64_t>(GetReg64(system, 2));
 
-    ret = QueryMemory64(system, out_memory_info, &out_page_info, address);
+    ret = QueryMemory64(system, out_memory_info, std::addressof(out_page_info), address);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_page_info));
@@ -2201,7 +2201,7 @@ static void SvcWrap_CreateThread64(Core::System& system) {
     priority = Convert<int32_t>(GetReg64(system, 4));
     core_id = Convert<int32_t>(GetReg64(system, 5));
 
-    ret = CreateThread64(system, &out_handle, func, arg, stack_bottom, priority, core_id);
+    ret = CreateThread64(system, std::addressof(out_handle), func, arg, stack_bottom, priority, core_id);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2239,7 +2239,7 @@ static void SvcWrap_GetThreadPriority64(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg64(system, 1));
 
-    ret = GetThreadPriority64(system, &out_priority, thread_handle);
+    ret = GetThreadPriority64(system, std::addressof(out_priority), thread_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_priority));
@@ -2268,7 +2268,7 @@ static void SvcWrap_GetThreadCoreMask64(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg64(system, 2));
 
-    ret = GetThreadCoreMask64(system, &out_core_id, &out_affinity_mask, thread_handle);
+    ret = GetThreadCoreMask64(system, std::addressof(out_core_id), std::addressof(out_affinity_mask), thread_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_core_id));
@@ -2369,7 +2369,7 @@ static void SvcWrap_CreateTransferMemory64(Core::System& system) {
     size = Convert<uint64_t>(GetReg64(system, 2));
     map_perm = Convert<MemoryPermission>(GetReg64(system, 3));
 
-    ret = CreateTransferMemory64(system, &out_handle, address, size, map_perm);
+    ret = CreateTransferMemory64(system, std::addressof(out_handle), address, size, map_perm);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2411,7 +2411,7 @@ static void SvcWrap_WaitSynchronization64(Core::System& system) {
     num_handles = Convert<int32_t>(GetReg64(system, 2));
     timeout_ns = Convert<int64_t>(GetReg64(system, 3));
 
-    ret = WaitSynchronization64(system, &out_index, handles, num_handles, timeout_ns);
+    ret = WaitSynchronization64(system, std::addressof(out_index), handles, num_handles, timeout_ns);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_index));
@@ -2501,7 +2501,7 @@ static void SvcWrap_ConnectToNamedPort64(Core::System& system) {
 
     name = Convert<uint64_t>(GetReg64(system, 1));
 
-    ret = ConnectToNamedPort64(system, &out_handle, name);
+    ret = ConnectToNamedPort64(system, std::addressof(out_handle), name);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2547,7 +2547,7 @@ static void SvcWrap_SendAsyncRequestWithUserBuffer64(Core::System& system) {
     message_buffer_size = Convert<uint64_t>(GetReg64(system, 2));
     session_handle = Convert<Handle>(GetReg64(system, 3));
 
-    ret = SendAsyncRequestWithUserBuffer64(system, &out_event_handle, message_buffer, message_buffer_size, session_handle);
+    ret = SendAsyncRequestWithUserBuffer64(system, std::addressof(out_event_handle), message_buffer, message_buffer_size, session_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_event_handle));
@@ -2561,7 +2561,7 @@ static void SvcWrap_GetProcessId64(Core::System& system) {
 
     process_handle = Convert<Handle>(GetReg64(system, 1));
 
-    ret = GetProcessId64(system, &out_process_id, process_handle);
+    ret = GetProcessId64(system, std::addressof(out_process_id), process_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_process_id));
@@ -2575,7 +2575,7 @@ static void SvcWrap_GetThreadId64(Core::System& system) {
 
     thread_handle = Convert<Handle>(GetReg64(system, 1));
 
-    ret = GetThreadId64(system, &out_thread_id, thread_handle);
+    ret = GetThreadId64(system, std::addressof(out_thread_id), thread_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_thread_id));
@@ -2627,7 +2627,7 @@ static void SvcWrap_GetInfo64(Core::System& system) {
     handle = Convert<Handle>(GetReg64(system, 2));
     info_subtype = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = GetInfo64(system, &out, info_type, handle, info_subtype);
+    ret = GetInfo64(system, std::addressof(out), info_type, handle, info_subtype);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out));
@@ -2690,7 +2690,7 @@ static void SvcWrap_GetDebugFutureThreadInfo64(Core::System& system) {
     debug_handle = Convert<Handle>(GetReg64(system, 2));
     ns = Convert<int64_t>(GetReg64(system, 3));
 
-    ret = GetDebugFutureThreadInfo64(system, &out_context, &out_thread_id, debug_handle, ns);
+    ret = GetDebugFutureThreadInfo64(system, std::addressof(out_context), std::addressof(out_thread_id), debug_handle, ns);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     auto out_context_scatter = Convert<std::array<uint64_t, 4>>(out_context);
@@ -2708,7 +2708,7 @@ static void SvcWrap_GetLastThreadInfo64(Core::System& system) {
     uint64_t out_tls_address{};
     uint32_t out_flags{};
 
-    ret = GetLastThreadInfo64(system, &out_context, &out_tls_address, &out_flags);
+    ret = GetLastThreadInfo64(system, std::addressof(out_context), std::addressof(out_tls_address), std::addressof(out_flags));
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     auto out_context_scatter = Convert<std::array<uint64_t, 4>>(out_context);
@@ -2730,7 +2730,7 @@ static void SvcWrap_GetResourceLimitLimitValue64(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg64(system, 1));
     which = Convert<LimitableResource>(GetReg64(system, 2));
 
-    ret = GetResourceLimitLimitValue64(system, &out_limit_value, resource_limit_handle, which);
+    ret = GetResourceLimitLimitValue64(system, std::addressof(out_limit_value), resource_limit_handle, which);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_limit_value));
@@ -2746,7 +2746,7 @@ static void SvcWrap_GetResourceLimitCurrentValue64(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg64(system, 1));
     which = Convert<LimitableResource>(GetReg64(system, 2));
 
-    ret = GetResourceLimitCurrentValue64(system, &out_current_value, resource_limit_handle, which);
+    ret = GetResourceLimitCurrentValue64(system, std::addressof(out_current_value), resource_limit_handle, which);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_current_value));
@@ -2830,7 +2830,7 @@ static void SvcWrap_GetResourceLimitPeakValue64(Core::System& system) {
     resource_limit_handle = Convert<Handle>(GetReg64(system, 1));
     which = Convert<LimitableResource>(GetReg64(system, 2));
 
-    ret = GetResourceLimitPeakValue64(system, &out_peak_value, resource_limit_handle, which);
+    ret = GetResourceLimitPeakValue64(system, std::addressof(out_peak_value), resource_limit_handle, which);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_peak_value));
@@ -2844,7 +2844,7 @@ static void SvcWrap_CreateIoPool64(Core::System& system) {
 
     which = Convert<IoPoolType>(GetReg64(system, 1));
 
-    ret = CreateIoPool64(system, &out_handle, which);
+    ret = CreateIoPool64(system, std::addressof(out_handle), which);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2866,7 +2866,7 @@ static void SvcWrap_CreateIoRegion64(Core::System& system) {
     mapping = Convert<MemoryMapping>(GetReg64(system, 4));
     perm = Convert<MemoryPermission>(GetReg64(system, 5));
 
-    ret = CreateIoRegion64(system, &out_handle, io_pool, physical_address, size, mapping, perm);
+    ret = CreateIoRegion64(system, std::addressof(out_handle), io_pool, physical_address, size, mapping, perm);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2905,7 +2905,7 @@ static void SvcWrap_CreateSession64(Core::System& system) {
     is_light = Convert<bool>(GetReg64(system, 2));
     name = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = CreateSession64(system, &out_server_session_handle, &out_client_session_handle, is_light, name);
+    ret = CreateSession64(system, std::addressof(out_server_session_handle), std::addressof(out_client_session_handle), is_light, name);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_server_session_handle));
@@ -2920,7 +2920,7 @@ static void SvcWrap_AcceptSession64(Core::System& system) {
 
     port = Convert<Handle>(GetReg64(system, 1));
 
-    ret = AcceptSession64(system, &out_handle, port);
+    ret = AcceptSession64(system, std::addressof(out_handle), port);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -2940,7 +2940,7 @@ static void SvcWrap_ReplyAndReceive64(Core::System& system) {
     reply_target = Convert<Handle>(GetReg64(system, 3));
     timeout_ns = Convert<int64_t>(GetReg64(system, 4));
 
-    ret = ReplyAndReceive64(system, &out_index, handles, num_handles, reply_target, timeout_ns);
+    ret = ReplyAndReceive64(system, std::addressof(out_index), handles, num_handles, reply_target, timeout_ns);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_index));
@@ -2964,7 +2964,7 @@ static void SvcWrap_ReplyAndReceiveWithUserBuffer64(Core::System& system) {
     reply_target = Convert<Handle>(GetReg64(system, 5));
     timeout_ns = Convert<int64_t>(GetReg64(system, 6));
 
-    ret = ReplyAndReceiveWithUserBuffer64(system, &out_index, message_buffer, message_buffer_size, handles, num_handles, reply_target, timeout_ns);
+    ret = ReplyAndReceiveWithUserBuffer64(system, std::addressof(out_index), message_buffer, message_buffer_size, handles, num_handles, reply_target, timeout_ns);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_index));
@@ -2976,7 +2976,7 @@ static void SvcWrap_CreateEvent64(Core::System& system) {
     Handle out_write_handle{};
     Handle out_read_handle{};
 
-    ret = CreateEvent64(system, &out_write_handle, &out_read_handle);
+    ret = CreateEvent64(system, std::addressof(out_write_handle), std::addressof(out_read_handle));
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_write_handle));
@@ -3067,7 +3067,7 @@ static void SvcWrap_CreateCodeMemory64(Core::System& system) {
     address = Convert<uint64_t>(GetReg64(system, 1));
     size = Convert<uint64_t>(GetReg64(system, 2));
 
-    ret = CreateCodeMemory64(system, &out_handle, address, size);
+    ret = CreateCodeMemory64(system, std::addressof(out_handle), address, size);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3109,7 +3109,7 @@ static void SvcWrap_ReadWriteRegister64(Core::System& system) {
     mask = Convert<uint32_t>(GetReg64(system, 2));
     value = Convert<uint32_t>(GetReg64(system, 3));
 
-    ret = ReadWriteRegister64(system, &out_value, address, mask, value);
+    ret = ReadWriteRegister64(system, std::addressof(out_value), address, mask, value);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_value));
@@ -3141,7 +3141,7 @@ static void SvcWrap_CreateSharedMemory64(Core::System& system) {
     owner_perm = Convert<MemoryPermission>(GetReg64(system, 2));
     remote_perm = Convert<MemoryPermission>(GetReg64(system, 3));
 
-    ret = CreateSharedMemory64(system, &out_handle, size, owner_perm, remote_perm);
+    ret = CreateSharedMemory64(system, std::addressof(out_handle), size, owner_perm, remote_perm);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3191,7 +3191,7 @@ static void SvcWrap_CreateInterruptEvent64(Core::System& system) {
     interrupt_id = Convert<int32_t>(GetReg64(system, 1));
     interrupt_type = Convert<InterruptType>(GetReg64(system, 2));
 
-    ret = CreateInterruptEvent64(system, &out_read_handle, interrupt_id, interrupt_type);
+    ret = CreateInterruptEvent64(system, std::addressof(out_read_handle), interrupt_id, interrupt_type);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_read_handle));
@@ -3205,7 +3205,7 @@ static void SvcWrap_QueryPhysicalAddress64(Core::System& system) {
 
     address = Convert<uint64_t>(GetReg64(system, 1));
 
-    ret = QueryPhysicalAddress64(system, &out_info, address);
+    ret = QueryPhysicalAddress64(system, std::addressof(out_info), address);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     auto out_info_scatter = Convert<std::array<uint64_t, 3>>(out_info);
@@ -3225,7 +3225,7 @@ static void SvcWrap_QueryIoMapping64(Core::System& system) {
     physical_address = Convert<uint64_t>(GetReg64(system, 2));
     size = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = QueryIoMapping64(system, &out_address, &out_size, physical_address, size);
+    ret = QueryIoMapping64(system, std::addressof(out_address), std::addressof(out_size), physical_address, size);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_address));
@@ -3242,7 +3242,7 @@ static void SvcWrap_CreateDeviceAddressSpace64(Core::System& system) {
     das_address = Convert<uint64_t>(GetReg64(system, 1));
     das_size = Convert<uint64_t>(GetReg64(system, 2));
 
-    ret = CreateDeviceAddressSpace64(system, &out_handle, das_address, das_size);
+    ret = CreateDeviceAddressSpace64(system, std::addressof(out_handle), das_address, das_size);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3396,7 +3396,7 @@ static void SvcWrap_DebugActiveProcess64(Core::System& system) {
 
     process_id = Convert<uint64_t>(GetReg64(system, 1));
 
-    ret = DebugActiveProcess64(system, &out_handle, process_id);
+    ret = DebugActiveProcess64(system, std::addressof(out_handle), process_id);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3468,7 +3468,7 @@ static void SvcWrap_GetProcessList64(Core::System& system) {
     out_process_ids = Convert<uint64_t>(GetReg64(system, 1));
     max_out_count = Convert<int32_t>(GetReg64(system, 2));
 
-    ret = GetProcessList64(system, &out_num_processes, out_process_ids, max_out_count);
+    ret = GetProcessList64(system, std::addressof(out_num_processes), out_process_ids, max_out_count);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_num_processes));
@@ -3486,7 +3486,7 @@ static void SvcWrap_GetThreadList64(Core::System& system) {
     max_out_count = Convert<int32_t>(GetReg64(system, 2));
     debug_handle = Convert<Handle>(GetReg64(system, 3));
 
-    ret = GetThreadList64(system, &out_num_threads, out_thread_ids, max_out_count, debug_handle);
+    ret = GetThreadList64(system, std::addressof(out_num_threads), out_thread_ids, max_out_count, debug_handle);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_num_threads));
@@ -3540,7 +3540,7 @@ static void SvcWrap_QueryDebugProcessMemory64(Core::System& system) {
     process_handle = Convert<Handle>(GetReg64(system, 2));
     address = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = QueryDebugProcessMemory64(system, out_memory_info, &out_page_info, process_handle, address);
+    ret = QueryDebugProcessMemory64(system, out_memory_info, std::addressof(out_page_info), process_handle, address);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_page_info));
@@ -3611,7 +3611,7 @@ static void SvcWrap_GetDebugThreadParam64(Core::System& system) {
     thread_id = Convert<uint64_t>(GetReg64(system, 3));
     param = Convert<DebugThreadParam>(GetReg64(system, 4));
 
-    ret = GetDebugThreadParam64(system, &out_64, &out_32, debug_handle, thread_id, param);
+    ret = GetDebugThreadParam64(system, std::addressof(out_64), std::addressof(out_32), debug_handle, thread_id, param);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_64));
@@ -3630,7 +3630,7 @@ static void SvcWrap_GetSystemInfo64(Core::System& system) {
     handle = Convert<Handle>(GetReg64(system, 2));
     info_subtype = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = GetSystemInfo64(system, &out, info_type, handle, info_subtype);
+    ret = GetSystemInfo64(system, std::addressof(out), info_type, handle, info_subtype);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out));
@@ -3649,7 +3649,7 @@ static void SvcWrap_CreatePort64(Core::System& system) {
     is_light = Convert<bool>(GetReg64(system, 3));
     name = Convert<uint64_t>(GetReg64(system, 4));
 
-    ret = CreatePort64(system, &out_server_handle, &out_client_handle, max_sessions, is_light, name);
+    ret = CreatePort64(system, std::addressof(out_server_handle), std::addressof(out_client_handle), max_sessions, is_light, name);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_server_handle));
@@ -3666,7 +3666,7 @@ static void SvcWrap_ManageNamedPort64(Core::System& system) {
     name = Convert<uint64_t>(GetReg64(system, 1));
     max_sessions = Convert<int32_t>(GetReg64(system, 2));
 
-    ret = ManageNamedPort64(system, &out_server_handle, name, max_sessions);
+    ret = ManageNamedPort64(system, std::addressof(out_server_handle), name, max_sessions);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_server_handle));
@@ -3680,7 +3680,7 @@ static void SvcWrap_ConnectToPort64(Core::System& system) {
 
     port = Convert<Handle>(GetReg64(system, 1));
 
-    ret = ConnectToPort64(system, &out_handle, port);
+    ret = ConnectToPort64(system, std::addressof(out_handle), port);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3752,7 +3752,7 @@ static void SvcWrap_QueryProcessMemory64(Core::System& system) {
     process_handle = Convert<Handle>(GetReg64(system, 2));
     address = Convert<uint64_t>(GetReg64(system, 3));
 
-    ret = QueryProcessMemory64(system, out_memory_info, &out_page_info, process_handle, address);
+    ret = QueryProcessMemory64(system, out_memory_info, std::addressof(out_page_info), process_handle, address);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_page_info));
@@ -3806,7 +3806,7 @@ static void SvcWrap_CreateProcess64(Core::System& system) {
     caps = Convert<uint64_t>(GetReg64(system, 2));
     num_caps = Convert<int32_t>(GetReg64(system, 3));
 
-    ret = CreateProcess64(system, &out_handle, parameters, caps, num_caps);
+    ret = CreateProcess64(system, std::addressof(out_handle), parameters, caps, num_caps);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));
@@ -3852,7 +3852,7 @@ static void SvcWrap_GetProcessInfo64(Core::System& system) {
     process_handle = Convert<Handle>(GetReg64(system, 1));
     info_type = Convert<ProcessInfoType>(GetReg64(system, 2));
 
-    ret = GetProcessInfo64(system, &out_info, process_handle, info_type);
+    ret = GetProcessInfo64(system, std::addressof(out_info), process_handle, info_type);
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_info));
@@ -3863,7 +3863,7 @@ static void SvcWrap_CreateResourceLimit64(Core::System& system) {
 
     Handle out_handle{};
 
-    ret = CreateResourceLimit64(system, &out_handle);
+    ret = CreateResourceLimit64(system, std::addressof(out_handle));
 
     SetReg64(system, 0, Convert<uint64_t>(ret));
     SetReg64(system, 1, Convert<uint64_t>(out_handle));

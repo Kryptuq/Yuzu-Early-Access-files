@@ -112,33 +112,6 @@ QString WaitTreeText::GetText() const {
     return text;
 }
 
-WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address_, const Kernel::KHandleTable& handle_table,
-                                     Core::System& system_)
-    : mutex_address{mutex_address_}, system{system_} {
-    mutex_value = system.Memory().Read32(mutex_address);
-    owner_handle = static_cast<Kernel::Handle>(mutex_value & Kernel::Svc::HandleWaitMask);
-    owner = handle_table.GetObject<Kernel::KThread>(owner_handle).GetPointerUnsafe();
-}
-
-WaitTreeMutexInfo::~WaitTreeMutexInfo() = default;
-
-QString WaitTreeMutexInfo::GetText() const {
-    return tr("waiting for mutex 0x%1").arg(mutex_address, 16, 16, QLatin1Char{'0'});
-}
-
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() const {
-    const bool has_waiters = (mutex_value & Kernel::Svc::HandleWaitMask) != 0;
-
-    std::vector<std::unique_ptr<WaitTreeItem>> list;
-    list.push_back(std::make_unique<WaitTreeText>(tr("has waiters: %1").arg(has_waiters)));
-    list.push_back(std::make_unique<WaitTreeText>(
-        tr("owner handle: 0x%1").arg(owner_handle, 8, 16, QLatin1Char{'0'})));
-    if (owner != nullptr) {
-        list.push_back(std::make_unique<WaitTreeThread>(*owner, system));
-    }
-    return list;
-}
-
 WaitTreeCallstack::WaitTreeCallstack(const Kernel::KThread& thread_, Core::System& system_)
     : thread{thread_}, system{system_} {}
 WaitTreeCallstack::~WaitTreeCallstack() = default;
@@ -182,10 +155,9 @@ bool WaitTreeExpandableItem::IsExpandable() const {
 }
 
 QString WaitTreeSynchronizationObject::GetText() const {
-    return tr("[%1] %2 %3")
+    return tr("[%1] %2")
         .arg(object.GetId())
-        .arg(QString::fromStdString(object.GetTypeObj().GetName()),
-             QString::fromStdString(object.GetName()));
+        .arg(QString::fromStdString(object.GetTypeObj().GetName()));
 }
 
 std::unique_ptr<WaitTreeSynchronizationObject> WaitTreeSynchronizationObject::make(
@@ -214,26 +186,6 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeSynchronizationObject::GetChi
         list.push_back(std::make_unique<WaitTreeThreadList>(std::move(threads), system));
     }
 
-    return list;
-}
-
-WaitTreeObjectList::WaitTreeObjectList(const std::vector<Kernel::KSynchronizationObject*>& list,
-                                       bool w_all, Core::System& system_)
-    : object_list(list), wait_all(w_all), system{system_} {}
-
-WaitTreeObjectList::~WaitTreeObjectList() = default;
-
-QString WaitTreeObjectList::GetText() const {
-    if (wait_all)
-        return tr("waiting for all objects");
-    return tr("waiting for one of the following objects");
-}
-
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeObjectList::GetChildren() const {
-    std::vector<std::unique_ptr<WaitTreeItem>> list(object_list.size());
-    std::transform(object_list.begin(), object_list.end(), list.begin(), [this](const auto& t) {
-        return WaitTreeSynchronizationObject::make(*t, system);
-    });
     return list;
 }
 
@@ -348,31 +300,13 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
 
     list.push_back(std::make_unique<WaitTreeText>(tr("processor = %1").arg(processor)));
     list.push_back(std::make_unique<WaitTreeText>(
-        tr("ideal core = %1").arg(thread.GetIdealCoreForDebugging())));
-    list.push_back(std::make_unique<WaitTreeText>(
         tr("affinity mask = %1").arg(thread.GetAffinityMask().GetAffinityMask())));
-    list.push_back(std::make_unique<WaitTreeText>(tr("thread id = %1").arg(thread.GetThreadID())));
+    list.push_back(std::make_unique<WaitTreeText>(tr("thread id = %1").arg(thread.GetThreadId())));
     list.push_back(std::make_unique<WaitTreeText>(tr("priority = %1(current) / %2(normal)")
                                                       .arg(thread.GetPriority())
                                                       .arg(thread.GetBasePriority())));
     list.push_back(std::make_unique<WaitTreeText>(
         tr("last running ticks = %1").arg(thread.GetLastScheduledTick())));
-
-    const VAddr mutex_wait_address = thread.GetMutexWaitAddressForDebugging();
-    if (mutex_wait_address != 0) {
-        const auto& handle_table = thread.GetOwnerProcess()->GetHandleTable();
-        list.push_back(
-            std::make_unique<WaitTreeMutexInfo>(mutex_wait_address, handle_table, system));
-    } else {
-        list.push_back(std::make_unique<WaitTreeText>(tr("not waiting for mutex")));
-    }
-
-    if (thread.GetState() == Kernel::ThreadState::Waiting &&
-        thread.GetWaitReasonForDebugging() ==
-            Kernel::ThreadWaitReasonForDebugging::Synchronization) {
-        list.push_back(std::make_unique<WaitTreeObjectList>(thread.GetWaitObjectsForDebugging(),
-                                                            thread.IsCancellable(), system));
-    }
 
     list.push_back(std::make_unique<WaitTreeCallstack>(thread, system));
 

@@ -43,18 +43,9 @@ Result WaitForAddress(Core::System& system, VAddr address, ArbitrationType arb_t
               address, arb_type, value, timeout_ns);
 
     // Validate input.
-    if (IsKernelAddress(address)) {
-        LOG_ERROR(Kernel_SVC, "Attempting to wait on kernel address (address={:08X})", address);
-        return ResultInvalidCurrentMemory;
-    }
-    if (!Common::IsAligned(address, sizeof(s32))) {
-        LOG_ERROR(Kernel_SVC, "Wait address must be 4 byte aligned (address={:08X})", address);
-        return ResultInvalidAddress;
-    }
-    if (!IsValidArbitrationType(arb_type)) {
-        LOG_ERROR(Kernel_SVC, "Invalid arbitration type specified (type={})", arb_type);
-        return ResultInvalidEnumValue;
-    }
+    R_UNLESS(!IsKernelAddress(address), ResultInvalidCurrentMemory);
+    R_UNLESS(Common::IsAligned(address, sizeof(s32)), ResultInvalidAddress);
+    R_UNLESS(IsValidArbitrationType(arb_type), ResultInvalidEnumValue);
 
     // Convert timeout from nanoseconds to ticks.
     s64 timeout{};
@@ -72,7 +63,8 @@ Result WaitForAddress(Core::System& system, VAddr address, ArbitrationType arb_t
         timeout = timeout_ns;
     }
 
-    return GetCurrentProcess(system.Kernel()).WaitAddressArbiter(address, arb_type, value, timeout);
+    R_RETURN(
+        GetCurrentProcess(system.Kernel()).WaitAddressArbiter(address, arb_type, value, timeout));
 }
 
 // Signals to an address (via Address Arbiter)
@@ -82,41 +74,32 @@ Result SignalToAddress(Core::System& system, VAddr address, SignalType signal_ty
               address, signal_type, value, count);
 
     // Validate input.
-    if (IsKernelAddress(address)) {
-        LOG_ERROR(Kernel_SVC, "Attempting to signal to a kernel address (address={:08X})", address);
-        return ResultInvalidCurrentMemory;
-    }
-    if (!Common::IsAligned(address, sizeof(s32))) {
-        LOG_ERROR(Kernel_SVC, "Signaled address must be 4 byte aligned (address={:08X})", address);
-        return ResultInvalidAddress;
-    }
-    if (!IsValidSignalType(signal_type)) {
-        LOG_ERROR(Kernel_SVC, "Invalid signal type specified (type={})", signal_type);
-        return ResultInvalidEnumValue;
-    }
+    R_UNLESS(!IsKernelAddress(address), ResultInvalidCurrentMemory);
+    R_UNLESS(Common::IsAligned(address, sizeof(s32)), ResultInvalidAddress);
+    R_UNLESS(IsValidSignalType(signal_type), ResultInvalidEnumValue);
 
-    return GetCurrentProcess(system.Kernel())
-        .SignalAddressArbiter(address, signal_type, value, count);
+    R_RETURN(GetCurrentProcess(system.Kernel())
+                 .SignalAddressArbiter(address, signal_type, value, count));
 }
 
 Result WaitForAddress64(Core::System& system, VAddr address, ArbitrationType arb_type, s32 value,
                         s64 timeout_ns) {
-    return WaitForAddress(system, address, arb_type, value, timeout_ns);
+    R_RETURN(WaitForAddress(system, address, arb_type, value, timeout_ns));
 }
 
 Result SignalToAddress64(Core::System& system, VAddr address, SignalType signal_type, s32 value,
                          s32 count) {
-    return SignalToAddress(system, address, signal_type, value, count);
+    R_RETURN(SignalToAddress(system, address, signal_type, value, count));
 }
 
 Result WaitForAddress64From32(Core::System& system, u32 address, ArbitrationType arb_type,
                               s32 value, s64 timeout_ns) {
-    return WaitForAddress(system, address, arb_type, value, timeout_ns);
+    R_RETURN(WaitForAddress(system, address, arb_type, value, timeout_ns));
 }
 
 Result SignalToAddress64From32(Core::System& system, u32 address, SignalType signal_type, s32 value,
                                s32 count) {
-    return SignalToAddress(system, address, signal_type, value, count);
+    R_RETURN(SignalToAddress(system, address, signal_type, value, count));
 }
 
 } // namespace Kernel::Svc
