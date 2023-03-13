@@ -193,7 +193,7 @@ bool SoftwareBlitEngine::Blit(Fermi2D::Surface& src, Fermi2D::Surface& dst,
         output_converter->ConvertFrom(impl->intermediate_dst, impl->dst_buffer);
     };
 
-    // Do actuall Blit
+    // Do actual Blit
 
     impl->dst_buffer.resize(dst_copy_size);
     if (src.linear == Fermi2D::MemoryLayout::BlockLinear) {

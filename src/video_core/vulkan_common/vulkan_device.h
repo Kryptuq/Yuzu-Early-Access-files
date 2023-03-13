@@ -180,7 +180,7 @@ public:
     ~Device();
 
     /**
-     * Returns a format supported by the device for the passed requeriments.
+     * Returns a format supported by the device for the passed requirements.
      * @param wanted_format The ideal format to be returned. It may not be the returned format.
      * @param wanted_usage The usage that must be fulfilled even if the format is not supported.
      * @param format_type Format type usage.
@@ -259,12 +259,12 @@ public:
 
     bool ShouldBoostClocks() const;
 
-    /// Returns uniform buffer alignment requeriment.
+    /// Returns uniform buffer alignment requirement.
     VkDeviceSize GetUniformBufferAlignment() const {
         return properties.properties.limits.minUniformBufferOffsetAlignment;
     }
 
-    /// Returns storage alignment requeriment.
+    /// Returns storage alignment requirement.
     VkDeviceSize GetStorageBufferAlignment() const {
         return properties.properties.limits.minStorageBufferOffsetAlignment;
     }
@@ -656,7 +656,7 @@ private:
     bool is_integrated{};                   ///< Is GPU an iGPU.
     bool is_virtual{};                      ///< Is GPU a virtual GPU.
     bool is_non_gpu{};                      ///< Is SoftwareRasterizer, FPGA, non-GPU device.
-    bool has_broken_cube_compatibility{};   ///< Has broken cube compatiblity bit
+    bool has_broken_cube_compatibility{};   ///< Has broken cube compatibility bit
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
     bool supports_d24_depth{};              ///< Supports D24 depth buffers.

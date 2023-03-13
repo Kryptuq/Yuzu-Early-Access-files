@@ -35,8 +35,6 @@ private:
 
     void ReadSystemSettings();
 
-    void RefreshConsoleID();
-
     void SetupPerGameUI();
 
     std::unique_ptr<Ui::ConfigureSystem> ui;

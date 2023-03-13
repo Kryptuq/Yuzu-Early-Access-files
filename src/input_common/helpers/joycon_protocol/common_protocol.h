@@ -68,7 +68,7 @@ public:
     }
 
     /**
-     * Waits for incoming data of the joycon device that matchs the subcommand
+     * Waits for incoming data of the joycon device that matches the subcommand
      * @param sub_command type of data to be returned
      * @returns a buffer containing the response
      */
@@ -137,7 +137,7 @@ public:
     DriverResult EnableMCU(bool enable);
 
     /**
-     * Configures the MCU to the correspoinding mode
+     * Configures the MCU to the corresponding mode
      * @param MCUConfig configuration
      */
     DriverResult ConfigureMCU(const MCUConfig& config);

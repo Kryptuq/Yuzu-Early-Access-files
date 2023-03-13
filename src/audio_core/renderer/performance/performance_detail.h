@@ -33,7 +33,7 @@ struct PerformanceDetailVersion1 {
     /* 0x0D */ PerformanceEntryType entry_type;
 };
 static_assert(sizeof(PerformanceDetailVersion1) == 0x10,
-              "PerformanceDetailVersion1 has the worng size!");
+              "PerformanceDetailVersion1 has the wrong size!");
 
 struct PerformanceDetailVersion2 {
     /* 0x00 */ u32 node_id;
@@ -45,6 +45,6 @@ struct PerformanceDetailVersion2 {
     /* 0x14 */ char unk14[0x4];
 };
 static_assert(sizeof(PerformanceDetailVersion2) == 0x18,
-              "PerformanceDetailVersion2 has the worng size!");
+              "PerformanceDetailVersion2 has the wrong size!");
 
 } // namespace AudioCore::AudioRenderer

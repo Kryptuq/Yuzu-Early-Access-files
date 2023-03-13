@@ -1306,6 +1306,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         auto copies = MakeShrinkImageCopies(new_info, overlap.info, base, up_scale, down_shift);
         if (overlap.info.num_samples != new_image.info.num_samples) {
             runtime.CopyImageMSAA(new_image, overlap, std::move(copies));
+            continue;
         } else {
             runtime.CopyImage(new_image, overlap, std::move(copies));
         }

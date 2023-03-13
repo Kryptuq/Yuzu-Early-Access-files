@@ -62,7 +62,7 @@ private:
     /// Registers controllers, clears all data and starts the scan thread
     void Setup();
 
-    /// Actively searchs for new devices
+    /// Actively searches for new devices
     void ScanThread(std::stop_token stop_token);
 
     /// Returns true if device is valid and not registered

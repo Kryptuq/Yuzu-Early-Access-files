@@ -146,7 +146,7 @@ public:
 
     /**
      * Initializes the system
-     * This function will initialize core functionaility used for system emulation
+     * This function will initialize core functionality used for system emulation
      */
     void Initialize();
 

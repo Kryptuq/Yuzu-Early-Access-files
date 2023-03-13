@@ -86,7 +86,7 @@ bool StartupChecks(const char* arg0, bool* has_broken_vulkan, bool perform_vulka
             return false;
         }
 
-        // Wait until the processs exits and get exit code from it
+        // Wait until the process exits and get exit code from it
         WaitForSingleObject(process_info.hProcess, INFINITE);
         DWORD exit_code = STILL_ACTIVE;
         const int err = GetExitCodeProcess(process_info.hProcess, &exit_code);

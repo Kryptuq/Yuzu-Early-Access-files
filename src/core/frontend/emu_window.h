@@ -205,7 +205,7 @@ protected:
     }
 
     /**
-     * Converts a screen postion into the equivalent touchscreen position.
+     * Converts a screen position into the equivalent touchscreen position.
      */
     std::pair<f32, f32> MapToTouchScreen(u32 framebuffer_x, u32 framebuffer_y) const;
 

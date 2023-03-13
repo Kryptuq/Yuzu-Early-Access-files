@@ -271,7 +271,7 @@ bool FixedPipelineState::operator==(const FixedPipelineState& rhs) const noexcep
 
 u32 FixedPipelineState::PackComparisonOp(Maxwell::ComparisonOp op) noexcept {
     // OpenGL enums go from 0x200 to 0x207 and the others from 1 to 8
-    // If we substract 0x200 to OpenGL enums and 1 to the others we get a 0-7 range.
+    // If we subtract 0x200 to OpenGL enums and 1 to the others we get a 0-7 range.
     // Perfect for a hash.
     const u32 value = static_cast<u32>(op);
     return value - (value >= 0x200 ? 0x200 : 1);
@@ -322,8 +322,8 @@ Maxwell::StencilOp::Op FixedPipelineState::UnpackStencilOp(u32 packed) noexcept 
 }
 
 u32 FixedPipelineState::PackCullFace(Maxwell::CullFace cull) noexcept {
-    // FrontAndBack is 0x408, by substracting 0x406 in it we get 2.
-    // Individual cull faces are in 0x404 and 0x405, substracting 0x404 we get 0 and 1.
+    // FrontAndBack is 0x408, by subtracting 0x406 in it we get 2.
+    // Individual cull faces are in 0x404 and 0x405, subtracting 0x404 we get 0 and 1.
     const u32 value = static_cast<u32>(cull);
     return value - (value == 0x408 ? 0x406 : 0x404);
 }

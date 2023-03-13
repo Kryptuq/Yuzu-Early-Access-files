@@ -110,7 +110,7 @@ private:
     /**
      * Handles button presses to execute functions assigned in yuzu_key_callbacks.
      * yuzu_key_callbacks contains specialized functions for the buttons in the window footer
-     * that can be overriden by games to achieve desired functionality.
+     * that can be overridden by games to achieve desired functionality.
      *
      * @tparam HIDButton The list of buttons contained in yuzu_key_callbacks
      */

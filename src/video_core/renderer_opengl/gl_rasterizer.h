@@ -162,7 +162,7 @@ private:
     /// Syncs the cull mode to match the guest state
     void SyncCullMode();
 
-    /// Syncs the primitve restart to match the guest state
+    /// Syncs the primitive restart to match the guest state
     void SyncPrimitiveRestart();
 
     /// Syncs the depth test state to match the guest state
@@ -246,7 +246,7 @@ private:
     std::array<GLuint, MAX_TEXTURES> texture_handles{};
     std::array<GLuint, MAX_IMAGES> image_handles{};
 
-    /// Number of commands queued to the OpenGL driver. Resetted on flush.
+    /// Number of commands queued to the OpenGL driver. Reset on flush.
     size_t num_queued_commands = 0;
     bool has_written_global_memory = false;
 

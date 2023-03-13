@@ -49,7 +49,7 @@ public:
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
         const auto var_def{var_alloc.AddDefine(inst, type)};
         if (var_def.empty()) {
-            // skip assigment.
+            // skip assignment.
             code += fmt::format(fmt::runtime(format_str + 3), std::forward<Args>(args)...);
         } else {
             code += fmt::format(fmt::runtime(format_str), var_def, std::forward<Args>(args)...);

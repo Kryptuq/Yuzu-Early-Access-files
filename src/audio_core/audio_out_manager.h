@@ -58,7 +58,7 @@ public:
     /**
      * Get a list of audio out device names.
      *
-     * @oaram names     - Output container to write names to.
+     * @param names     - Output container to write names to.
      * @return Number of names written.
      */
     u32 GetAudioOutDeviceNames(

@@ -51,7 +51,7 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
 
     const auto camera_data = npad_device->GetCamera();
 
-    // This indicates how much ambient light is precent
+    // This indicates how much ambient light is present
     processor_state.ambient_noise_level = Core::IrSensor::CameraAmbientNoiseLevel::Low;
     processor_state.sampling_number = camera_data.sample;
 

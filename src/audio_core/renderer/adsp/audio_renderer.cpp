@@ -165,7 +165,7 @@ void AudioRenderer::ThreadFunc() {
                 // Check this buffer is valid, as it may not be used.
                 if (command_buffer.buffer != 0) {
                     // If there are no remaining commands (from the previous list),
-                    // this is a new command list, initalize it.
+                    // this is a new command list, initialize it.
                     if (command_buffer.remaining_command_count == 0) {
                         command_list_processor.Initialize(system, command_buffer.buffer,
                                                           command_buffer.size, streams[index]);

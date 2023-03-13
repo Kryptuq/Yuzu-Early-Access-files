@@ -66,7 +66,7 @@ public:
      * @param description The room description
      * @param port The port of the room
      * @param net_version The version of the libNetwork that gets used
-     * @param has_password True if the room is passowrd protected
+     * @param has_password True if the room is password protected
      * @param preferred_game The preferred game of the room
      * @param preferred_game_id The title id of the preferred game
      */

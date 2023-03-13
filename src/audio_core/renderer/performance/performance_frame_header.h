@@ -16,7 +16,7 @@ struct PerformanceFrameHeaderVersion1 {
     /* 0x14 */ u32 frame_index;
 };
 static_assert(sizeof(PerformanceFrameHeaderVersion1) == 0x18,
-              "PerformanceFrameHeaderVersion1 has the worng size!");
+              "PerformanceFrameHeaderVersion1 has the wrong size!");
 
 struct PerformanceFrameHeaderVersion2 {
     /* 0x00 */ u32 magic; // "PERF"
@@ -31,6 +31,6 @@ struct PerformanceFrameHeaderVersion2 {
     /* 0x25 */ char unk25[0xB];
 };
 static_assert(sizeof(PerformanceFrameHeaderVersion2) == 0x30,
-              "PerformanceFrameHeaderVersion2 has the worng size!");
+              "PerformanceFrameHeaderVersion2 has the wrong size!");
 
 } // namespace AudioCore::AudioRenderer

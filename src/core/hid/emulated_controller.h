@@ -132,7 +132,7 @@ struct ControllerStatus {
     RingAnalogValue ring_analog_value{};
     NfcValues nfc_values{};
 
-    // Data for HID serices
+    // Data for HID services
     HomeButtonState home_button_state{};
     CaptureButtonState capture_button_state{};
     NpadButtonState npad_button_state{};
@@ -357,7 +357,7 @@ public:
 
     /**
      * Sends a small vibration to the output device
-     * @return true if SetVibration was successfull
+     * @return true if SetVibration was successful
      */
     bool IsVibrationEnabled(std::size_t device_index);
 
@@ -373,7 +373,7 @@ public:
     /**
      * Sets the desired camera format to be polled from a controller
      * @param camera_format size of each frame
-     * @return true if SetCameraFormat was successfull
+     * @return true if SetCameraFormat was successful
      */
     bool SetCameraFormat(Core::IrSensor::ImageTransferProcessorFormat camera_format);
 

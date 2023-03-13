@@ -137,7 +137,7 @@ EncryptedNTAG215File EncodedDataToNfcData(const NTAG215File& encoded_data) {
 }
 
 u32 GetTagPassword(const TagUuid& uuid) {
-    // Verifiy that the generated password is correct
+    // Verify that the generated password is correct
     u32 password = 0xAA ^ (uuid.uid[1] ^ uuid.uid[3]);
     password &= (0x55 ^ (uuid.uid[2] ^ uuid.uid[4])) << 8;
     password &= (0xAA ^ (uuid.uid[3] ^ uuid.uid[5])) << 16;

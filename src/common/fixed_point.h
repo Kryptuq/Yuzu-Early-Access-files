@@ -22,7 +22,7 @@ class FixedPoint;
 namespace detail {
 
 // helper templates to make magic with types :)
-// these allow us to determine resonable types from
+// these allow us to determine reasonable types from
 // a desired size, they also let us infer the next largest type
 // from a type which is nice for the division op
 template <size_t T>

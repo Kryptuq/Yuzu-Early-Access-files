@@ -55,7 +55,7 @@ void Controller_Gesture::OnUpdate(const Core::Timing::CoreTiming& core_timing) {
         static_cast<f32>(shared_memory->gesture_lifo.timestamp - last_update_timestamp) /
         (1000 * 1000 * 1000);
 
-    // Only update if necesary
+    // Only update if necessary
     if (!ShouldUpdateGesture(gesture, time_difference)) {
         return;
     }

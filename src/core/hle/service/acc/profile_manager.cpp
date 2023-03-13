@@ -287,7 +287,7 @@ void ProfileManager::StoreOpenedUsers() {
     });
 }
 
-/// Return the users profile base and the unknown arbitary data.
+/// Return the users profile base and the unknown arbitrary data.
 bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
                                            UserData& data) const {
     if (GetProfileBase(index, profile)) {
@@ -297,13 +297,13 @@ bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, Pro
     return false;
 }
 
-/// Return the users profile base and the unknown arbitary data.
+/// Return the users profile base and the unknown arbitrary data.
 bool ProfileManager::GetProfileBaseAndData(UUID uuid, ProfileBase& profile, UserData& data) const {
     const auto idx = GetUserIndex(uuid);
     return GetProfileBaseAndData(idx, profile, data);
 }
 
-/// Return the users profile base and the unknown arbitary data.
+/// Return the users profile base and the unknown arbitrary data.
 bool ProfileManager::GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile,
                                            UserData& data) const {
     return GetProfileBaseAndData(user.user_uuid, profile, data);

@@ -53,7 +53,7 @@ struct DeviceStatus {
     MouseWheelValues mouse_wheel_values{};
     MouseStickValue mouse_stick_value{};
 
-    // Data for HID serices
+    // Data for HID services
     KeyboardKey keyboard_state{};
     KeyboardModifier keyboard_moddifier_state{};
     MouseButton mouse_button_state{};
@@ -75,7 +75,7 @@ struct InterfaceUpdateCallback {
 class EmulatedDevices {
 public:
     /**
-     * Contains all input data related to external devices that aren't necesarily a controller
+     * Contains all input data related to external devices that aren't necessarily a controller
      * This includes devices such as the keyboard or mouse
      */
     explicit EmulatedDevices();

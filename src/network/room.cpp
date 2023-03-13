@@ -27,7 +27,7 @@ public:
     std::atomic<State> state{State::Closed}; ///< Current state of the room.
     RoomInformation room_information;        ///< Information about this room.
 
-    std::string verify_uid;              ///< A GUID which may be used for verfication.
+    std::string verify_uid;              ///< A GUID which may be used for verification.
     mutable std::mutex verify_uid_mutex; ///< Mutex for verify_uid
 
     std::string password; ///< The password required to connect to this room.

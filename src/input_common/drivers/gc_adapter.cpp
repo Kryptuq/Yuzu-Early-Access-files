@@ -344,7 +344,7 @@ bool GCAdapter::IsVibrationEnabled([[maybe_unused]] const PadIdentifier& identif
 
 void GCAdapter::UpdateVibrations() {
     // Use 8 states to keep the switching between on/off fast enough for
-    // a human to feel different vibration strenght
+    // a human to feel different vibration strength
     // More states == more rumble strengths == slower update time
     constexpr u8 vibration_states = 8;
 

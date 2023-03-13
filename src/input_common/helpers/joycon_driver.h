@@ -73,7 +73,7 @@ private:
     /// Main thread, actively request new data from the handle
     void InputThread(std::stop_token stop_token);
 
-    /// Called everytime a valid package arrives
+    /// Called every time a valid package arrives
     void OnNewData(std::span<u8> buffer);
 
     /// Updates device configuration to enable or disable features
@@ -110,7 +110,7 @@ private:
     bool amiibo_detected{};
     bool is_ring_disabled_by_irs{};
 
-    // Harware configuration
+    // Hardware configuration
     u8 leds{};
     ReportMode mode{};
     bool passive_enabled{};   // Low power mode, Ideal for multiple controllers at the same time

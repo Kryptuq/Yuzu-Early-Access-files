@@ -45,7 +45,7 @@ public:
     // Return whether or not the user has write permission on this filesystem.
     virtual bool IsWritable() const;
 
-    // Determine if the entry at path is non-existant, a file, or a directory.
+    // Determine if the entry at path is non-existent, a file, or a directory.
     virtual VfsEntryType GetEntryType(std::string_view path) const;
 
     // Opens the file with path relative to root. If it doesn't exist, returns nullptr.
@@ -58,7 +58,7 @@ public:
     // Moves the file from old_path to new_path, returning the moved file on success and nullptr on
     // failure.
     virtual VirtualFile MoveFile(std::string_view old_path, std::string_view new_path);
-    // Deletes the file with path relative to root, returing true on success.
+    // Deletes the file with path relative to root, returning true on success.
     virtual bool DeleteFile(std::string_view path);
 
     // Opens the directory with path relative to root. If it doesn't exist, returns nullptr.
@@ -71,7 +71,7 @@ public:
     // Moves the directory from old_path to new_path, returning the moved directory on success and
     // nullptr on failure.
     virtual VirtualDir MoveDirectory(std::string_view old_path, std::string_view new_path);
-    // Deletes the directory with path relative to root, returing true on success.
+    // Deletes the directory with path relative to root, returning true on success.
     virtual bool DeleteDirectory(std::string_view path);
 
 protected:
@@ -144,7 +144,7 @@ public:
         return Read(reinterpret_cast<u8*>(data), sizeof(T), offset);
     }
 
-    // Writes exactly one byte to offset in file and retuns whether or not the byte was written
+    // Writes exactly one byte to offset in file and returns whether or not the byte was written
     // successfully.
     virtual bool WriteByte(u8 data, std::size_t offset = 0);
     // Writes a vector of bytes to offset in file and returns the number of bytes successfully
@@ -191,13 +191,13 @@ public:
     VfsDirectory() = default;
     virtual ~VfsDirectory();
 
-    // Retrives the file located at path as if the current directory was root. Returns nullptr if
+    // Retrieves the file located at path as if the current directory was root. Returns nullptr if
     // not found.
     virtual VirtualFile GetFileRelative(std::string_view path) const;
     // Calls GetFileRelative(path) on the root of the current directory.
     virtual VirtualFile GetFileAbsolute(std::string_view path) const;
 
-    // Retrives the directory located at path as if the current directory was root. Returns nullptr
+    // Retrieves the directory located at path as if the current directory was root. Returns nullptr
     // if not found.
     virtual VirtualDir GetDirectoryRelative(std::string_view path) const;
     // Calls GetDirectoryRelative(path) on the root of the current directory.
@@ -205,7 +205,7 @@ public:
 
     // Returns a vector containing all of the files in this directory.
     virtual std::vector<VirtualFile> GetFiles() const = 0;
-    // Returns the file with filename matching name. Returns nullptr if directory dosen't have a
+    // Returns the file with filename matching name. Returns nullptr if directory doesn't have a
     // file with name.
     virtual VirtualFile GetFile(std::string_view name) const;
 
@@ -214,7 +214,7 @@ public:
 
     // Returns a vector containing all of the subdirectories in this directory.
     virtual std::vector<VirtualDir> GetSubdirectories() const = 0;
-    // Returns the directory with name matching name. Returns nullptr if directory dosen't have a
+    // Returns the directory with name matching name. Returns nullptr if directory doesn't have a
     // directory with name.
     virtual VirtualDir GetSubdirectory(std::string_view name) const;
 

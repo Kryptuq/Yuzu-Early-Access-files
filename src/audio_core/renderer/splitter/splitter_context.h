@@ -55,7 +55,7 @@ public:
     /**
      * Get the total number of splitter destinations.
      *
-     * @return Number of destiantions.
+     * @return Number of destinations.
      */
     u32 GetDataCount() const;
 

@@ -94,7 +94,7 @@ bool LoadKeys(InternalKey& locked_secret, InternalKey& unfixed_info);
 /// Returns true if key_retail.bin exist
 bool IsKeyAvailable();
 
-/// Decodes encripted amiibo data returns true if output is valid
+/// Decodes encrypted amiibo data returns true if output is valid
 bool DecodeAmiibo(const EncryptedNTAG215File& encrypted_tag_data, NTAG215File& tag_data);
 
 /// Encodes plain amiibo data returns true if output is valid

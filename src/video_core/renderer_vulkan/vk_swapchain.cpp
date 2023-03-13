@@ -159,7 +159,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, bo
     present_mode = ChooseSwapPresentMode(present_modes);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
-    // Ensure Tripple buffering if possible.
+    // Ensure Triple buffering if possible.
     if (capabilities.maxImageCount > 0) {
         if (requested_image_count > capabilities.maxImageCount) {
             requested_image_count = capabilities.maxImageCount;

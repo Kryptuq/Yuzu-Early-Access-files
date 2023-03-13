@@ -11,7 +11,7 @@
 
 namespace Core::Crypto {
 
-// Sits on top of a VirtualFile and provides CTR-mode AES decription.
+// Sits on top of a VirtualFile and provides CTR-mode AES description.
 class CTREncryptionLayer : public EncryptionLayer {
 public:
     using IVData = std::array<u8, 16>;

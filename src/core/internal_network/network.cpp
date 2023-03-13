@@ -572,7 +572,7 @@ std::pair<s32, Errno> Socket::SendTo(u32 flags, std::span<const u8> message,
     ASSERT(flags == 0);
 
     const sockaddr* to = nullptr;
-    const int tolen = addr ? sizeof(sockaddr) : 0;
+    const int to_len = addr ? sizeof(sockaddr) : 0;
     sockaddr host_addr_in;
 
     if (addr) {
@@ -581,7 +581,7 @@ std::pair<s32, Errno> Socket::SendTo(u32 flags, std::span<const u8> message,
     }
 
     const auto result = sendto(fd, reinterpret_cast<const char*>(message.data()),
-                               static_cast<int>(message.size()), 0, to, tolen);
+                               static_cast<int>(message.size()), 0, to, to_len);
     if (result != SOCKET_ERROR) {
         return {static_cast<s32>(result), Errno::SUCCESS};
     }

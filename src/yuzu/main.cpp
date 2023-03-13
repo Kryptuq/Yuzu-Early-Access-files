@@ -274,7 +274,7 @@ static QString PrettyProductName() {
 
 #ifdef _WIN32
 static void OverrideWindowsFont() {
-    // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrllic characters
+    // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrillic characters
     // Asking to use "MS Shell Dlg 2" gives better other chars while leaving the Chinese Characters.
     const QString startup_font = QApplication::font().family();
     const QStringList ugly_fonts = {QStringLiteral("SimSun"), QStringLiteral("PMingLiU")};
@@ -3596,7 +3596,7 @@ bool GMainWindow::CreateShortcut(const std::string& shortcut_path, const std::st
                                  const std::string& command, const std::string& arguments,
                                  const std::string& categories, const std::string& keywords) {
 #if defined(__linux__) || defined(__FreeBSD__)
-    // This desktop file template was writting referencing
+    // This desktop file template was writing referencing
     // https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
     std::string shortcut_contents{};
     shortcut_contents.append("[Desktop Entry]\n");

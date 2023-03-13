@@ -25,7 +25,7 @@ namespace Response {
 /**
  * Returns Type if the packet is valid, else none
  *
- * Note: Modifies the buffer to zero out the crc (since thats the easiest way to check without
+ * Note: Modifies the buffer to zero out the crc (since that's the easiest way to check without
  * copying the buffer)
  */
 std::optional<Type> Validate(u8* data, std::size_t size) {

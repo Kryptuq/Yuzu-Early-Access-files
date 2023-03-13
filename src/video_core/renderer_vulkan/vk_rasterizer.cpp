@@ -671,7 +671,7 @@ bool RasterizerVulkan::AccelerateConditionalRendering() {
         // TODO(Blinkhawk): Reimplement Host conditional rendering.
         return false;
     }
-    // Medium / Low Hack: stub any checks on queries writen into the buffer cache.
+    // Medium / Low Hack: stub any checks on queries written into the buffer cache.
     const GPUVAddr condition_address{maxwell3d->regs.render_enable.Address()};
     Maxwell::ReportSemaphore::Compare cmp;
     if (gpu_memory->IsMemoryDirty(condition_address, sizeof(cmp),

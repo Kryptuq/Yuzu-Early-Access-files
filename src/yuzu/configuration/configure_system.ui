@@ -411,7 +411,7 @@
             </item>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="4" column="0">
            <widget class="QCheckBox" name="custom_rtc_checkbox">
             <property name="text">
              <string>Custom RTC</string>
@@ -425,54 +425,21 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="5" column="0">
            <widget class="QCheckBox" name="rng_seed_checkbox">
             <property name="text">
              <string>RNG Seed</string>
             </property>
            </widget>
           </item>
-          <item row="7" column="0">
+          <item row="6" column="0">
            <widget class="QLabel" name="device_name_label">
             <property name="text">
              <string>Device Name</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QComboBox" name="combo_sound">
-            <item>
-             <property name="text">
-              <string>Mono</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Stereo</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Surround</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_console_id">
-            <property name="text">
-             <string>Console ID:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_sound">
-            <property name="text">
-             <string>Sound output mode</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
+          <item row="4" column="1">
            <widget class="QDateTimeEdit" name="custom_rtc_edit">
             <property name="minimumDate">
              <date>
@@ -483,14 +450,14 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
+          <item row="6" column="1">
            <widget class="QLineEdit" name="device_name_edit">
             <property name="maxLength">
              <number>128</number>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="5" column="1">
            <widget class="QLineEdit" name="rng_seed_edit">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -508,22 +475,6 @@
             </property>
             <property name="maxLength">
              <number>8</number>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QPushButton" name="button_regenerate_console_id">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="layoutDirection">
-             <enum>Qt::RightToLeft</enum>
-            </property>
-            <property name="text">
-             <string>Regenerate</string>
             </property>
            </widget>
           </item>

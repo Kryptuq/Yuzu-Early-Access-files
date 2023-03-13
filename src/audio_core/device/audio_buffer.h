@@ -16,7 +16,7 @@ struct AudioBuffer {
     s64 played_timestamp;
     /// Game memory address for these samples.
     VAddr samples;
-    /// Unqiue identifier for this buffer.
+    /// Unique identifier for this buffer.
     u64 tag;
     /// Size of the samples buffer.
     u64 size;

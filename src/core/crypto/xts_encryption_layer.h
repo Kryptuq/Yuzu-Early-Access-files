@@ -9,7 +9,7 @@
 
 namespace Core::Crypto {
 
-// Sits on top of a VirtualFile and provides XTS-mode AES decription.
+// Sits on top of a VirtualFile and provides XTS-mode AES description.
 class XTSEncryptionLayer : public EncryptionLayer {
 public:
     XTSEncryptionLayer(FileSys::VirtualFile base, Key256 key);

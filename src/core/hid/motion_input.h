@@ -84,7 +84,7 @@ private:
     // Gyroscope vector measurement in radians/s.
     Common::Vec3f gyro;
 
-    // Vector to be substracted from gyro measurements
+    // Vector to be subtracted from gyro measurements
     Common::Vec3f gyro_bias;
 
     // Minimum gyro amplitude to detect if the device is moving

@@ -344,12 +344,12 @@ if(ENABLE_QT)
                 find_package(PkgConfig REQUIRED)
                 pkg_check_modules(QT_DEP_GLU QUIET glu>=9.0.0)
                 if (NOT QT_DEP_GLU_FOUND)
-                    message(FATAL_ERROR "Qt bundled pacakge dependency `glu` not found. \
+                    message(FATAL_ERROR "Qt bundled package dependency `glu` not found. \
                         Perhaps `libglu1-mesa-dev` needs to be installed?")
                 endif()
                 pkg_check_modules(QT_DEP_MESA QUIET dri>=20.0.8)
                 if (NOT QT_DEP_MESA_FOUND)
-                    message(FATAL_ERROR "Qt bundled pacakge dependency `dri` not found. \
+                    message(FATAL_ERROR "Qt bundled package dependency `dri` not found. \
                         Perhaps `mesa-common-dev` needs to be installed?")
                 endif()
 

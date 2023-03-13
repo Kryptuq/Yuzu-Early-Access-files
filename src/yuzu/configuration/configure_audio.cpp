@@ -10,6 +10,7 @@
 #include "ui_configure_audio.h"
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_audio.h"
+#include "yuzu/uisettings.h"
 
 ConfigureAudio::ConfigureAudio(const Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureAudio>()), system{system_} {
@@ -47,17 +48,22 @@ void ConfigureAudio::SetConfiguration() {
 
     const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
     ui->volume_slider->setValue(volume_value);
+    ui->toggle_background_mute->setChecked(UISettings::values.mute_when_in_background.GetValue());
 
     if (!Settings::IsConfiguringGlobal()) {
         if (Settings::values.volume.UsingGlobal()) {
             ui->volume_combo_box->setCurrentIndex(0);
             ui->volume_slider->setEnabled(false);
+            ui->combo_sound->setCurrentIndex(Settings::values.sound_index.GetValue());
         } else {
             ui->volume_combo_box->setCurrentIndex(1);
             ui->volume_slider->setEnabled(true);
+            ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
         }
         ConfigurationShared::SetHighlight(ui->volume_layout,
                                           !Settings::values.volume.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->mode_label,
+                                          !Settings::values.sound_index.UsingGlobal());
     }
     SetVolumeIndicatorText(ui->volume_slider->sliderPosition());
 }
@@ -109,6 +115,8 @@ void ConfigureAudio::SetVolumeIndicatorText(int percentage) {
 }
 
 void ConfigureAudio::ApplyConfiguration() {
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.sound_index, ui->combo_sound);
+
     if (Settings::IsConfiguringGlobal()) {
         Settings::values.sink_id =
             ui->sink_combo_box->itemText(ui->sink_combo_box->currentIndex()).toStdString();
@@ -116,6 +124,7 @@ void ConfigureAudio::ApplyConfiguration() {
             ui->output_combo_box->itemText(ui->output_combo_box->currentIndex()).toStdString());
         Settings::values.audio_input_device_id.SetValue(
             ui->input_combo_box->itemText(ui->input_combo_box->currentIndex()).toStdString());
+        UISettings::values.mute_when_in_background = ui->toggle_background_mute->isChecked();
 
         // Guard if during game and set to game-specific value
         if (Settings::values.volume.UsingGlobal()) {
@@ -174,9 +183,13 @@ void ConfigureAudio::RetranslateUI() {
 void ConfigureAudio::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->volume_slider->setEnabled(Settings::values.volume.UsingGlobal());
+        // ui->combo_sound->setEnabled(Settings::values.sound_index.UsingGlobal());
 
         return;
     }
+
+    // ConfigurationShared::SetColoredComboBox(ui->combo_sound, ui->label_sound,
+    //                                        Settings::values.sound_index.GetValue(true));
 
     connect(ui->volume_combo_box, qOverload<int>(&QComboBox::activated), this, [this](int index) {
         ui->volume_slider->setEnabled(index == 1);

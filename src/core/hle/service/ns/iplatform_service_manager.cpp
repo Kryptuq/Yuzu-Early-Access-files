@@ -119,7 +119,7 @@ struct IPlatformServiceManager::Impl {
                 break;
             }
 
-            // Derive key withing inverse xor
+            // Derive key within inverse xor
             const u32 KEY = GetU32Swapped(input.data() + cur_offset) ^ EXPECTED_MAGIC;
             const u32 SIZE = GetU32Swapped(input.data() + cur_offset + 4) ^ KEY;
             shared_font_regions.push_back(FontRegion{cur_offset + 8, SIZE});

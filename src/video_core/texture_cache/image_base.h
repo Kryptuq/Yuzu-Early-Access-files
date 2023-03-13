@@ -25,7 +25,7 @@ enum class ImageFlagBits : u32 {
     Registered = 1 << 6,  ///< True when the image is registered
     Picked = 1 << 7,      ///< Temporary flag to mark the image as picked
     Remapped = 1 << 8,    ///< Image has been remapped.
-    Sparse = 1 << 9,      ///< Image has non continous submemory.
+    Sparse = 1 << 9,      ///< Image has non continuous submemory.
 
     // Garbage Collection Flags
     BadOverlap = 1 << 10, ///< This image overlaps other but doesn't fit, has higher

@@ -763,7 +763,7 @@ ButtonMapping SDLDriver::GetButtonMappingForDevice(const Common::ParamPackage& p
 
     // This list is missing ZL/ZR since those are not considered buttons in SDL GameController.
     // We will add those afterwards
-    // This list also excludes Screenshot since theres not really a mapping for that
+    // This list also excludes Screenshot since there's not really a mapping for that
     ButtonBindings switch_to_sdl_button;
 
     if (SDL_GameControllerGetType(controller) == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO) {
@@ -1022,7 +1022,7 @@ MotionMapping SDLDriver::GetMotionMappingForDevice(const Common::ParamPackage& p
 
 Common::Input::ButtonNames SDLDriver::GetUIName(const Common::ParamPackage& params) const {
     if (params.Has("button")) {
-        // TODO(German77): Find how to substitue the values for real button names
+        // TODO(German77): Find how to substitute the values for real button names
         return Common::Input::ButtonNames::Value;
     }
     if (params.Has("hat")) {

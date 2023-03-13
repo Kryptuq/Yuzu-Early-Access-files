@@ -71,7 +71,7 @@ public:
         Idle,          ///< Default state (i.e. not connected)
         Joining,       ///< The client is attempting to join a room.
         Joined,    ///< The client is connected to the room and is ready to send/receive packets.
-        Moderator, ///< The client is connnected to the room and is granted mod permissions.
+        Moderator, ///< The client is connected to the room and is granted mod permissions.
     };
 
     enum class Error : u8 {
@@ -201,7 +201,7 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time the State of the member
-     * changed. The function wil be called every time the event is triggered. The callback function
+     * changed. The function will be called every time the event is triggered. The callback function
      * must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
@@ -210,8 +210,8 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time an error happened. The
-     * function wil be called every time the event is triggered. The callback function must not bind
-     * or unbind a function. Doing so will cause a deadlock
+     * function will be called every time the event is triggered. The callback function must not
+     * bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
      */
@@ -219,7 +219,7 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time a ProxyPacket is received.
-     * The function wil be called everytime the event is triggered.
+     * The function will be called every time the event is triggered.
      * The callback function must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
@@ -229,7 +229,7 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time an LDNPacket is received.
-     * The function wil be called everytime the event is triggered.
+     * The function will be called every time the event is triggered.
      * The callback function must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
@@ -239,7 +239,7 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time the RoomInformation changes.
-     * The function wil be called every time the event is triggered.
+     * The function will be called every time the event is triggered.
      * The callback function must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list
@@ -249,7 +249,7 @@ public:
 
     /**
      * Binds a function to an event that will be triggered every time a ChatMessage is received.
-     * The function wil be called every time the event is triggered.
+     * The function will be called every time the event is triggered.
      * The callback function must not bind or unbind a function. Doing so will cause a deadlock
      * @param callback The function to call
      * @return A handle used for removing the function from the registered list

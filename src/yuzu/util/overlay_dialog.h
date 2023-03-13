@@ -71,7 +71,7 @@ private:
                                   const QString& left_button_text, const QString& right_button_text,
                                   Qt::Alignment alignment);
 
-    /// Moves and resizes the dialog to be fully overlayed on top of the parent window.
+    /// Moves and resizes the dialog to be fully overlaid on top of the parent window.
     void MoveAndResizeWindow();
 
     /**

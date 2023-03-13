@@ -341,7 +341,7 @@ public:
 
     /// Flushes the query to guest memory.
     virtual void Flush() {
-        // When counter is nullptr it means that it's just been reseted. We are supposed to write a
+        // When counter is nullptr it means that it's just been reset. We are supposed to write a
         // zero in these cases.
         const u64 value = counter ? counter->Query() : 0;
         std::memcpy(host_ptr, &value, sizeof(u64));

@@ -68,7 +68,7 @@ public:
     constexpr Span(const Range& range) : ptr{std::data(range)}, num{std::size(range)} {}
 
     /// Construct a span from a pointer and a size.
-    /// This is inteded for subranges.
+    /// This is intended for subranges.
     constexpr Span(const T* ptr_, std::size_t num_) noexcept : ptr{ptr_}, num{num_} {}
 
     /// Returns the data pointer by the span.
@@ -390,11 +390,11 @@ public:
     Handle(const Handle&) = delete;
     Handle& operator=(const Handle&) = delete;
 
-    /// Construct a handle transfering the ownership from another handle.
+    /// Construct a handle transferring the ownership from another handle.
     Handle(Handle&& rhs) noexcept
         : handle{std::exchange(rhs.handle, nullptr)}, owner{rhs.owner}, dld{rhs.dld} {}
 
-    /// Assign the current handle transfering the ownership from another handle.
+    /// Assign the current handle transferring the ownership from another handle.
     /// Destroys any previously held object.
     Handle& operator=(Handle&& rhs) noexcept {
         Release();
@@ -463,10 +463,10 @@ public:
     Handle(const Handle&) = delete;
     Handle& operator=(const Handle&) = delete;
 
-    /// Construct a handle transfering ownership from another handle.
+    /// Construct a handle transferring ownership from another handle.
     Handle(Handle&& rhs) noexcept : handle{std::exchange(rhs.handle, nullptr)}, dld{rhs.dld} {}
 
-    /// Assign the current handle transfering the ownership from another handle.
+    /// Assign the current handle transferring the ownership from another handle.
     /// Destroys any previously held object.
     Handle& operator=(Handle&& rhs) noexcept {
         Release();
@@ -533,12 +533,12 @@ public:
     PoolAllocations(const PoolAllocations&) = delete;
     PoolAllocations& operator=(const PoolAllocations&) = delete;
 
-    /// Construct an allocation transfering ownership from another allocation.
+    /// Construct an allocation transferring ownership from another allocation.
     PoolAllocations(PoolAllocations&& rhs) noexcept
         : allocations{std::move(rhs.allocations)}, num{rhs.num}, device{rhs.device}, pool{rhs.pool},
           dld{rhs.dld} {}
 
-    /// Assign an allocation transfering ownership from another allocation.
+    /// Assign an allocation transferring ownership from another allocation.
     PoolAllocations& operator=(PoolAllocations&& rhs) noexcept {
         allocations = std::move(rhs.allocations);
         num = rhs.num;

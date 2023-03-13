@@ -363,7 +363,7 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
                   code_size + m_system_resource_size);
         R_RETURN(ResultLimitReached);
     }
-    // Initialize proces address space
+    // Initialize process address space
     if (const Result result{m_page_table.InitializeForProcess(
             metadata.GetAddressSpaceType(), false, false, false, KMemoryManager::Pool::Application,
             0x8000000, code_size, std::addressof(m_kernel.GetAppSystemResource()),

@@ -15,7 +15,7 @@
 
 namespace Common::Input {
 
-// Type of data that is expected to recieve or send
+// Type of data that is expected to receive or send
 enum class InputType {
     None,
     Battery,
@@ -103,7 +103,7 @@ enum class VibrationAmplificationType {
 struct AnalogProperties {
     // Anything below this value will be detected as zero
     float deadzone{};
-    // Anyting above this values will be detected as one
+    // Anything above this values will be detected as one
     float range{1.0f};
     // Minimum value to be detected as active
     float threshold{0.5f};
@@ -209,7 +209,7 @@ struct LedStatus {
     bool led_4{};
 };
 
-// Raw data fom camera
+// Raw data from camera
 struct CameraStatus {
     CameraFormat format{CameraFormat::None};
     std::vector<u8> data{};
@@ -428,7 +428,7 @@ inline void UnregisterOutputFactory(const std::string& name) {
 }
 
 /**
- * Create an input device from given paramters.
+ * Create an input device from given parameters.
  * @tparam InputDeviceType the type of input devices to create
  * @param params a serialized ParamPackage string that contains all parameters for creating the
  * device

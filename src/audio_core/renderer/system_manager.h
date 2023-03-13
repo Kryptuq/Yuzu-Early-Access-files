@@ -36,7 +36,7 @@ public:
     /**
      * Initialize the system manager, called when any system is registered.
      *
-     * @return True if sucessfully initialized, otherwise false.
+     * @return True if successfully initialized, otherwise false.
      */
     bool InitializeUnsafe();
 
@@ -50,7 +50,7 @@ public:
      * The manager does not own the system, so do not free it without calling Remove.
      *
      * @param system - The system to add.
-     * @return True if succesfully added, otherwise false.
+     * @return True if successfully added, otherwise false.
      */
     bool Add(System& system);
 
@@ -58,7 +58,7 @@ public:
      * Remove an audio render system from the manager.
      *
      * @param system - The system to remove.
-     * @return True if succesfully removed, otherwise false.
+     * @return True if successfully removed, otherwise false.
      */
     bool Remove(System& system);
 

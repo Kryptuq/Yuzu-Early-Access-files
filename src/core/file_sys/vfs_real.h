@@ -38,7 +38,7 @@ private:
     boost::container::flat_map<std::string, std::weak_ptr<Common::FS::IOFile>> cache;
 };
 
-// An implmentation of VfsFile that represents a file on the user's computer.
+// An implementation of VfsFile that represents a file on the user's computer.
 class RealVfsFile : public VfsFile {
     friend class RealVfsDirectory;
     friend class RealVfsFilesystem;

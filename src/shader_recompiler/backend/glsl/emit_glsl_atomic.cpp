@@ -398,162 +398,162 @@ void EmitStorageAtomicMaxF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value
 }
 
 void EmitGlobalAtomicIAdd32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMin32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMin32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMax32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMax32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicInc32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicDec32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAnd32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicOr32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicXor32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicExchange32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicIAdd64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMin64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMin64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMax64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMax64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicInc64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicDec64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAnd64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicOr64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicXor64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicExchange64(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicIAdd32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMin32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMin32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicSMax32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicUMax32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicInc32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicDec32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAnd32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicOr32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicXor32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicExchange32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAddF32(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAddF16x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicAddF32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicMinF16x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicMinF32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicMaxF16x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitGlobalAtomicMaxF32x2(EmitContext&) {
-    throw NotImplementedException("GLSL Instrucion");
+    throw NotImplementedException("GLSL Instruction");
 }
 } // namespace Shader::Backend::GLSL

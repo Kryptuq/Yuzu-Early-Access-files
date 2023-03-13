@@ -90,7 +90,7 @@ Fiber::~Fiber() {
 }
 
 void Fiber::Exit() {
-    ASSERT_MSG(impl->is_thread_fiber, "Exitting non main thread fiber");
+    ASSERT_MSG(impl->is_thread_fiber, "Exiting non main thread fiber");
     if (!impl->is_thread_fiber) {
         return;
     }

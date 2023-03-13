@@ -358,7 +358,7 @@ struct System::Impl {
     void ShutdownMainProcess() {
         SetShuttingDown(true);
 
-        // Log last frame performance stats if game was loded
+        // Log last frame performance stats if game was loaded
         if (perf_stats) {
             const auto perf_results = GetAndResetPerfStats();
             constexpr auto performance = Common::Telemetry::FieldType::Performance;

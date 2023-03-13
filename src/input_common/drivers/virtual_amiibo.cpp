@@ -57,7 +57,7 @@ Common::Input::NfcState VirtualAmiibo::WriteNfcData(
     }
 
     if (!nfc_file.Write(data)) {
-        LOG_ERROR(Service_NFP, "Error writting to file");
+        LOG_ERROR(Service_NFP, "Error writing to file");
         return Common::Input::NfcState::WriteFailed;
     }
 

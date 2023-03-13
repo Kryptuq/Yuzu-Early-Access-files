@@ -93,7 +93,7 @@ inline bool IsDirectoryLogoPartition(const VirtualDir& pfs) {
            pfs->GetFile("StartupMovie.gif") != nullptr;
 }
 
-// An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) conatiner.
+// An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) container.
 // After construction, use GetStatus to determine if the file is valid and ready to be used.
 class NCA : public ReadOnlyVfsDirectory {
 public:

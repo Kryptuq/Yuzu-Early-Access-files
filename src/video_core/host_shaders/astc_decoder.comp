@@ -125,7 +125,7 @@ uvec4 local_buff;
 uvec4 color_endpoint_data;
 int color_bitsread = 0;
 
-// Four values, two endpoints, four maximum paritions
+// Four values, two endpoints, four maximum partitions
 uint color_values[32];
 int colvals_index = 0;
 

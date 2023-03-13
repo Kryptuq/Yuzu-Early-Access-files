@@ -44,7 +44,7 @@ public:
 template <class P>
 class ChannelSetupCaches {
 public:
-    /// Operations for seting the channel of execution.
+    /// Operations for setting the channel of execution.
     virtual ~ChannelSetupCaches();
 
     /// Create channel state.

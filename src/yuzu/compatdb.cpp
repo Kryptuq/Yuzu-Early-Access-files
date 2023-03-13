@@ -76,7 +76,7 @@ void CompatDB::Submit() {
     compatibility_Graphical->addButton(ui->radioButton_Audio_Minor, 1);
     compatibility_Audio->addButton(ui->radioButton_Audio_No, 2);
 
-    const int compatiblity = static_cast<int>(CalculateCompatibility());
+    const int compatibility = static_cast<int>(CalculateCompatibility());
 
     switch ((static_cast<CompatDBPage>(currentId()))) {
     case CompatDBPage::Intro:
@@ -113,9 +113,9 @@ void CompatDB::Submit() {
         break;
     case CompatDBPage::Final:
         back();
-        LOG_INFO(Frontend, "Compatibility Rating: {}", compatiblity);
+        LOG_INFO(Frontend, "Compatibility Rating: {}", compatibility);
         telemetry_session.AddField(Common::Telemetry::FieldType::UserFeedback, "Compatibility",
-                                   compatiblity);
+                                   compatibility);
 
         button(NextButton)->setEnabled(false);
         button(NextButton)->setText(tr("Submitting"));

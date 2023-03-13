@@ -690,7 +690,7 @@ void Hid::ResetSixAxisSensorFusionParameters(HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
-    // Since these parameters are unknow just use what HW outputs
+    // Since these parameters are unknown just use what HW outputs
     const Core::HID::SixAxisSensorFusionParameters fusion_parameters{
         .parameter1 = 0.03f,
         .parameter2 = 0.4f,

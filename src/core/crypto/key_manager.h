@@ -249,7 +249,7 @@ public:
 
     static bool KeyFileExists(bool title);
 
-    // Call before using the sd seed to attempt to derive it if it dosen't exist. Needs system
+    // Call before using the sd seed to attempt to derive it if it doesn't exist. Needs system
     // save 8*43 and the private file to exist.
     void DeriveSDSeedLazy();
 

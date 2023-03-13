@@ -29,7 +29,7 @@ public:
      */
     enum class State {
         Invalid,
-        Aquired,
+        Acquired,
         RequestDetach,
         Detached,
         RequestAttach,

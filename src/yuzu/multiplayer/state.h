@@ -23,7 +23,7 @@ class MultiplayerState : public QWidget {
 
 public:
     enum class NotificationStatus {
-        Unitialized,
+        Uninitialized,
         Disconnected,
         Connected,
         Notification,
@@ -98,7 +98,7 @@ private:
     QAction* show_room;
     std::shared_ptr<Core::AnnounceMultiplayerSession> announce_multiplayer_session;
     Network::RoomMember::State current_state = Network::RoomMember::State::Uninitialized;
-    NotificationStatus notification_status = NotificationStatus::Unitialized;
+    NotificationStatus notification_status = NotificationStatus::Uninitialized;
     bool has_mod_perms = false;
     Network::RoomMember::CallbackHandle<Network::RoomMember::State> state_callback_handle;
     Network::RoomMember::CallbackHandle<Network::RoomMember::Error> error_callback_handle;

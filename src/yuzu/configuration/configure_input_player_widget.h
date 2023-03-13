@@ -43,7 +43,7 @@ public:
     // Handles emulated controller events
     void ControllerUpdate(Core::HID::ControllerTriggerType type);
 
-    // Updates input on sheduled interval
+    // Updates input on scheduled interval
     void UpdateInput();
 
 protected:

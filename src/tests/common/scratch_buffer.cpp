@@ -191,7 +191,7 @@ TEST_CASE("ScratchBuffer: Span Writes", "[common]") {
 
     for (size_t i = 0; i < buf_span.size(); ++i) {
         const auto new_value = static_cast<u8>(i + 1U);
-        // Writes to a span of the scratch buffer will propogate to the buffer itself
+        // Writes to a span of the scratch buffer will propagate to the buffer itself
         buf_span[i] = new_value;
         REQUIRE(buf[i] == new_value);
     }

@@ -87,7 +87,7 @@ public:
     /**
      * Update this destination.
      *
-     * @param params - Inpout parameters to update the destination.
+     * @param params - Input parameters to update the destination.
      */
     void Update(const InParameter& params);
 
@@ -126,9 +126,9 @@ private:
     std::array<f32, MaxMixBuffers> prev_mix_volumes{0.0f};
     /// Next destination in the mix chain
     SplitterDestinationData* next{};
-    /// Is this destiantion in use?
+    /// Is this destination in use?
     bool in_use{};
-    /// Does this destiantion need its volumes updated?
+    /// Does this destination need its volumes updated?
     bool need_update{};
 };
 

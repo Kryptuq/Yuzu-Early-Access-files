@@ -9,7 +9,7 @@
 
 namespace Network {
 
-/// A class that serializes data for network transfer. It also handles endianess
+/// A class that serializes data for network transfer. It also handles endianness
 class Packet {
 public:
     Packet() = default;

@@ -183,7 +183,7 @@ public:
     void Initialize();
 
     /**
-     * Does this voice ned an update?
+     * Does this voice need an update?
      *
      * @param params - Input parameters to check matching.
      *
@@ -236,7 +236,7 @@ public:
      *
      * @param error_info           - Output array of errors.
      * @param wave_buffer          - The wavebuffer to be updated.
-     * @param wave_buffer_internal - Input parametters to be used for the update.
+     * @param wave_buffer_internal - Input parameters to be used for the update.
      * @param sample_format        - Sample format of the wavebuffer.
      * @param valid                - Is this wavebuffer valid?
      * @param pool_mapper          - Used to map the wavebuffers.

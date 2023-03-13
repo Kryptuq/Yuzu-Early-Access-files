@@ -789,7 +789,7 @@ Result Module::Interface::InitializeApplicationInfoBase() {
     }
 
     LOG_WARNING(Service_ACC, "ApplicationInfo init required");
-    // TODO(ogniK): Actual initalization here
+    // TODO(ogniK): Actual initialization here
 
     return ResultSuccess;
 }

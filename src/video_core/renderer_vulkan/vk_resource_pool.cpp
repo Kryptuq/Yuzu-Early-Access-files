@@ -37,7 +37,7 @@ size_t ResourcePool::CommitResource() {
             found = free_resource;
         }
     }
-    // Free iterator is hinted to the resource after the one that's been commited.
+    // Free iterator is hinted to the resource after the one that's been committed.
     hint_iterator = (*found + 1) % ticks.size();
     return *found;
 }
@@ -46,7 +46,7 @@ size_t ResourcePool::ManageOverflow() {
     const size_t old_capacity = ticks.size();
     Grow();
 
-    // The last entry is guaranted to be free, since it's the first element of the freshly
+    // The last entry is guaranteed to be free, since it's the first element of the freshly
     // allocated resources.
     return old_capacity;
 }

@@ -142,7 +142,7 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
             return;
         }
 
-        // Make slow movements at least 3 units on lenght
+        // Make slow movements at least 3 units on length
         if (move_distance < 3.0f) {
             // Normalize value
             mouse_change /= move_distance;
@@ -154,7 +154,7 @@ void Mouse::Move(int x, int y, int center_x, int center_y) {
 
         const auto last_move_distance = last_mouse_change.Length();
 
-        // Make fast movements clamp to 8 units on lenght
+        // Make fast movements clamp to 8 units on length
         if (last_move_distance > 8.0f) {
             // Normalize value
             last_mouse_change /= last_move_distance;

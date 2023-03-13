@@ -278,7 +278,7 @@ void Lobby::OnRefreshLobby() {
         }
     }
 
-    // Reenable the refresh button and resize the columns
+    // Re-enable the refresh button and resize the columns
     ui->refresh_list->setEnabled(true);
     ui->refresh_list->setText(tr("Refresh List"));
     ui->room_list->header()->stretchLastSection();

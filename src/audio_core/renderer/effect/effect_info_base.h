@@ -192,7 +192,7 @@ public:
     /**
      * Get this effect's parameter data.
      *
-     * @return Pointer to the parametter, must be cast to the correct type.
+     * @return Pointer to the parameter, must be cast to the correct type.
      */
     u8* GetParameter() {
         return parameter.data();
@@ -201,7 +201,7 @@ public:
     /**
      * Get this effect's parameter data.
      *
-     * @return Pointer to the parametter, must be cast to the correct type.
+     * @return Pointer to the parameter, must be cast to the correct type.
      */
     u8* GetStateBuffer() {
         return state.data();

@@ -328,7 +328,7 @@ void SanitizeAnalog(Common::Input::AnalogStatus& analog, bool clamp_value) {
     // Apply center offset
     raw_value -= properties.offset;
 
-    // Set initial values to be formated
+    // Set initial values to be formatted
     value = raw_value;
 
     // Calculate vector size
@@ -398,7 +398,7 @@ void SanitizeStick(Common::Input::AnalogStatus& analog_x, Common::Input::AnalogS
     raw_x = properties_x.inverted ? -raw_x : raw_x;
     raw_y = properties_y.inverted ? -raw_y : raw_y;
 
-    // Set initial values to be formated
+    // Set initial values to be formatted
     x = raw_x;
     y = raw_y;
 

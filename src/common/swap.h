@@ -229,7 +229,7 @@ public:
         value = swap(swap() - 1);
         return old;
     }
-    // Comparaison
+    // Comparison
     // v == i
     bool operator==(const swapped_t& i) const {
         return swap() == i.swap();
@@ -368,7 +368,7 @@ public:
     // Member
     /** todo **/
 
-    // Arithmetics
+    // Arithmetic
     template <typename S, typename T2, typename F2>
     friend S operator+(const S& p, const swapped_t v);
 
@@ -384,7 +384,7 @@ public:
     template <typename S, typename T2, typename F2>
     friend S operator%(const S& p, const swapped_t v);
 
-    // Arithmetics + assignments
+    // Arithmetic + assignments
     template <typename S, typename T2, typename F2>
     friend S operator+=(const S& p, const swapped_t v);
 
@@ -415,7 +415,7 @@ public:
     friend bool operator==(const S& p, const swapped_t v);
 };
 
-// Arithmetics
+// Arithmetic
 template <typename S, typename T, typename F>
 S operator+(const S& i, const swap_struct_t<T, F> v) {
     return i + v.swap();
@@ -441,7 +441,7 @@ S operator%(const S& i, const swap_struct_t<T, F> v) {
     return i % v.swap();
 }
 
-// Arithmetics + assignments
+// Arithmetic + assignments
 template <typename S, typename T, typename F>
 S& operator+=(S& i, const swap_struct_t<T, F> v) {
     i += v.swap();
@@ -465,7 +465,7 @@ S operator&(const swap_struct_t<T, F> v, const S& i) {
     return static_cast<S>(v.swap() & i);
 }
 
-// Comparaison
+// Comparison
 template <typename S, typename T, typename F>
 bool operator<(const S& p, const swap_struct_t<T, F> v) {
     return p < v.swap();

@@ -93,7 +93,7 @@ public:
      * Splitter sort, traverse the splitter node graph and sort the sorted mixes from results.
      *
      * @param splitter_context - Splitter context for the sort.
-     * @return True if the sort was successful, othewise false.
+     * @return True if the sort was successful, otherwise false.
      */
     bool TSortInfo(const SplitterContext& splitter_context);
 

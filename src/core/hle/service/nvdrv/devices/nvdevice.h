@@ -59,7 +59,7 @@ public:
                             std::vector<u8>& output, std::vector<u8>& inline_output) = 0;
 
     /**
-     * Called once a device is openned
+     * Called once a device is opened
      * @param fd The device fd
      */
     virtual void OnOpen(DeviceFD fd) = 0;

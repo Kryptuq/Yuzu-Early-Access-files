@@ -83,7 +83,7 @@ if (MSVC)
     )
 
     if (USE_CCACHE OR YUZU_USE_PRECOMPILED_HEADERS)
-    # when caching, we need to use /Z7 to downgrade debug info to use an older but more cachable format
+    # when caching, we need to use /Z7 to downgrade debug info to use an older but more cacheable format
     # Precompiled headers are deleted if not using /Z7. See https://github.com/nanoant/CMakePCHCompiler/issues/21
         add_compile_options(/Z7)
     else()

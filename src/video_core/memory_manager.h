@@ -103,8 +103,8 @@ public:
 
     /**
      * Returns a vector with all the subranges of cpu addresses mapped beneath.
-     * if the region is continous, a single pair will be returned. If it's unmapped, an empty vector
-     * will be returned;
+     * if the region is continuous, a single pair will be returned. If it's unmapped, an empty
+     * vector will be returned;
      */
     std::vector<std::pair<GPUVAddr, std::size_t>> GetSubmappedRange(GPUVAddr gpu_addr,
                                                                     std::size_t size) const;

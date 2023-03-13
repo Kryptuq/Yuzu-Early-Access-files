@@ -164,8 +164,8 @@ void JoyconDriver::InputThread(std::stop_token stop_token) {
 void JoyconDriver::OnNewData(std::span<u8> buffer) {
     const auto report_mode = static_cast<ReportMode>(buffer[0]);
 
-    // Packages can be a litte bit inconsistent. Average the delta time to provide a smoother motion
-    // experience
+    // Packages can be a little bit inconsistent. Average the delta time to provide a smoother
+    // motion experience
     switch (report_mode) {
     case ReportMode::STANDARD_FULL_60HZ:
     case ReportMode::NFC_IR_MODE_60HZ:

@@ -22,8 +22,8 @@ CommandPool::CommandPool(MasterSemaphore& master_semaphore_, const Device& devic
 CommandPool::~CommandPool() = default;
 
 void CommandPool::Allocate(size_t begin, size_t end) {
-    // Command buffers are going to be commited, recorded, executed every single usage cycle.
-    // They are also going to be reseted when commited.
+    // Command buffers are going to be committed, recorded, executed every single usage cycle.
+    // They are also going to be reset when committed.
     Pool& pool = pools.emplace_back();
     pool.handle = device.GetLogical().CreateCommandPool({
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,

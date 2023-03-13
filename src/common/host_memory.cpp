@@ -322,7 +322,7 @@ private:
     }
 
     /// Return true when a given memory region is a "nieche" and the placeholders don't have to be
-    /// splitted.
+    /// split.
     bool IsNiechePlaceholder(size_t virtual_offset, size_t length) const {
         const auto it = placeholders.upper_bound({virtual_offset, virtual_offset + length});
         if (it != placeholders.end() && it->lower() == virtual_offset + length) {
@@ -484,7 +484,7 @@ class HostMemory::Impl {
 public:
     explicit Impl(size_t /*backing_size */, size_t /* virtual_size */) {
         // This is just a place holder.
-        // Please implement fastmem in a propper way on your platform.
+        // Please implement fastmem in a proper way on your platform.
         throw std::bad_alloc{};
     }
 

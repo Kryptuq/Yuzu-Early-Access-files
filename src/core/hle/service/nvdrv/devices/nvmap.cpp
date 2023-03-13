@@ -264,7 +264,7 @@ NvResult nvmap::IocFree(std::span<const u8> input, std::vector<u8>& output) {
         params.flags.raw = 0;
         params.flags.map_uncached.Assign(freeInfo->was_uncached);
     } else {
-        // This is possible when there's internel dups or other duplicates.
+        // This is possible when there's internal dups or other duplicates.
     }
 
     std::memcpy(output.data(), &params, sizeof(params));

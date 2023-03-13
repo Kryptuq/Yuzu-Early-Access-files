@@ -132,7 +132,7 @@ public:
     /// Retrieves the motion mappings for the given device.
     [[nodiscard]] MotionMapping GetMotionMappingForDevice(const Common::ParamPackage& device) const;
 
-    /// Returns an enum contaning the name to be displayed from the input engine.
+    /// Returns an enum containing the name to be displayed from the input engine.
     [[nodiscard]] Common::Input::ButtonNames GetButtonName(
         const Common::ParamPackage& params) const;
 

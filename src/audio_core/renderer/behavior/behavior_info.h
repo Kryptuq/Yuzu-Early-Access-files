@@ -155,7 +155,7 @@ public:
     /**
      * Check if a variadic command buffer is supported.
      * As of Rev 5 with the added optional performance metric logging, the command
-     * buffer can be a variable size, so take that into account for calcualting its size.
+     * buffer can be a variable size, so take that into account for calculating its size.
      *
      * @return True if supported, otherwise false.
      */

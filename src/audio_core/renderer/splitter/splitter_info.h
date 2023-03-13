@@ -49,14 +49,14 @@ public:
     /**
      * Get the number of destinations in this splitter.
      *
-     * @return The number of destiantions.
+     * @return The number of destinations.
      */
     u32 GetDestinationCount() const;
 
     /**
      * Set the number of destinations in this splitter.
      *
-     * @param count - The new number of destiantions.
+     * @param count - The new number of destinations.
      */
     void SetDestinationCount(u32 count);
 

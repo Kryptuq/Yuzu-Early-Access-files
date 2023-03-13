@@ -224,7 +224,7 @@ private:
 
     /// Bottom row is where console wide settings are held, and its "owned" by the parent
     /// ConfigureInput widget. On show, add this widget to the main layout. This will change the
-    /// parent of the widget to this widget (but thats fine).
+    /// parent of the widget to this widget (but that's fine).
     QWidget* bottom_row;
 
     Core::HID::HIDCore& hid_core;

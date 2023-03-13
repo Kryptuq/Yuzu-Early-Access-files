@@ -25,7 +25,7 @@ void UpdateDescriptorQueue::TickFrame() {
 
 void UpdateDescriptorQueue::Acquire() {
     // Minimum number of entries required.
-    // This is the maximum number of entries a single draw call migth use.
+    // This is the maximum number of entries a single draw call might use.
     static constexpr size_t MIN_ENTRIES = 0x400;
 
     if (std::distance(payload.data(), payload_cursor) + MIN_ENTRIES >= payload.max_size()) {

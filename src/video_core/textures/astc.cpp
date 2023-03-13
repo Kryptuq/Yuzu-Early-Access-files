@@ -1571,7 +1571,7 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     assert(strm.GetBitsRead() + weightParams.GetPackedBitSize() == 128);
 
     // Decode both color data and texel weight data
-    u32 colorValues[32]; // Four values, two endpoints, four maximum paritions
+    u32 colorValues[32]; // Four values, two endpoints, four maximum partitions
     DecodeColorValues(colorValues, colorEndpointData, colorEndpointMode, nPartitions,
                       colorDataBits);
 

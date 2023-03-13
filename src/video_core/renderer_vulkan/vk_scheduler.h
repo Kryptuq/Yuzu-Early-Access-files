@@ -232,10 +232,10 @@ private:
 
     std::queue<std::unique_ptr<CommandChunk>> work_queue;
     std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
+    std::mutex execution_mutex;
     std::mutex reserve_mutex;
-    std::mutex work_mutex;
-    std::condition_variable_any work_cv;
-    std::condition_variable wait_cv;
+    std::mutex queue_mutex;
+    std::condition_variable_any event_cv;
     std::jthread worker_thread;
 };
 

@@ -154,7 +154,7 @@ public:
     ExecutionMode GetExecutionMode() const;
 
     /**
-     * Get the rendering deivce for this system.
+     * Get the rendering device for this system.
      * This is unused.
      *
      * @return Rendering device for this system.
@@ -241,7 +241,7 @@ private:
     std::span<u8> command_workbuffer{};
     /// Size of command workbuffer
     u64 command_workbuffer_size{};
-    /// Numebr of commands in the workbuffer
+    /// Number of commands in the workbuffer
     u64 command_buffer_size{};
     /// Manager for upsamplers
     UpsamplerManager* upsampler_manager{};

@@ -39,7 +39,7 @@
         <item>
          <widget class="QLabel" name="output_label">
           <property name="text">
-           <string>Output Device</string>
+           <string>Output Device:</string>
           </property>
          </widget>
         </item>
@@ -53,12 +53,42 @@
         <item>
          <widget class="QLabel" name="input_label">
           <property name="text">
-           <string>Input Device</string>
+           <string>Input Device:</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QComboBox" name="input_combo_box"/>
+        </item>
+       </layout>
+      </item>
+       <item>
+       <layout class="QHBoxLayout" name="mode_layout">
+        <item>
+         <widget class="QLabel" name="mode_label">
+          <property name="text">
+           <string>Sound Ouput Mode:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+          <widget class="QComboBox" name="combo_sound">
+            <item>
+              <property name="text">
+                <string>Mono</string>
+              </property>
+            </item>
+            <item>
+              <property name="text">
+                <string>Stereo</string>
+              </property>
+            </item>
+            <item>
+              <property name="text">
+                <string>Surround</string>
+              </property>
+            </item>
+          </widget>
         </item>
        </layout>
       </item>
@@ -148,6 +178,17 @@
          </item>
         </layout>
        </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="mute_layout">
+         <item>
+           <widget class="QCheckBox" name="toggle_background_mute">
+             <property name="text">
+               <string>Mute audio when in background</string>
+             </property>
+           </widget>
+         </item>
+       </layout>
       </item>
      </layout>
     </widget>

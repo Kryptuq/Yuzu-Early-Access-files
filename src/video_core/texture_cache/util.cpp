@@ -1075,9 +1075,6 @@ std::optional<OverlapResult> ResolveOverlap(const ImageInfo& new_info, GPUVAddr 
         return std::nullopt;
     }
     if (gpu_addr == overlap.gpu_addr) {
-        if (new_info.num_samples != overlap.info.num_samples) {
-            return std::nullopt;
-        }
         const std::optional solution = ResolveOverlapEqualAddress(new_info, overlap, strict_size);
         if (!solution) {
             return std::nullopt;

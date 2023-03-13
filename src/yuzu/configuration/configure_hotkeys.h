@@ -34,7 +34,7 @@ public:
 
     /**
      * Populates the hotkey list widget using data from the provided registry.
-     * Called everytime the Configure dialog is opened.
+     * Called every time the Configure dialog is opened.
      * @param registry The HotkeyRegistry whose data is used to populate the list.
      */
     void Populate(const HotkeyRegistry& registry);

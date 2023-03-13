@@ -112,7 +112,7 @@ void MultiplayerState::SetNotificationStatus(NotificationStatus status) {
 
 void MultiplayerState::UpdateNotificationStatus() {
     switch (notification_status) {
-    case NotificationStatus::Unitialized:
+    case NotificationStatus::Uninitialized:
         status_icon->setPixmap(QIcon::fromTheme(QStringLiteral("disconnected")).pixmap(16));
         status_text->setText(tr("Not Connected. Click here to find a room!"));
         leave_room->setEnabled(false);
