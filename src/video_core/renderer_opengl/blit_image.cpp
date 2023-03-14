@@ -22,7 +22,7 @@ BlitImageHelper::~BlitImageHelper() = default;
 void BlitImageHelper::BlitColor(GLuint dst_framebuffer, GLuint src_image_view, GLuint src_sampler,
                                 const Region2D& dst_region, const Region2D& src_region,
                                 const Extent3D& src_size) {
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     glDisable(GL_COLOR_LOGIC_OP);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
@@ -31,7 +31,6 @@ void BlitImageHelper::BlitColor(GLuint dst_framebuffer, GLuint src_image_view, G
     glDisable(GL_ALPHA_TEST);
     glDisablei(GL_BLEND, 0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glCullFace(GL_BACK);
     glFrontFace(GL_CW);
     glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthRangeIndexed(0, 0.0, 0.0);

@@ -67,7 +67,7 @@
         <item>
          <widget class="QLabel" name="mode_label">
           <property name="text">
-           <string>Sound Ouput Mode:</string>
+           <string>Sound Output Mode:</string>
           </property>
          </widget>
         </item>

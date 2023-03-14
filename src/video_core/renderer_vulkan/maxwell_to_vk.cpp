@@ -166,7 +166,7 @@ struct FormatTuple {
     {VK_FORMAT_R16G16_UINT, Attachable | Storage},             // R16G16_UINT
     {VK_FORMAT_R16G16_SINT, Attachable | Storage},             // R16G16_SINT
     {VK_FORMAT_R16G16_SNORM, Attachable | Storage},            // R16G16_SNORM
-    {VK_FORMAT_UNDEFINED},                                     // R32G32B32_FLOAT
+    {VK_FORMAT_R32G32B32_SFLOAT},                              // R32G32B32_FLOAT
     {VK_FORMAT_A8B8G8R8_SRGB_PACK32, Attachable},              // A8B8G8R8_SRGB
     {VK_FORMAT_R8G8_UNORM, Attachable | Storage},              // R8G8_UNORM
     {VK_FORMAT_R8G8_SNORM, Attachable | Storage},              // R8G8_SNORM
@@ -234,11 +234,6 @@ FormatInfo SurfaceFormat(const Device& device, FormatType format_type, bool with
                          PixelFormat pixel_format) {
     ASSERT(static_cast<size_t>(pixel_format) < std::size(tex_format_tuples));
     FormatTuple tuple = tex_format_tuples[static_cast<size_t>(pixel_format)];
-    if (tuple.format == VK_FORMAT_UNDEFINED) {
-        UNIMPLEMENTED_MSG("Unimplemented texture format with pixel format={}", pixel_format);
-        return FormatInfo{VK_FORMAT_A8B8G8R8_UNORM_PACK32, true, true};
-    }
-
     // Use A8B8G8R8_UNORM on hardware that doesn't support ASTC natively
     if (!device.IsOptimalAstcSupported() && VideoCore::Surface::IsPixelFormatASTC(pixel_format)) {
         const bool is_srgb = with_srgb && VideoCore::Surface::IsPixelFormatSRGB(pixel_format);

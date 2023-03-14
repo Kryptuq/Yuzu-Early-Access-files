@@ -54,16 +54,17 @@ void ConfigureAudio::SetConfiguration() {
         if (Settings::values.volume.UsingGlobal()) {
             ui->volume_combo_box->setCurrentIndex(0);
             ui->volume_slider->setEnabled(false);
-            ui->combo_sound->setCurrentIndex(Settings::values.sound_index.GetValue());
         } else {
             ui->volume_combo_box->setCurrentIndex(1);
             ui->volume_slider->setEnabled(true);
-            ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
         }
-        ConfigurationShared::SetHighlight(ui->volume_layout,
-                                          !Settings::values.volume.UsingGlobal());
+        ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
         ConfigurationShared::SetHighlight(ui->mode_label,
                                           !Settings::values.sound_index.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->volume_layout,
+                                          !Settings::values.volume.UsingGlobal());
+    } else {
+        ui->combo_sound->setCurrentIndex(Settings::values.sound_index.GetValue());
     }
     SetVolumeIndicatorText(ui->volume_slider->sliderPosition());
 }
@@ -182,14 +183,13 @@ void ConfigureAudio::RetranslateUI() {
 
 void ConfigureAudio::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
+        ui->combo_sound->setEnabled(Settings::values.sound_index.UsingGlobal());
         ui->volume_slider->setEnabled(Settings::values.volume.UsingGlobal());
-        // ui->combo_sound->setEnabled(Settings::values.sound_index.UsingGlobal());
-
         return;
     }
 
-    // ConfigurationShared::SetColoredComboBox(ui->combo_sound, ui->label_sound,
-    //                                        Settings::values.sound_index.GetValue(true));
+    ConfigurationShared::SetColoredComboBox(ui->combo_sound, ui->mode_label,
+                                            Settings::values.sound_index.GetValue(true));
 
     connect(ui->volume_combo_box, qOverload<int>(&QComboBox::activated), this, [this](int index) {
         ui->volume_slider->setEnabled(index == 1);

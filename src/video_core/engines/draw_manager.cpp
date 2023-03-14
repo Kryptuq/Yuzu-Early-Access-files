@@ -164,6 +164,7 @@ void DrawManager::DrawEnd(u32 instance_count, bool force_draw) {
         draw_state.index_buffer.count =
             static_cast<u32>(draw_state.inline_index_draw_indexes.size() / 4);
         draw_state.index_buffer.format = Maxwell3D::Regs::IndexFormat::UnsignedInt;
+        maxwell3d->dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         ProcessDraw(true, instance_count);
         draw_state.inline_index_draw_indexes.clear();
         break;

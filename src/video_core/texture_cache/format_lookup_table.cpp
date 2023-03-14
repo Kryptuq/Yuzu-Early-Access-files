@@ -42,15 +42,15 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
                                        ComponentType blue, ComponentType alpha,
                                        bool is_srgb) noexcept {
     switch (Hash(format, red, green, blue, alpha, is_srgb)) {
-    case Hash(TextureFormat::A8R8G8B8, UNORM):
+    case Hash(TextureFormat::A8B8G8R8, UNORM):
         return PixelFormat::A8B8G8R8_UNORM;
-    case Hash(TextureFormat::A8R8G8B8, SNORM):
+    case Hash(TextureFormat::A8B8G8R8, SNORM):
         return PixelFormat::A8B8G8R8_SNORM;
-    case Hash(TextureFormat::A8R8G8B8, UINT):
+    case Hash(TextureFormat::A8B8G8R8, UINT):
         return PixelFormat::A8B8G8R8_UINT;
-    case Hash(TextureFormat::A8R8G8B8, SINT):
+    case Hash(TextureFormat::A8B8G8R8, SINT):
         return PixelFormat::A8B8G8R8_SINT;
-    case Hash(TextureFormat::A8R8G8B8, UNORM, SRGB):
+    case Hash(TextureFormat::A8B8G8R8, UNORM, SRGB):
         return PixelFormat::A8B8G8R8_SRGB;
     case Hash(TextureFormat::B5G6R5, UNORM):
         return PixelFormat::B5G6R5_UNORM;
@@ -74,13 +74,13 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
         return PixelFormat::R8_UINT;
     case Hash(TextureFormat::R8, SINT):
         return PixelFormat::R8_SINT;
-    case Hash(TextureFormat::R8G8, UNORM):
+    case Hash(TextureFormat::G8R8, UNORM):
         return PixelFormat::R8G8_UNORM;
-    case Hash(TextureFormat::R8G8, SNORM):
+    case Hash(TextureFormat::G8R8, SNORM):
         return PixelFormat::R8G8_SNORM;
-    case Hash(TextureFormat::R8G8, UINT):
+    case Hash(TextureFormat::G8R8, UINT):
         return PixelFormat::R8G8_UINT;
-    case Hash(TextureFormat::R8G8, SINT):
+    case Hash(TextureFormat::G8R8, SINT):
         return PixelFormat::R8G8_SINT;
     case Hash(TextureFormat::R16G16B16A16, FLOAT):
         return PixelFormat::R16G16B16A16_FLOAT;
@@ -136,49 +136,49 @@ PixelFormat PixelFormatFromTextureInfo(TextureFormat format, ComponentType red, 
         return PixelFormat::R32_SINT;
     case Hash(TextureFormat::E5B9G9R9, FLOAT):
         return PixelFormat::E5B9G9R9_FLOAT;
-    case Hash(TextureFormat::D32, FLOAT):
+    case Hash(TextureFormat::Z32, FLOAT):
         return PixelFormat::D32_FLOAT;
-    case Hash(TextureFormat::D16, UNORM):
+    case Hash(TextureFormat::Z16, UNORM):
         return PixelFormat::D16_UNORM;
-    case Hash(TextureFormat::S8D24, UINT, UNORM, UNORM, UNORM, LINEAR):
+    case Hash(TextureFormat::Z24S8, UINT, UNORM, UNORM, UNORM, LINEAR):
         return PixelFormat::S8_UINT_D24_UNORM;
-    case Hash(TextureFormat::S8D24, UINT, UNORM, UINT, UINT, LINEAR):
+    case Hash(TextureFormat::Z24S8, UINT, UNORM, UINT, UINT, LINEAR):
         return PixelFormat::S8_UINT_D24_UNORM;
-    case Hash(TextureFormat::R8G24, UINT, UNORM, UNORM, UNORM, LINEAR):
+    case Hash(TextureFormat::G24R8, UINT, UNORM, UNORM, UNORM, LINEAR):
         return PixelFormat::S8_UINT_D24_UNORM;
-    case Hash(TextureFormat::D24S8, UNORM, UINT, UINT, UINT, LINEAR):
+    case Hash(TextureFormat::S8Z24, UNORM, UINT, UINT, UINT, LINEAR):
         return PixelFormat::D24_UNORM_S8_UINT;
-    case Hash(TextureFormat::D32S8, FLOAT, UINT, UNORM, UNORM, LINEAR):
+    case Hash(TextureFormat::Z32_X24S8, FLOAT, UINT, UNORM, UNORM, LINEAR):
         return PixelFormat::D32_FLOAT_S8_UINT;
-    case Hash(TextureFormat::R32_B24G8, FLOAT, UINT, UNORM, UNORM, LINEAR):
+    case Hash(TextureFormat::R32B24G8, FLOAT, UINT, UNORM, UNORM, LINEAR):
         return PixelFormat::D32_FLOAT_S8_UINT;
-    case Hash(TextureFormat::BC1_RGBA, UNORM, LINEAR):
+    case Hash(TextureFormat::DXT1, UNORM, LINEAR):
         return PixelFormat::BC1_RGBA_UNORM;
-    case Hash(TextureFormat::BC1_RGBA, UNORM, SRGB):
+    case Hash(TextureFormat::DXT1, UNORM, SRGB):
         return PixelFormat::BC1_RGBA_SRGB;
-    case Hash(TextureFormat::BC2, UNORM, LINEAR):
+    case Hash(TextureFormat::DXT23, UNORM, LINEAR):
         return PixelFormat::BC2_UNORM;
-    case Hash(TextureFormat::BC2, UNORM, SRGB):
+    case Hash(TextureFormat::DXT23, UNORM, SRGB):
         return PixelFormat::BC2_SRGB;
-    case Hash(TextureFormat::BC3, UNORM, LINEAR):
+    case Hash(TextureFormat::DXT45, UNORM, LINEAR):
         return PixelFormat::BC3_UNORM;
-    case Hash(TextureFormat::BC3, UNORM, SRGB):
+    case Hash(TextureFormat::DXT45, UNORM, SRGB):
         return PixelFormat::BC3_SRGB;
-    case Hash(TextureFormat::BC4, UNORM):
+    case Hash(TextureFormat::DXN1, UNORM):
         return PixelFormat::BC4_UNORM;
-    case Hash(TextureFormat::BC4, SNORM):
+    case Hash(TextureFormat::DXN1, SNORM):
         return PixelFormat::BC4_SNORM;
-    case Hash(TextureFormat::BC5, UNORM):
+    case Hash(TextureFormat::DXN2, UNORM):
         return PixelFormat::BC5_UNORM;
-    case Hash(TextureFormat::BC5, SNORM):
+    case Hash(TextureFormat::DXN2, SNORM):
         return PixelFormat::BC5_SNORM;
-    case Hash(TextureFormat::BC7, UNORM, LINEAR):
+    case Hash(TextureFormat::BC7U, UNORM, LINEAR):
         return PixelFormat::BC7_UNORM;
-    case Hash(TextureFormat::BC7, UNORM, SRGB):
+    case Hash(TextureFormat::BC7U, UNORM, SRGB):
         return PixelFormat::BC7_SRGB;
-    case Hash(TextureFormat::BC6H_SFLOAT, FLOAT):
+    case Hash(TextureFormat::BC6H_S16, FLOAT):
         return PixelFormat::BC6H_SFLOAT;
-    case Hash(TextureFormat::BC6H_UFLOAT, FLOAT):
+    case Hash(TextureFormat::BC6H_U16, FLOAT):
         return PixelFormat::BC6H_UFLOAT;
     case Hash(TextureFormat::ASTC_2D_4X4, UNORM, LINEAR):
         return PixelFormat::ASTC_2D_4X4_UNORM;
