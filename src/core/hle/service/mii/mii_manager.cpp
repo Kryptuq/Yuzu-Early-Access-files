@@ -510,7 +510,7 @@ CharInfo MiiManager::ConvertV3ToCharInfo(const Ver3StoreData& mii_v3) const {
     return mii;
 }
 
-Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
+Ver3StoreData MiiManager::BuildFromStoreData(const CharInfo& mii) const {
     Service::Mii::MiiManager manager;
     Ver3StoreData mii_v3{};
 
@@ -534,16 +534,13 @@ Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
     mii_v3.region_information.character_set.Assign(mii.font_region);
 
     mii_v3.appearance_bits1.face_shape.Assign(mii.faceline_type);
-    mii_v3.appearance_bits1.skin_color.Assign(mii.faceline_color);
     mii_v3.appearance_bits2.wrinkles.Assign(mii.faceline_wrinkle);
     mii_v3.appearance_bits2.makeup.Assign(mii.faceline_make);
 
     mii_v3.hair_style = mii.hair_type;
-    mii_v3.appearance_bits3.hair_color.Assign(mii.hair_color);
     mii_v3.appearance_bits3.flip_hair.Assign(mii.hair_flip);
 
     mii_v3.appearance_bits4.eye_type.Assign(mii.eye_type);
-    mii_v3.appearance_bits4.eye_color.Assign(mii.eye_color);
     mii_v3.appearance_bits4.eye_scale.Assign(mii.eye_scale);
     mii_v3.appearance_bits4.eye_vertical_stretch.Assign(mii.eye_aspect);
     mii_v3.appearance_bits4.eye_rotation.Assign(mii.eye_rotate);
@@ -551,7 +548,6 @@ Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
     mii_v3.appearance_bits4.eye_y_position.Assign(mii.eye_y);
 
     mii_v3.appearance_bits5.eyebrow_style.Assign(mii.eyebrow_type);
-    mii_v3.appearance_bits5.eyebrow_color.Assign(mii.eyebrow_color);
     mii_v3.appearance_bits5.eyebrow_scale.Assign(mii.eyebrow_scale);
     mii_v3.appearance_bits5.eyebrow_yscale.Assign(mii.eyebrow_aspect);
     mii_v3.appearance_bits5.eyebrow_rotation.Assign(mii.eyebrow_rotate);
@@ -563,7 +559,6 @@ Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
     mii_v3.appearance_bits6.nose_y_position.Assign(mii.nose_y);
 
     mii_v3.appearance_bits7.mouth_type.Assign(mii.mouth_type);
-    mii_v3.appearance_bits7.mouth_color.Assign(mii.mouth_color);
     mii_v3.appearance_bits7.mouth_scale.Assign(mii.mouth_scale);
     mii_v3.appearance_bits7.mouth_horizontal_stretch.Assign(mii.mouth_aspect);
     mii_v3.appearance_bits8.mouth_y_position.Assign(mii.mouth_y);
@@ -573,10 +568,7 @@ Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
     mii_v3.appearance_bits9.mustache_y_position.Assign(mii.mustache_y);
 
     mii_v3.appearance_bits9.bear_type.Assign(mii.beard_type);
-    mii_v3.appearance_bits9.facial_hair_color.Assign(mii.beard_color);
 
-    mii_v3.appearance_bits10.glasses_type.Assign(mii.glasses_type);
-    mii_v3.appearance_bits10.glasses_color.Assign(mii.glasses_color);
     mii_v3.appearance_bits10.glasses_scale.Assign(mii.glasses_scale);
     mii_v3.appearance_bits10.glasses_y_position.Assign(mii.glasses_y);
 
@@ -585,9 +577,34 @@ Ver3StoreData MiiManager::ConvertCharInfoToV3(const CharInfo& mii) const {
     mii_v3.appearance_bits11.mole_x_position.Assign(mii.mole_x);
     mii_v3.appearance_bits11.mole_y_position.Assign(mii.mole_y);
 
+    // These types are converted to V3 from a table
+    mii_v3.appearance_bits1.skin_color.Assign(Ver3FacelineColorTable[mii.faceline_color]);
+    mii_v3.appearance_bits3.hair_color.Assign(Ver3HairColorTable[mii.hair_color]);
+    mii_v3.appearance_bits4.eye_color.Assign(Ver3EyeColorTable[mii.eye_color]);
+    mii_v3.appearance_bits5.eyebrow_color.Assign(Ver3HairColorTable[mii.eyebrow_color]);
+    mii_v3.appearance_bits7.mouth_color.Assign(Ver3MouthlineColorTable[mii.mouth_color]);
+    mii_v3.appearance_bits9.facial_hair_color.Assign(Ver3HairColorTable[mii.beard_color]);
+    mii_v3.appearance_bits10.glasses_color.Assign(Ver3GlassColorTable[mii.glasses_color]);
+    mii_v3.appearance_bits10.glasses_type.Assign(Ver3GlassTypeTable[mii.glasses_type]);
+
+    mii_v3.crc = GenerateCrc16(&mii_v3, sizeof(Ver3StoreData) - sizeof(u16));
+
     // TODO: Validate mii_v3 data
 
     return mii_v3;
+}
+
+NfpStoreDataExtension MiiManager::SetFromStoreData(const CharInfo& mii) const {
+    return {
+        .faceline_color = static_cast<u8>(mii.faceline_color & 0xf),
+        .hair_color = static_cast<u8>(mii.hair_color & 0x7f),
+        .eye_color = static_cast<u8>(mii.eyebrow_color & 0x7f),
+        .eyebrow_color = static_cast<u8>(mii.eyebrow_color & 0x7f),
+        .mouth_color = static_cast<u8>(mii.mouth_color & 0x7f),
+        .beard_color = static_cast<u8>(mii.beard_color & 0x7f),
+        .glass_color = static_cast<u8>(mii.glasses_color & 0x7f),
+        .glass_type = static_cast<u8>(mii.glasses_type & 0x1f),
+    };
 }
 
 bool MiiManager::ValidateV3Info(const Ver3StoreData& mii_v3) const {

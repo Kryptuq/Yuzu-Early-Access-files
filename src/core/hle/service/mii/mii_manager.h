@@ -23,10 +23,15 @@ public:
     CharInfo BuildRandom(Age age, Gender gender, Race race);
     CharInfo BuildDefault(std::size_t index);
     CharInfo ConvertV3ToCharInfo(const Ver3StoreData& mii_v3) const;
-    Ver3StoreData ConvertCharInfoToV3(const CharInfo& mii) const;
     bool ValidateV3Info(const Ver3StoreData& mii_v3) const;
     ResultVal<std::vector<MiiInfoElement>> GetDefault(SourceFlag source_flag);
     Result GetIndex(const CharInfo& info, u32& index);
+
+    // This is nn::mii::detail::Ver::StoreDataRaw::BuildFromStoreData
+    Ver3StoreData BuildFromStoreData(const CharInfo& mii) const;
+
+    // This is nn::mii::detail::NfpStoreDataExtentionRaw::SetFromStoreData
+    NfpStoreDataExtension SetFromStoreData(const CharInfo& mii) const;
 
 private:
     const Common::UUID user_id{};

@@ -448,7 +448,7 @@ Result NfpDevice::DeleteRegisterInfo() {
     rng.GenerateRandomBytes(&tag_data.unknown, sizeof(u8));
     rng.GenerateRandomBytes(&tag_data.unknown2[0], sizeof(u32));
     rng.GenerateRandomBytes(&tag_data.unknown2[1], sizeof(u32));
-    rng.GenerateRandomBytes(&tag_data.application_area_crc, sizeof(u32));
+    rng.GenerateRandomBytes(&tag_data.register_info_crc, sizeof(u32));
     rng.GenerateRandomBytes(&tag_data.settings.init_date, sizeof(u32));
     tag_data.settings.settings.font_region.Assign(0);
     tag_data.settings.settings.amiibo_initialized.Assign(0);
@@ -471,6 +471,7 @@ Result NfpDevice::SetRegisterInfoPrivate(const AmiiboName& amiibo_name) {
     }
 
     Service::Mii::MiiManager manager;
+    const auto mii = manager.BuildDefault(0);
     auto& settings = tag_data.settings;
 
     if (tag_data.settings.settings.amiibo_initialized == 0) {
@@ -479,16 +480,15 @@ Result NfpDevice::SetRegisterInfoPrivate(const AmiiboName& amiibo_name) {
     }
 
     SetAmiiboName(settings, amiibo_name);
-    tag_data.owner_mii = manager.ConvertCharInfoToV3(manager.BuildDefault(0));
+    tag_data.owner_mii = manager.BuildFromStoreData(mii);
+    tag_data.mii_extension = manager.SetFromStoreData(mii);
     tag_data.unknown = 0;
-    tag_data.unknown2[6] = 0;
+    tag_data.unknown2 = {};
     settings.country_code_id = 0;
     settings.settings.font_region.Assign(0);
     settings.settings.amiibo_initialized.Assign(1);
 
-    // TODO: this is a mix of tag.file input
-    std::array<u8, 0x7e> unknown_input{};
-    tag_data.application_area_crc = CalculateCrc(unknown_input);
+    UpdateRegisterInfoCrc();
 
     return Flush();
 }
@@ -685,6 +685,11 @@ Result NfpDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
         return WrongDeviceState;
     }
 
+    if (is_app_area_open) {
+        LOG_ERROR(Service_NFP, "Application area is open");
+        return WrongDeviceState;
+    }
+
     if (mount_target == MountTarget::None || mount_target == MountTarget::Rom) {
         LOG_ERROR(Service_NFP, "Amiibo is read only", device_state);
         return WrongDeviceState;
@@ -715,10 +720,9 @@ Result NfpDevice::RecreateApplicationArea(u32 access_id, std::span<const u8> dat
     tag_data.settings.settings.appdata_initialized.Assign(1);
     tag_data.application_area_id = access_id;
     tag_data.unknown = {};
+    tag_data.unknown2 = {};
 
-    // TODO: this is a mix of tag_data input
-    std::array<u8, 0x7e> unknown_input{};
-    tag_data.application_area_crc = CalculateCrc(unknown_input);
+    UpdateRegisterInfoCrc();
 
     return Flush();
 }
@@ -752,6 +756,10 @@ Result NfpDevice::DeleteApplicationArea() {
     rng.GenerateRandomBytes(&tag_data.application_id_byte, sizeof(u8));
     tag_data.settings.settings.appdata_initialized.Assign(0);
     tag_data.unknown = {};
+    tag_data.unknown2 = {};
+    is_app_area_open = false;
+
+    UpdateRegisterInfoCrc();
 
     return Flush();
 }
@@ -838,6 +846,31 @@ void NfpDevice::UpdateSettingsCrc() {
     settings.crc = CalculateCrc(unknown_input);
 }
 
+void NfpDevice::UpdateRegisterInfoCrc() {
+#pragma pack(push, 1)
+    struct CrcData {
+        Mii::Ver3StoreData mii;
+        u8 application_id_byte;
+        u8 unknown;
+        Mii::NfpStoreDataExtension mii_extension;
+        std::array<u32, 0x5> unknown2;
+    };
+    static_assert(sizeof(CrcData) == 0x7e, "CrcData is an invalid size");
+#pragma pack(pop)
+
+    const CrcData crc_data{
+        .mii = tag_data.owner_mii,
+        .application_id_byte = tag_data.application_id_byte,
+        .unknown = tag_data.unknown,
+        .mii_extension = tag_data.mii_extension,
+        .unknown2 = tag_data.unknown2,
+    };
+
+    std::array<u8, sizeof(CrcData)> data{};
+    memcpy(data.data(), &crc_data, sizeof(CrcData));
+    tag_data.register_info_crc = CalculateCrc(data);
+}
+
 u32 NfpDevice::CalculateCrc(std::span<const u8> data) {
     constexpr u32 magic = 0xedb88320;
     u32 crc = 0xffffffff;
@@ -847,17 +880,15 @@ u32 NfpDevice::CalculateCrc(std::span<const u8> data) {
     }
 
     for (u8 input : data) {
-        u32 temp = (crc ^ input) >> 1;
-        if (((crc ^ input) & 1) != 0) {
-            temp = temp ^ magic;
-        }
-
-        for (std::size_t step = 0; step < 7; ++step) {
-            crc = temp >> 1;
-            if ((temp & 1) != 0) {
-                crc = temp >> 1 ^ magic;
-            }
-        }
+        crc ^= input;
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
+        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
     }
 
     return ~crc;

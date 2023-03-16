@@ -88,8 +88,9 @@ NTAG215File NfcDataToEncodedData(const EncryptedNTAG215File& nfc_data) {
     encoded_data.application_area_id = nfc_data.user_memory.application_area_id;
     encoded_data.application_id_byte = nfc_data.user_memory.application_id_byte;
     encoded_data.unknown = nfc_data.user_memory.unknown;
+    encoded_data.mii_extension = nfc_data.user_memory.mii_extension;
     encoded_data.unknown2 = nfc_data.user_memory.unknown2;
-    encoded_data.application_area_crc = nfc_data.user_memory.application_area_crc;
+    encoded_data.register_info_crc = nfc_data.user_memory.register_info_crc;
     encoded_data.application_area = nfc_data.user_memory.application_area;
     encoded_data.hmac_tag = nfc_data.user_memory.hmac_tag;
     encoded_data.lock_bytes = nfc_data.uuid.lock_bytes;
@@ -122,8 +123,9 @@ EncryptedNTAG215File EncodedDataToNfcData(const NTAG215File& encoded_data) {
     nfc_data.user_memory.application_area_id = encoded_data.application_area_id;
     nfc_data.user_memory.application_id_byte = encoded_data.application_id_byte;
     nfc_data.user_memory.unknown = encoded_data.unknown;
+    nfc_data.user_memory.mii_extension = encoded_data.mii_extension;
     nfc_data.user_memory.unknown2 = encoded_data.unknown2;
-    nfc_data.user_memory.application_area_crc = encoded_data.application_area_crc;
+    nfc_data.user_memory.register_info_crc = encoded_data.register_info_crc;
     nfc_data.user_memory.application_area = encoded_data.application_area;
     nfc_data.user_memory.hmac_tag = encoded_data.hmac_tag;
     nfc_data.user_memory.model_info = encoded_data.model_info;

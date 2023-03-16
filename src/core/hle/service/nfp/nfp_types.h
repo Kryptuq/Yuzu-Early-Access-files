@@ -259,8 +259,9 @@ struct EncryptedAmiiboFile {
     u32_be application_area_id;            // Encrypted Game id
     u8 application_id_byte;
     u8 unknown;
-    std::array<u32, 0x7> unknown2;
-    u32_be application_area_crc;
+    Service::Mii::NfpStoreDataExtension mii_extension;
+    std::array<u32, 0x5> unknown2;
+    u32_be register_info_crc;
     ApplicationArea application_area; // Encrypted Game data
 };
 static_assert(sizeof(EncryptedAmiiboFile) == 0x1F8, "AmiiboFile is an invalid size");
@@ -280,8 +281,9 @@ struct NTAG215File {
     u32_be application_area_id;
     u8 application_id_byte;
     u8 unknown;
-    std::array<u32, 0x7> unknown2;
-    u32_be application_area_crc;
+    Service::Mii::NfpStoreDataExtension mii_extension;
+    std::array<u32, 0x5> unknown2;
+    u32_be register_info_crc;
     ApplicationArea application_area; // Encrypted Game data
     HashData hmac_tag;                // Hash
     UniqueSerialNumber uid;           // Unique serial number
