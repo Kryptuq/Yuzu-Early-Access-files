@@ -14,7 +14,7 @@ namespace Tegra::Texture {
 
 namespace {
 
-constexpr std::array<float, 256> SRGB_CONVERSION_LUT = {
+[[maybe_unused]] constexpr std::array<float, 256> SRGB_CONVERSION_LUT = {
     0.000000f, 0.000000f, 0.000000f, 0.000012f, 0.000021f, 0.000033f, 0.000046f, 0.000062f,
     0.000081f, 0.000102f, 0.000125f, 0.000151f, 0.000181f, 0.000214f, 0.000251f, 0.000293f,
     0.000338f, 0.000388f, 0.000443f, 0.000503f, 0.000568f, 0.000639f, 0.000715f, 0.000798f,
@@ -52,11 +52,13 @@ constexpr std::array<float, 256> SRGB_CONVERSION_LUT = {
 } // Anonymous namespace
 
 std::array<float, 4> TSCEntry::BorderColor() const noexcept {
-    if (!srgb_conversion) {
-        return border_color;
-    }
-    return {SRGB_CONVERSION_LUT[srgb_border_color_r], SRGB_CONVERSION_LUT[srgb_border_color_g],
-            SRGB_CONVERSION_LUT[srgb_border_color_b], border_color[3]};
+    // TODO: Handle SRGB correctly. Using this breaks shadows in some games (Xenoblade).
+    // if (!srgb_conversion) {
+    //    return border_color;
+    //}
+    // return {SRGB_CONVERSION_LUT[srgb_border_color_r], SRGB_CONVERSION_LUT[srgb_border_color_g],
+    //        SRGB_CONVERSION_LUT[srgb_border_color_b], border_color[3]};
+    return border_color;
 }
 
 float TSCEntry::MaxAnisotropy() const noexcept {

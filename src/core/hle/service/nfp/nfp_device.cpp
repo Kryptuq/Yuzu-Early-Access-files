@@ -3,6 +3,17 @@
 
 #include <array>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4701) // Potentially uninitialized local variable 'result' used
+#endif
+
+#include <boost/crc.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #include "common/input.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
@@ -843,7 +854,9 @@ void NfpDevice::UpdateSettingsCrc() {
 
     // TODO: this reads data from a global, find what it is
     std::array<u8, 8> unknown_input{};
-    settings.crc = CalculateCrc(unknown_input);
+    boost::crc_32_type crc;
+    crc.process_bytes(&unknown_input, sizeof(unknown_input));
+    settings.crc = crc.checksum();
 }
 
 void NfpDevice::UpdateRegisterInfoCrc() {
@@ -866,32 +879,9 @@ void NfpDevice::UpdateRegisterInfoCrc() {
         .unknown2 = tag_data.unknown2,
     };
 
-    std::array<u8, sizeof(CrcData)> data{};
-    memcpy(data.data(), &crc_data, sizeof(CrcData));
-    tag_data.register_info_crc = CalculateCrc(data);
-}
-
-u32 NfpDevice::CalculateCrc(std::span<const u8> data) {
-    constexpr u32 magic = 0xedb88320;
-    u32 crc = 0xffffffff;
-
-    if (data.size() == 0) {
-        return 0;
-    }
-
-    for (u8 input : data) {
-        crc ^= input;
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-        crc = crc >> 1 ^ ((crc & 1) ? magic : 0x0);
-    }
-
-    return ~crc;
+    boost::crc_32_type crc;
+    crc.process_bytes(&crc_data, sizeof(CrcData));
+    tag_data.register_info_crc = crc.checksum();
 }
 
 } // namespace Service::NFP
