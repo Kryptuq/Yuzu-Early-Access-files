@@ -9,9 +9,10 @@
 #include <memory>
 #include <mutex>
 #include <new>
-#include <stop_token>
 #include <type_traits>
 #include <utility>
+
+#include "common/polyfill_thread.h"
 
 namespace Common {
 
@@ -78,7 +79,7 @@ public:
         auto& slot = slots[idx(tail)];
         if (!slot.turn.test()) {
             std::unique_lock lock{cv_mutex};
-            cv.wait(lock, stop, [&slot] { return slot.turn.test(); });
+            Common::CondvarWait(cv, lock, stop, [&slot] { return slot.turn.test(); });
         }
         v = slot.move();
         slot.destroy();

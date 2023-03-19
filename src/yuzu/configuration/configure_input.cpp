@@ -189,6 +189,8 @@ QList<QWidget*> ConfigureInput::GetSubTabs() const {
 }
 
 void ConfigureInput::ApplyConfiguration() {
+    const bool was_global = Settings::values.players.UsingGlobal();
+    Settings::values.players.SetGlobal(true);
     for (auto* controller : player_controllers) {
         controller->ApplyConfiguration();
     }
@@ -201,6 +203,7 @@ void ConfigureInput::ApplyConfiguration() {
 
     Settings::values.vibration_enabled.SetValue(ui->vibrationGroup->isChecked());
     Settings::values.motion_enabled.SetValue(ui->motionGroup->isChecked());
+    Settings::values.players.SetGlobal(was_global);
 }
 
 void ConfigureInput::changeEvent(QEvent* event) {
