@@ -17,7 +17,7 @@ Result SendSyncRequest(Core::System& system, Handle handle) {
         GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KClientSession>(handle);
     R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
 
-    LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
+    LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}", handle);
 
     R_RETURN(session->SendSyncRequest());
 }

@@ -36,12 +36,12 @@ bool SplitPath(const std::string& full_path, std::string* _pPath, std::string* _
 [[nodiscard]] std::string ReplaceAll(std::string result, const std::string& src,
                                      const std::string& dest);
 
-[[nodiscard]] std::string UTF16ToUTF8(const std::u16string& input);
-[[nodiscard]] std::u16string UTF8ToUTF16(const std::string& input);
+[[nodiscard]] std::string UTF16ToUTF8(std::u16string_view input);
+[[nodiscard]] std::u16string UTF8ToUTF16(std::string_view input);
 
 #ifdef _WIN32
-[[nodiscard]] std::string UTF16ToUTF8(const std::wstring& input);
-[[nodiscard]] std::wstring UTF8ToUTF16W(const std::string& str);
+[[nodiscard]] std::string UTF16ToUTF8(std::wstring_view input);
+[[nodiscard]] std::wstring UTF8ToUTF16W(std::string_view str);
 
 #endif
 

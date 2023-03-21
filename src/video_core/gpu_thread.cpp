@@ -59,9 +59,6 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
             state.cv.notify_all();
         }
     }
-
-    // Drain the queue.
-    state.queue.Clear();
 }
 
 ThreadManager::ThreadManager(Core::System& system_, bool is_async_)
@@ -121,7 +118,7 @@ u64 ThreadManager::PushCommand(CommandData&& command_data, bool block) {
 
     std::unique_lock lk(state.write_lock);
     const u64 fence{++state.last_fence};
-    state.queue.Push(std::move(command_data), fence, block);
+    state.queue.EmplaceWait(std::move(command_data), fence, block);
 
     if (block) {
         Common::CondvarWait(state.cv, lk, thread.get_stop_token(), [this, fence] {

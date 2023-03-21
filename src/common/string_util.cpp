@@ -125,18 +125,18 @@ std::string ReplaceAll(std::string result, const std::string& src, const std::st
     return result;
 }
 
-std::string UTF16ToUTF8(const std::u16string& input) {
+std::string UTF16ToUTF8(std::u16string_view input) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    return convert.to_bytes(input);
+    return convert.to_bytes(input.data(), input.data() + input.size());
 }
 
-std::u16string UTF8ToUTF16(const std::string& input) {
+std::u16string UTF8ToUTF16(std::string_view input) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-    return convert.from_bytes(input);
+    return convert.from_bytes(input.data(), input.data() + input.size());
 }
 
 #ifdef _WIN32
-static std::wstring CPToUTF16(u32 code_page, const std::string& input) {
+static std::wstring CPToUTF16(u32 code_page, std::string_view input) {
     const auto size =
         MultiByteToWideChar(code_page, 0, input.data(), static_cast<int>(input.size()), nullptr, 0);
 
@@ -154,7 +154,7 @@ static std::wstring CPToUTF16(u32 code_page, const std::string& input) {
     return output;
 }
 
-std::string UTF16ToUTF8(const std::wstring& input) {
+std::string UTF16ToUTF8(std::wstring_view input) {
     const auto size = WideCharToMultiByte(CP_UTF8, 0, input.data(), static_cast<int>(input.size()),
                                           nullptr, 0, nullptr, nullptr);
     if (size == 0) {
@@ -172,7 +172,7 @@ std::string UTF16ToUTF8(const std::wstring& input) {
     return output;
 }
 
-std::wstring UTF8ToUTF16W(const std::string& input) {
+std::wstring UTF8ToUTF16W(std::string_view input) {
     return CPToUTF16(CP_UTF8, input);
 }
 

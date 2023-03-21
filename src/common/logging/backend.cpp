@@ -207,7 +207,7 @@ public:
         if (!filter.CheckMessage(log_class, log_level)) {
             return;
         }
-        message_queue.Push(
+        message_queue.EmplaceWait(
             CreateEntry(log_class, log_level, filename, line_num, function, std::move(message)));
     }
 
