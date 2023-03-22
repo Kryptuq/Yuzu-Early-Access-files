@@ -8,7 +8,7 @@
 namespace Kernel::Svc {
 namespace {
 
-constexpr bool IsValidAddressRange(VAddr address, u64 size) {
+constexpr bool IsValidAddressRange(u64 address, u64 size) {
     return address + size > address;
 }
 
@@ -26,7 +26,7 @@ constexpr bool IsValidProcessMemoryPermission(Svc::MemoryPermission perm) {
 
 } // namespace
 
-Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, VAddr address,
+Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, u64 address,
                                   u64 size, Svc::MemoryPermission perm) {
     LOG_TRACE(Kernel_SVC,
               "called, process_handle=0x{:X}, addr=0x{:X}, size=0x{:X}, permissions=0x{:08X}",
@@ -56,8 +56,8 @@ Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, V
     R_RETURN(page_table.SetProcessMemoryPermission(address, size, perm));
 }
 
-Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
-                        VAddr src_address, u64 size) {
+Result MapProcessMemory(Core::System& system, u64 dst_address, Handle process_handle,
+                        u64 src_address, u64 size) {
     LOG_TRACE(Kernel_SVC,
               "called, dst_address=0x{:X}, process_handle=0x{:X}, src_address=0x{:X}, size=0x{:X}",
               dst_address, process_handle, src_address, size);
@@ -97,8 +97,8 @@ Result MapProcessMemory(Core::System& system, VAddr dst_address, Handle process_
                                  KMemoryPermission::UserReadWrite));
 }
 
-Result UnmapProcessMemory(Core::System& system, VAddr dst_address, Handle process_handle,
-                          VAddr src_address, u64 size) {
+Result UnmapProcessMemory(Core::System& system, u64 dst_address, Handle process_handle,
+                          u64 src_address, u64 size) {
     LOG_TRACE(Kernel_SVC,
               "called, dst_address=0x{:X}, process_handle=0x{:X}, src_address=0x{:X}, size=0x{:X}",
               dst_address, process_handle, src_address, size);

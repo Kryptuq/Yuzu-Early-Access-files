@@ -61,7 +61,7 @@ size_t KSystemControl::Init::GetIntendedMemorySize() {
     }
 }
 
-PAddr KSystemControl::Init::GetKernelPhysicalBaseAddress(u64 base_address) {
+KPhysicalAddress KSystemControl::Init::GetKernelPhysicalBaseAddress(KPhysicalAddress base_address) {
     const size_t real_dram_size = KSystemControl::Init::GetRealMemorySize();
     const size_t intended_dram_size = KSystemControl::Init::GetIntendedMemorySize();
     if (intended_dram_size * 2 < real_dram_size) {

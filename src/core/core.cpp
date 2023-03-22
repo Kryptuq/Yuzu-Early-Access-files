@@ -564,7 +564,7 @@ void System::InvalidateCpuInstructionCaches() {
     impl->kernel.InvalidateAllInstructionCaches();
 }
 
-void System::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
+void System::InvalidateCpuInstructionCacheRange(u64 addr, std::size_t size) {
     impl->kernel.InvalidateCpuInstructionCacheRange(addr, size);
 }
 
@@ -794,7 +794,7 @@ FileSys::VirtualFilesystem System::GetFilesystem() const {
 }
 
 void System::RegisterCheatList(const std::vector<Memory::CheatEntry>& list,
-                               const std::array<u8, 32>& build_id, VAddr main_region_begin,
+                               const std::array<u8, 32>& build_id, u64 main_region_begin,
                                u64 main_region_size) {
     impl->cheat_engine = std::make_unique<Memory::CheatEngine>(*this, list, build_id);
     impl->cheat_engine->SetMainMemoryParameters(main_region_begin, main_region_size);

@@ -201,17 +201,17 @@ void CheatEngine::Initialize() {
 
     const auto& page_table = system.ApplicationProcess()->PageTable();
     metadata.heap_extents = {
-        .base = page_table.GetHeapRegionStart(),
+        .base = GetInteger(page_table.GetHeapRegionStart()),
         .size = page_table.GetHeapRegionSize(),
     };
 
     metadata.address_space_extents = {
-        .base = page_table.GetAddressSpaceStart(),
+        .base = GetInteger(page_table.GetAddressSpaceStart()),
         .size = page_table.GetAddressSpaceSize(),
     };
 
     metadata.alias_extents = {
-        .base = page_table.GetAliasCodeRegionStart(),
+        .base = GetInteger(page_table.GetAliasCodeRegionStart()),
         .size = page_table.GetAliasCodeRegionSize(),
     };
 

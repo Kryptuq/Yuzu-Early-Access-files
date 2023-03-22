@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "common/alignment.h"
-#include "common/common_types.h"
 #include "core/hle/kernel/k_page_bitmap.h"
 #include "core/hle/kernel/k_spin_lock.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/memory_types.h"
 #include "core/hle/kernel/svc_results.h"
 
@@ -26,23 +26,23 @@ public:
     KDynamicPageManager() = default;
 
     template <typename T>
-    T* GetPointer(VAddr addr) {
+    T* GetPointer(KVirtualAddress addr) {
         return reinterpret_cast<T*>(m_backing_memory.data() + (addr - m_address));
     }
 
     template <typename T>
-    const T* GetPointer(VAddr addr) const {
+    const T* GetPointer(KVirtualAddress addr) const {
         return reinterpret_cast<T*>(m_backing_memory.data() + (addr - m_address));
     }
 
-    Result Initialize(VAddr memory, size_t size, size_t align) {
+    Result Initialize(KVirtualAddress memory, size_t size, size_t align) {
         // We need to have positive size.
         R_UNLESS(size > 0, ResultOutOfMemory);
         m_backing_memory.resize(size);
 
         // Set addresses.
         m_address = memory;
-        m_aligned_address = Common::AlignDown(memory, align);
+        m_aligned_address = Common::AlignDown(GetInteger(memory), align);
 
         // Calculate extents.
         const size_t managed_size = m_address + size - m_aligned_address;
@@ -79,7 +79,7 @@ public:
         R_SUCCEED();
     }
 
-    VAddr GetAddress() const {
+    KVirtualAddress GetAddress() const {
         return m_address;
     }
     size_t GetSize() const {
@@ -145,7 +145,8 @@ public:
         KScopedSpinLock lk(m_lock);
 
         // Set the bit for the free page.
-        size_t offset = (reinterpret_cast<uintptr_t>(pb) - m_aligned_address) / sizeof(PageBuffer);
+        size_t offset =
+            (reinterpret_cast<uint64_t>(pb) - GetInteger(m_aligned_address)) / sizeof(PageBuffer);
         m_page_bitmap.SetBit(offset);
 
         // Decrement our used count.
@@ -158,8 +159,8 @@ private:
     size_t m_used{};
     size_t m_peak{};
     size_t m_count{};
-    VAddr m_address{};
-    VAddr m_aligned_address{};
+    KVirtualAddress m_address{};
+    KVirtualAddress m_aligned_address{};
     size_t m_size{};
 
     // TODO(bunnei): Back by host memory until we emulate kernel virtual address space.

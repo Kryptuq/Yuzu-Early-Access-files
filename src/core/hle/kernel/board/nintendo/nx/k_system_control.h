@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "common/common_types.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel::Board::Nintendo::Nx {
 
@@ -18,7 +18,7 @@ public:
         // Initialization.
         static std::size_t GetRealMemorySize();
         static std::size_t GetIntendedMemorySize();
-        static PAddr GetKernelPhysicalBaseAddress(u64 base_address);
+        static KPhysicalAddress GetKernelPhysicalBaseAddress(KPhysicalAddress base_address);
         static bool ShouldIncreaseThreadResourceLimit();
         static std::size_t GetApplicationPoolSize();
         static std::size_t GetAppletPoolSize();

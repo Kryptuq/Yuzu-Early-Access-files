@@ -20,7 +20,7 @@ void Break(Core::System& system, BreakReason reason, u64 info1, u64 info2) {
     bool has_dumped_buffer{};
     std::vector<u8> debug_buffer;
 
-    const auto handle_debug_buffer = [&](VAddr addr, u64 sz) {
+    const auto handle_debug_buffer = [&](u64 addr, u64 sz) {
         if (sz == 0 || addr == 0 || has_dumped_buffer) {
             return;
         }

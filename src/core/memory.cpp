@@ -35,31 +35,35 @@ struct Memory::Impl {
         system.ArmInterface(core_id).PageTableChanged(*current_page_table, address_space_width);
     }
 
-    void MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target) {
+    void MapMemoryRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size,
+                         Common::PhysicalAddress target) {
         ASSERT_MSG((size & YUZU_PAGEMASK) == 0, "non-page aligned size: {:016X}", size);
-        ASSERT_MSG((base & YUZU_PAGEMASK) == 0, "non-page aligned base: {:016X}", base);
-        ASSERT_MSG(target >= DramMemoryMap::Base, "Out of bounds target: {:016X}", target);
+        ASSERT_MSG((base & YUZU_PAGEMASK) == 0, "non-page aligned base: {:016X}", GetInteger(base));
+        ASSERT_MSG(target >= DramMemoryMap::Base, "Out of bounds target: {:016X}",
+                   GetInteger(target));
         MapPages(page_table, base / YUZU_PAGESIZE, size / YUZU_PAGESIZE, target,
                  Common::PageType::Memory);
 
         if (Settings::IsFastmemEnabled()) {
-            system.DeviceMemory().buffer.Map(base, target - DramMemoryMap::Base, size);
+            system.DeviceMemory().buffer.Map(GetInteger(base),
+                                             GetInteger(target) - DramMemoryMap::Base, size);
         }
     }
 
-    void UnmapRegion(Common::PageTable& page_table, VAddr base, u64 size) {
+    void UnmapRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size) {
         ASSERT_MSG((size & YUZU_PAGEMASK) == 0, "non-page aligned size: {:016X}", size);
-        ASSERT_MSG((base & YUZU_PAGEMASK) == 0, "non-page aligned base: {:016X}", base);
+        ASSERT_MSG((base & YUZU_PAGEMASK) == 0, "non-page aligned base: {:016X}", GetInteger(base));
         MapPages(page_table, base / YUZU_PAGESIZE, size / YUZU_PAGESIZE, 0,
                  Common::PageType::Unmapped);
 
         if (Settings::IsFastmemEnabled()) {
-            system.DeviceMemory().buffer.Unmap(base, size);
+            system.DeviceMemory().buffer.Unmap(GetInteger(base), size);
         }
     }
 
-    [[nodiscard]] u8* GetPointerFromRasterizerCachedMemory(VAddr vaddr) const {
-        const PAddr paddr{current_page_table->backing_addr[vaddr >> YUZU_PAGEBITS]};
+    [[nodiscard]] u8* GetPointerFromRasterizerCachedMemory(u64 vaddr) const {
+        const Common::PhysicalAddress paddr{
+            current_page_table->backing_addr[vaddr >> YUZU_PAGEBITS]};
 
         if (!paddr) {
             return {};
@@ -68,8 +72,9 @@ struct Memory::Impl {
         return system.DeviceMemory().GetPointer<u8>(paddr) + vaddr;
     }
 
-    [[nodiscard]] u8* GetPointerFromDebugMemory(VAddr vaddr) const {
-        const PAddr paddr{current_page_table->backing_addr[vaddr >> YUZU_PAGEBITS]};
+    [[nodiscard]] u8* GetPointerFromDebugMemory(u64 vaddr) const {
+        const Common::PhysicalAddress paddr{
+            current_page_table->backing_addr[vaddr >> YUZU_PAGEBITS]};
 
         if (paddr == 0) {
             return {};
@@ -78,11 +83,11 @@ struct Memory::Impl {
         return system.DeviceMemory().GetPointer<u8>(paddr) + vaddr;
     }
 
-    u8 Read8(const VAddr addr) {
+    u8 Read8(const Common::ProcessAddress addr) {
         return Read<u8>(addr);
     }
 
-    u16 Read16(const VAddr addr) {
+    u16 Read16(const Common::ProcessAddress addr) {
         if ((addr & 1) == 0) {
             return Read<u16_le>(addr);
         } else {
@@ -92,7 +97,7 @@ struct Memory::Impl {
         }
     }
 
-    u32 Read32(const VAddr addr) {
+    u32 Read32(const Common::ProcessAddress addr) {
         if ((addr & 3) == 0) {
             return Read<u32_le>(addr);
         } else {
@@ -102,7 +107,7 @@ struct Memory::Impl {
         }
     }
 
-    u64 Read64(const VAddr addr) {
+    u64 Read64(const Common::ProcessAddress addr) {
         if ((addr & 7) == 0) {
             return Read<u64_le>(addr);
         } else {
@@ -112,11 +117,11 @@ struct Memory::Impl {
         }
     }
 
-    void Write8(const VAddr addr, const u8 data) {
+    void Write8(const Common::ProcessAddress addr, const u8 data) {
         Write<u8>(addr, data);
     }
 
-    void Write16(const VAddr addr, const u16 data) {
+    void Write16(const Common::ProcessAddress addr, const u16 data) {
         if ((addr & 1) == 0) {
             Write<u16_le>(addr, data);
         } else {
@@ -125,7 +130,7 @@ struct Memory::Impl {
         }
     }
 
-    void Write32(const VAddr addr, const u32 data) {
+    void Write32(const Common::ProcessAddress addr, const u32 data) {
         if ((addr & 3) == 0) {
             Write<u32_le>(addr, data);
         } else {
@@ -134,7 +139,7 @@ struct Memory::Impl {
         }
     }
 
-    void Write64(const VAddr addr, const u64 data) {
+    void Write64(const Common::ProcessAddress addr, const u64 data) {
         if ((addr & 7) == 0) {
             Write<u64_le>(addr, data);
         } else {
@@ -143,23 +148,23 @@ struct Memory::Impl {
         }
     }
 
-    bool WriteExclusive8(const VAddr addr, const u8 data, const u8 expected) {
+    bool WriteExclusive8(const Common::ProcessAddress addr, const u8 data, const u8 expected) {
         return WriteExclusive<u8>(addr, data, expected);
     }
 
-    bool WriteExclusive16(const VAddr addr, const u16 data, const u16 expected) {
+    bool WriteExclusive16(const Common::ProcessAddress addr, const u16 data, const u16 expected) {
         return WriteExclusive<u16_le>(addr, data, expected);
     }
 
-    bool WriteExclusive32(const VAddr addr, const u32 data, const u32 expected) {
+    bool WriteExclusive32(const Common::ProcessAddress addr, const u32 data, const u32 expected) {
         return WriteExclusive<u32_le>(addr, data, expected);
     }
 
-    bool WriteExclusive64(const VAddr addr, const u64 data, const u64 expected) {
+    bool WriteExclusive64(const Common::ProcessAddress addr, const u64 data, const u64 expected) {
         return WriteExclusive<u64_le>(addr, data, expected);
     }
 
-    std::string ReadCString(VAddr vaddr, std::size_t max_length) {
+    std::string ReadCString(Common::ProcessAddress vaddr, std::size_t max_length) {
         std::string string;
         string.reserve(max_length);
         for (std::size_t i = 0; i < max_length; ++i) {
@@ -174,8 +179,9 @@ struct Memory::Impl {
         return string;
     }
 
-    void WalkBlock(const Kernel::KProcess& process, const VAddr addr, const std::size_t size,
-                   auto on_unmapped, auto on_memory, auto on_rasterizer, auto increment) {
+    void WalkBlock(const Kernel::KProcess& process, const Common::ProcessAddress addr,
+                   const std::size_t size, auto on_unmapped, auto on_memory, auto on_rasterizer,
+                   auto increment) {
         const auto& page_table = process.PageTable().PageTableImpl();
         std::size_t remaining_size = size;
         std::size_t page_index = addr >> YUZU_PAGEBITS;
@@ -185,7 +191,7 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(YUZU_PAGESIZE) - page_offset, remaining_size);
             const auto current_vaddr =
-                static_cast<VAddr>((page_index << YUZU_PAGEBITS) + page_offset);
+                static_cast<u64>((page_index << YUZU_PAGEBITS) + page_offset);
 
             const auto [pointer, type] = page_table.pointers[page_index].PointerType();
             switch (type) {
@@ -220,24 +226,24 @@ struct Memory::Impl {
     }
 
     template <bool UNSAFE>
-    void ReadBlockImpl(const Kernel::KProcess& process, const VAddr src_addr, void* dest_buffer,
-                       const std::size_t size) {
+    void ReadBlockImpl(const Kernel::KProcess& process, const Common::ProcessAddress src_addr,
+                       void* dest_buffer, const std::size_t size) {
         WalkBlock(
             process, src_addr, size,
             [src_addr, size, &dest_buffer](const std::size_t copy_amount,
-                                           const VAddr current_vaddr) {
+                                           const Common::ProcessAddress current_vaddr) {
                 LOG_ERROR(HW_Memory,
                           "Unmapped ReadBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
-                          current_vaddr, src_addr, size);
+                          GetInteger(current_vaddr), GetInteger(src_addr), size);
                 std::memset(dest_buffer, 0, copy_amount);
             },
             [&](const std::size_t copy_amount, const u8* const src_ptr) {
                 std::memcpy(dest_buffer, src_ptr, copy_amount);
             },
-            [&](const VAddr current_vaddr, const std::size_t copy_amount,
+            [&](const Common::ProcessAddress current_vaddr, const std::size_t copy_amount,
                 const u8* const host_ptr) {
                 if constexpr (!UNSAFE) {
-                    system.GPU().FlushRegion(current_vaddr, copy_amount);
+                    system.GPU().FlushRegion(GetInteger(current_vaddr), copy_amount);
                 }
                 std::memcpy(dest_buffer, host_ptr, copy_amount);
             },
@@ -246,30 +252,34 @@ struct Memory::Impl {
             });
     }
 
-    void ReadBlock(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
+    void ReadBlock(const Common::ProcessAddress src_addr, void* dest_buffer,
+                   const std::size_t size) {
         ReadBlockImpl<false>(*system.ApplicationProcess(), src_addr, dest_buffer, size);
     }
 
-    void ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
+    void ReadBlockUnsafe(const Common::ProcessAddress src_addr, void* dest_buffer,
+                         const std::size_t size) {
         ReadBlockImpl<true>(*system.ApplicationProcess(), src_addr, dest_buffer, size);
     }
 
     template <bool UNSAFE>
-    void WriteBlockImpl(const Kernel::KProcess& process, const VAddr dest_addr,
+    void WriteBlockImpl(const Kernel::KProcess& process, const Common::ProcessAddress dest_addr,
                         const void* src_buffer, const std::size_t size) {
         WalkBlock(
             process, dest_addr, size,
-            [dest_addr, size](const std::size_t copy_amount, const VAddr current_vaddr) {
+            [dest_addr, size](const std::size_t copy_amount,
+                              const Common::ProcessAddress current_vaddr) {
                 LOG_ERROR(HW_Memory,
                           "Unmapped WriteBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
-                          current_vaddr, dest_addr, size);
+                          GetInteger(current_vaddr), GetInteger(dest_addr), size);
             },
             [&](const std::size_t copy_amount, u8* const dest_ptr) {
                 std::memcpy(dest_ptr, src_buffer, copy_amount);
             },
-            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
+            [&](const Common::ProcessAddress current_vaddr, const std::size_t copy_amount,
+                u8* const host_ptr) {
                 if constexpr (!UNSAFE) {
-                    system.GPU().InvalidateRegion(current_vaddr, copy_amount);
+                    system.GPU().InvalidateRegion(GetInteger(current_vaddr), copy_amount);
                 }
                 std::memcpy(host_ptr, src_buffer, copy_amount);
             },
@@ -278,71 +288,77 @@ struct Memory::Impl {
             });
     }
 
-    void WriteBlock(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
+    void WriteBlock(const Common::ProcessAddress dest_addr, const void* src_buffer,
+                    const std::size_t size) {
         WriteBlockImpl<false>(*system.ApplicationProcess(), dest_addr, src_buffer, size);
     }
 
-    void WriteBlockUnsafe(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
+    void WriteBlockUnsafe(const Common::ProcessAddress dest_addr, const void* src_buffer,
+                          const std::size_t size) {
         WriteBlockImpl<true>(*system.ApplicationProcess(), dest_addr, src_buffer, size);
     }
 
-    void ZeroBlock(const Kernel::KProcess& process, const VAddr dest_addr, const std::size_t size) {
+    void ZeroBlock(const Kernel::KProcess& process, const Common::ProcessAddress dest_addr,
+                   const std::size_t size) {
         WalkBlock(
             process, dest_addr, size,
-            [dest_addr, size](const std::size_t copy_amount, const VAddr current_vaddr) {
+            [dest_addr, size](const std::size_t copy_amount,
+                              const Common::ProcessAddress current_vaddr) {
                 LOG_ERROR(HW_Memory,
                           "Unmapped ZeroBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
-                          current_vaddr, dest_addr, size);
+                          GetInteger(current_vaddr), GetInteger(dest_addr), size);
             },
             [](const std::size_t copy_amount, u8* const dest_ptr) {
                 std::memset(dest_ptr, 0, copy_amount);
             },
-            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
-                system.GPU().InvalidateRegion(current_vaddr, copy_amount);
+            [&](const Common::ProcessAddress current_vaddr, const std::size_t copy_amount,
+                u8* const host_ptr) {
+                system.GPU().InvalidateRegion(GetInteger(current_vaddr), copy_amount);
                 std::memset(host_ptr, 0, copy_amount);
             },
             [](const std::size_t copy_amount) {});
     }
 
-    void CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr src_addr,
-                   const std::size_t size) {
+    void CopyBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                   Common::ProcessAddress src_addr, const std::size_t size) {
         WalkBlock(
             process, dest_addr, size,
-            [&](const std::size_t copy_amount, const VAddr current_vaddr) {
+            [&](const std::size_t copy_amount, const Common::ProcessAddress current_vaddr) {
                 LOG_ERROR(HW_Memory,
                           "Unmapped CopyBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
-                          current_vaddr, src_addr, size);
+                          GetInteger(current_vaddr), GetInteger(src_addr), size);
                 ZeroBlock(process, dest_addr, copy_amount);
             },
             [&](const std::size_t copy_amount, const u8* const src_ptr) {
                 WriteBlockImpl<false>(process, dest_addr, src_ptr, copy_amount);
             },
-            [&](const VAddr current_vaddr, const std::size_t copy_amount, u8* const host_ptr) {
-                system.GPU().FlushRegion(current_vaddr, copy_amount);
+            [&](const Common::ProcessAddress current_vaddr, const std::size_t copy_amount,
+                u8* const host_ptr) {
+                system.GPU().FlushRegion(GetInteger(current_vaddr), copy_amount);
                 WriteBlockImpl<false>(process, dest_addr, host_ptr, copy_amount);
             },
             [&](const std::size_t copy_amount) {
-                dest_addr += static_cast<VAddr>(copy_amount);
-                src_addr += static_cast<VAddr>(copy_amount);
+                dest_addr += copy_amount;
+                src_addr += copy_amount;
             });
     }
 
     template <typename Callback>
-    Result PerformCacheOperation(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size,
-                                 Callback&& cb) {
+    Result PerformCacheOperation(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                                 std::size_t size, Callback&& cb) {
         class InvalidMemoryException : public std::exception {};
 
         try {
             WalkBlock(
                 process, dest_addr, size,
-                [&](const std::size_t block_size, const VAddr current_vaddr) {
-                    LOG_ERROR(HW_Memory, "Unmapped cache maintenance @ {:#018X}", current_vaddr);
+                [&](const std::size_t block_size, const Common::ProcessAddress current_vaddr) {
+                    LOG_ERROR(HW_Memory, "Unmapped cache maintenance @ {:#018X}",
+                              GetInteger(current_vaddr));
                     throw InvalidMemoryException();
                 },
                 [&](const std::size_t block_size, u8* const host_ptr) {},
-                [&](const VAddr current_vaddr, const std::size_t block_size, u8* const host_ptr) {
-                    cb(current_vaddr, block_size);
-                },
+                [&](const Common::ProcessAddress current_vaddr, const std::size_t block_size,
+                    u8* const host_ptr) { cb(current_vaddr, block_size); },
                 [](const std::size_t block_size) {});
         } catch (InvalidMemoryException&) {
             return Kernel::ResultInvalidCurrentMemory;
@@ -351,34 +367,40 @@ struct Memory::Impl {
         return ResultSuccess;
     }
 
-    Result InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
+    Result InvalidateDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                               std::size_t size) {
+        auto on_rasterizer = [&](const Common::ProcessAddress current_vaddr,
+                                 const std::size_t block_size) {
             // dc ivac: Invalidate to point of coherency
             // GPU flush -> CPU invalidate
-            system.GPU().FlushRegion(current_vaddr, block_size);
+            system.GPU().FlushRegion(GetInteger(current_vaddr), block_size);
         };
         return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
-    Result StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
+    Result StoreDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                          std::size_t size) {
+        auto on_rasterizer = [&](const Common::ProcessAddress current_vaddr,
+                                 const std::size_t block_size) {
             // dc cvac: Store to point of coherency
             // CPU flush -> GPU invalidate
-            system.GPU().InvalidateRegion(current_vaddr, block_size);
+            system.GPU().InvalidateRegion(GetInteger(current_vaddr), block_size);
         };
         return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
-    Result FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size) {
-        auto on_rasterizer = [&](const VAddr current_vaddr, const std::size_t block_size) {
+    Result FlushDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                          std::size_t size) {
+        auto on_rasterizer = [&](const Common::ProcessAddress current_vaddr,
+                                 const std::size_t block_size) {
             // dc civac: Store to point of coherency, and invalidate from cache
             // CPU flush -> GPU invalidate
-            system.GPU().InvalidateRegion(current_vaddr, block_size);
+            system.GPU().InvalidateRegion(GetInteger(current_vaddr), block_size);
         };
         return PerformCacheOperation(process, dest_addr, size, on_rasterizer);
     }
 
-    void MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
+    void MarkRegionDebug(u64 vaddr, u64 size, bool debug) {
         if (vaddr == 0) {
             return;
         }
@@ -434,7 +456,7 @@ struct Memory::Impl {
         }
     }
 
-    void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
+    void RasterizerMarkRegionCached(u64 vaddr, u64 size, bool cached) {
         if (vaddr == 0) {
             return;
         }
@@ -514,10 +536,12 @@ struct Memory::Impl {
      * @param target     The target address to begin mapping from.
      * @param type       The page type to map the memory as.
      */
-    void MapPages(Common::PageTable& page_table, VAddr base, u64 size, PAddr target,
-                  Common::PageType type) {
-        LOG_DEBUG(HW_Memory, "Mapping {:016X} onto {:016X}-{:016X}", target, base * YUZU_PAGESIZE,
-                  (base + size) * YUZU_PAGESIZE);
+    void MapPages(Common::PageTable& page_table, Common::ProcessAddress base_address, u64 size,
+                  Common::PhysicalAddress target, Common::PageType type) {
+        auto base = GetInteger(base_address);
+
+        LOG_DEBUG(HW_Memory, "Mapping {:016X} onto {:016X}-{:016X}", GetInteger(target),
+                  base * YUZU_PAGESIZE, (base + size) * YUZU_PAGESIZE);
 
         // During boot, current_page_table might not be set yet, in which case we need not flush
         if (system.IsPoweredOn()) {
@@ -530,7 +554,7 @@ struct Memory::Impl {
             }
         }
 
-        const VAddr end = base + size;
+        const Common::ProcessAddress end = base + size;
         ASSERT_MSG(end <= page_table.pointers.size(), "out of range mapping at {:016X}",
                    base + page_table.pointers.size());
 
@@ -548,7 +572,7 @@ struct Memory::Impl {
             while (base != end) {
                 page_table.pointers[base].Store(
                     system.DeviceMemory().GetPointer<u8>(target) - (base << YUZU_PAGEBITS), type);
-                page_table.backing_addr[base] = target - (base << YUZU_PAGEBITS);
+                page_table.backing_addr[base] = GetInteger(target) - (base << YUZU_PAGEBITS);
 
                 ASSERT_MSG(page_table.pointers[base].Pointer(),
                            "memory mapping base yield a nullptr within the table");
@@ -559,9 +583,9 @@ struct Memory::Impl {
         }
     }
 
-    [[nodiscard]] u8* GetPointerImpl(VAddr vaddr, auto on_unmapped, auto on_rasterizer) const {
+    [[nodiscard]] u8* GetPointerImpl(u64 vaddr, auto on_unmapped, auto on_rasterizer) const {
         // AARCH64 masks the upper 16 bit of all memory accesses
-        vaddr &= 0xffffffffffffULL;
+        vaddr = vaddr & 0xffffffffffffULL;
 
         if (vaddr >= 1uLL << current_page_table->GetAddressSpaceBits()) {
             on_unmapped();
@@ -593,15 +617,18 @@ struct Memory::Impl {
         return nullptr;
     }
 
-    [[nodiscard]] u8* GetPointer(const VAddr vaddr) const {
+    [[nodiscard]] u8* GetPointer(const Common::ProcessAddress vaddr) const {
         return GetPointerImpl(
-            vaddr, [vaddr]() { LOG_ERROR(HW_Memory, "Unmapped GetPointer @ 0x{:016X}", vaddr); },
+            GetInteger(vaddr),
+            [vaddr]() {
+                LOG_ERROR(HW_Memory, "Unmapped GetPointer @ 0x{:016X}", GetInteger(vaddr));
+            },
             []() {});
     }
 
-    [[nodiscard]] u8* GetPointerSilent(const VAddr vaddr) const {
+    [[nodiscard]] u8* GetPointerSilent(const Common::ProcessAddress vaddr) const {
         return GetPointerImpl(
-            vaddr, []() {}, []() {});
+            GetInteger(vaddr), []() {}, []() {});
     }
 
     /**
@@ -616,14 +643,15 @@ struct Memory::Impl {
      * @returns The instance of T read from the specified virtual address.
      */
     template <typename T>
-    T Read(VAddr vaddr) {
+    T Read(Common::ProcessAddress vaddr) {
         T result = 0;
         const u8* const ptr = GetPointerImpl(
-            vaddr,
+            GetInteger(vaddr),
             [vaddr]() {
-                LOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:016X}", sizeof(T) * 8, vaddr);
+                LOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:016X}", sizeof(T) * 8,
+                          GetInteger(vaddr));
             },
-            [&]() { system.GPU().FlushRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().FlushRegion(GetInteger(vaddr), sizeof(T)); });
         if (ptr) {
             std::memcpy(&result, ptr, sizeof(T));
         }
@@ -640,28 +668,28 @@ struct Memory::Impl {
      *           is undefined.
      */
     template <typename T>
-    void Write(VAddr vaddr, const T data) {
+    void Write(Common::ProcessAddress vaddr, const T data) {
         u8* const ptr = GetPointerImpl(
-            vaddr,
+            GetInteger(vaddr),
             [vaddr, data]() {
                 LOG_ERROR(HW_Memory, "Unmapped Write{} @ 0x{:016X} = 0x{:016X}", sizeof(T) * 8,
-                          vaddr, static_cast<u64>(data));
+                          GetInteger(vaddr), static_cast<u64>(data));
             },
-            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().InvalidateRegion(GetInteger(vaddr), sizeof(T)); });
         if (ptr) {
             std::memcpy(ptr, &data, sizeof(T));
         }
     }
 
     template <typename T>
-    bool WriteExclusive(VAddr vaddr, const T data, const T expected) {
+    bool WriteExclusive(Common::ProcessAddress vaddr, const T data, const T expected) {
         u8* const ptr = GetPointerImpl(
-            vaddr,
+            GetInteger(vaddr),
             [vaddr, data]() {
                 LOG_ERROR(HW_Memory, "Unmapped WriteExclusive{} @ 0x{:016X} = 0x{:016X}",
-                          sizeof(T) * 8, vaddr, static_cast<u64>(data));
+                          sizeof(T) * 8, GetInteger(vaddr), static_cast<u64>(data));
             },
-            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(T)); });
+            [&]() { system.GPU().InvalidateRegion(GetInteger(vaddr), sizeof(T)); });
         if (ptr) {
             const auto volatile_pointer = reinterpret_cast<volatile T*>(ptr);
             return Common::AtomicCompareAndSwap(volatile_pointer, data, expected);
@@ -669,14 +697,14 @@ struct Memory::Impl {
         return true;
     }
 
-    bool WriteExclusive128(VAddr vaddr, const u128 data, const u128 expected) {
+    bool WriteExclusive128(Common::ProcessAddress vaddr, const u128 data, const u128 expected) {
         u8* const ptr = GetPointerImpl(
-            vaddr,
+            GetInteger(vaddr),
             [vaddr, data]() {
                 LOG_ERROR(HW_Memory, "Unmapped WriteExclusive128 @ 0x{:016X} = 0x{:016X}{:016X}",
-                          vaddr, static_cast<u64>(data[1]), static_cast<u64>(data[0]));
+                          GetInteger(vaddr), static_cast<u64>(data[1]), static_cast<u64>(data[0]));
             },
-            [&]() { system.GPU().InvalidateRegion(vaddr, sizeof(u128)); });
+            [&]() { system.GPU().InvalidateRegion(GetInteger(vaddr), sizeof(u128)); });
         if (ptr) {
             const auto volatile_pointer = reinterpret_cast<volatile u64*>(ptr);
             return Common::AtomicCompareAndSwap(volatile_pointer, data, expected);
@@ -702,15 +730,16 @@ void Memory::SetCurrentPageTable(Kernel::KProcess& process, u32 core_id) {
     impl->SetCurrentPageTable(process, core_id);
 }
 
-void Memory::MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target) {
+void Memory::MapMemoryRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size,
+                             Common::PhysicalAddress target) {
     impl->MapMemoryRegion(page_table, base, size, target);
 }
 
-void Memory::UnmapRegion(Common::PageTable& page_table, VAddr base, u64 size) {
+void Memory::UnmapRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size) {
     impl->UnmapRegion(page_table, base, size);
 }
 
-bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
+bool Memory::IsValidVirtualAddress(const Common::ProcessAddress vaddr) const {
     const Kernel::KProcess& process = *system.ApplicationProcess();
     const auto& page_table = process.PageTable().PageTableImpl();
     const size_t page = vaddr >> YUZU_PAGEBITS;
@@ -722,9 +751,9 @@ bool Memory::IsValidVirtualAddress(const VAddr vaddr) const {
            type == Common::PageType::DebugMemory;
 }
 
-bool Memory::IsValidVirtualAddressRange(VAddr base, u64 size) const {
-    VAddr end = base + size;
-    VAddr page = Common::AlignDown(base, YUZU_PAGESIZE);
+bool Memory::IsValidVirtualAddressRange(Common::ProcessAddress base, u64 size) const {
+    Common::ProcessAddress end = base + size;
+    Common::ProcessAddress page = Common::AlignDown(GetInteger(base), YUZU_PAGESIZE);
 
     for (; page < end; page += YUZU_PAGESIZE) {
         if (!IsValidVirtualAddress(page)) {
@@ -735,131 +764,135 @@ bool Memory::IsValidVirtualAddressRange(VAddr base, u64 size) const {
     return true;
 }
 
-u8* Memory::GetPointer(VAddr vaddr) {
+u8* Memory::GetPointer(Common::ProcessAddress vaddr) {
     return impl->GetPointer(vaddr);
 }
 
-u8* Memory::GetPointerSilent(VAddr vaddr) {
+u8* Memory::GetPointerSilent(Common::ProcessAddress vaddr) {
     return impl->GetPointerSilent(vaddr);
 }
 
-const u8* Memory::GetPointer(VAddr vaddr) const {
+const u8* Memory::GetPointer(Common::ProcessAddress vaddr) const {
     return impl->GetPointer(vaddr);
 }
 
-u8 Memory::Read8(const VAddr addr) {
+u8 Memory::Read8(const Common::ProcessAddress addr) {
     return impl->Read8(addr);
 }
 
-u16 Memory::Read16(const VAddr addr) {
+u16 Memory::Read16(const Common::ProcessAddress addr) {
     return impl->Read16(addr);
 }
 
-u32 Memory::Read32(const VAddr addr) {
+u32 Memory::Read32(const Common::ProcessAddress addr) {
     return impl->Read32(addr);
 }
 
-u64 Memory::Read64(const VAddr addr) {
+u64 Memory::Read64(const Common::ProcessAddress addr) {
     return impl->Read64(addr);
 }
 
-void Memory::Write8(VAddr addr, u8 data) {
+void Memory::Write8(Common::ProcessAddress addr, u8 data) {
     impl->Write8(addr, data);
 }
 
-void Memory::Write16(VAddr addr, u16 data) {
+void Memory::Write16(Common::ProcessAddress addr, u16 data) {
     impl->Write16(addr, data);
 }
 
-void Memory::Write32(VAddr addr, u32 data) {
+void Memory::Write32(Common::ProcessAddress addr, u32 data) {
     impl->Write32(addr, data);
 }
 
-void Memory::Write64(VAddr addr, u64 data) {
+void Memory::Write64(Common::ProcessAddress addr, u64 data) {
     impl->Write64(addr, data);
 }
 
-bool Memory::WriteExclusive8(VAddr addr, u8 data, u8 expected) {
+bool Memory::WriteExclusive8(Common::ProcessAddress addr, u8 data, u8 expected) {
     return impl->WriteExclusive8(addr, data, expected);
 }
 
-bool Memory::WriteExclusive16(VAddr addr, u16 data, u16 expected) {
+bool Memory::WriteExclusive16(Common::ProcessAddress addr, u16 data, u16 expected) {
     return impl->WriteExclusive16(addr, data, expected);
 }
 
-bool Memory::WriteExclusive32(VAddr addr, u32 data, u32 expected) {
+bool Memory::WriteExclusive32(Common::ProcessAddress addr, u32 data, u32 expected) {
     return impl->WriteExclusive32(addr, data, expected);
 }
 
-bool Memory::WriteExclusive64(VAddr addr, u64 data, u64 expected) {
+bool Memory::WriteExclusive64(Common::ProcessAddress addr, u64 data, u64 expected) {
     return impl->WriteExclusive64(addr, data, expected);
 }
 
-bool Memory::WriteExclusive128(VAddr addr, u128 data, u128 expected) {
+bool Memory::WriteExclusive128(Common::ProcessAddress addr, u128 data, u128 expected) {
     return impl->WriteExclusive128(addr, data, expected);
 }
 
-std::string Memory::ReadCString(VAddr vaddr, std::size_t max_length) {
+std::string Memory::ReadCString(Common::ProcessAddress vaddr, std::size_t max_length) {
     return impl->ReadCString(vaddr, max_length);
 }
 
-void Memory::ReadBlock(const Kernel::KProcess& process, const VAddr src_addr, void* dest_buffer,
-                       const std::size_t size) {
+void Memory::ReadBlock(const Kernel::KProcess& process, const Common::ProcessAddress src_addr,
+                       void* dest_buffer, const std::size_t size) {
     impl->ReadBlockImpl<false>(process, src_addr, dest_buffer, size);
 }
 
-void Memory::ReadBlock(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
+void Memory::ReadBlock(const Common::ProcessAddress src_addr, void* dest_buffer,
+                       const std::size_t size) {
     impl->ReadBlock(src_addr, dest_buffer, size);
 }
 
-void Memory::ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
+void Memory::ReadBlockUnsafe(const Common::ProcessAddress src_addr, void* dest_buffer,
+                             const std::size_t size) {
     impl->ReadBlockUnsafe(src_addr, dest_buffer, size);
 }
 
-void Memory::WriteBlock(const Kernel::KProcess& process, VAddr dest_addr, const void* src_buffer,
-                        std::size_t size) {
+void Memory::WriteBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                        const void* src_buffer, std::size_t size) {
     impl->WriteBlockImpl<false>(process, dest_addr, src_buffer, size);
 }
 
-void Memory::WriteBlock(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
+void Memory::WriteBlock(const Common::ProcessAddress dest_addr, const void* src_buffer,
+                        const std::size_t size) {
     impl->WriteBlock(dest_addr, src_buffer, size);
 }
 
-void Memory::WriteBlockUnsafe(const VAddr dest_addr, const void* src_buffer,
+void Memory::WriteBlockUnsafe(const Common::ProcessAddress dest_addr, const void* src_buffer,
                               const std::size_t size) {
     impl->WriteBlockUnsafe(dest_addr, src_buffer, size);
 }
 
-void Memory::CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr src_addr,
-                       const std::size_t size) {
+void Memory::CopyBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                       Common::ProcessAddress src_addr, const std::size_t size) {
     impl->CopyBlock(process, dest_addr, src_addr, size);
 }
 
-void Memory::ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, const std::size_t size) {
+void Memory::ZeroBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                       const std::size_t size) {
     impl->ZeroBlock(process, dest_addr, size);
 }
 
-Result Memory::InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr,
-                                   const std::size_t size) {
+Result Memory::InvalidateDataCache(const Kernel::KProcess& process,
+                                   Common::ProcessAddress dest_addr, const std::size_t size) {
     return impl->InvalidateDataCache(process, dest_addr, size);
 }
 
-Result Memory::StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr,
+Result Memory::StoreDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
                               const std::size_t size) {
     return impl->StoreDataCache(process, dest_addr, size);
 }
 
-Result Memory::FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr,
+Result Memory::FlushDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
                               const std::size_t size) {
     return impl->FlushDataCache(process, dest_addr, size);
 }
 
-void Memory::RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
-    impl->RasterizerMarkRegionCached(vaddr, size, cached);
+void Memory::RasterizerMarkRegionCached(Common::ProcessAddress vaddr, u64 size, bool cached) {
+    impl->RasterizerMarkRegionCached(GetInteger(vaddr), size, cached);
 }
 
-void Memory::MarkRegionDebug(VAddr vaddr, u64 size, bool debug) {
-    impl->MarkRegionDebug(vaddr, size, debug);
+void Memory::MarkRegionDebug(Common::ProcessAddress vaddr, u64 size, bool debug) {
+    impl->MarkRegionDebug(GetInteger(vaddr), size, debug);
 }
 
 } // namespace Core::Memory

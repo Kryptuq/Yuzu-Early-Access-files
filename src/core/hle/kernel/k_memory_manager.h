@@ -7,10 +7,10 @@
 #include <tuple>
 
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_page_heap.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/result.h"
 
 namespace Core {
@@ -50,21 +50,21 @@ public:
 
     explicit KMemoryManager(Core::System& system);
 
-    void Initialize(VAddr management_region, size_t management_region_size);
+    void Initialize(KVirtualAddress management_region, size_t management_region_size);
 
     Result InitializeOptimizedMemory(u64 process_id, Pool pool);
     void FinalizeOptimizedMemory(u64 process_id, Pool pool);
 
-    PAddr AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option);
+    KPhysicalAddress AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option);
     Result AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 option);
     Result AllocateForProcess(KPageGroup* out, size_t num_pages, u32 option, u64 process_id,
                               u8 fill_pattern);
 
-    Pool GetPool(PAddr address) const {
+    Pool GetPool(KPhysicalAddress address) const {
         return this->GetManager(address).GetPool();
     }
 
-    void Open(PAddr address, size_t num_pages) {
+    void Open(KPhysicalAddress address, size_t num_pages) {
         // Repeatedly open references until we've done so for all pages.
         while (num_pages) {
             auto& manager = this->GetManager(address);
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    void OpenFirst(PAddr address, size_t num_pages) {
+    void OpenFirst(KPhysicalAddress address, size_t num_pages) {
         // Repeatedly open references until we've done so for all pages.
         while (num_pages) {
             auto& manager = this->GetManager(address);
@@ -96,7 +96,7 @@ public:
         }
     }
 
-    void Close(PAddr address, size_t num_pages) {
+    void Close(KPhysicalAddress address, size_t num_pages) {
         // Repeatedly close references until we've done so for all pages.
         while (num_pages) {
             auto& manager = this->GetManager(address);
@@ -199,16 +199,16 @@ private:
     public:
         Impl() = default;
 
-        size_t Initialize(PAddr address, size_t size, VAddr management, VAddr management_end,
-                          Pool p);
+        size_t Initialize(KPhysicalAddress address, size_t size, KVirtualAddress management,
+                          KVirtualAddress management_end, Pool p);
 
-        PAddr AllocateBlock(s32 index, bool random) {
+        KPhysicalAddress AllocateBlock(s32 index, bool random) {
             return m_heap.AllocateBlock(index, random);
         }
-        PAddr AllocateAligned(s32 index, size_t num_pages, size_t align_pages) {
+        KPhysicalAddress AllocateAligned(s32 index, size_t num_pages, size_t align_pages) {
             return m_heap.AllocateAligned(index, num_pages, align_pages);
         }
-        void Free(PAddr addr, size_t num_pages) {
+        void Free(KPhysicalAddress addr, size_t num_pages) {
             m_heap.Free(addr, num_pages);
         }
 
@@ -220,10 +220,10 @@ private:
             UNIMPLEMENTED();
         }
 
-        void TrackUnoptimizedAllocation(PAddr block, size_t num_pages);
-        void TrackOptimizedAllocation(PAddr block, size_t num_pages);
+        void TrackUnoptimizedAllocation(KPhysicalAddress block, size_t num_pages);
+        void TrackOptimizedAllocation(KPhysicalAddress block, size_t num_pages);
 
-        bool ProcessOptimizedAllocation(PAddr block, size_t num_pages, u8 fill_pattern);
+        bool ProcessOptimizedAllocation(KPhysicalAddress block, size_t num_pages, u8 fill_pattern);
 
         constexpr Pool GetPool() const {
             return m_pool;
@@ -231,7 +231,7 @@ private:
         constexpr size_t GetSize() const {
             return m_heap.GetSize();
         }
-        constexpr PAddr GetEndAddress() const {
+        constexpr KPhysicalAddress GetEndAddress() const {
             return m_heap.GetEndAddress();
         }
 
@@ -243,10 +243,10 @@ private:
             UNIMPLEMENTED();
         }
 
-        constexpr size_t GetPageOffset(PAddr address) const {
+        constexpr size_t GetPageOffset(KPhysicalAddress address) const {
             return m_heap.GetPageOffset(address);
         }
-        constexpr size_t GetPageOffsetToEnd(PAddr address) const {
+        constexpr size_t GetPageOffsetToEnd(KPhysicalAddress address) const {
             return m_heap.GetPageOffsetToEnd(address);
         }
 
@@ -263,7 +263,7 @@ private:
             return m_prev;
         }
 
-        void OpenFirst(PAddr address, size_t num_pages) {
+        void OpenFirst(KPhysicalAddress address, size_t num_pages) {
             size_t index = this->GetPageOffset(address);
             const size_t end = index + num_pages;
             while (index < end) {
@@ -274,7 +274,7 @@ private:
             }
         }
 
-        void Open(PAddr address, size_t num_pages) {
+        void Open(KPhysicalAddress address, size_t num_pages) {
             size_t index = this->GetPageOffset(address);
             const size_t end = index + num_pages;
             while (index < end) {
@@ -285,7 +285,7 @@ private:
             }
         }
 
-        void Close(PAddr address, size_t num_pages) {
+        void Close(KPhysicalAddress address, size_t num_pages) {
             size_t index = this->GetPageOffset(address);
             const size_t end = index + num_pages;
 
@@ -323,18 +323,18 @@ private:
 
         KPageHeap m_heap;
         std::vector<RefCount> m_page_reference_counts;
-        VAddr m_management_region{};
+        KVirtualAddress m_management_region{};
         Pool m_pool{};
         Impl* m_next{};
         Impl* m_prev{};
     };
 
 private:
-    Impl& GetManager(PAddr address) {
+    Impl& GetManager(KPhysicalAddress address) {
         return m_managers[m_memory_layout.GetPhysicalLinearRegion(address).GetAttributes()];
     }
 
-    const Impl& GetManager(PAddr address) const {
+    const Impl& GetManager(KPhysicalAddress address) const {
         return m_managers[m_memory_layout.GetPhysicalLinearRegion(address).GetAttributes()];
     }
 

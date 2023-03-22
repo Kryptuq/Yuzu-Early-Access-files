@@ -18,23 +18,23 @@ namespace Kernel {
 
 namespace {
 
-bool ReadFromUser(Core::System& system, u32* out, VAddr address) {
-    *out = system.Memory().Read32(address);
+bool ReadFromUser(Core::System& system, u32* out, KProcessAddress address) {
+    *out = system.Memory().Read32(GetInteger(address));
     return true;
 }
 
-bool WriteToUser(Core::System& system, VAddr address, const u32* p) {
-    system.Memory().Write32(address, *p);
+bool WriteToUser(Core::System& system, KProcessAddress address, const u32* p) {
+    system.Memory().Write32(GetInteger(address), *p);
     return true;
 }
 
-bool UpdateLockAtomic(Core::System& system, u32* out, VAddr address, u32 if_zero,
+bool UpdateLockAtomic(Core::System& system, u32* out, KProcessAddress address, u32 if_zero,
                       u32 new_orr_mask) {
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // Load the value from the address.
-    const auto expected = monitor.ExclusiveRead32(current_core, address);
+    const auto expected = monitor.ExclusiveRead32(current_core, GetInteger(address));
 
     // Orr in the new mask.
     u32 value = expected | new_orr_mask;
@@ -45,7 +45,7 @@ bool UpdateLockAtomic(Core::System& system, u32* out, VAddr address, u32 if_zero
     }
 
     // Try to store.
-    if (!monitor.ExclusiveWrite32(current_core, address, value)) {
+    if (!monitor.ExclusiveWrite32(current_core, GetInteger(address), value)) {
         // If we failed to store, try again.
         return UpdateLockAtomic(system, out, address, if_zero, new_orr_mask);
     }
@@ -102,7 +102,7 @@ KConditionVariable::KConditionVariable(Core::System& system)
 
 KConditionVariable::~KConditionVariable() = default;
 
-Result KConditionVariable::SignalToAddress(VAddr addr) {
+Result KConditionVariable::SignalToAddress(KProcessAddress addr) {
     KThread* owner_thread = GetCurrentThreadPointer(m_kernel);
 
     // Signal the address.
@@ -143,7 +143,7 @@ Result KConditionVariable::SignalToAddress(VAddr addr) {
     }
 }
 
-Result KConditionVariable::WaitForAddress(Handle handle, VAddr addr, u32 value) {
+Result KConditionVariable::WaitForAddress(Handle handle, KProcessAddress addr, u32 value) {
     KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     ThreadQueueImplForKConditionVariableWaitForAddress wait_queue(m_kernel);
 
@@ -191,7 +191,7 @@ void KConditionVariable::SignalImpl(KThread* thread) {
     ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(m_kernel));
 
     // Update the tag.
-    VAddr address = thread->GetAddressKey();
+    KProcessAddress address = thread->GetAddressKey();
     u32 own_tag = thread->GetAddressKeyValue();
 
     u32 prev_tag{};
@@ -262,7 +262,7 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
     }
 }
 
-Result KConditionVariable::Wait(VAddr addr, u64 key, u32 value, s64 timeout) {
+Result KConditionVariable::Wait(KProcessAddress addr, u64 key, u32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};

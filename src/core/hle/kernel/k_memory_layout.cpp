@@ -85,7 +85,8 @@ bool KMemoryRegionTree::Insert(u64 address, size_t size, u32 type_id, u32 new_at
     return true;
 }
 
-VAddr KMemoryRegionTree::GetRandomAlignedRegion(size_t size, size_t alignment, u32 type_id) {
+KVirtualAddress KMemoryRegionTree::GetRandomAlignedRegion(size_t size, size_t alignment,
+                                                          u32 type_id) {
     // We want to find the total extents of the type id.
     const auto extents = this->GetDerivedRegionExtents(static_cast<KMemoryRegionType>(type_id));
 
@@ -130,11 +131,13 @@ KMemoryLayout::KMemoryLayout()
       m_virtual_linear_tree{m_memory_region_allocator}, m_physical_linear_tree{
                                                             m_memory_region_allocator} {}
 
-void KMemoryLayout::InitializeLinearMemoryRegionTrees(PAddr aligned_linear_phys_start,
-                                                      VAddr linear_virtual_start) {
+void KMemoryLayout::InitializeLinearMemoryRegionTrees(KPhysicalAddress aligned_linear_phys_start,
+                                                      KVirtualAddress linear_virtual_start) {
     // Set static differences.
-    m_linear_phys_to_virt_diff = linear_virtual_start - aligned_linear_phys_start;
-    m_linear_virt_to_phys_diff = aligned_linear_phys_start - linear_virtual_start;
+    m_linear_phys_to_virt_diff =
+        GetInteger(linear_virtual_start) - GetInteger(aligned_linear_phys_start);
+    m_linear_virt_to_phys_diff =
+        GetInteger(aligned_linear_phys_start) - GetInteger(linear_virtual_start);
 
     // Initialize linear trees.
     for (auto& region : GetPhysicalMemoryRegionTree()) {

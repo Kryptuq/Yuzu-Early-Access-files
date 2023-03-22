@@ -5,7 +5,7 @@
 
 #include <array>
 #include <span>
-#include "common/common_types.h"
+#include "common/typed_address.h"
 #include "core/hle/result.h"
 
 namespace Core {
@@ -138,7 +138,7 @@ public:
     void DisablePollingMode();
 
     // Called on EnableJoyPollingReceiveMode
-    void SetTransferMemoryAddress(VAddr t_mem);
+    void SetTransferMemoryAddress(Common::ProcessAddress t_mem);
 
     Kernel::KReadableEvent& GetSendCommandAsycEvent() const;
 
@@ -174,7 +174,7 @@ protected:
     JoyEnableSixAxisDataAccessor enable_sixaxis_data{};
     ButtonOnlyPollingDataAccessor button_only_data{};
 
-    VAddr transfer_memory{};
+    Common::ProcessAddress transfer_memory{};
 
     Core::System& system;
     Kernel::KEvent* send_command_async_event;

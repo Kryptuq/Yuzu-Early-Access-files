@@ -5,9 +5,9 @@
 
 #include <atomic>
 
-#include "common/common_types.h"
 #include "core/hle/kernel/k_dynamic_resource_manager.h"
 #include "core/hle/kernel/k_page_table_slab_heap.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel {
 
@@ -26,23 +26,23 @@ public:
         BaseHeap::Initialize(page_allocator, pt_heap);
     }
 
-    VAddr Allocate() {
-        return VAddr(BaseHeap::Allocate());
+    KVirtualAddress Allocate() {
+        return KVirtualAddress(BaseHeap::Allocate());
     }
 
-    RefCount GetRefCount(VAddr addr) const {
+    RefCount GetRefCount(KVirtualAddress addr) const {
         return m_pt_heap->GetRefCount(addr);
     }
 
-    void Open(VAddr addr, int count) {
+    void Open(KVirtualAddress addr, int count) {
         return m_pt_heap->Open(addr, count);
     }
 
-    bool Close(VAddr addr, int count) {
+    bool Close(KVirtualAddress addr, int count) {
         return m_pt_heap->Close(addr, count);
     }
 
-    bool IsInPageTableHeap(VAddr addr) const {
+    bool IsInPageTableHeap(KVirtualAddress addr) const {
         return m_pt_heap->IsInRange(addr);
     }
 

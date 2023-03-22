@@ -118,14 +118,14 @@ void GDBStub::Watchpoint(Kernel::KThread* thread, const Kernel::DebugWatchpoint&
 
     switch (watch.type) {
     case Kernel::DebugWatchpointType::Read:
-        SendReply(fmt::format("{}rwatch:{:x};", status, watch.start_address));
+        SendReply(fmt::format("{}rwatch:{:x};", status, GetInteger(watch.start_address)));
         break;
     case Kernel::DebugWatchpointType::Write:
-        SendReply(fmt::format("{}watch:{:x};", status, watch.start_address));
+        SendReply(fmt::format("{}watch:{:x};", status, GetInteger(watch.start_address)));
         break;
     case Kernel::DebugWatchpointType::ReadOrWrite:
     default:
-        SendReply(fmt::format("{}awatch:{:x};", status, watch.start_address));
+        SendReply(fmt::format("{}awatch:{:x};", status, GetInteger(watch.start_address)));
         break;
     }
 }
@@ -554,8 +554,9 @@ void GDBStub::HandleQuery(std::string_view command) {
         if (main != modules.end()) {
             SendReply(fmt::format("TextSeg={:x}", main->first));
         } else {
-            SendReply(fmt::format("TextSeg={:x}",
-                                  system.ApplicationProcess()->PageTable().GetCodeRegionStart()));
+            SendReply(fmt::format(
+                "TextSeg={:x}",
+                GetInteger(system.ApplicationProcess()->PageTable().GetCodeRegionStart())));
         }
     } else if (command.starts_with("Xfer:libraries:read::")) {
         Loader::AppLoader::Modules modules;
@@ -757,17 +758,20 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
         reply = fmt::format("Process:     {:#x} ({})\n"
                             "Program Id:  {:#018x}\n",
                             process->GetProcessId(), process->GetName(), process->GetProgramId());
-        reply +=
-            fmt::format("Layout:\n"
-                        "  Alias: {:#012x} - {:#012x}\n"
-                        "  Heap:  {:#012x} - {:#012x}\n"
-                        "  Aslr:  {:#012x} - {:#012x}\n"
-                        "  Stack: {:#012x} - {:#012x}\n"
-                        "Modules:\n",
-                        page_table.GetAliasRegionStart(), page_table.GetAliasRegionEnd(),
-                        page_table.GetHeapRegionStart(), page_table.GetHeapRegionEnd(),
-                        page_table.GetAliasCodeRegionStart(), page_table.GetAliasCodeRegionEnd(),
-                        page_table.GetStackRegionStart(), page_table.GetStackRegionEnd());
+        reply += fmt::format("Layout:\n"
+                             "  Alias: {:#012x} - {:#012x}\n"
+                             "  Heap:  {:#012x} - {:#012x}\n"
+                             "  Aslr:  {:#012x} - {:#012x}\n"
+                             "  Stack: {:#012x} - {:#012x}\n"
+                             "Modules:\n",
+                             GetInteger(page_table.GetAliasRegionStart()),
+                             GetInteger(page_table.GetAliasRegionEnd()),
+                             GetInteger(page_table.GetHeapRegionStart()),
+                             GetInteger(page_table.GetHeapRegionEnd()),
+                             GetInteger(page_table.GetAliasCodeRegionStart()),
+                             GetInteger(page_table.GetAliasCodeRegionEnd()),
+                             GetInteger(page_table.GetStackRegionStart()),
+                             GetInteger(page_table.GetStackRegionEnd()));
 
         for (const auto& [vaddr, name] : modules) {
             reply += fmt::format("  {:#012x} - {:#012x} {}\n", vaddr,

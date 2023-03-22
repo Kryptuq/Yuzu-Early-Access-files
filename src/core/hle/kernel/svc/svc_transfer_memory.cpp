@@ -25,7 +25,7 @@ constexpr bool IsValidTransferMemoryPermission(MemoryPermission perm) {
 } // Anonymous namespace
 
 /// Creates a TransferMemory object
-Result CreateTransferMemory(Core::System& system, Handle* out, VAddr address, u64 size,
+Result CreateTransferMemory(Core::System& system, Handle* out, u64 address, u64 size,
                             MemoryPermission map_perm) {
     auto& kernel = system.Kernel();
 

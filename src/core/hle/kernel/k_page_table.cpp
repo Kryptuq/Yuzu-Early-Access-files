@@ -106,7 +106,7 @@ KPageTable::~KPageTable() = default;
 
 Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
                                         bool enable_das_merge, bool from_back,
-                                        KMemoryManager::Pool pool, VAddr code_addr,
+                                        KMemoryManager::Pool pool, KProcessAddress code_addr,
                                         size_t code_size, KSystemResource* system_resource,
                                         KResourceLimit* resource_limit) {
 
@@ -119,8 +119,8 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
 
     //  Set our width and heap/alias sizes
     m_address_space_width = GetAddressSpaceWidthFromType(as_type);
-    const VAddr start = 0;
-    const VAddr end{1ULL << m_address_space_width};
+    const KProcessAddress start = 0;
+    const KProcessAddress end{1ULL << m_address_space_width};
     size_t alias_region_size{GetSpaceSize(KAddressSpaceInfo::Type::Alias)};
     size_t heap_region_size{GetSpaceSize(KAddressSpaceInfo::Type::Heap)};
 
@@ -135,8 +135,8 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
 
     // Set code regions and determine remaining
     constexpr size_t RegionAlignment{2_MiB};
-    VAddr process_code_start{};
-    VAddr process_code_end{};
+    KProcessAddress process_code_start{};
+    KProcessAddress process_code_end{};
     size_t stack_region_size{};
     size_t kernel_map_region_size{};
 
@@ -149,8 +149,8 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
         m_code_region_end = m_code_region_start + GetSpaceSize(KAddressSpaceInfo::Type::Map39Bit);
         m_alias_code_region_start = m_code_region_start;
         m_alias_code_region_end = m_code_region_end;
-        process_code_start = Common::AlignDown(code_addr, RegionAlignment);
-        process_code_end = Common::AlignUp(code_addr + code_size, RegionAlignment);
+        process_code_start = Common::AlignDown(GetInteger(code_addr), RegionAlignment);
+        process_code_end = Common::AlignUp(GetInteger(code_addr) + code_size, RegionAlignment);
     } else {
         stack_region_size = 0;
         kernel_map_region_size = 0;
@@ -178,7 +178,7 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
     m_resource_limit = resource_limit;
 
     // Determine the region we can place our undetermineds in
-    VAddr alloc_start{};
+    KProcessAddress alloc_start{};
     size_t alloc_size{};
     if ((process_code_start - m_code_region_start) >= (end - process_code_end)) {
         alloc_start = m_code_region_start;
@@ -292,7 +292,7 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
                                                      : KMemoryManager::Direction::FromFront);
 
     // Ensure that we regions inside our address space
-    auto IsInAddressSpace = [&](VAddr addr) {
+    auto IsInAddressSpace = [&](KProcessAddress addr) {
         return m_address_space_start <= addr && addr <= m_address_space_end;
     };
     ASSERT(IsInAddressSpace(m_alias_region_start));
@@ -305,14 +305,14 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
     ASSERT(IsInAddressSpace(m_kernel_map_region_end));
 
     // Ensure that we selected regions that don't overlap
-    const VAddr alias_start{m_alias_region_start};
-    const VAddr alias_last{m_alias_region_end - 1};
-    const VAddr heap_start{m_heap_region_start};
-    const VAddr heap_last{m_heap_region_end - 1};
-    const VAddr stack_start{m_stack_region_start};
-    const VAddr stack_last{m_stack_region_end - 1};
-    const VAddr kmap_start{m_kernel_map_region_start};
-    const VAddr kmap_last{m_kernel_map_region_end - 1};
+    const KProcessAddress alias_start{m_alias_region_start};
+    const KProcessAddress alias_last{m_alias_region_end - 1};
+    const KProcessAddress heap_start{m_heap_region_start};
+    const KProcessAddress heap_last{m_heap_region_end - 1};
+    const KProcessAddress stack_start{m_stack_region_start};
+    const KProcessAddress stack_last{m_stack_region_end - 1};
+    const KProcessAddress kmap_start{m_kernel_map_region_start};
+    const KProcessAddress kmap_last{m_kernel_map_region_end - 1};
     ASSERT(alias_last < heap_start || heap_last < alias_start);
     ASSERT(alias_last < stack_start || stack_last < alias_start);
     ASSERT(alias_last < kmap_start || kmap_last < alias_start);
@@ -334,9 +334,10 @@ Result KPageTable::InitializeForProcess(FileSys::ProgramAddressSpaceType as_type
 
 void KPageTable::Finalize() {
     // Finalize memory blocks.
-    m_memory_block_manager.Finalize(m_memory_block_slab_manager, [&](VAddr addr, u64 size) {
-        m_system.Memory().UnmapRegion(*m_page_table_impl, addr, size);
-    });
+    m_memory_block_manager.Finalize(
+        m_memory_block_slab_manager, [&](KProcessAddress addr, u64 size) {
+            m_system.Memory().UnmapRegion(*m_page_table_impl, addr, size);
+        });
 
     // Release any insecure mapped memory.
     if (m_mapped_insecure_memory) {
@@ -352,7 +353,7 @@ void KPageTable::Finalize() {
     m_page_table_impl.reset();
 }
 
-Result KPageTable::MapProcessCode(VAddr addr, size_t num_pages, KMemoryState state,
+Result KPageTable::MapProcessCode(KProcessAddress addr, size_t num_pages, KMemoryState state,
                                   KMemoryPermission perm) {
     const u64 size{num_pages * PageSize};
 
@@ -388,7 +389,8 @@ Result KPageTable::MapProcessCode(VAddr addr, size_t num_pages, KMemoryState sta
     R_SUCCEED();
 }
 
-Result KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, size_t size) {
+Result KPageTable::MapCodeMemory(KProcessAddress dst_address, KProcessAddress src_address,
+                                 size_t size) {
     // Validate the mapping request.
     R_UNLESS(this->CanContain(dst_address, size, KMemoryState::AliasCode),
              ResultInvalidMemoryRegion);
@@ -473,7 +475,8 @@ Result KPageTable::MapCodeMemory(VAddr dst_address, VAddr src_address, size_t si
     R_SUCCEED();
 }
 
-Result KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, size_t size,
+Result KPageTable::UnmapCodeMemory(KProcessAddress dst_address, KProcessAddress src_address,
+                                   size_t size,
                                    ICacheInvalidationStrategy icache_invalidation_strategy) {
     // Validate the mapping request.
     R_UNLESS(this->CanContain(dst_address, size, KMemoryState::AliasCode),
@@ -525,7 +528,7 @@ Result KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, size_t 
     SCOPE_EXIT({
         if (reprotected_pages && any_code_pages) {
             if (icache_invalidation_strategy == ICacheInvalidationStrategy::InvalidateRange) {
-                m_system.InvalidateCpuInstructionCacheRange(dst_address, size);
+                m_system.InvalidateCpuInstructionCacheRange(GetInteger(dst_address), size);
             } else {
                 m_system.InvalidateCpuInstructionCaches();
             }
@@ -575,9 +578,10 @@ Result KPageTable::UnmapCodeMemory(VAddr dst_address, VAddr src_address, size_t 
     R_SUCCEED();
 }
 
-VAddr KPageTable::FindFreeArea(VAddr region_start, size_t region_num_pages, size_t num_pages,
-                               size_t alignment, size_t offset, size_t guard_pages) {
-    VAddr address = 0;
+KProcessAddress KPageTable::FindFreeArea(KProcessAddress region_start, size_t region_num_pages,
+                                         size_t num_pages, size_t alignment, size_t offset,
+                                         size_t guard_pages) {
+    KProcessAddress address = 0;
 
     if (num_pages <= region_num_pages) {
         if (this->IsAslrEnabled()) {
@@ -593,7 +597,7 @@ VAddr KPageTable::FindFreeArea(VAddr region_start, size_t region_num_pages, size
     return address;
 }
 
-Result KPageTable::MakePageGroup(KPageGroup& pg, VAddr addr, size_t num_pages) {
+Result KPageTable::MakePageGroup(KPageGroup& pg, KProcessAddress addr, size_t num_pages) {
     ASSERT(this->IsLockedByCurrentThread());
 
     const size_t size = num_pages * PageSize;
@@ -604,11 +608,11 @@ Result KPageTable::MakePageGroup(KPageGroup& pg, VAddr addr, size_t num_pages) {
     // Begin traversal.
     Common::PageTable::TraversalContext context;
     Common::PageTable::TraversalEntry next_entry;
-    R_UNLESS(m_page_table_impl->BeginTraversal(next_entry, context, addr),
+    R_UNLESS(m_page_table_impl->BeginTraversal(next_entry, context, GetInteger(addr)),
              ResultInvalidCurrentMemory);
 
     // Prepare tracking variables.
-    PAddr cur_addr = next_entry.phys_addr;
+    KPhysicalAddress cur_addr = next_entry.phys_addr;
     size_t cur_size = next_entry.block_size - (cur_addr & (next_entry.block_size - 1));
     size_t tot_size = cur_size;
 
@@ -646,7 +650,7 @@ Result KPageTable::MakePageGroup(KPageGroup& pg, VAddr addr, size_t num_pages) {
     R_SUCCEED();
 }
 
-bool KPageTable::IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_pages) {
+bool KPageTable::IsValidPageGroup(const KPageGroup& pg, KProcessAddress addr, size_t num_pages) {
     ASSERT(this->IsLockedByCurrentThread());
 
     const size_t size = num_pages * PageSize;
@@ -659,7 +663,7 @@ bool KPageTable::IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_p
 
     // We're going to validate that the group we'd expect is the group we see.
     auto cur_it = pg.begin();
-    PAddr cur_block_address = cur_it->GetAddress();
+    KPhysicalAddress cur_block_address = cur_it->GetAddress();
     size_t cur_block_pages = cur_it->GetNumPages();
 
     auto UpdateCurrentIterator = [&]() {
@@ -677,12 +681,12 @@ bool KPageTable::IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_p
     // Begin traversal.
     Common::PageTable::TraversalContext context;
     Common::PageTable::TraversalEntry next_entry;
-    if (!m_page_table_impl->BeginTraversal(next_entry, context, addr)) {
+    if (!m_page_table_impl->BeginTraversal(next_entry, context, GetInteger(addr))) {
         return false;
     }
 
     // Prepare tracking variables.
-    PAddr cur_addr = next_entry.phys_addr;
+    KPhysicalAddress cur_addr = next_entry.phys_addr;
     size_t cur_size = next_entry.block_size - (cur_addr & (next_entry.block_size - 1));
     size_t tot_size = cur_size;
 
@@ -734,8 +738,8 @@ bool KPageTable::IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_p
     return cur_block_address == cur_addr && cur_block_pages == (cur_size / PageSize);
 }
 
-Result KPageTable::UnmapProcessMemory(VAddr dst_addr, size_t size, KPageTable& src_page_table,
-                                      VAddr src_addr) {
+Result KPageTable::UnmapProcessMemory(KProcessAddress dst_addr, size_t size,
+                                      KPageTable& src_page_table, KProcessAddress src_addr) {
     // Acquire the table locks.
     KScopedLightLockPair lk(src_page_table.m_general_lock, m_general_lock);
 
@@ -774,8 +778,8 @@ Result KPageTable::UnmapProcessMemory(VAddr dst_addr, size_t size, KPageTable& s
 }
 
 Result KPageTable::SetupForIpcClient(PageLinkedList* page_list, size_t* out_blocks_needed,
-                                     VAddr address, size_t size, KMemoryPermission test_perm,
-                                     KMemoryState dst_state) {
+                                     KProcessAddress address, size_t size,
+                                     KMemoryPermission test_perm, KMemoryState dst_state) {
     // Validate pre-conditions.
     ASSERT(this->IsLockedByCurrentThread());
     ASSERT(test_perm == KMemoryPermission::UserReadWrite ||
@@ -790,10 +794,10 @@ Result KPageTable::SetupForIpcClient(PageLinkedList* page_list, size_t* out_bloc
                               : KMemoryPermission::UserRead;
 
     // Get aligned extents.
-    const VAddr aligned_src_start = Common::AlignDown((address), PageSize);
-    const VAddr aligned_src_end = Common::AlignUp((address) + size, PageSize);
-    const VAddr mapping_src_start = Common::AlignUp((address), PageSize);
-    const VAddr mapping_src_end = Common::AlignDown((address) + size, PageSize);
+    const KProcessAddress aligned_src_start = Common::AlignDown(GetInteger(address), PageSize);
+    const KProcessAddress aligned_src_end = Common::AlignUp(GetInteger(address) + size, PageSize);
+    const KProcessAddress mapping_src_start = Common::AlignUp(GetInteger(address), PageSize);
+    const KProcessAddress mapping_src_end = Common::AlignDown(GetInteger(address) + size, PageSize);
 
     const auto aligned_src_last = (aligned_src_end)-1;
     const auto mapping_src_last = (mapping_src_end)-1;
@@ -840,14 +844,15 @@ Result KPageTable::SetupForIpcClient(PageLinkedList* page_list, size_t* out_bloc
                                      test_attr_mask, KMemoryAttribute::None));
 
         if (mapping_src_start < mapping_src_end && (mapping_src_start) < info.GetEndAddress() &&
-            info.GetAddress() < (mapping_src_end)) {
-            const auto cur_start =
-                info.GetAddress() >= (mapping_src_start) ? info.GetAddress() : (mapping_src_start);
+            info.GetAddress() < GetInteger(mapping_src_end)) {
+            const auto cur_start = info.GetAddress() >= GetInteger(mapping_src_start)
+                                       ? info.GetAddress()
+                                       : (mapping_src_start);
             const auto cur_end = mapping_src_last >= info.GetLastAddress() ? info.GetEndAddress()
                                                                            : (mapping_src_end);
             const size_t cur_size = cur_end - cur_start;
 
-            if (info.GetAddress() < (mapping_src_start)) {
+            if (info.GetAddress() < GetInteger(mapping_src_start)) {
                 ++blocks_needed;
             }
             if (mapping_src_last < info.GetLastAddress()) {
@@ -882,30 +887,32 @@ Result KPageTable::SetupForIpcClient(PageLinkedList* page_list, size_t* out_bloc
     R_SUCCEED();
 }
 
-Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_addr,
-                                     KMemoryPermission test_perm, KMemoryState dst_state,
-                                     KPageTable& src_page_table, bool send) {
+Result KPageTable::SetupForIpcServer(KProcessAddress* out_addr, size_t size,
+                                     KProcessAddress src_addr, KMemoryPermission test_perm,
+                                     KMemoryState dst_state, KPageTable& src_page_table,
+                                     bool send) {
     ASSERT(this->IsLockedByCurrentThread());
     ASSERT(src_page_table.IsLockedByCurrentThread());
 
     // Check that we can theoretically map.
-    const VAddr region_start = m_alias_region_start;
+    const KProcessAddress region_start = m_alias_region_start;
     const size_t region_size = m_alias_region_end - m_alias_region_start;
     R_UNLESS(size < region_size, ResultOutOfAddressSpace);
 
     // Get aligned source extents.
-    const VAddr src_start = src_addr;
-    const VAddr src_end = src_addr + size;
-    const VAddr aligned_src_start = Common::AlignDown((src_start), PageSize);
-    const VAddr aligned_src_end = Common::AlignUp((src_start) + size, PageSize);
-    const VAddr mapping_src_start = Common::AlignUp((src_start), PageSize);
-    const VAddr mapping_src_end = Common::AlignDown((src_start) + size, PageSize);
+    const KProcessAddress src_start = src_addr;
+    const KProcessAddress src_end = src_addr + size;
+    const KProcessAddress aligned_src_start = Common::AlignDown(GetInteger(src_start), PageSize);
+    const KProcessAddress aligned_src_end = Common::AlignUp(GetInteger(src_start) + size, PageSize);
+    const KProcessAddress mapping_src_start = Common::AlignUp(GetInteger(src_start), PageSize);
+    const KProcessAddress mapping_src_end =
+        Common::AlignDown(GetInteger(src_start) + size, PageSize);
     const size_t aligned_src_size = aligned_src_end - aligned_src_start;
     const size_t mapping_src_size =
         (mapping_src_start < mapping_src_end) ? (mapping_src_end - mapping_src_start) : 0;
 
     // Select a random address to map at.
-    VAddr dst_addr =
+    KProcessAddress dst_addr =
         this->FindFreeArea(region_start, region_size / PageSize, aligned_src_size / PageSize,
                            PageSize, 0, this->GetNumGuardPages());
 
@@ -930,9 +937,9 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Ensure that we manage page references correctly.
-    PAddr start_partial_page = 0;
-    PAddr end_partial_page = 0;
-    VAddr cur_mapped_addr = dst_addr;
+    KPhysicalAddress start_partial_page = 0;
+    KPhysicalAddress end_partial_page = 0;
+    KProcessAddress cur_mapped_addr = dst_addr;
 
     // If the partial pages are mapped, an extra reference will have been opened. Otherwise, they'll
     // free on scope exit.
@@ -977,11 +984,12 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     // Begin traversal.
     Common::PageTable::TraversalContext context;
     Common::PageTable::TraversalEntry next_entry;
-    bool traverse_valid = src_impl.BeginTraversal(next_entry, context, aligned_src_start);
+    bool traverse_valid =
+        src_impl.BeginTraversal(next_entry, context, GetInteger(aligned_src_start));
     ASSERT(traverse_valid);
 
     // Prepare tracking variables.
-    PAddr cur_block_addr = next_entry.phys_addr;
+    KPhysicalAddress cur_block_addr = next_entry.phys_addr;
     size_t cur_block_size =
         next_entry.block_size - ((cur_block_addr) & (next_entry.block_size - 1));
     size_t tot_block_size = cur_block_size;
@@ -989,7 +997,7 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     // Map the start page, if we have one.
     if (start_partial_page != 0) {
         // Ensure the page holds correct data.
-        const VAddr start_partial_virt =
+        const KVirtualAddress start_partial_virt =
             GetHeapVirtualAddress(m_system.Kernel().MemoryLayout(), start_partial_page);
         if (send) {
             const size_t partial_offset = src_start - aligned_src_start;
@@ -1002,21 +1010,23 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
                 clear_size = 0;
             }
 
-            std::memset(m_system.Memory().GetPointer<void>(start_partial_virt), fill_val,
-                        partial_offset);
+            std::memset(m_system.Memory().GetPointer<void>(GetInteger(start_partial_virt)),
+                        fill_val, partial_offset);
             std::memcpy(
-                m_system.Memory().GetPointer<void>(start_partial_virt + partial_offset),
+                m_system.Memory().GetPointer<void>(GetInteger(start_partial_virt) + partial_offset),
                 m_system.Memory().GetPointer<void>(
-                    GetHeapVirtualAddress(m_system.Kernel().MemoryLayout(), cur_block_addr) +
+                    GetInteger(
+                        GetHeapVirtualAddress(m_system.Kernel().MemoryLayout(), cur_block_addr)) +
                     partial_offset),
                 copy_size);
             if (clear_size > 0) {
-                std::memset(m_system.Memory().GetPointer<void>(start_partial_virt + partial_offset +
-                                                               copy_size),
+                std::memset(m_system.Memory().GetPointer<void>(GetInteger(start_partial_virt) +
+                                                               partial_offset + copy_size),
                             fill_val, clear_size);
             }
         } else {
-            std::memset(m_system.Memory().GetPointer<void>(start_partial_virt), fill_val, PageSize);
+            std::memset(m_system.Memory().GetPointer<void>(GetInteger(start_partial_virt)),
+                        fill_val, PageSize);
         }
 
         // Map the page.
@@ -1061,7 +1071,8 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     }
 
     // Handle the last direct-mapped page.
-    if (const VAddr mapped_block_end = aligned_src_start + tot_block_size - cur_block_size;
+    if (const KProcessAddress mapped_block_end =
+            aligned_src_start + tot_block_size - cur_block_size;
         mapped_block_end < mapping_src_end) {
         const size_t last_block_size = mapping_src_end - mapped_block_end;
 
@@ -1084,18 +1095,20 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     // Map the end page, if we have one.
     if (end_partial_page != 0) {
         // Ensure the page holds correct data.
-        const VAddr end_partial_virt =
+        const KVirtualAddress end_partial_virt =
             GetHeapVirtualAddress(m_system.Kernel().MemoryLayout(), end_partial_page);
         if (send) {
             const size_t copy_size = src_end - mapping_src_end;
-            std::memcpy(m_system.Memory().GetPointer<void>(end_partial_virt),
-                        m_system.Memory().GetPointer<void>(GetHeapVirtualAddress(
-                            m_system.Kernel().MemoryLayout(), cur_block_addr)),
+            std::memcpy(m_system.Memory().GetPointer<void>(GetInteger(end_partial_virt)),
+                        m_system.Memory().GetPointer<void>(GetInteger(GetHeapVirtualAddress(
+                            m_system.Kernel().MemoryLayout(), cur_block_addr))),
                         copy_size);
-            std::memset(m_system.Memory().GetPointer<void>(end_partial_virt + copy_size), fill_val,
-                        PageSize - copy_size);
+            std::memset(
+                m_system.Memory().GetPointer<void>(GetInteger(end_partial_virt) + copy_size),
+                fill_val, PageSize - copy_size);
         } else {
-            std::memset(m_system.Memory().GetPointer<void>(end_partial_virt), fill_val, PageSize);
+            std::memset(m_system.Memory().GetPointer<void>(GetInteger(end_partial_virt)), fill_val,
+                        PageSize);
         }
 
         // Map the page.
@@ -1116,7 +1129,7 @@ Result KPageTable::SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_add
     R_SUCCEED();
 }
 
-Result KPageTable::SetupForIpc(VAddr* out_dst_addr, size_t size, VAddr src_addr,
+Result KPageTable::SetupForIpc(KProcessAddress* out_dst_addr, size_t size, KProcessAddress src_addr,
                                KPageTable& src_page_table, KMemoryPermission test_perm,
                                KMemoryState dst_state, bool send) {
     // For convenience, alias this.
@@ -1142,8 +1155,8 @@ Result KPageTable::SetupForIpc(VAddr* out_dst_addr, size_t size, VAddr src_addr,
     R_TRY(allocator_result);
 
     // Get the mapped extents.
-    const VAddr src_map_start = Common::AlignUp((src_addr), PageSize);
-    const VAddr src_map_end = Common::AlignDown((src_addr) + size, PageSize);
+    const KProcessAddress src_map_start = Common::AlignUp(GetInteger(src_addr), PageSize);
+    const KProcessAddress src_map_end = Common::AlignDown(GetInteger(src_addr) + size, PageSize);
     const size_t src_map_size = src_map_end - src_map_start;
 
     // Ensure that we clean up appropriately if we fail after this.
@@ -1172,7 +1185,8 @@ Result KPageTable::SetupForIpc(VAddr* out_dst_addr, size_t size, VAddr src_addr,
     R_SUCCEED();
 }
 
-Result KPageTable::CleanupForIpcServer(VAddr address, size_t size, KMemoryState dst_state) {
+Result KPageTable::CleanupForIpcServer(KProcessAddress address, size_t size,
+                                       KMemoryState dst_state) {
     // Validate the address.
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
 
@@ -1196,8 +1210,8 @@ Result KPageTable::CleanupForIpcServer(VAddr address, size_t size, KMemoryState 
     KScopedPageTableUpdater updater(this);
 
     // Get aligned extents.
-    const VAddr aligned_start = Common::AlignDown((address), PageSize);
-    const VAddr aligned_end = Common::AlignUp((address) + size, PageSize);
+    const KProcessAddress aligned_start = Common::AlignDown(GetInteger(address), PageSize);
+    const KProcessAddress aligned_end = Common::AlignUp(GetInteger(address) + size, PageSize);
     const size_t aligned_size = aligned_end - aligned_start;
     const size_t aligned_num_pages = aligned_size / PageSize;
 
@@ -1211,22 +1225,23 @@ Result KPageTable::CleanupForIpcServer(VAddr address, size_t size, KMemoryState 
                                   KMemoryBlockDisableMergeAttribute::Normal);
 
     // Release from the resource limit as relevant.
-    const VAddr mapping_start = Common::AlignUp((address), PageSize);
-    const VAddr mapping_end = Common::AlignDown((address) + size, PageSize);
+    const KProcessAddress mapping_start = Common::AlignUp(GetInteger(address), PageSize);
+    const KProcessAddress mapping_end = Common::AlignDown(GetInteger(address) + size, PageSize);
     const size_t mapping_size = (mapping_start < mapping_end) ? mapping_end - mapping_start : 0;
     m_resource_limit->Release(LimitableResource::PhysicalMemoryMax, aligned_size - mapping_size);
 
     R_SUCCEED();
 }
 
-Result KPageTable::CleanupForIpcClient(VAddr address, size_t size, KMemoryState dst_state) {
+Result KPageTable::CleanupForIpcClient(KProcessAddress address, size_t size,
+                                       KMemoryState dst_state) {
     // Validate the address.
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
 
     // Get aligned source extents.
-    const VAddr mapping_start = Common::AlignUp((address), PageSize);
-    const VAddr mapping_end = Common::AlignDown((address) + size, PageSize);
-    const VAddr mapping_last = mapping_end - 1;
+    const KProcessAddress mapping_start = Common::AlignUp(GetInteger(address), PageSize);
+    const KProcessAddress mapping_end = Common::AlignDown(GetInteger(address) + size, PageSize);
+    const KProcessAddress mapping_last = mapping_end - 1;
     const size_t mapping_size = (mapping_start < mapping_end) ? (mapping_end - mapping_start) : 0;
 
     // If nothing was mapped, we're actually done immediately.
@@ -1279,7 +1294,7 @@ Result KPageTable::CleanupForIpcClient(VAddr address, size_t size, KMemoryState 
             KMemoryInfo cur_info = start_it->GetMemoryInfo();
 
             // Create tracking variables.
-            VAddr cur_address = cur_info.GetAddress();
+            KProcessAddress cur_address = cur_info.GetAddress();
             size_t cur_size = cur_info.GetSize();
             bool cur_perm_eq = cur_info.GetPermission() == cur_info.GetOriginalPermission();
             bool cur_needs_set_perm = !cur_perm_eq && cur_info.GetIpcLockCount() == 1;
@@ -1352,7 +1367,7 @@ Result KPageTable::CleanupForIpcClient(VAddr address, size_t size, KMemoryState 
                    .IsSuccess());
 
         // Create tracking variables.
-        VAddr cur_address = cur_info.GetAddress();
+        KProcessAddress cur_address = cur_info.GetAddress();
         size_t cur_size = cur_info.GetSize();
         bool cur_perm_eq = cur_info.GetPermission() == cur_info.GetOriginalPermission();
         bool cur_needs_set_perm = !cur_perm_eq && cur_info.GetIpcLockCount() == 1;
@@ -1439,16 +1454,16 @@ Result KPageTable::CleanupForIpcClient(VAddr address, size_t size, KMemoryState 
 }
 
 void KPageTable::CleanupForIpcClientOnServerSetupFailure([[maybe_unused]] PageLinkedList* page_list,
-                                                         VAddr address, size_t size,
+                                                         KProcessAddress address, size_t size,
                                                          KMemoryPermission prot_perm) {
     ASSERT(this->IsLockedByCurrentThread());
-    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(address), PageSize));
     ASSERT(Common::IsAligned(size, PageSize));
 
     // Get the mapped extents.
-    const VAddr src_map_start = address;
-    const VAddr src_map_end = address + size;
-    const VAddr src_map_last = src_map_end - 1;
+    const KProcessAddress src_map_start = address;
+    const KProcessAddress src_map_end = address + size;
+    const KProcessAddress src_map_last = src_map_end - 1;
 
     // This function is only invoked when there's something to do.
     ASSERT(src_map_end > src_map_start);
@@ -1458,8 +1473,9 @@ void KPageTable::CleanupForIpcClientOnServerSetupFailure([[maybe_unused]] PageLi
     while (true) {
         const KMemoryInfo info = it->GetMemoryInfo();
 
-        const auto cur_start =
-            info.GetAddress() >= src_map_start ? info.GetAddress() : src_map_start;
+        const auto cur_start = info.GetAddress() >= GetInteger(src_map_start)
+                                   ? info.GetAddress()
+                                   : GetInteger(src_map_start);
         const auto cur_end =
             src_map_last <= info.GetLastAddress() ? src_map_end : info.GetEndAddress();
 
@@ -1469,7 +1485,7 @@ void KPageTable::CleanupForIpcClientOnServerSetupFailure([[maybe_unused]] PageLi
             (info.GetIpcLockCount() != 0 &&
              (info.GetOriginalPermission() & KMemoryPermission::IpcLockChangeMask) != prot_perm)) {
             // Check if we actually need to fix the protections on the block.
-            if (cur_end == src_map_end || info.GetAddress() <= src_map_start ||
+            if (cur_end == src_map_end || info.GetAddress() <= GetInteger(src_map_start) ||
                 (info.GetPermission() & KMemoryPermission::IpcLockChangeMask) != prot_perm) {
                 ASSERT(Operate(cur_start, (cur_end - cur_start) / PageSize, info.GetPermission(),
                                OperationType::ChangePermissions)
@@ -1488,15 +1504,15 @@ void KPageTable::CleanupForIpcClientOnServerSetupFailure([[maybe_unused]] PageLi
     }
 }
 
-Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
+Result KPageTable::MapPhysicalMemory(KProcessAddress address, size_t size) {
     // Lock the physical memory lock.
     KScopedLightLock phys_lk(m_map_physical_memory_lock);
 
     // Calculate the last address for convenience.
-    const VAddr last_address = address + size - 1;
+    const KProcessAddress last_address = address + size - 1;
 
     // Define iteration variables.
-    VAddr cur_address;
+    KProcessAddress cur_address;
     size_t mapped_size;
 
     // The entire mapping process can be retried.
@@ -1528,7 +1544,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
 
                 // Track the memory if it's mapped.
                 if (info.GetState() != KMemoryState::Free) {
-                    mapped_size += VAddr(info.GetEndAddress()) - cur_address;
+                    mapped_size += KProcessAddress(info.GetEndAddress()) - cur_address;
                 }
 
                 // Advance.
@@ -1581,7 +1597,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
 
                         const bool is_free = info.GetState() == KMemoryState::Free;
                         if (is_free) {
-                            if (info.GetAddress() < address) {
+                            if (info.GetAddress() < GetInteger(address)) {
                                 ++num_allocator_blocks;
                             }
                             if (last_address < info.GetLastAddress()) {
@@ -1599,7 +1615,8 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
 
                         // Track the memory if it's mapped.
                         if (!is_free) {
-                            checked_mapped_size += VAddr(info.GetEndAddress()) - cur_address;
+                            checked_mapped_size +=
+                                KProcessAddress(info.GetEndAddress()) - cur_address;
                         }
 
                         // Advance.
@@ -1627,7 +1644,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
 
                 // Prepare to iterate over the memory.
                 auto pg_it = pg.begin();
-                PAddr pg_phys_addr = pg_it->GetAddress();
+                KPhysicalAddress pg_phys_addr = pg_it->GetAddress();
                 size_t pg_pages = pg_it->GetNumPages();
 
                 // Reset the current tracking address, and make sure we clean up on failure.
@@ -1635,7 +1652,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
                 cur_address = address;
                 ON_RESULT_FAILURE {
                     if (cur_address > address) {
-                        const VAddr last_unmap_address = cur_address - 1;
+                        const KProcessAddress last_unmap_address = cur_address - 1;
 
                         // Iterate, unmapping the pages.
                         cur_address = address;
@@ -1652,7 +1669,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
                             if (info.GetState() == KMemoryState::Free) {
                                 // Determine the range to unmap.
                                 const size_t cur_pages =
-                                    std::min(VAddr(info.GetEndAddress()) - cur_address,
+                                    std::min(KProcessAddress(info.GetEndAddress()) - cur_address,
                                              last_unmap_address + 1 - cur_address) /
                                     PageSize;
 
@@ -1695,9 +1712,10 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
                     // If it's unmapped, we need to map it.
                     if (info.GetState() == KMemoryState::Free) {
                         // Determine the range to map.
-                        size_t map_pages = std::min(VAddr(info.GetEndAddress()) - cur_address,
-                                                    last_address + 1 - cur_address) /
-                                           PageSize;
+                        size_t map_pages =
+                            std::min(KProcessAddress(info.GetEndAddress()) - cur_address,
+                                     last_address + 1 - cur_address) /
+                            PageSize;
 
                         // While we have pages to map, map them.
                         while (map_pages > 0) {
@@ -1754,7 +1772,7 @@ Result KPageTable::MapPhysicalMemory(VAddr address, size_t size) {
     }
 }
 
-Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
+Result KPageTable::UnmapPhysicalMemory(KProcessAddress address, size_t size) {
     // Lock the physical memory lock.
     KScopedLightLock phys_lk(m_map_physical_memory_lock);
 
@@ -1762,13 +1780,13 @@ Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
     KScopedLightLock lk(m_general_lock);
 
     // Calculate the last address for convenience.
-    const VAddr last_address = address + size - 1;
+    const KProcessAddress last_address = address + size - 1;
 
     // Define iteration variables.
-    VAddr map_start_address = 0;
-    VAddr map_last_address = 0;
+    KProcessAddress map_start_address = 0;
+    KProcessAddress map_last_address = 0;
 
-    VAddr cur_address;
+    KProcessAddress cur_address;
     size_t mapped_size;
     size_t num_allocator_blocks = 0;
 
@@ -1801,7 +1819,7 @@ Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
                 map_last_address =
                     (last_address >= info.GetLastAddress()) ? info.GetLastAddress() : last_address;
 
-                if (info.GetAddress() < address) {
+                if (info.GetAddress() < GetInteger(address)) {
                     ++num_allocator_blocks;
                 }
                 if (last_address < info.GetLastAddress()) {
@@ -1854,7 +1872,7 @@ Result KPageTable::UnmapPhysicalMemory(VAddr address, size_t size) {
         // If the memory state is normal, we need to unmap it.
         if (info.GetState() == KMemoryState::Normal) {
             // Determine the range to unmap.
-            const size_t cur_pages = std::min(VAddr(info.GetEndAddress()) - cur_address,
+            const size_t cur_pages = std::min(KProcessAddress(info.GetEndAddress()) - cur_address,
                                               last_address + 1 - cur_address) /
                                      PageSize;
 
@@ -2144,13 +2162,14 @@ void KPageTable::RemapPageGroup(PageLinkedList* page_list, KProcessAddress addre
         const KMemoryInfo info = it->GetMemoryInfo();
 
         // Determine the range to map.
-        KProcessAddress map_address = std::max<VAddr>(info.GetAddress(), start_address);
-        const KProcessAddress map_end_address = std::min<VAddr>(info.GetEndAddress(), end_address);
+        KProcessAddress map_address = std::max<KProcessAddress>(info.GetAddress(), start_address);
+        const KProcessAddress map_end_address =
+            std::min<KProcessAddress>(info.GetEndAddress(), end_address);
         ASSERT(map_end_address != map_address);
 
         // Determine if we should disable head merge.
         const bool disable_head_merge =
-            info.GetAddress() >= start_address &&
+            info.GetAddress() >= GetInteger(start_address) &&
             True(info.GetDisableMergeAttribute() & KMemoryBlockDisableMergeAttribute::Normal);
         const KPageProperties map_properties = {
             info.GetPermission(), false, false,
@@ -2214,7 +2233,7 @@ Result KPageTable::MapPages(KProcessAddress* out_addr, size_t num_pages, size_t 
     KProcessAddress addr = this->FindFreeArea(region_start, region_num_pages, num_pages, alignment,
                                               0, this->GetNumGuardPages());
     R_UNLESS(addr != 0, ResultOutOfMemory);
-    ASSERT(Common::IsAligned(addr, alignment));
+    ASSERT(Common::IsAligned(GetInteger(addr), alignment));
     ASSERT(this->CanContain(addr, num_pages * PageSize, state));
     ASSERT(this->CheckMemoryState(addr, num_pages * PageSize, KMemoryState::All, KMemoryState::Free,
                                   KMemoryPermission::None, KMemoryPermission::None,
@@ -2455,7 +2474,7 @@ Result KPageTable::UnmapPageGroup(KProcessAddress address, const KPageGroup& pg,
     R_SUCCEED();
 }
 
-Result KPageTable::MakeAndOpenPageGroup(KPageGroup* out, VAddr address, size_t num_pages,
+Result KPageTable::MakeAndOpenPageGroup(KPageGroup* out, KProcessAddress address, size_t num_pages,
                                         KMemoryState state_mask, KMemoryState state,
                                         KMemoryPermission perm_mask, KMemoryPermission perm,
                                         KMemoryAttribute attr_mask, KMemoryAttribute attr) {
@@ -2480,7 +2499,7 @@ Result KPageTable::MakeAndOpenPageGroup(KPageGroup* out, VAddr address, size_t n
     R_SUCCEED();
 }
 
-Result KPageTable::SetProcessMemoryPermission(VAddr addr, size_t size,
+Result KPageTable::SetProcessMemoryPermission(KProcessAddress addr, size_t size,
                                               Svc::MemoryPermission svc_perm) {
     const size_t num_pages = size / PageSize;
 
@@ -2541,23 +2560,23 @@ Result KPageTable::SetProcessMemoryPermission(VAddr addr, size_t size,
 
     // Ensure cache coherency, if we're setting pages as executable.
     if (is_x) {
-        m_system.InvalidateCpuInstructionCacheRange(addr, size);
+        m_system.InvalidateCpuInstructionCacheRange(GetInteger(addr), size);
     }
 
     R_SUCCEED();
 }
 
-KMemoryInfo KPageTable::QueryInfoImpl(VAddr addr) {
+KMemoryInfo KPageTable::QueryInfoImpl(KProcessAddress addr) {
     KScopedLightLock lk(m_general_lock);
 
     return m_memory_block_manager.FindBlock(addr)->GetMemoryInfo();
 }
 
-KMemoryInfo KPageTable::QueryInfo(VAddr addr) {
+KMemoryInfo KPageTable::QueryInfo(KProcessAddress addr) {
     if (!Contains(addr, 1)) {
         return {
-            .m_address = m_address_space_end,
-            .m_size = 0 - m_address_space_end,
+            .m_address = GetInteger(m_address_space_end),
+            .m_size = 0 - GetInteger(m_address_space_end),
             .m_state = static_cast<KMemoryState>(Svc::MemoryState::Inaccessible),
             .m_device_disable_merge_left_count = 0,
             .m_device_disable_merge_right_count = 0,
@@ -2574,7 +2593,8 @@ KMemoryInfo KPageTable::QueryInfo(VAddr addr) {
     return QueryInfoImpl(addr);
 }
 
-Result KPageTable::SetMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermission svc_perm) {
+Result KPageTable::SetMemoryPermission(KProcessAddress addr, size_t size,
+                                       Svc::MemoryPermission svc_perm) {
     const size_t num_pages = size / PageSize;
 
     // Lock the table.
@@ -2611,7 +2631,7 @@ Result KPageTable::SetMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermi
     R_SUCCEED();
 }
 
-Result KPageTable::SetMemoryAttribute(VAddr addr, size_t size, u32 mask, u32 attr) {
+Result KPageTable::SetMemoryAttribute(KProcessAddress addr, size_t size, u32 mask, u32 attr) {
     const size_t num_pages = size / PageSize;
     ASSERT((static_cast<KMemoryAttribute>(mask) | KMemoryAttribute::SetMask) ==
            KMemoryAttribute::SetMask);
@@ -2666,12 +2686,12 @@ Result KPageTable::SetMaxHeapSize(size_t size) {
     R_SUCCEED();
 }
 
-Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
+Result KPageTable::SetHeapSize(u64* out, size_t size) {
     // Lock the physical memory mutex.
     KScopedLightLock map_phys_mem_lk(m_map_physical_memory_lock);
 
     // Try to perform a reduction in heap, instead of an extension.
-    VAddr cur_address{};
+    KProcessAddress cur_address{};
     size_t allocation_size{};
     {
         // Lock the table.
@@ -2722,11 +2742,11 @@ Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
             m_current_heap_end = m_heap_region_start + size;
 
             // Set the output.
-            *out = m_heap_region_start;
+            *out = GetInteger(m_heap_region_start);
             R_SUCCEED();
         } else if (size == GetHeapSize()) {
             // The size requested is exactly the current size.
-            *out = m_heap_region_start;
+            *out = GetInteger(m_heap_region_start);
             R_SUCCEED();
         } else {
             // We have to allocate memory. Determine how much to allocate and where while the table
@@ -2799,14 +2819,14 @@ Result KPageTable::SetHeapSize(VAddr* out, size_t size) {
         m_current_heap_end = m_heap_region_start + size;
 
         // Set the output.
-        *out = m_heap_region_start;
+        *out = GetInteger(m_heap_region_start);
         R_SUCCEED();
     }
 }
 
-Result KPageTable::LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, size_t size,
-                                                KMemoryPermission perm, bool is_aligned,
-                                                bool check_heap) {
+Result KPageTable::LockForMapDeviceAddressSpace(bool* out_is_io, KProcessAddress address,
+                                                size_t size, KMemoryPermission perm,
+                                                bool is_aligned, bool check_heap) {
     // Lightly validate the range before doing anything else.
     const size_t num_pages = size / PageSize;
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
@@ -2842,7 +2862,8 @@ Result KPageTable::LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, 
     R_SUCCEED();
 }
 
-Result KPageTable::LockForUnmapDeviceAddressSpace(VAddr address, size_t size, bool check_heap) {
+Result KPageTable::LockForUnmapDeviceAddressSpace(KProcessAddress address, size_t size,
+                                                  bool check_heap) {
     // Lightly validate the range before doing anything else.
     const size_t num_pages = size / PageSize;
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
@@ -2876,7 +2897,7 @@ Result KPageTable::LockForUnmapDeviceAddressSpace(VAddr address, size_t size, bo
     R_SUCCEED();
 }
 
-Result KPageTable::UnlockForDeviceAddressSpace(VAddr address, size_t size) {
+Result KPageTable::UnlockForDeviceAddressSpace(KProcessAddress address, size_t size) {
     // Lightly validate the range before doing anything else.
     const size_t num_pages = size / PageSize;
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
@@ -2904,7 +2925,8 @@ Result KPageTable::UnlockForDeviceAddressSpace(VAddr address, size_t size) {
     R_SUCCEED();
 }
 
-Result KPageTable::LockForIpcUserBuffer(PAddr* out, VAddr address, size_t size) {
+Result KPageTable::LockForIpcUserBuffer(KPhysicalAddress* out, KProcessAddress address,
+                                        size_t size) {
     R_RETURN(this->LockMemoryAndOpen(
         nullptr, out, address, size, KMemoryState::FlagCanIpcUserBuffer,
         KMemoryState::FlagCanIpcUserBuffer, KMemoryPermission::All,
@@ -2913,7 +2935,7 @@ Result KPageTable::LockForIpcUserBuffer(PAddr* out, VAddr address, size_t size) 
         KMemoryAttribute::Locked));
 }
 
-Result KPageTable::UnlockForIpcUserBuffer(VAddr address, size_t size) {
+Result KPageTable::UnlockForIpcUserBuffer(KProcessAddress address, size_t size) {
     R_RETURN(this->UnlockMemory(address, size, KMemoryState::FlagCanIpcUserBuffer,
                                 KMemoryState::FlagCanIpcUserBuffer, KMemoryPermission::None,
                                 KMemoryPermission::None, KMemoryAttribute::All,
@@ -2921,7 +2943,7 @@ Result KPageTable::UnlockForIpcUserBuffer(VAddr address, size_t size) {
                                 KMemoryAttribute::Locked, nullptr));
 }
 
-Result KPageTable::LockForCodeMemory(KPageGroup* out, VAddr addr, size_t size) {
+Result KPageTable::LockForCodeMemory(KPageGroup* out, KProcessAddress addr, size_t size) {
     R_RETURN(this->LockMemoryAndOpen(
         out, nullptr, addr, size, KMemoryState::FlagCanCodeMemory, KMemoryState::FlagCanCodeMemory,
         KMemoryPermission::All, KMemoryPermission::UserReadWrite, KMemoryAttribute::All,
@@ -2929,17 +2951,17 @@ Result KPageTable::LockForCodeMemory(KPageGroup* out, VAddr addr, size_t size) {
         KMemoryAttribute::Locked));
 }
 
-Result KPageTable::UnlockForCodeMemory(VAddr addr, size_t size, const KPageGroup& pg) {
+Result KPageTable::UnlockForCodeMemory(KProcessAddress addr, size_t size, const KPageGroup& pg) {
     R_RETURN(this->UnlockMemory(
         addr, size, KMemoryState::FlagCanCodeMemory, KMemoryState::FlagCanCodeMemory,
         KMemoryPermission::None, KMemoryPermission::None, KMemoryAttribute::All,
         KMemoryAttribute::Locked, KMemoryPermission::UserReadWrite, KMemoryAttribute::Locked, &pg));
 }
 
-bool KPageTable::IsRegionContiguous(VAddr addr, u64 size) const {
-    auto start_ptr = m_system.DeviceMemory().GetPointer<u8>(addr);
+bool KPageTable::IsRegionContiguous(KProcessAddress addr, u64 size) const {
+    auto start_ptr = m_system.DeviceMemory().GetPointer<u8>(GetInteger(addr));
     for (u64 offset{}; offset < size; offset += PageSize) {
-        if (start_ptr != m_system.DeviceMemory().GetPointer<u8>(addr + offset)) {
+        if (start_ptr != m_system.DeviceMemory().GetPointer<u8>(GetInteger(addr) + offset)) {
             return false;
         }
         start_ptr += PageSize;
@@ -2947,18 +2969,19 @@ bool KPageTable::IsRegionContiguous(VAddr addr, u64 size) const {
     return true;
 }
 
-void KPageTable::AddRegionToPages(VAddr start, size_t num_pages, KPageGroup& page_linked_list) {
-    VAddr addr{start};
+void KPageTable::AddRegionToPages(KProcessAddress start, size_t num_pages,
+                                  KPageGroup& page_linked_list) {
+    KProcessAddress addr{start};
     while (addr < start + (num_pages * PageSize)) {
-        const PAddr paddr{GetPhysicalAddr(addr)};
+        const KPhysicalAddress paddr{GetPhysicalAddr(addr)};
         ASSERT(paddr != 0);
         page_linked_list.AddBlock(paddr, 1);
         addr += PageSize;
     }
 }
 
-VAddr KPageTable::AllocateVirtualMemory(VAddr start, size_t region_num_pages, u64 needed_num_pages,
-                                        size_t align) {
+KProcessAddress KPageTable::AllocateVirtualMemory(KProcessAddress start, size_t region_num_pages,
+                                                  u64 needed_num_pages, size_t align) {
     if (m_enable_aslr) {
         UNIMPLEMENTED();
     }
@@ -2966,11 +2989,11 @@ VAddr KPageTable::AllocateVirtualMemory(VAddr start, size_t region_num_pages, u6
                                                IsKernel() ? 1 : 4);
 }
 
-Result KPageTable::Operate(VAddr addr, size_t num_pages, const KPageGroup& page_group,
+Result KPageTable::Operate(KProcessAddress addr, size_t num_pages, const KPageGroup& page_group,
                            OperationType operation) {
     ASSERT(this->IsLockedByCurrentThread());
 
-    ASSERT(Common::IsAligned(addr, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(addr), PageSize));
     ASSERT(num_pages > 0);
     ASSERT(num_pages == page_group.GetNumPages());
 
@@ -3001,12 +3024,12 @@ Result KPageTable::Operate(VAddr addr, size_t num_pages, const KPageGroup& page_
     R_SUCCEED();
 }
 
-Result KPageTable::Operate(VAddr addr, size_t num_pages, KMemoryPermission perm,
-                           OperationType operation, PAddr map_addr) {
+Result KPageTable::Operate(KProcessAddress addr, size_t num_pages, KMemoryPermission perm,
+                           OperationType operation, KPhysicalAddress map_addr) {
     ASSERT(this->IsLockedByCurrentThread());
 
     ASSERT(num_pages > 0);
-    ASSERT(Common::IsAligned(addr, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(addr), PageSize));
     ASSERT(ContainsPages(addr, num_pages));
 
     switch (operation) {
@@ -3022,7 +3045,7 @@ Result KPageTable::Operate(VAddr addr, size_t num_pages, KMemoryPermission perm,
     case OperationType::MapFirst:
     case OperationType::Map: {
         ASSERT(map_addr);
-        ASSERT(Common::IsAligned(map_addr, PageSize));
+        ASSERT(Common::IsAligned(GetInteger(map_addr), PageSize));
         m_system.Memory().MapMemoryRegion(*m_page_table_impl, addr, num_pages * PageSize, map_addr);
 
         // Open references to pages, if we should.
@@ -3060,7 +3083,7 @@ void KPageTable::FinalizeUpdate(PageLinkedList* page_list) {
     }
 }
 
-VAddr KPageTable::GetRegionAddress(KMemoryState state) const {
+KProcessAddress KPageTable::GetRegionAddress(KMemoryState state) const {
     switch (state) {
     case KMemoryState::Free:
     case KMemoryState::Kernel:
@@ -3132,11 +3155,11 @@ size_t KPageTable::GetRegionSize(KMemoryState state) const {
     }
 }
 
-bool KPageTable::CanContain(VAddr addr, size_t size, KMemoryState state) const {
-    const VAddr end = addr + size;
-    const VAddr last = end - 1;
+bool KPageTable::CanContain(KProcessAddress addr, size_t size, KMemoryState state) const {
+    const KProcessAddress end = addr + size;
+    const KProcessAddress last = end - 1;
 
-    const VAddr region_start = this->GetRegionAddress(state);
+    const KProcessAddress region_start = this->GetRegionAddress(state);
     const size_t region_size = this->GetRegionSize(state);
 
     const bool is_in_region =
@@ -3191,21 +3214,21 @@ Result KPageTable::CheckMemoryState(const KMemoryInfo& info, KMemoryState state_
     R_SUCCEED();
 }
 
-Result KPageTable::CheckMemoryStateContiguous(size_t* out_blocks_needed, VAddr addr, size_t size,
-                                              KMemoryState state_mask, KMemoryState state,
-                                              KMemoryPermission perm_mask, KMemoryPermission perm,
-                                              KMemoryAttribute attr_mask,
+Result KPageTable::CheckMemoryStateContiguous(size_t* out_blocks_needed, KProcessAddress addr,
+                                              size_t size, KMemoryState state_mask,
+                                              KMemoryState state, KMemoryPermission perm_mask,
+                                              KMemoryPermission perm, KMemoryAttribute attr_mask,
                                               KMemoryAttribute attr) const {
     ASSERT(this->IsLockedByCurrentThread());
 
     // Get information about the first block.
-    const VAddr last_addr = addr + size - 1;
+    const KProcessAddress last_addr = addr + size - 1;
     KMemoryBlockManager::const_iterator it = m_memory_block_manager.FindIterator(addr);
     KMemoryInfo info = it->GetMemoryInfo();
 
     // If the start address isn't aligned, we need a block.
     const size_t blocks_for_start_align =
-        (Common::AlignDown(addr, PageSize) != info.GetAddress()) ? 1 : 0;
+        (Common::AlignDown(GetInteger(addr), PageSize) != info.GetAddress()) ? 1 : 0;
 
     while (true) {
         // Validate against the provided masks.
@@ -3224,7 +3247,7 @@ Result KPageTable::CheckMemoryStateContiguous(size_t* out_blocks_needed, VAddr a
 
     // If the end address isn't aligned, we need a block.
     const size_t blocks_for_end_align =
-        (Common::AlignUp(addr + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
+        (Common::AlignUp(GetInteger(addr) + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
 
     if (out_blocks_needed != nullptr) {
         *out_blocks_needed = blocks_for_start_align + blocks_for_end_align;
@@ -3235,20 +3258,20 @@ Result KPageTable::CheckMemoryStateContiguous(size_t* out_blocks_needed, VAddr a
 
 Result KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
                                     KMemoryAttribute* out_attr, size_t* out_blocks_needed,
-                                    VAddr addr, size_t size, KMemoryState state_mask,
+                                    KProcessAddress addr, size_t size, KMemoryState state_mask,
                                     KMemoryState state, KMemoryPermission perm_mask,
                                     KMemoryPermission perm, KMemoryAttribute attr_mask,
                                     KMemoryAttribute attr, KMemoryAttribute ignore_attr) const {
     ASSERT(this->IsLockedByCurrentThread());
 
     // Get information about the first block.
-    const VAddr last_addr = addr + size - 1;
+    const KProcessAddress last_addr = addr + size - 1;
     KMemoryBlockManager::const_iterator it = m_memory_block_manager.FindIterator(addr);
     KMemoryInfo info = it->GetMemoryInfo();
 
     // If the start address isn't aligned, we need a block.
     const size_t blocks_for_start_align =
-        (Common::AlignDown(addr, PageSize) != info.GetAddress()) ? 1 : 0;
+        (Common::AlignDown(GetInteger(addr), PageSize) != info.GetAddress()) ? 1 : 0;
 
     // Validate all blocks in the range have correct state.
     const KMemoryState first_state = info.m_state;
@@ -3277,7 +3300,7 @@ Result KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermission* 
 
     // If the end address isn't aligned, we need a block.
     const size_t blocks_for_end_align =
-        (Common::AlignUp(addr + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
+        (Common::AlignUp(GetInteger(addr) + size, PageSize) != info.GetEndAddress()) ? 1 : 0;
 
     // Write output state.
     if (out_state != nullptr) {
@@ -3295,11 +3318,12 @@ Result KPageTable::CheckMemoryState(KMemoryState* out_state, KMemoryPermission* 
     R_SUCCEED();
 }
 
-Result KPageTable::LockMemoryAndOpen(KPageGroup* out_pg, PAddr* out_paddr, VAddr addr, size_t size,
-                                     KMemoryState state_mask, KMemoryState state,
-                                     KMemoryPermission perm_mask, KMemoryPermission perm,
-                                     KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                                     KMemoryPermission new_perm, KMemoryAttribute lock_attr) {
+Result KPageTable::LockMemoryAndOpen(KPageGroup* out_pg, KPhysicalAddress* out_KPhysicalAddress,
+                                     KProcessAddress addr, size_t size, KMemoryState state_mask,
+                                     KMemoryState state, KMemoryPermission perm_mask,
+                                     KMemoryPermission perm, KMemoryAttribute attr_mask,
+                                     KMemoryAttribute attr, KMemoryPermission new_perm,
+                                     KMemoryAttribute lock_attr) {
     // Validate basic preconditions.
     ASSERT((lock_attr & attr) == KMemoryAttribute::None);
     ASSERT((lock_attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
@@ -3329,8 +3353,8 @@ Result KPageTable::LockMemoryAndOpen(KPageGroup* out_pg, PAddr* out_paddr, VAddr
                                  attr_mask, attr));
 
     // Get the physical address, if we're supposed to.
-    if (out_paddr != nullptr) {
-        ASSERT(this->GetPhysicalAddressLocked(out_paddr, addr));
+    if (out_KPhysicalAddress != nullptr) {
+        ASSERT(this->GetPhysicalAddressLocked(out_KPhysicalAddress, addr));
     }
 
     // Make the page group, if we're supposed to.
@@ -3361,7 +3385,7 @@ Result KPageTable::LockMemoryAndOpen(KPageGroup* out_pg, PAddr* out_paddr, VAddr
     R_SUCCEED();
 }
 
-Result KPageTable::UnlockMemory(VAddr addr, size_t size, KMemoryState state_mask,
+Result KPageTable::UnlockMemory(KProcessAddress addr, size_t size, KMemoryState state_mask,
                                 KMemoryState state, KMemoryPermission perm_mask,
                                 KMemoryPermission perm, KMemoryAttribute attr_mask,
                                 KMemoryAttribute attr, KMemoryPermission new_perm,

@@ -8,6 +8,7 @@
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_queue.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/svc_results.h"
 #include "core/memory.h"
@@ -20,12 +21,12 @@ KAddressArbiter::~KAddressArbiter() = default;
 
 namespace {
 
-bool ReadFromUser(Core::System& system, s32* out, VAddr address) {
-    *out = system.Memory().Read32(address);
+bool ReadFromUser(Core::System& system, s32* out, KProcessAddress address) {
+    *out = system.Memory().Read32(GetInteger(address));
     return true;
 }
 
-bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 value) {
+bool DecrementIfLessThan(Core::System& system, s32* out, KProcessAddress address, s32 value) {
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
@@ -35,7 +36,8 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
     // Load the value from the address.
-    const s32 current_value = static_cast<s32>(monitor.ExclusiveRead32(current_core, address));
+    const s32 current_value =
+        static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
 
     // Compare it to the desired one.
     if (current_value < value) {
@@ -43,7 +45,8 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
         const s32 decrement_value = current_value - 1;
 
         // Decrement and try to store.
-        if (!monitor.ExclusiveWrite32(current_core, address, static_cast<u32>(decrement_value))) {
+        if (!monitor.ExclusiveWrite32(current_core, GetInteger(address),
+                                      static_cast<u32>(decrement_value))) {
             // If we failed to store, try again.
             DecrementIfLessThan(system, out, address, value);
         }
@@ -57,7 +60,8 @@ bool DecrementIfLessThan(Core::System& system, s32* out, VAddr address, s32 valu
     return true;
 }
 
-bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32 new_value) {
+bool UpdateIfEqual(Core::System& system, s32* out, KProcessAddress address, s32 value,
+                   s32 new_value) {
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
@@ -67,14 +71,16 @@ bool UpdateIfEqual(Core::System& system, s32* out, VAddr address, s32 value, s32
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
     // Load the value from the address.
-    const s32 current_value = static_cast<s32>(monitor.ExclusiveRead32(current_core, address));
+    const s32 current_value =
+        static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
 
     // Compare it to the desired one.
     if (current_value == value) {
         // If equal, we want to try to write the new value.
 
         // Try to store.
-        if (!monitor.ExclusiveWrite32(current_core, address, static_cast<u32>(new_value))) {
+        if (!monitor.ExclusiveWrite32(current_core, GetInteger(address),
+                                      static_cast<u32>(new_value))) {
             // If we failed to store, try again.
             UpdateIfEqual(system, out, address, value, new_value);
         }
@@ -110,7 +116,7 @@ private:
 
 } // namespace
 
-Result KAddressArbiter::Signal(VAddr addr, s32 count) {
+Result KAddressArbiter::Signal(uint64_t addr, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
@@ -133,7 +139,7 @@ Result KAddressArbiter::Signal(VAddr addr, s32 count) {
     R_SUCCEED();
 }
 
-Result KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count) {
+Result KAddressArbiter::SignalAndIncrementIfEqual(uint64_t addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
@@ -162,7 +168,7 @@ Result KAddressArbiter::SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 cou
     R_SUCCEED();
 }
 
-Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count) {
+Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(uint64_t addr, s32 value, s32 count) {
     // Perform signaling.
     s32 num_waiters{};
     {
@@ -225,7 +231,7 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 val
     R_SUCCEED();
 }
 
-Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout) {
+Result KAddressArbiter::WaitIfLessThan(uint64_t addr, s32 value, bool decrement, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};
@@ -280,7 +286,7 @@ Result KAddressArbiter::WaitIfLessThan(VAddr addr, s32 value, bool decrement, s6
     return cur_thread->GetWaitResult();
 }
 
-Result KAddressArbiter::WaitIfEqual(VAddr addr, s32 value, s64 timeout) {
+Result KAddressArbiter::WaitIfEqual(uint64_t addr, s32 value, s64 timeout) {
     // Prepare to wait.
     KThread* cur_thread = GetCurrentThreadPointer(m_kernel);
     KHardwareTimer* timer{};

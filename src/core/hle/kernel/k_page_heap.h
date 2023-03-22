@@ -8,8 +8,8 @@
 
 #include "common/alignment.h"
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "core/hle/kernel/k_page_bitmap.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/memory_types.h"
 
 namespace Kernel {
@@ -18,24 +18,24 @@ class KPageHeap {
 public:
     KPageHeap() = default;
 
-    constexpr PAddr GetAddress() const {
+    constexpr KPhysicalAddress GetAddress() const {
         return m_heap_address;
     }
     constexpr size_t GetSize() const {
         return m_heap_size;
     }
-    constexpr PAddr GetEndAddress() const {
+    constexpr KPhysicalAddress GetEndAddress() const {
         return this->GetAddress() + this->GetSize();
     }
-    constexpr size_t GetPageOffset(PAddr block) const {
+    constexpr size_t GetPageOffset(KPhysicalAddress block) const {
         return (block - this->GetAddress()) / PageSize;
     }
-    constexpr size_t GetPageOffsetToEnd(PAddr block) const {
+    constexpr size_t GetPageOffsetToEnd(KPhysicalAddress block) const {
         return (this->GetEndAddress() - block) / PageSize;
     }
 
-    void Initialize(PAddr heap_address, size_t heap_size, VAddr management_address,
-                    size_t management_size) {
+    void Initialize(KPhysicalAddress heap_address, size_t heap_size,
+                    KVirtualAddress management_address, size_t management_size) {
         return this->Initialize(heap_address, heap_size, management_address, management_size,
                                 MemoryBlockPageShifts.data(), NumMemoryBlockPageShifts);
     }
@@ -53,7 +53,7 @@ public:
         m_initial_used_size = m_heap_size - free_size - reserved_size;
     }
 
-    PAddr AllocateBlock(s32 index, bool random) {
+    KPhysicalAddress AllocateBlock(s32 index, bool random) {
         if (random) {
             const size_t block_pages = m_blocks[index].GetNumPages();
             return this->AllocateByRandom(index, block_pages, block_pages);
@@ -62,12 +62,12 @@ public:
         }
     }
 
-    PAddr AllocateAligned(s32 index, size_t num_pages, size_t align_pages) {
+    KPhysicalAddress AllocateAligned(s32 index, size_t num_pages, size_t align_pages) {
         // TODO: linear search support?
         return this->AllocateByRandom(index, num_pages, align_pages);
     }
 
-    void Free(PAddr addr, size_t num_pages);
+    void Free(KPhysicalAddress addr, size_t num_pages);
 
     static size_t CalculateManagementOverheadSize(size_t region_size) {
         return CalculateManagementOverheadSize(region_size, MemoryBlockPageShifts.data(),
@@ -125,24 +125,25 @@ private:
             return this->GetNumFreeBlocks() * this->GetNumPages();
         }
 
-        u64* Initialize(PAddr addr, size_t size, size_t bs, size_t nbs, u64* bit_storage) {
+        u64* Initialize(KPhysicalAddress addr, size_t size, size_t bs, size_t nbs,
+                        u64* bit_storage) {
             // Set shifts.
             m_block_shift = bs;
             m_next_block_shift = nbs;
 
             // Align up the address.
-            PAddr end = addr + size;
+            KPhysicalAddress end = addr + size;
             const size_t align = (m_next_block_shift != 0) ? (u64(1) << m_next_block_shift)
                                                            : (u64(1) << m_block_shift);
-            addr = Common::AlignDown(addr, align);
-            end = Common::AlignUp(end, align);
+            addr = Common::AlignDown(GetInteger(addr), align);
+            end = Common::AlignUp(GetInteger(end), align);
 
             m_heap_address = addr;
             m_end_offset = (end - addr) / (u64(1) << m_block_shift);
             return m_bitmap.Initialize(bit_storage, m_end_offset);
         }
 
-        PAddr PushBlock(PAddr address) {
+        KPhysicalAddress PushBlock(KPhysicalAddress address) {
             // Set the bit for the free block.
             size_t offset = (address - m_heap_address) >> this->GetShift();
             m_bitmap.SetBit(offset);
@@ -161,7 +162,7 @@ private:
             return {};
         }
 
-        PAddr PopBlock(bool random) {
+        KPhysicalAddress PopBlock(bool random) {
             // Find a free block.
             s64 soffset = m_bitmap.FindFreeBlock(random);
             if (soffset < 0) {
@@ -187,18 +188,19 @@ private:
 
     private:
         KPageBitmap m_bitmap;
-        PAddr m_heap_address{};
+        KPhysicalAddress m_heap_address{};
         uintptr_t m_end_offset{};
         size_t m_block_shift{};
         size_t m_next_block_shift{};
     };
 
 private:
-    void Initialize(PAddr heap_address, size_t heap_size, VAddr management_address,
-                    size_t management_size, const size_t* block_shifts, size_t num_block_shifts);
+    void Initialize(KPhysicalAddress heap_address, size_t heap_size,
+                    KVirtualAddress management_address, size_t management_size,
+                    const size_t* block_shifts, size_t num_block_shifts);
     size_t GetNumFreePages() const;
 
-    void FreeBlock(PAddr block, s32 index);
+    void FreeBlock(KPhysicalAddress block, s32 index);
 
     static constexpr size_t NumMemoryBlockPageShifts{7};
     static constexpr std::array<size_t, NumMemoryBlockPageShifts> MemoryBlockPageShifts{
@@ -206,14 +208,14 @@ private:
     };
 
 private:
-    PAddr AllocateByLinearSearch(s32 index);
-    PAddr AllocateByRandom(s32 index, size_t num_pages, size_t align_pages);
+    KPhysicalAddress AllocateByLinearSearch(s32 index);
+    KPhysicalAddress AllocateByRandom(s32 index, size_t num_pages, size_t align_pages);
 
     static size_t CalculateManagementOverheadSize(size_t region_size, const size_t* block_shifts,
                                                   size_t num_block_shifts);
 
 private:
-    PAddr m_heap_address{};
+    KPhysicalAddress m_heap_address{};
     size_t m_heap_size{};
     size_t m_initial_used_size{};
     size_t m_num_blocks{};

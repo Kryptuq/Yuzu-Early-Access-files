@@ -10,8 +10,8 @@
 
 namespace Kernel {
 
-KPageBuffer* KPageBuffer::FromPhysicalAddress(Core::System& system, PAddr phys_addr) {
-    ASSERT(Common::IsAligned(phys_addr, PageSize));
+KPageBuffer* KPageBuffer::FromPhysicalAddress(Core::System& system, KPhysicalAddress phys_addr) {
+    ASSERT(Common::IsAligned(GetInteger(phys_addr), PageSize));
     return system.DeviceMemory().GetPointer<KPageBuffer>(phys_addr);
 }
 

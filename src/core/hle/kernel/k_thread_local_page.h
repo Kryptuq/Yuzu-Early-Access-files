@@ -27,19 +27,20 @@ public:
     static_assert(RegionsPerPage > 0);
 
 public:
-    constexpr explicit KThreadLocalPage(KernelCore&, VAddr addr = {}) : m_virt_addr(addr) {
+    constexpr explicit KThreadLocalPage(KernelCore&, KProcessAddress addr = {})
+        : m_virt_addr(addr) {
         m_is_region_free.fill(true);
     }
 
-    constexpr VAddr GetAddress() const {
+    constexpr KProcessAddress GetAddress() const {
         return m_virt_addr;
     }
 
     Result Initialize(KernelCore& kernel, KProcess* process);
     Result Finalize();
 
-    VAddr Reserve();
-    void Release(VAddr addr);
+    KProcessAddress Reserve();
+    void Release(KProcessAddress addr);
 
     bool IsAllUsed() const {
         return std::ranges::all_of(m_is_region_free.begin(), m_is_region_free.end(),
@@ -60,7 +61,7 @@ public:
     }
 
 public:
-    using RedBlackKeyType = VAddr;
+    using RedBlackKeyType = KProcessAddress;
 
     static constexpr RedBlackKeyType GetRedBlackKey(const RedBlackKeyType& v) {
         return v;
@@ -72,8 +73,8 @@ public:
     template <typename T>
         requires(std::same_as<T, KThreadLocalPage> || std::same_as<T, RedBlackKeyType>)
     static constexpr int Compare(const T& lhs, const KThreadLocalPage& rhs) {
-        const VAddr lval = GetRedBlackKey(lhs);
-        const VAddr rval = GetRedBlackKey(rhs);
+        const KProcessAddress lval = GetRedBlackKey(lhs);
+        const KProcessAddress rval = GetRedBlackKey(rhs);
 
         if (lval < rval) {
             return -1;
@@ -85,22 +86,22 @@ public:
     }
 
 private:
-    constexpr VAddr GetRegionAddress(size_t i) const {
+    constexpr KProcessAddress GetRegionAddress(size_t i) const {
         return this->GetAddress() + i * Svc::ThreadLocalRegionSize;
     }
 
-    constexpr bool Contains(VAddr addr) const {
+    constexpr bool Contains(KProcessAddress addr) const {
         return this->GetAddress() <= addr && addr < this->GetAddress() + PageSize;
     }
 
-    constexpr size_t GetRegionIndex(VAddr addr) const {
-        ASSERT(Common::IsAligned(addr, Svc::ThreadLocalRegionSize));
+    constexpr size_t GetRegionIndex(KProcessAddress addr) const {
+        ASSERT(Common::IsAligned(GetInteger(addr), Svc::ThreadLocalRegionSize));
         ASSERT(this->Contains(addr));
         return (addr - this->GetAddress()) / Svc::ThreadLocalRegionSize;
     }
 
 private:
-    VAddr m_virt_addr{};
+    KProcessAddress m_virt_addr{};
     KProcess* m_owner{};
     KernelCore* m_kernel{};
     std::array<bool, RegionsPerPage> m_is_region_free{};

@@ -5,8 +5,8 @@
 
 #include <array>
 
-#include "common/common_types.h"
 #include "common/quaternion.h"
+#include "common/typed_address.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/ring_lifo.h"
 
@@ -34,7 +34,7 @@ public:
     void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
     // Called on InitializeSevenSixAxisSensor
-    void SetTransferMemoryAddress(VAddr t_mem);
+    void SetTransferMemoryAddress(Common::ProcessAddress t_mem);
 
     // Called on ResetSevenSixAxisSensorTimestamp
     void ResetTimestamp();
@@ -66,7 +66,7 @@ private:
     static_assert(sizeof(seven_sixaxis_lifo) == 0xA70, "SevenSixAxisState is an invalid size");
 
     SevenSixAxisState next_seven_sixaxis_state{};
-    VAddr transfer_memory{};
+    Common::ProcessAddress transfer_memory{};
     ConsoleSharedMemory* shared_memory = nullptr;
     Core::HID::EmulatedConsole* console = nullptr;
 

@@ -13,7 +13,7 @@ KTransferMemory::KTransferMemory(KernelCore& kernel)
 
 KTransferMemory::~KTransferMemory() = default;
 
-Result KTransferMemory::Initialize(VAddr address, std::size_t size,
+Result KTransferMemory::Initialize(KProcessAddress address, std::size_t size,
                                    Svc::MemoryPermission owner_perm) {
     // Set members.
     m_owner = GetCurrentProcessPointer(m_kernel);

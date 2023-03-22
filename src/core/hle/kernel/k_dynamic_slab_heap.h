@@ -19,7 +19,7 @@ class KDynamicSlabHeap : protected impl::KSlabHeapImpl {
 public:
     constexpr KDynamicSlabHeap() = default;
 
-    constexpr VAddr GetAddress() const {
+    constexpr KVirtualAddress GetAddress() const {
         return m_address;
     }
     constexpr size_t GetSize() const {
@@ -35,7 +35,7 @@ public:
         return m_count.load();
     }
 
-    constexpr bool IsInRange(VAddr addr) const {
+    constexpr bool IsInRange(KVirtualAddress addr) const {
         return this->GetAddress() <= addr && addr <= this->GetAddress() + this->GetSize() - 1;
     }
 
@@ -115,7 +115,7 @@ private:
     std::atomic<size_t> m_used{};
     std::atomic<size_t> m_peak{};
     std::atomic<size_t> m_count{};
-    VAddr m_address{};
+    KVirtualAddress m_address{};
     size_t m_size{};
 };
 

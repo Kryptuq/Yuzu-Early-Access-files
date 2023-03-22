@@ -168,21 +168,21 @@ void ARM_Interface::LoadWatchpointArray(const WatchpointArray& wp) {
 }
 
 const Kernel::DebugWatchpoint* ARM_Interface::MatchingWatchpoint(
-    VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const {
+    u64 addr, u64 size, Kernel::DebugWatchpointType access_type) const {
     if (!watchpoints) {
         return nullptr;
     }
 
-    const VAddr start_address{addr};
-    const VAddr end_address{addr + size};
+    const u64 start_address{addr};
+    const u64 end_address{addr + size};
 
     for (size_t i = 0; i < Core::Hardware::NUM_WATCHPOINTS; i++) {
         const auto& watch{(*watchpoints)[i]};
 
-        if (end_address <= watch.start_address) {
+        if (end_address <= GetInteger(watch.start_address)) {
             continue;
         }
-        if (start_address >= watch.end_address) {
+        if (start_address >= GetInteger(watch.end_address)) {
             continue;
         }
         if ((access_type & watch.type) == Kernel::DebugWatchpointType::None) {

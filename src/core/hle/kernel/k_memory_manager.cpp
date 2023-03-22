@@ -5,7 +5,6 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
-#include "common/common_types.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/device_memory.h"
@@ -44,10 +43,10 @@ KMemoryManager::KMemoryManager(Core::System& system)
           KLightLock{system.Kernel()},
       } {}
 
-void KMemoryManager::Initialize(VAddr management_region, size_t management_region_size) {
+void KMemoryManager::Initialize(KVirtualAddress management_region, size_t management_region_size) {
 
     // Clear the management region to zero.
-    const VAddr management_region_end = management_region + management_region_size;
+    const KVirtualAddress management_region_end = management_region + management_region_size;
     // std::memset(GetVoidPointer(management_region), 0, management_region_size);
 
     // Reset our manager count.
@@ -56,7 +55,7 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
     // Traverse the virtual memory layout tree, initializing each manager as appropriate.
     while (m_num_managers != MaxManagerCount) {
         // Locate the region that should initialize the current manager.
-        PAddr region_address = 0;
+        KPhysicalAddress region_address = 0;
         size_t region_size = 0;
         Pool region_pool = Pool::Count;
         for (const auto& it : m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
@@ -70,8 +69,8 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
                 continue;
             }
 
-            const PAddr cur_start = it.GetAddress();
-            const PAddr cur_end = it.GetEndAddress();
+            const KPhysicalAddress cur_start = it.GetAddress();
+            const KPhysicalAddress cur_end = it.GetEndAddress();
 
             // Validate the region.
             ASSERT(cur_end != 0);
@@ -119,17 +118,17 @@ void KMemoryManager::Initialize(VAddr management_region, size_t management_regio
 
     // Free each region to its corresponding heap.
     size_t reserved_sizes[MaxManagerCount] = {};
-    const PAddr ini_start = GetInitialProcessBinaryPhysicalAddress();
-    const PAddr ini_end = ini_start + InitialProcessBinarySizeMax;
-    const PAddr ini_last = ini_end - 1;
+    const KPhysicalAddress ini_start = GetInitialProcessBinaryPhysicalAddress();
+    const KPhysicalAddress ini_end = ini_start + InitialProcessBinarySizeMax;
+    const KPhysicalAddress ini_last = ini_end - 1;
     for (const auto& it : m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree()) {
         if (it.IsDerivedFrom(KMemoryRegionType_DramUserPool)) {
             // Get the manager for the region.
             auto& manager = m_managers[it.GetAttributes()];
 
-            const PAddr cur_start = it.GetAddress();
-            const PAddr cur_last = it.GetLastAddress();
-            const PAddr cur_end = it.GetEndAddress();
+            const KPhysicalAddress cur_start = it.GetAddress();
+            const KPhysicalAddress cur_last = it.GetLastAddress();
+            const KPhysicalAddress cur_end = it.GetEndAddress();
 
             if (cur_start <= ini_start && ini_last <= cur_last) {
                 // Free memory before the ini to the heap.
@@ -175,7 +174,8 @@ void KMemoryManager::FinalizeOptimizedMemory(u64 process_id, Pool pool) {
     UNREACHABLE();
 }
 
-PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_pages, u32 option) {
+KPhysicalAddress KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_pages,
+                                                           u32 option) {
     // Early return if we're allocating no pages.
     if (num_pages == 0) {
         return 0;
@@ -190,7 +190,7 @@ PAddr KMemoryManager::AllocateAndOpenContinuous(size_t num_pages, size_t align_p
 
     // Loop, trying to iterate from each block.
     Impl* chosen_manager = nullptr;
-    PAddr allocated_block = 0;
+    KPhysicalAddress allocated_block = 0;
     for (chosen_manager = this->GetFirstManager(pool, dir); chosen_manager != nullptr;
          chosen_manager = this->GetNextManager(chosen_manager, dir)) {
         allocated_block = chosen_manager->AllocateAligned(heap_index, num_pages, align_pages);
@@ -239,7 +239,7 @@ Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, 
              cur_manager = this->GetNextManager(cur_manager, dir)) {
             while (num_pages >= pages_per_alloc) {
                 // Allocate a block.
-                PAddr allocated_block = cur_manager->AllocateBlock(index, random);
+                KPhysicalAddress allocated_block = cur_manager->AllocateBlock(index, random);
                 if (allocated_block == 0) {
                     break;
                 }
@@ -286,7 +286,7 @@ Result KMemoryManager::AllocateAndOpen(KPageGroup* out, size_t num_pages, u32 op
 
     // Open the first reference to the pages.
     for (const auto& block : *out) {
-        PAddr cur_address = block.GetAddress();
+        KPhysicalAddress cur_address = block.GetAddress();
         size_t remaining_pages = block.GetNumPages();
         while (remaining_pages > 0) {
             // Get the manager for the current address.
@@ -337,7 +337,7 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
         // Iterate over the allocated blocks.
         for (const auto& block : *out) {
             // Get the block extents.
-            const PAddr block_address = block.GetAddress();
+            const KPhysicalAddress block_address = block.GetAddress();
             const size_t block_pages = block.GetNumPages();
 
             // If it has no pages, we don't need to do anything.
@@ -348,7 +348,7 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
             // Fill all the pages that we need to fill.
             bool any_new = false;
             {
-                PAddr cur_address = block_address;
+                KPhysicalAddress cur_address = block_address;
                 size_t remaining_pages = block_pages;
                 while (remaining_pages > 0) {
                     // Get the manager for the current address.
@@ -369,7 +369,7 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
             // If there are new pages, update tracking for the allocation.
             if (any_new) {
                 // Update tracking for the allocation.
-                PAddr cur_address = block_address;
+                KPhysicalAddress cur_address = block_address;
                 size_t remaining_pages = block_pages;
                 while (remaining_pages > 0) {
                     // Get the manager for the current address.
@@ -400,8 +400,9 @@ Result KMemoryManager::AllocateForProcess(KPageGroup* out, size_t num_pages, u32
     R_SUCCEED();
 }
 
-size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr management,
-                                        VAddr management_end, Pool p) {
+size_t KMemoryManager::Impl::Initialize(KPhysicalAddress address, size_t size,
+                                        KVirtualAddress management, KVirtualAddress management_end,
+                                        Pool p) {
     // Calculate management sizes.
     const size_t ref_count_size = (size / PageSize) * sizeof(u16);
     const size_t optimize_map_size = CalculateOptimizedProcessOverheadSize(size);
@@ -417,7 +418,7 @@ size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr manage
     m_management_region = management;
     m_page_reference_counts.resize(
         Kernel::Board::Nintendo::Nx::KSystemControl::Init::GetIntendedMemorySize() / PageSize);
-    ASSERT(Common::IsAligned(m_management_region, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(m_management_region), PageSize));
 
     // Initialize the manager's KPageHeap.
     m_heap.Initialize(address, size, management + manager_size, page_heap_size);
@@ -425,15 +426,15 @@ size_t KMemoryManager::Impl::Initialize(PAddr address, size_t size, VAddr manage
     return total_management_size;
 }
 
-void KMemoryManager::Impl::TrackUnoptimizedAllocation(PAddr block, size_t num_pages) {
+void KMemoryManager::Impl::TrackUnoptimizedAllocation(KPhysicalAddress block, size_t num_pages) {
     UNREACHABLE();
 }
 
-void KMemoryManager::Impl::TrackOptimizedAllocation(PAddr block, size_t num_pages) {
+void KMemoryManager::Impl::TrackOptimizedAllocation(KPhysicalAddress block, size_t num_pages) {
     UNREACHABLE();
 }
 
-bool KMemoryManager::Impl::ProcessOptimizedAllocation(PAddr block, size_t num_pages,
+bool KMemoryManager::Impl::ProcessOptimizedAllocation(KPhysicalAddress block, size_t num_pages,
                                                       u8 fill_pattern) {
     UNREACHABLE();
 }

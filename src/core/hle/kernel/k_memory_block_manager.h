@@ -7,9 +7,9 @@
 #include <functional>
 
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "core/hle/kernel/k_dynamic_resource_manager.h"
 #include "core/hle/kernel/k_memory_block.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel {
 
@@ -85,9 +85,10 @@ public:
 public:
     KMemoryBlockManager();
 
-    using HostUnmapCallback = std::function<void(VAddr, u64)>;
+    using HostUnmapCallback = std::function<void(Common::ProcessAddress, u64)>;
 
-    Result Initialize(VAddr st, VAddr nd, KMemoryBlockSlabManager* slab_manager);
+    Result Initialize(KProcessAddress st, KProcessAddress nd,
+                      KMemoryBlockSlabManager* slab_manager);
     void Finalize(KMemoryBlockSlabManager* slab_manager, HostUnmapCallback&& host_unmap_callback);
 
     iterator end() {
@@ -100,27 +101,28 @@ public:
         return m_memory_block_tree.cend();
     }
 
-    VAddr FindFreeArea(VAddr region_start, size_t region_num_pages, size_t num_pages,
-                       size_t alignment, size_t offset, size_t guard_pages) const;
+    KProcessAddress FindFreeArea(KProcessAddress region_start, size_t region_num_pages,
+                                 size_t num_pages, size_t alignment, size_t offset,
+                                 size_t guard_pages) const;
 
-    void Update(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address, size_t num_pages,
-                KMemoryState state, KMemoryPermission perm, KMemoryAttribute attr,
+    void Update(KMemoryBlockManagerUpdateAllocator* allocator, KProcessAddress address,
+                size_t num_pages, KMemoryState state, KMemoryPermission perm, KMemoryAttribute attr,
                 KMemoryBlockDisableMergeAttribute set_disable_attr,
                 KMemoryBlockDisableMergeAttribute clear_disable_attr);
-    void UpdateLock(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address, size_t num_pages,
-                    MemoryBlockLockFunction lock_func, KMemoryPermission perm);
+    void UpdateLock(KMemoryBlockManagerUpdateAllocator* allocator, KProcessAddress address,
+                    size_t num_pages, MemoryBlockLockFunction lock_func, KMemoryPermission perm);
 
-    void UpdateIfMatch(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
+    void UpdateIfMatch(KMemoryBlockManagerUpdateAllocator* allocator, KProcessAddress address,
                        size_t num_pages, KMemoryState test_state, KMemoryPermission test_perm,
                        KMemoryAttribute test_attr, KMemoryState state, KMemoryPermission perm,
                        KMemoryAttribute attr);
 
-    iterator FindIterator(VAddr address) const {
+    iterator FindIterator(KProcessAddress address) const {
         return m_memory_block_tree.find(KMemoryBlock(
             address, 1, KMemoryState::Free, KMemoryPermission::None, KMemoryAttribute::None));
     }
 
-    const KMemoryBlock* FindBlock(VAddr address) const {
+    const KMemoryBlock* FindBlock(KProcessAddress address) const {
         if (const_iterator it = this->FindIterator(address); it != m_memory_block_tree.end()) {
             return std::addressof(*it);
         }
@@ -132,12 +134,12 @@ public:
     bool CheckState() const;
 
 private:
-    void CoalesceForUpdate(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
+    void CoalesceForUpdate(KMemoryBlockManagerUpdateAllocator* allocator, KProcessAddress address,
                            size_t num_pages);
 
     MemoryBlockTree m_memory_block_tree;
-    VAddr m_start_address{};
-    VAddr m_end_address{};
+    KProcessAddress m_start_address{};
+    KProcessAddress m_end_address{};
 };
 
 class KScopedMemoryBlockManagerAuditor {

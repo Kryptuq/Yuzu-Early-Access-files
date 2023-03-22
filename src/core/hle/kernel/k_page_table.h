@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "common/page_table.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/k_dynamic_resource_manager.h"
@@ -15,6 +14,7 @@
 #include "core/hle/kernel/k_memory_block_manager.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
 
@@ -65,45 +65,47 @@ public:
 
     Result InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
                                 bool enable_das_merge, bool from_back, KMemoryManager::Pool pool,
-                                VAddr code_addr, size_t code_size, KSystemResource* system_resource,
-                                KResourceLimit* resource_limit);
+                                KProcessAddress code_addr, size_t code_size,
+                                KSystemResource* system_resource, KResourceLimit* resource_limit);
 
     void Finalize();
 
-    Result MapProcessCode(VAddr addr, size_t pages_count, KMemoryState state,
+    Result MapProcessCode(KProcessAddress addr, size_t pages_count, KMemoryState state,
                           KMemoryPermission perm);
-    Result MapCodeMemory(VAddr dst_address, VAddr src_address, size_t size);
-    Result UnmapCodeMemory(VAddr dst_address, VAddr src_address, size_t size,
+    Result MapCodeMemory(KProcessAddress dst_address, KProcessAddress src_address, size_t size);
+    Result UnmapCodeMemory(KProcessAddress dst_address, KProcessAddress src_address, size_t size,
                            ICacheInvalidationStrategy icache_invalidation_strategy);
-    Result UnmapProcessMemory(VAddr dst_addr, size_t size, KPageTable& src_page_table,
-                              VAddr src_addr);
-    Result MapPhysicalMemory(VAddr addr, size_t size);
-    Result UnmapPhysicalMemory(VAddr addr, size_t size);
-    Result MapMemory(VAddr dst_addr, VAddr src_addr, size_t size);
-    Result UnmapMemory(VAddr dst_addr, VAddr src_addr, size_t size);
-    Result SetProcessMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermission svc_perm);
-    KMemoryInfo QueryInfo(VAddr addr);
-    Result SetMemoryPermission(VAddr addr, size_t size, Svc::MemoryPermission perm);
-    Result SetMemoryAttribute(VAddr addr, size_t size, u32 mask, u32 attr);
+    Result UnmapProcessMemory(KProcessAddress dst_addr, size_t size, KPageTable& src_page_table,
+                              KProcessAddress src_addr);
+    Result MapPhysicalMemory(KProcessAddress addr, size_t size);
+    Result UnmapPhysicalMemory(KProcessAddress addr, size_t size);
+    Result MapMemory(KProcessAddress dst_addr, KProcessAddress src_addr, size_t size);
+    Result UnmapMemory(KProcessAddress dst_addr, KProcessAddress src_addr, size_t size);
+    Result SetProcessMemoryPermission(KProcessAddress addr, size_t size,
+                                      Svc::MemoryPermission svc_perm);
+    KMemoryInfo QueryInfo(KProcessAddress addr);
+    Result SetMemoryPermission(KProcessAddress addr, size_t size, Svc::MemoryPermission perm);
+    Result SetMemoryAttribute(KProcessAddress addr, size_t size, u32 mask, u32 attr);
     Result SetMaxHeapSize(size_t size);
-    Result SetHeapSize(VAddr* out, size_t size);
-    Result LockForMapDeviceAddressSpace(bool* out_is_io, VAddr address, size_t size,
+    Result SetHeapSize(u64* out, size_t size);
+    Result LockForMapDeviceAddressSpace(bool* out_is_io, KProcessAddress address, size_t size,
                                         KMemoryPermission perm, bool is_aligned, bool check_heap);
-    Result LockForUnmapDeviceAddressSpace(VAddr address, size_t size, bool check_heap);
+    Result LockForUnmapDeviceAddressSpace(KProcessAddress address, size_t size, bool check_heap);
 
-    Result UnlockForDeviceAddressSpace(VAddr addr, size_t size);
+    Result UnlockForDeviceAddressSpace(KProcessAddress addr, size_t size);
 
-    Result LockForIpcUserBuffer(PAddr* out, VAddr address, size_t size);
-    Result UnlockForIpcUserBuffer(VAddr address, size_t size);
+    Result LockForIpcUserBuffer(KPhysicalAddress* out, KProcessAddress address, size_t size);
+    Result UnlockForIpcUserBuffer(KProcessAddress address, size_t size);
 
-    Result SetupForIpc(VAddr* out_dst_addr, size_t size, VAddr src_addr, KPageTable& src_page_table,
-                       KMemoryPermission test_perm, KMemoryState dst_state, bool send);
-    Result CleanupForIpcServer(VAddr address, size_t size, KMemoryState dst_state);
-    Result CleanupForIpcClient(VAddr address, size_t size, KMemoryState dst_state);
+    Result SetupForIpc(KProcessAddress* out_dst_addr, size_t size, KProcessAddress src_addr,
+                       KPageTable& src_page_table, KMemoryPermission test_perm,
+                       KMemoryState dst_state, bool send);
+    Result CleanupForIpcServer(KProcessAddress address, size_t size, KMemoryState dst_state);
+    Result CleanupForIpcClient(KProcessAddress address, size_t size, KMemoryState dst_state);
 
-    Result LockForCodeMemory(KPageGroup* out, VAddr addr, size_t size);
-    Result UnlockForCodeMemory(VAddr addr, size_t size, const KPageGroup& pg);
-    Result MakeAndOpenPageGroup(KPageGroup* out, VAddr address, size_t num_pages,
+    Result LockForCodeMemory(KPageGroup* out, KProcessAddress addr, size_t size);
+    Result UnlockForCodeMemory(KProcessAddress addr, size_t size, const KPageGroup& pg);
+    Result MakeAndOpenPageGroup(KPageGroup* out, KProcessAddress address, size_t num_pages,
                                 KMemoryState state_mask, KMemoryState state,
                                 KMemoryPermission perm_mask, KMemoryPermission perm,
                                 KMemoryAttribute attr_mask, KMemoryAttribute attr);
@@ -120,7 +122,7 @@ public:
         return m_block_info_manager;
     }
 
-    bool CanContain(VAddr addr, size_t size, KMemoryState state) const;
+    bool CanContain(KProcessAddress addr, size_t size, KMemoryState state) const;
 
     Result MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
                     KPhysicalAddress phys_addr, KProcessAddress region_start,
@@ -173,8 +175,8 @@ protected:
             m_root = n;
         }
 
-        void Push(Core::Memory::Memory& memory, VAddr addr) {
-            this->Push(memory.GetPointer<Node>(addr));
+        void Push(Core::Memory::Memory& memory, KVirtualAddress addr) {
+            this->Push(memory.GetPointer<Node>(GetInteger(addr)));
         }
 
         Node* Peek() const {
@@ -212,27 +214,28 @@ private:
     Result MapPages(KProcessAddress* out_addr, size_t num_pages, size_t alignment,
                     KPhysicalAddress phys_addr, bool is_pa_valid, KProcessAddress region_start,
                     size_t region_num_pages, KMemoryState state, KMemoryPermission perm);
-    bool IsRegionContiguous(VAddr addr, u64 size) const;
-    void AddRegionToPages(VAddr start, size_t num_pages, KPageGroup& page_linked_list);
-    KMemoryInfo QueryInfoImpl(VAddr addr);
-    VAddr AllocateVirtualMemory(VAddr start, size_t region_num_pages, u64 needed_num_pages,
-                                size_t align);
-    Result Operate(VAddr addr, size_t num_pages, const KPageGroup& page_group,
+    bool IsRegionContiguous(KProcessAddress addr, u64 size) const;
+    void AddRegionToPages(KProcessAddress start, size_t num_pages, KPageGroup& page_linked_list);
+    KMemoryInfo QueryInfoImpl(KProcessAddress addr);
+    KProcessAddress AllocateVirtualMemory(KProcessAddress start, size_t region_num_pages,
+                                          u64 needed_num_pages, size_t align);
+    Result Operate(KProcessAddress addr, size_t num_pages, const KPageGroup& page_group,
                    OperationType operation);
-    Result Operate(VAddr addr, size_t num_pages, KMemoryPermission perm, OperationType operation,
-                   PAddr map_addr = 0);
+    Result Operate(KProcessAddress addr, size_t num_pages, KMemoryPermission perm,
+                   OperationType operation, KPhysicalAddress map_addr = 0);
     void FinalizeUpdate(PageLinkedList* page_list);
-    VAddr GetRegionAddress(KMemoryState state) const;
+    KProcessAddress GetRegionAddress(KMemoryState state) const;
     size_t GetRegionSize(KMemoryState state) const;
 
-    VAddr FindFreeArea(VAddr region_start, size_t region_num_pages, size_t num_pages,
-                       size_t alignment, size_t offset, size_t guard_pages);
+    KProcessAddress FindFreeArea(KProcessAddress region_start, size_t region_num_pages,
+                                 size_t num_pages, size_t alignment, size_t offset,
+                                 size_t guard_pages);
 
-    Result CheckMemoryStateContiguous(size_t* out_blocks_needed, VAddr addr, size_t size,
+    Result CheckMemoryStateContiguous(size_t* out_blocks_needed, KProcessAddress addr, size_t size,
                                       KMemoryState state_mask, KMemoryState state,
                                       KMemoryPermission perm_mask, KMemoryPermission perm,
                                       KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
-    Result CheckMemoryStateContiguous(VAddr addr, size_t size, KMemoryState state_mask,
+    Result CheckMemoryStateContiguous(KProcessAddress addr, size_t size, KMemoryState state_mask,
                                       KMemoryState state, KMemoryPermission perm_mask,
                                       KMemoryPermission perm, KMemoryAttribute attr_mask,
                                       KMemoryAttribute attr) const {
@@ -244,12 +247,12 @@ private:
                             KMemoryPermission perm_mask, KMemoryPermission perm,
                             KMemoryAttribute attr_mask, KMemoryAttribute attr) const;
     Result CheckMemoryState(KMemoryState* out_state, KMemoryPermission* out_perm,
-                            KMemoryAttribute* out_attr, size_t* out_blocks_needed, VAddr addr,
-                            size_t size, KMemoryState state_mask, KMemoryState state,
-                            KMemoryPermission perm_mask, KMemoryPermission perm,
+                            KMemoryAttribute* out_attr, size_t* out_blocks_needed,
+                            KProcessAddress addr, size_t size, KMemoryState state_mask,
+                            KMemoryState state, KMemoryPermission perm_mask, KMemoryPermission perm,
                             KMemoryAttribute attr_mask, KMemoryAttribute attr,
                             KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const;
-    Result CheckMemoryState(size_t* out_blocks_needed, VAddr addr, size_t size,
+    Result CheckMemoryState(size_t* out_blocks_needed, KProcessAddress addr, size_t size,
                             KMemoryState state_mask, KMemoryState state,
                             KMemoryPermission perm_mask, KMemoryPermission perm,
                             KMemoryAttribute attr_mask, KMemoryAttribute attr,
@@ -258,39 +261,40 @@ private:
                                   state_mask, state, perm_mask, perm, attr_mask, attr,
                                   ignore_attr));
     }
-    Result CheckMemoryState(VAddr addr, size_t size, KMemoryState state_mask, KMemoryState state,
-                            KMemoryPermission perm_mask, KMemoryPermission perm,
+    Result CheckMemoryState(KProcessAddress addr, size_t size, KMemoryState state_mask,
+                            KMemoryState state, KMemoryPermission perm_mask, KMemoryPermission perm,
                             KMemoryAttribute attr_mask, KMemoryAttribute attr,
                             KMemoryAttribute ignore_attr = DefaultMemoryIgnoreAttr) const {
         R_RETURN(this->CheckMemoryState(nullptr, addr, size, state_mask, state, perm_mask, perm,
                                         attr_mask, attr, ignore_attr));
     }
 
-    Result LockMemoryAndOpen(KPageGroup* out_pg, PAddr* out_paddr, VAddr addr, size_t size,
-                             KMemoryState state_mask, KMemoryState state,
-                             KMemoryPermission perm_mask, KMemoryPermission perm,
-                             KMemoryAttribute attr_mask, KMemoryAttribute attr,
-                             KMemoryPermission new_perm, KMemoryAttribute lock_attr);
-    Result UnlockMemory(VAddr addr, size_t size, KMemoryState state_mask, KMemoryState state,
-                        KMemoryPermission perm_mask, KMemoryPermission perm,
+    Result LockMemoryAndOpen(KPageGroup* out_pg, KPhysicalAddress* out_KPhysicalAddress,
+                             KProcessAddress addr, size_t size, KMemoryState state_mask,
+                             KMemoryState state, KMemoryPermission perm_mask,
+                             KMemoryPermission perm, KMemoryAttribute attr_mask,
+                             KMemoryAttribute attr, KMemoryPermission new_perm,
+                             KMemoryAttribute lock_attr);
+    Result UnlockMemory(KProcessAddress addr, size_t size, KMemoryState state_mask,
+                        KMemoryState state, KMemoryPermission perm_mask, KMemoryPermission perm,
                         KMemoryAttribute attr_mask, KMemoryAttribute attr,
                         KMemoryPermission new_perm, KMemoryAttribute lock_attr,
                         const KPageGroup* pg);
 
-    Result MakePageGroup(KPageGroup& pg, VAddr addr, size_t num_pages);
-    bool IsValidPageGroup(const KPageGroup& pg, VAddr addr, size_t num_pages);
+    Result MakePageGroup(KPageGroup& pg, KProcessAddress addr, size_t num_pages);
+    bool IsValidPageGroup(const KPageGroup& pg, KProcessAddress addr, size_t num_pages);
 
     bool IsLockedByCurrentThread() const {
         return m_general_lock.IsLockedByCurrentThread();
     }
 
-    bool IsHeapPhysicalAddress(const KMemoryLayout& layout, PAddr phys_addr) {
+    bool IsHeapPhysicalAddress(const KMemoryLayout& layout, KPhysicalAddress phys_addr) {
         ASSERT(this->IsLockedByCurrentThread());
 
         return layout.IsHeapPhysicalAddress(m_cached_physical_heap_region, phys_addr);
     }
 
-    bool GetPhysicalAddressLocked(PAddr* out, VAddr virt_addr) const {
+    bool GetPhysicalAddressLocked(KPhysicalAddress* out, KProcessAddress virt_addr) const {
         ASSERT(this->IsLockedByCurrentThread());
 
         *out = GetPhysicalAddr(virt_addr);
@@ -298,12 +302,13 @@ private:
         return *out != 0;
     }
 
-    Result SetupForIpcClient(PageLinkedList* page_list, size_t* out_blocks_needed, VAddr address,
-                             size_t size, KMemoryPermission test_perm, KMemoryState dst_state);
-    Result SetupForIpcServer(VAddr* out_addr, size_t size, VAddr src_addr,
+    Result SetupForIpcClient(PageLinkedList* page_list, size_t* out_blocks_needed,
+                             KProcessAddress address, size_t size, KMemoryPermission test_perm,
+                             KMemoryState dst_state);
+    Result SetupForIpcServer(KProcessAddress* out_addr, size_t size, KProcessAddress src_addr,
                              KMemoryPermission test_perm, KMemoryState dst_state,
                              KPageTable& src_page_table, bool send);
-    void CleanupForIpcClientOnServerSetupFailure(PageLinkedList* page_list, VAddr address,
+    void CleanupForIpcClientOnServerSetupFailure(PageLinkedList* page_list, KProcessAddress address,
                                                  size_t size, KMemoryPermission prot_perm);
 
     Result AllocateAndMapPagesImpl(PageLinkedList* page_list, KProcessAddress address,
@@ -315,61 +320,61 @@ private:
     mutable KLightLock m_map_physical_memory_lock;
 
 public:
-    constexpr VAddr GetAddressSpaceStart() const {
+    constexpr KProcessAddress GetAddressSpaceStart() const {
         return m_address_space_start;
     }
-    constexpr VAddr GetAddressSpaceEnd() const {
+    constexpr KProcessAddress GetAddressSpaceEnd() const {
         return m_address_space_end;
     }
     constexpr size_t GetAddressSpaceSize() const {
         return m_address_space_end - m_address_space_start;
     }
-    constexpr VAddr GetHeapRegionStart() const {
+    constexpr KProcessAddress GetHeapRegionStart() const {
         return m_heap_region_start;
     }
-    constexpr VAddr GetHeapRegionEnd() const {
+    constexpr KProcessAddress GetHeapRegionEnd() const {
         return m_heap_region_end;
     }
     constexpr size_t GetHeapRegionSize() const {
         return m_heap_region_end - m_heap_region_start;
     }
-    constexpr VAddr GetAliasRegionStart() const {
+    constexpr KProcessAddress GetAliasRegionStart() const {
         return m_alias_region_start;
     }
-    constexpr VAddr GetAliasRegionEnd() const {
+    constexpr KProcessAddress GetAliasRegionEnd() const {
         return m_alias_region_end;
     }
     constexpr size_t GetAliasRegionSize() const {
         return m_alias_region_end - m_alias_region_start;
     }
-    constexpr VAddr GetStackRegionStart() const {
+    constexpr KProcessAddress GetStackRegionStart() const {
         return m_stack_region_start;
     }
-    constexpr VAddr GetStackRegionEnd() const {
+    constexpr KProcessAddress GetStackRegionEnd() const {
         return m_stack_region_end;
     }
     constexpr size_t GetStackRegionSize() const {
         return m_stack_region_end - m_stack_region_start;
     }
-    constexpr VAddr GetKernelMapRegionStart() const {
+    constexpr KProcessAddress GetKernelMapRegionStart() const {
         return m_kernel_map_region_start;
     }
-    constexpr VAddr GetKernelMapRegionEnd() const {
+    constexpr KProcessAddress GetKernelMapRegionEnd() const {
         return m_kernel_map_region_end;
     }
-    constexpr VAddr GetCodeRegionStart() const {
+    constexpr KProcessAddress GetCodeRegionStart() const {
         return m_code_region_start;
     }
-    constexpr VAddr GetCodeRegionEnd() const {
+    constexpr KProcessAddress GetCodeRegionEnd() const {
         return m_code_region_end;
     }
-    constexpr VAddr GetAliasCodeRegionStart() const {
+    constexpr KProcessAddress GetAliasCodeRegionStart() const {
         return m_alias_code_region_start;
     }
-    constexpr VAddr GetAliasCodeRegionEnd() const {
+    constexpr KProcessAddress GetAliasCodeRegionEnd() const {
         return m_alias_code_region_end;
     }
-    constexpr VAddr GetAliasCodeRegionSize() const {
+    constexpr size_t GetAliasCodeRegionSize() const {
         return m_alias_code_region_end - m_alias_code_region_start;
     }
     size_t GetNormalMemorySize() {
@@ -382,25 +387,25 @@ public:
     constexpr size_t GetHeapSize() const {
         return m_current_heap_end - m_heap_region_start;
     }
-    constexpr bool IsInsideAddressSpace(VAddr address, size_t size) const {
+    constexpr bool IsInsideAddressSpace(KProcessAddress address, size_t size) const {
         return m_address_space_start <= address && address + size - 1 <= m_address_space_end - 1;
     }
-    constexpr bool IsOutsideAliasRegion(VAddr address, size_t size) const {
+    constexpr bool IsOutsideAliasRegion(KProcessAddress address, size_t size) const {
         return m_alias_region_start > address || address + size - 1 > m_alias_region_end - 1;
     }
-    constexpr bool IsOutsideStackRegion(VAddr address, size_t size) const {
+    constexpr bool IsOutsideStackRegion(KProcessAddress address, size_t size) const {
         return m_stack_region_start > address || address + size - 1 > m_stack_region_end - 1;
     }
-    constexpr bool IsInvalidRegion(VAddr address, size_t size) const {
+    constexpr bool IsInvalidRegion(KProcessAddress address, size_t size) const {
         return address + size - 1 > GetAliasCodeRegionStart() + GetAliasCodeRegionSize() - 1;
     }
-    constexpr bool IsInsideHeapRegion(VAddr address, size_t size) const {
+    constexpr bool IsInsideHeapRegion(KProcessAddress address, size_t size) const {
         return address + size > m_heap_region_start && m_heap_region_end > address;
     }
-    constexpr bool IsInsideAliasRegion(VAddr address, size_t size) const {
+    constexpr bool IsInsideAliasRegion(KProcessAddress address, size_t size) const {
         return address + size > m_alias_region_start && m_alias_region_end > address;
     }
-    constexpr bool IsOutsideASLRRegion(VAddr address, size_t size) const {
+    constexpr bool IsOutsideASLRRegion(KProcessAddress address, size_t size) const {
         if (IsInvalidRegion(address, size)) {
             return true;
         }
@@ -412,47 +417,53 @@ public:
         }
         return {};
     }
-    constexpr bool IsInsideASLRRegion(VAddr address, size_t size) const {
+    constexpr bool IsInsideASLRRegion(KProcessAddress address, size_t size) const {
         return !IsOutsideASLRRegion(address, size);
     }
     constexpr size_t GetNumGuardPages() const {
         return IsKernel() ? 1 : 4;
     }
-    PAddr GetPhysicalAddr(VAddr addr) const {
+    KPhysicalAddress GetPhysicalAddr(KProcessAddress addr) const {
         const auto backing_addr = m_page_table_impl->backing_addr[addr >> PageBits];
         ASSERT(backing_addr);
-        return backing_addr + addr;
+        return backing_addr + GetInteger(addr);
     }
-    constexpr bool Contains(VAddr addr) const {
+    constexpr bool Contains(KProcessAddress addr) const {
         return m_address_space_start <= addr && addr <= m_address_space_end - 1;
     }
-    constexpr bool Contains(VAddr addr, size_t size) const {
+    constexpr bool Contains(KProcessAddress addr, size_t size) const {
         return m_address_space_start <= addr && addr < addr + size &&
                addr + size - 1 <= m_address_space_end - 1;
     }
 
 public:
-    static VAddr GetLinearMappedVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+    static KVirtualAddress GetLinearMappedVirtualAddress(const KMemoryLayout& layout,
+                                                         KPhysicalAddress addr) {
         return layout.GetLinearVirtualAddress(addr);
     }
 
-    static PAddr GetLinearMappedPhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+    static KPhysicalAddress GetLinearMappedPhysicalAddress(const KMemoryLayout& layout,
+                                                           KVirtualAddress addr) {
         return layout.GetLinearPhysicalAddress(addr);
     }
 
-    static VAddr GetHeapVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+    static KVirtualAddress GetHeapVirtualAddress(const KMemoryLayout& layout,
+                                                 KPhysicalAddress addr) {
         return GetLinearMappedVirtualAddress(layout, addr);
     }
 
-    static PAddr GetHeapPhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+    static KPhysicalAddress GetHeapPhysicalAddress(const KMemoryLayout& layout,
+                                                   KVirtualAddress addr) {
         return GetLinearMappedPhysicalAddress(layout, addr);
     }
 
-    static VAddr GetPageTableVirtualAddress(const KMemoryLayout& layout, PAddr addr) {
+    static KVirtualAddress GetPageTableVirtualAddress(const KMemoryLayout& layout,
+                                                      KPhysicalAddress addr) {
         return GetLinearMappedVirtualAddress(layout, addr);
     }
 
-    static PAddr GetPageTablePhysicalAddress(const KMemoryLayout& layout, VAddr addr) {
+    static KPhysicalAddress GetPageTablePhysicalAddress(const KMemoryLayout& layout,
+                                                        KVirtualAddress addr) {
         return GetLinearMappedPhysicalAddress(layout, addr);
     }
 
@@ -464,7 +475,7 @@ private:
         return m_enable_aslr;
     }
 
-    constexpr bool ContainsPages(VAddr addr, size_t num_pages) const {
+    constexpr bool ContainsPages(KProcessAddress addr, size_t num_pages) const {
         return (m_address_space_start <= addr) &&
                (num_pages <= (m_address_space_end - m_address_space_start) / PageSize) &&
                (addr + num_pages * PageSize - 1 <= m_address_space_end - 1);
@@ -489,21 +500,21 @@ private:
     };
 
 private:
-    VAddr m_address_space_start{};
-    VAddr m_address_space_end{};
-    VAddr m_heap_region_start{};
-    VAddr m_heap_region_end{};
-    VAddr m_current_heap_end{};
-    VAddr m_alias_region_start{};
-    VAddr m_alias_region_end{};
-    VAddr m_stack_region_start{};
-    VAddr m_stack_region_end{};
-    VAddr m_kernel_map_region_start{};
-    VAddr m_kernel_map_region_end{};
-    VAddr m_code_region_start{};
-    VAddr m_code_region_end{};
-    VAddr m_alias_code_region_start{};
-    VAddr m_alias_code_region_end{};
+    KProcessAddress m_address_space_start{};
+    KProcessAddress m_address_space_end{};
+    KProcessAddress m_heap_region_start{};
+    KProcessAddress m_heap_region_end{};
+    KProcessAddress m_current_heap_end{};
+    KProcessAddress m_alias_region_start{};
+    KProcessAddress m_alias_region_end{};
+    KProcessAddress m_stack_region_start{};
+    KProcessAddress m_stack_region_end{};
+    KProcessAddress m_kernel_map_region_start{};
+    KProcessAddress m_kernel_map_region_end{};
+    KProcessAddress m_code_region_start{};
+    KProcessAddress m_code_region_end{};
+    KProcessAddress m_alias_code_region_start{};
+    KProcessAddress m_alias_code_region_end{};
 
     size_t m_max_heap_size{};
     size_t m_mapped_physical_memory_size{};

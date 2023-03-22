@@ -195,7 +195,7 @@ public:
         }
 
         // Set up the configuration with the required TransferMemory address
-        configuration.transfer_memory.offset = tmem->GetSourceAddress();
+        configuration.transfer_memory.offset = GetInteger(tmem->GetSourceAddress());
         configuration.transfer_memory.size = tmem_size;
 
         // Gather up all the callbacks from the loaded plugin
@@ -383,12 +383,12 @@ public:
         }
 
         const CodeRange user_rx{
-            .offset = rx_mem->GetSourceAddress(),
+            .offset = GetInteger(rx_mem->GetSourceAddress()),
             .size = parameters.rx_size,
         };
 
         const CodeRange user_ro{
-            .offset = ro_mem->GetSourceAddress(),
+            .offset = GetInteger(ro_mem->GetSourceAddress()),
             .size = parameters.ro_size,
         };
 

@@ -253,7 +253,7 @@ struct LastThreadContext {
 };
 
 struct PhysicalMemoryInfo {
-    PAddr physical_address;
+    u64 physical_address;
     u64 virtual_address;
     u64 size;
 };
@@ -359,7 +359,7 @@ struct LastThreadContext {
 };
 
 struct PhysicalMemoryInfo {
-    PAddr physical_address;
+    u64 physical_address;
     u32 virtual_address;
     u32 size;
 };

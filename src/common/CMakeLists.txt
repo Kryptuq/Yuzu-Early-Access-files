@@ -132,6 +132,7 @@ add_library(common STATIC
     time_zone.h
     tiny_mt.h
     tree.h
+    typed_address.h
     uint128.h
     unique_function.h
     uuid.cpp

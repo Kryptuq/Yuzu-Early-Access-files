@@ -76,7 +76,7 @@ void KSharedMemory::Finalize() {
     m_resource_limit->Close();
 }
 
-Result KSharedMemory::Map(KProcess& target_process, VAddr address, std::size_t map_size,
+Result KSharedMemory::Map(KProcess& target_process, KProcessAddress address, std::size_t map_size,
                           Svc::MemoryPermission map_perm) {
     // Validate the size.
     R_UNLESS(m_size == map_size, ResultInvalidSize);
@@ -94,7 +94,8 @@ Result KSharedMemory::Map(KProcess& target_process, VAddr address, std::size_t m
                                                      ConvertToKMemoryPermission(map_perm)));
 }
 
-Result KSharedMemory::Unmap(KProcess& target_process, VAddr address, std::size_t unmap_size) {
+Result KSharedMemory::Unmap(KProcess& target_process, KProcessAddress address,
+                            std::size_t unmap_size) {
     // Validate the size.
     R_UNLESS(m_size == unmap_size, ResultInvalidSize);
 

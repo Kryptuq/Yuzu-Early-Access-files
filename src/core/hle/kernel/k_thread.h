@@ -14,7 +14,6 @@
 
 #include <boost/intrusive/list.hpp>
 
-#include "common/common_types.h"
 #include "common/intrusive_red_black_tree.h"
 #include "common/spin_lock.h"
 #include "core/arm/arm_interface.h"
@@ -23,6 +22,7 @@
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_timer_task.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_common.h"
@@ -46,7 +46,7 @@ class KProcess;
 class KScheduler;
 class KThreadQueue;
 
-using KThreadFunction = VAddr;
+using KThreadFunction = KProcessAddress;
 
 enum class ThreadType : u32 {
     Main = 0,
@@ -230,9 +230,9 @@ public:
 
     /*
      * Returns the Thread Local Storage address of the current thread
-     * @returns VAddr of the thread's TLS
+     * @returns Address of the thread's TLS
      */
-    VAddr GetTlsAddress() const {
+    KProcessAddress GetTlsAddress() const {
         return m_tls_address;
     }
 
@@ -419,8 +419,8 @@ public:
                                                KThreadFunction func, uintptr_t arg, s32 virt_core);
 
     static Result InitializeUserThread(Core::System& system, KThread* thread, KThreadFunction func,
-                                       uintptr_t arg, VAddr user_stack_top, s32 prio, s32 virt_core,
-                                       KProcess* owner);
+                                       uintptr_t arg, KProcessAddress user_stack_top, s32 prio,
+                                       s32 virt_core, KProcess* owner);
 
     static Result InitializeServiceThread(Core::System& system, KThread* thread,
                                           std::function<void()>&& thread_func, s32 prio,
@@ -565,15 +565,15 @@ public:
 
     Result GetThreadContext3(std::vector<u8>& out);
 
-    KThread* RemoveUserWaiterByKey(bool* out_has_waiters, VAddr key) {
+    KThread* RemoveUserWaiterByKey(bool* out_has_waiters, KProcessAddress key) {
         return this->RemoveWaiterByKey(out_has_waiters, key, false);
     }
 
-    KThread* RemoveKernelWaiterByKey(bool* out_has_waiters, VAddr key) {
+    KThread* RemoveKernelWaiterByKey(bool* out_has_waiters, KProcessAddress key) {
         return this->RemoveWaiterByKey(out_has_waiters, key, true);
     }
 
-    VAddr GetAddressKey() const {
+    KProcessAddress GetAddressKey() const {
         return m_address_key;
     }
 
@@ -591,14 +591,14 @@ public:
     // to cope with arbitrary host pointers making their way
     // into things.
 
-    void SetUserAddressKey(VAddr key, u32 val) {
+    void SetUserAddressKey(KProcessAddress key, u32 val) {
         ASSERT(m_waiting_lock_info == nullptr);
         m_address_key = key;
         m_address_key_value = val;
         m_is_kernel_address_key = false;
     }
 
-    void SetKernelAddressKey(VAddr key) {
+    void SetKernelAddressKey(KProcessAddress key) {
         ASSERT(m_waiting_lock_info == nullptr);
         m_address_key = key;
         m_is_kernel_address_key = true;
@@ -637,12 +637,13 @@ public:
         return m_argument;
     }
 
-    VAddr GetUserStackTop() const {
+    KProcessAddress GetUserStackTop() const {
         return m_stack_top;
     }
 
 private:
-    KThread* RemoveWaiterByKey(bool* out_has_waiters, VAddr key, bool is_kernel_address_key);
+    KThread* RemoveWaiterByKey(bool* out_has_waiters, KProcessAddress key,
+                               bool is_kernel_address_key);
 
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
@@ -695,12 +696,13 @@ private:
 
     void IncreaseBasePriority(s32 priority);
 
-    Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top, s32 prio,
+    Result Initialize(KThreadFunction func, uintptr_t arg, KProcessAddress user_stack_top, s32 prio,
                       s32 virt_core, KProcess* owner, ThreadType type);
 
     static Result InitializeThread(KThread* thread, KThreadFunction func, uintptr_t arg,
-                                   VAddr user_stack_top, s32 prio, s32 core, KProcess* owner,
-                                   ThreadType type, std::function<void()>&& init_func);
+                                   KProcessAddress user_stack_top, s32 prio, s32 core,
+                                   KProcess* owner, ThreadType type,
+                                   std::function<void()>&& init_func);
 
     // For core KThread implementation
     ThreadContext32 m_thread_context_32{};
@@ -749,7 +751,8 @@ public:
     public:
         explicit LockWithPriorityInheritanceInfo(KernelCore&) {}
 
-        static LockWithPriorityInheritanceInfo* Create(KernelCore& kernel, VAddr address_key,
+        static LockWithPriorityInheritanceInfo* Create(KernelCore& kernel,
+                                                       KProcessAddress address_key,
                                                        bool is_kernel_address_key) {
             // Create a new lock info.
             auto* new_lock = LockWithPriorityInheritanceInfo::Allocate(kernel);
@@ -797,7 +800,7 @@ public:
             return m_tree;
         }
 
-        VAddr GetAddressKey() const {
+        KProcessAddress GetAddressKey() const {
             return m_address_key;
         }
         bool GetIsKernelAddressKey() const {
@@ -812,7 +815,7 @@ public:
 
     private:
         LockWithPriorityInheritanceThreadTree m_tree{};
-        VAddr m_address_key{};
+        KProcessAddress m_address_key{};
         KThread* m_owner{};
         u32 m_waiter_count{};
         bool m_is_kernel_address_key{};
@@ -827,7 +830,8 @@ public:
     }
 
     void AddHeldLock(LockWithPriorityInheritanceInfo* lock_info);
-    LockWithPriorityInheritanceInfo* FindHeldLock(VAddr address_key, bool is_kernel_address_key);
+    LockWithPriorityInheritanceInfo* FindHeldLock(KProcessAddress address_key,
+                                                  bool is_kernel_address_key);
 
 private:
     using LockWithPriorityInheritanceInfoList =
@@ -839,11 +843,11 @@ private:
     KAffinityMask m_physical_affinity_mask{};
     u64 m_thread_id{};
     std::atomic<s64> m_cpu_time{};
-    VAddr m_address_key{};
+    KProcessAddress m_address_key{};
     KProcess* m_parent{};
-    VAddr m_kernel_stack_top{};
+    KVirtualAddress m_kernel_stack_top{};
     u32* m_light_ipc_data{};
-    VAddr m_tls_address{};
+    KProcessAddress m_tls_address{};
     KLightLock m_activity_pause_lock;
     s64 m_schedule_count{};
     s64 m_last_scheduled_tick{};
@@ -887,16 +891,16 @@ private:
 
     // For debugging
     std::vector<KSynchronizationObject*> m_wait_objects_for_debugging{};
-    VAddr m_mutex_wait_address_for_debugging{};
+    KProcessAddress m_mutex_wait_address_for_debugging{};
     ThreadWaitReasonForDebugging m_wait_reason_for_debugging{};
     uintptr_t m_argument{};
-    VAddr m_stack_top{};
+    KProcessAddress m_stack_top{};
 
 public:
     using ConditionVariableThreadTreeType = ConditionVariableThreadTree;
 
-    void SetConditionVariable(ConditionVariableThreadTree* tree, VAddr address, u64 cv_key,
-                              u32 value) {
+    void SetConditionVariable(ConditionVariableThreadTree* tree, KProcessAddress address,
+                              u64 cv_key, u32 value) {
         ASSERT(m_waiting_lock_info == nullptr);
         m_condvar_tree = tree;
         m_condvar_key = cv_key;

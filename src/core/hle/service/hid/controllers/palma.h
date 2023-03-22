@@ -5,7 +5,7 @@
 
 #include <array>
 #include "common/common_funcs.h"
-#include "common/common_types.h"
+#include "common/typed_address.h"
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/errors.h"
 
@@ -125,8 +125,8 @@ public:
     Result ReadPalmaUniqueCode(const PalmaConnectionHandle& handle);
     Result SetPalmaUniqueCodeInvalid(const PalmaConnectionHandle& handle);
     Result WritePalmaRgbLedPatternEntry(const PalmaConnectionHandle& handle, u64 unknown);
-    Result WritePalmaWaveEntry(const PalmaConnectionHandle& handle, PalmaWaveSet wave, VAddr t_mem,
-                               u64 size);
+    Result WritePalmaWaveEntry(const PalmaConnectionHandle& handle, PalmaWaveSet wave,
+                               Common::ProcessAddress t_mem, u64 size);
     Result SetPalmaDataBaseIdentificationVersion(const PalmaConnectionHandle& handle,
                                                  s32 database_id_version_);
     Result GetPalmaDataBaseIdentificationVersion(const PalmaConnectionHandle& handle);

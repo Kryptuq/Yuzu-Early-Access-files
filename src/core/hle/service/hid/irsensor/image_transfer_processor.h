@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "common/common_types.h"
+#include "common/typed_address.h"
 #include "core/hid/irs_types.h"
 #include "core/hle/service/hid/irsensor/processor_base.h"
 
@@ -37,7 +37,7 @@ public:
     void SetConfig(Core::IrSensor::PackedImageTransferProcessorExConfig config);
 
     // Transfer memory where the image data will be stored
-    void SetTransferMemoryAddress(VAddr t_mem);
+    void SetTransferMemoryAddress(Common::ProcessAddress t_mem);
 
     Core::IrSensor::ImageTransferProcessorState GetState(std::vector<u8>& data) const;
 
@@ -72,6 +72,6 @@ private:
     int callback_key{};
 
     Core::System& system;
-    VAddr transfer_memory{};
+    Common::ProcessAddress transfer_memory{};
 };
 } // namespace Service::IRS

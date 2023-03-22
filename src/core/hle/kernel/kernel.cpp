@@ -271,9 +271,9 @@ struct KernelCore::Impl {
         system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
     }
 
-    void InitializeResourceManagers(KernelCore& kernel, VAddr address, size_t size) {
+    void InitializeResourceManagers(KernelCore& kernel, KVirtualAddress address, size_t size) {
         // Ensure that the buffer is suitable for our use.
-        ASSERT(Common::IsAligned(address, PageSize));
+        ASSERT(Common::IsAligned(GetInteger(address), PageSize));
         ASSERT(Common::IsAligned(size, PageSize));
 
         // Ensure that we have space for our reference counts.
@@ -462,29 +462,30 @@ struct KernelCore::Impl {
             KernelPhysicalAddressSpaceBase + KernelPhysicalAddressSpaceSize - 1);
 
         // Save start and end for ease of use.
-        const VAddr code_start_virt_addr = KernelVirtualAddressCodeBase;
-        const VAddr code_end_virt_addr = KernelVirtualAddressCodeEnd;
+        constexpr KVirtualAddress code_start_virt_addr = KernelVirtualAddressCodeBase;
+        constexpr KVirtualAddress code_end_virt_addr = KernelVirtualAddressCodeEnd;
 
         // Setup the containing kernel region.
         constexpr size_t KernelRegionSize = 1_GiB;
         constexpr size_t KernelRegionAlign = 1_GiB;
-        constexpr VAddr kernel_region_start =
-            Common::AlignDown(code_start_virt_addr, KernelRegionAlign);
+        constexpr KVirtualAddress kernel_region_start =
+            Common::AlignDown(GetInteger(code_start_virt_addr), KernelRegionAlign);
         size_t kernel_region_size = KernelRegionSize;
         if (!(kernel_region_start + KernelRegionSize - 1 <= KernelVirtualAddressSpaceLast)) {
-            kernel_region_size = KernelVirtualAddressSpaceEnd - kernel_region_start;
+            kernel_region_size = KernelVirtualAddressSpaceEnd - GetInteger(kernel_region_start);
         }
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            kernel_region_start, kernel_region_size, KMemoryRegionType_Kernel));
+            GetInteger(kernel_region_start), kernel_region_size, KMemoryRegionType_Kernel));
 
         // Setup the code region.
         constexpr size_t CodeRegionAlign = PageSize;
-        constexpr VAddr code_region_start =
-            Common::AlignDown(code_start_virt_addr, CodeRegionAlign);
-        constexpr VAddr code_region_end = Common::AlignUp(code_end_virt_addr, CodeRegionAlign);
+        constexpr KVirtualAddress code_region_start =
+            Common::AlignDown(GetInteger(code_start_virt_addr), CodeRegionAlign);
+        constexpr KVirtualAddress code_region_end =
+            Common::AlignUp(GetInteger(code_end_virt_addr), CodeRegionAlign);
         constexpr size_t code_region_size = code_region_end - code_region_start;
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            code_region_start, code_region_size, KMemoryRegionType_KernelCode));
+            GetInteger(code_region_start), code_region_size, KMemoryRegionType_KernelCode));
 
         // Setup board-specific device physical regions.
         Init::SetupDevicePhysicalMemoryRegions(*memory_layout);
@@ -520,11 +521,11 @@ struct KernelCore::Impl {
         ASSERT(misc_region_size > 0);
 
         // Setup the misc region.
-        const VAddr misc_region_start =
+        const KVirtualAddress misc_region_start =
             memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
                 misc_region_size, MiscRegionAlign, KMemoryRegionType_Kernel);
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            misc_region_start, misc_region_size, KMemoryRegionType_KernelMisc));
+            GetInteger(misc_region_start), misc_region_size, KMemoryRegionType_KernelMisc));
 
         // Determine if we'll use extra thread resources.
         const bool use_extra_resources = KSystemControl::Init::ShouldIncreaseThreadResourceLimit();
@@ -532,11 +533,11 @@ struct KernelCore::Impl {
         // Setup the stack region.
         constexpr size_t StackRegionSize = 14_MiB;
         constexpr size_t StackRegionAlign = KernelAslrAlignment;
-        const VAddr stack_region_start =
+        const KVirtualAddress stack_region_start =
             memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
                 StackRegionSize, StackRegionAlign, KMemoryRegionType_Kernel);
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            stack_region_start, StackRegionSize, KMemoryRegionType_KernelStack));
+            GetInteger(stack_region_start), StackRegionSize, KMemoryRegionType_KernelStack));
 
         // Determine the size of the resource region.
         const size_t resource_region_size =
@@ -548,29 +549,29 @@ struct KernelCore::Impl {
         ASSERT(slab_region_size <= resource_region_size);
 
         // Setup the slab region.
-        const PAddr code_start_phys_addr = KernelPhysicalAddressCodeBase;
-        const PAddr code_end_phys_addr = code_start_phys_addr + code_region_size;
-        const PAddr slab_start_phys_addr = code_end_phys_addr;
-        const PAddr slab_end_phys_addr = slab_start_phys_addr + slab_region_size;
+        const KPhysicalAddress code_start_phys_addr = KernelPhysicalAddressCodeBase;
+        const KPhysicalAddress code_end_phys_addr = code_start_phys_addr + code_region_size;
+        const KPhysicalAddress slab_start_phys_addr = code_end_phys_addr;
+        const KPhysicalAddress slab_end_phys_addr = slab_start_phys_addr + slab_region_size;
         constexpr size_t SlabRegionAlign = KernelAslrAlignment;
         const size_t slab_region_needed_size =
-            Common::AlignUp(code_end_phys_addr + slab_region_size, SlabRegionAlign) -
-            Common::AlignDown(code_end_phys_addr, SlabRegionAlign);
-        const VAddr slab_region_start =
+            Common::AlignUp(GetInteger(code_end_phys_addr) + slab_region_size, SlabRegionAlign) -
+            Common::AlignDown(GetInteger(code_end_phys_addr), SlabRegionAlign);
+        const KVirtualAddress slab_region_start =
             memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
                 slab_region_needed_size, SlabRegionAlign, KMemoryRegionType_Kernel) +
-            (code_end_phys_addr % SlabRegionAlign);
+            (GetInteger(code_end_phys_addr) % SlabRegionAlign);
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            slab_region_start, slab_region_size, KMemoryRegionType_KernelSlab));
+            GetInteger(slab_region_start), slab_region_size, KMemoryRegionType_KernelSlab));
 
         // Setup the temp region.
         constexpr size_t TempRegionSize = 128_MiB;
         constexpr size_t TempRegionAlign = KernelAslrAlignment;
-        const VAddr temp_region_start =
+        const KVirtualAddress temp_region_start =
             memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegion(
                 TempRegionSize, TempRegionAlign, KMemoryRegionType_Kernel);
-        ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(temp_region_start, TempRegionSize,
-                                                                  KMemoryRegionType_KernelTemp));
+        ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
+            GetInteger(temp_region_start), TempRegionSize, KMemoryRegionType_KernelTemp));
 
         // Automatically map in devices that have auto-map attributes.
         for (auto& region : memory_layout->GetPhysicalMemoryRegionTree()) {
@@ -596,35 +597,37 @@ struct KernelCore::Impl {
             region.SetTypeAttribute(KMemoryRegionAttr_DidKernelMap);
 
             // Create a virtual pair region and insert it into the tree.
-            const PAddr map_phys_addr = Common::AlignDown(region.GetAddress(), PageSize);
+            const KPhysicalAddress map_phys_addr = Common::AlignDown(region.GetAddress(), PageSize);
             const size_t map_size =
-                Common::AlignUp(region.GetEndAddress(), PageSize) - map_phys_addr;
-            const VAddr map_virt_addr =
+                Common::AlignUp(region.GetEndAddress(), PageSize) - GetInteger(map_phys_addr);
+            const KVirtualAddress map_virt_addr =
                 memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegionWithGuard(
                     map_size, PageSize, KMemoryRegionType_KernelMisc, PageSize);
             ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-                map_virt_addr, map_size, KMemoryRegionType_KernelMiscMappedDevice));
-            region.SetPairAddress(map_virt_addr + region.GetAddress() - map_phys_addr);
+                GetInteger(map_virt_addr), map_size, KMemoryRegionType_KernelMiscMappedDevice));
+            region.SetPairAddress(GetInteger(map_virt_addr) + region.GetAddress() -
+                                  GetInteger(map_phys_addr));
         }
 
         Init::SetupDramPhysicalMemoryRegions(*memory_layout);
 
         // Insert a physical region for the kernel code region.
         ASSERT(memory_layout->GetPhysicalMemoryRegionTree().Insert(
-            code_start_phys_addr, code_region_size, KMemoryRegionType_DramKernelCode));
+            GetInteger(code_start_phys_addr), code_region_size, KMemoryRegionType_DramKernelCode));
 
         // Insert a physical region for the kernel slab region.
         ASSERT(memory_layout->GetPhysicalMemoryRegionTree().Insert(
-            slab_start_phys_addr, slab_region_size, KMemoryRegionType_DramKernelSlab));
+            GetInteger(slab_start_phys_addr), slab_region_size, KMemoryRegionType_DramKernelSlab));
 
         // Determine size available for kernel page table heaps, requiring > 8 MB.
-        const PAddr resource_end_phys_addr = slab_start_phys_addr + resource_region_size;
+        const KPhysicalAddress resource_end_phys_addr = slab_start_phys_addr + resource_region_size;
         const size_t page_table_heap_size = resource_end_phys_addr - slab_end_phys_addr;
         ASSERT(page_table_heap_size / 4_MiB > 2);
 
         // Insert a physical region for the kernel page table heap region
         ASSERT(memory_layout->GetPhysicalMemoryRegionTree().Insert(
-            slab_end_phys_addr, page_table_heap_size, KMemoryRegionType_DramKernelPtHeap));
+            GetInteger(slab_end_phys_addr), page_table_heap_size,
+            KMemoryRegionType_DramKernelPtHeap));
 
         // All DRAM regions that we haven't tagged by this point will be mapped under the linear
         // mapping. Tag them.
@@ -646,20 +649,21 @@ struct KernelCore::Impl {
 
         // Setup the linear mapping region.
         constexpr size_t LinearRegionAlign = 1_GiB;
-        const PAddr aligned_linear_phys_start =
+        const KPhysicalAddress aligned_linear_phys_start =
             Common::AlignDown(linear_extents.GetAddress(), LinearRegionAlign);
         const size_t linear_region_size =
             Common::AlignUp(linear_extents.GetEndAddress(), LinearRegionAlign) -
-            aligned_linear_phys_start;
-        const VAddr linear_region_start =
+            GetInteger(aligned_linear_phys_start);
+        const KVirtualAddress linear_region_start =
             memory_layout->GetVirtualMemoryRegionTree().GetRandomAlignedRegionWithGuard(
                 linear_region_size, LinearRegionAlign, KMemoryRegionType_None, LinearRegionAlign);
 
-        const u64 linear_region_phys_to_virt_diff = linear_region_start - aligned_linear_phys_start;
+        const u64 linear_region_phys_to_virt_diff =
+            GetInteger(linear_region_start) - GetInteger(aligned_linear_phys_start);
 
         // Map and create regions for all the linearly-mapped data.
         {
-            PAddr cur_phys_addr = 0;
+            KPhysicalAddress cur_phys_addr = 0;
             u64 cur_size = 0;
             for (auto& region : memory_layout->GetPhysicalMemoryRegionTree()) {
                 if (!region.HasTypeAttribute(KMemoryRegionAttr_LinearMapped)) {
@@ -678,15 +682,16 @@ struct KernelCore::Impl {
                     cur_size = region.GetSize();
                 }
 
-                const VAddr region_virt_addr =
+                const KVirtualAddress region_virt_addr =
                     region.GetAddress() + linear_region_phys_to_virt_diff;
                 ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-                    region_virt_addr, region.GetSize(),
+                    GetInteger(region_virt_addr), region.GetSize(),
                     GetTypeForVirtualLinearMapping(region.GetType())));
-                region.SetPairAddress(region_virt_addr);
+                region.SetPairAddress(GetInteger(region_virt_addr));
 
                 KMemoryRegion* virt_region =
-                    memory_layout->GetVirtualMemoryRegionTree().FindModifiable(region_virt_addr);
+                    memory_layout->GetVirtualMemoryRegionTree().FindModifiable(
+                        GetInteger(region_virt_addr));
                 ASSERT(virt_region != nullptr);
                 virt_region->SetPairAddress(region.GetAddress());
             }
@@ -694,10 +699,11 @@ struct KernelCore::Impl {
 
         // Insert regions for the initial page table region.
         ASSERT(memory_layout->GetPhysicalMemoryRegionTree().Insert(
-            resource_end_phys_addr, KernelPageTableHeapSize, KMemoryRegionType_DramKernelInitPt));
+            GetInteger(resource_end_phys_addr), KernelPageTableHeapSize,
+            KMemoryRegionType_DramKernelInitPt));
         ASSERT(memory_layout->GetVirtualMemoryRegionTree().Insert(
-            resource_end_phys_addr + linear_region_phys_to_virt_diff, KernelPageTableHeapSize,
-            KMemoryRegionType_VirtualDramKernelInitPt));
+            GetInteger(resource_end_phys_addr) + linear_region_phys_to_virt_diff,
+            KernelPageTableHeapSize, KMemoryRegionType_VirtualDramKernelInitPt));
 
         // All linear-mapped DRAM regions that we haven't tagged by this point will be allocated to
         // some pool partition. Tag them.
@@ -969,12 +975,12 @@ void KernelCore::InvalidateAllInstructionCaches() {
     }
 }
 
-void KernelCore::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
+void KernelCore::InvalidateCpuInstructionCacheRange(KProcessAddress addr, std::size_t size) {
     for (auto& physical_core : impl->cores) {
         if (!physical_core->IsInitialized()) {
             continue;
         }
-        physical_core->ArmInterface().InvalidateCacheRange(addr, size);
+        physical_core->ArmInterface().InvalidateCacheRange(GetInteger(addr), size);
     }
 }
 

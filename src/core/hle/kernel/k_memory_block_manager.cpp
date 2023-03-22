@@ -7,7 +7,8 @@ namespace Kernel {
 
 KMemoryBlockManager::KMemoryBlockManager() = default;
 
-Result KMemoryBlockManager::Initialize(VAddr st, VAddr nd, KMemoryBlockSlabManager* slab_manager) {
+Result KMemoryBlockManager::Initialize(KProcessAddress st, KProcessAddress nd,
+                                       KMemoryBlockSlabManager* slab_manager) {
     // Allocate a block to encapsulate the address space, insert it into the tree.
     KMemoryBlock* start_block = slab_manager->Allocate();
     R_UNLESS(start_block != nullptr, ResultOutOfResource);
@@ -15,8 +16,8 @@ Result KMemoryBlockManager::Initialize(VAddr st, VAddr nd, KMemoryBlockSlabManag
     // Set our start and end.
     m_start_address = st;
     m_end_address = nd;
-    ASSERT(Common::IsAligned(m_start_address, PageSize));
-    ASSERT(Common::IsAligned(m_end_address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(m_start_address), PageSize));
+    ASSERT(Common::IsAligned(GetInteger(m_end_address), PageSize));
 
     // Initialize and insert the block.
     start_block->Initialize(m_start_address, (m_end_address - m_start_address) / PageSize,
@@ -40,12 +41,13 @@ void KMemoryBlockManager::Finalize(KMemoryBlockSlabManager* slab_manager,
     ASSERT(m_memory_block_tree.empty());
 }
 
-VAddr KMemoryBlockManager::FindFreeArea(VAddr region_start, size_t region_num_pages,
-                                        size_t num_pages, size_t alignment, size_t offset,
-                                        size_t guard_pages) const {
+KProcessAddress KMemoryBlockManager::FindFreeArea(KProcessAddress region_start,
+                                                  size_t region_num_pages, size_t num_pages,
+                                                  size_t alignment, size_t offset,
+                                                  size_t guard_pages) const {
     if (num_pages > 0) {
-        const VAddr region_end = region_start + region_num_pages * PageSize;
-        const VAddr region_last = region_end - 1;
+        const KProcessAddress region_end = region_start + region_num_pages * PageSize;
+        const KProcessAddress region_last = region_end - 1;
         for (const_iterator it = this->FindIterator(region_start); it != m_memory_block_tree.cend();
              it++) {
             const KMemoryInfo info = it->GetMemoryInfo();
@@ -56,17 +58,19 @@ VAddr KMemoryBlockManager::FindFreeArea(VAddr region_start, size_t region_num_pa
                 continue;
             }
 
-            VAddr area = (info.GetAddress() <= region_start) ? region_start : info.GetAddress();
+            KProcessAddress area =
+                (info.GetAddress() <= GetInteger(region_start)) ? region_start : info.GetAddress();
             area += guard_pages * PageSize;
 
-            const VAddr offset_area = Common::AlignDown(area, alignment) + offset;
+            const KProcessAddress offset_area =
+                Common::AlignDown(GetInteger(area), alignment) + offset;
             area = (area <= offset_area) ? offset_area : offset_area + alignment;
 
-            const VAddr area_end = area + num_pages * PageSize + guard_pages * PageSize;
-            const VAddr area_last = area_end - 1;
+            const KProcessAddress area_end = area + num_pages * PageSize + guard_pages * PageSize;
+            const KProcessAddress area_last = area_end - 1;
 
-            if (info.GetAddress() <= area && area < area_last && area_last <= region_last &&
-                area_last <= info.GetLastAddress()) {
+            if (info.GetAddress() <= GetInteger(area) && area < area_last &&
+                area_last <= region_last && area_last <= info.GetLastAddress()) {
                 return area;
             }
         }
@@ -76,7 +80,7 @@ VAddr KMemoryBlockManager::FindFreeArea(VAddr region_start, size_t region_num_pa
 }
 
 void KMemoryBlockManager::CoalesceForUpdate(KMemoryBlockManagerUpdateAllocator* allocator,
-                                            VAddr address, size_t num_pages) {
+                                            KProcessAddress address, size_t num_pages) {
     // Find the iterator now that we've updated.
     iterator it = this->FindIterator(address);
     if (address != m_start_address) {
@@ -104,18 +108,18 @@ void KMemoryBlockManager::CoalesceForUpdate(KMemoryBlockManagerUpdateAllocator* 
     }
 }
 
-void KMemoryBlockManager::Update(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
-                                 size_t num_pages, KMemoryState state, KMemoryPermission perm,
-                                 KMemoryAttribute attr,
+void KMemoryBlockManager::Update(KMemoryBlockManagerUpdateAllocator* allocator,
+                                 KProcessAddress address, size_t num_pages, KMemoryState state,
+                                 KMemoryPermission perm, KMemoryAttribute attr,
                                  KMemoryBlockDisableMergeAttribute set_disable_attr,
                                  KMemoryBlockDisableMergeAttribute clear_disable_attr) {
     // Ensure for auditing that we never end up with an invalid tree.
     KScopedMemoryBlockManagerAuditor auditor(this);
-    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(address), PageSize));
     ASSERT((attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
            KMemoryAttribute::None);
 
-    VAddr cur_address = address;
+    KProcessAddress cur_address = address;
     size_t remaining_pages = num_pages;
     iterator it = this->FindIterator(address);
 
@@ -168,17 +172,17 @@ void KMemoryBlockManager::Update(KMemoryBlockManagerUpdateAllocator* allocator, 
 }
 
 void KMemoryBlockManager::UpdateIfMatch(KMemoryBlockManagerUpdateAllocator* allocator,
-                                        VAddr address, size_t num_pages, KMemoryState test_state,
-                                        KMemoryPermission test_perm, KMemoryAttribute test_attr,
-                                        KMemoryState state, KMemoryPermission perm,
-                                        KMemoryAttribute attr) {
+                                        KProcessAddress address, size_t num_pages,
+                                        KMemoryState test_state, KMemoryPermission test_perm,
+                                        KMemoryAttribute test_attr, KMemoryState state,
+                                        KMemoryPermission perm, KMemoryAttribute attr) {
     // Ensure for auditing that we never end up with an invalid tree.
     KScopedMemoryBlockManagerAuditor auditor(this);
-    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(address), PageSize));
     ASSERT((attr & (KMemoryAttribute::IpcLocked | KMemoryAttribute::DeviceShared)) ==
            KMemoryAttribute::None);
 
-    VAddr cur_address = address;
+    KProcessAddress cur_address = address;
     size_t remaining_pages = num_pages;
     iterator it = this->FindIterator(address);
 
@@ -230,18 +234,18 @@ void KMemoryBlockManager::UpdateIfMatch(KMemoryBlockManagerUpdateAllocator* allo
     this->CoalesceForUpdate(allocator, address, num_pages);
 }
 
-void KMemoryBlockManager::UpdateLock(KMemoryBlockManagerUpdateAllocator* allocator, VAddr address,
-                                     size_t num_pages, MemoryBlockLockFunction lock_func,
-                                     KMemoryPermission perm) {
+void KMemoryBlockManager::UpdateLock(KMemoryBlockManagerUpdateAllocator* allocator,
+                                     KProcessAddress address, size_t num_pages,
+                                     MemoryBlockLockFunction lock_func, KMemoryPermission perm) {
     // Ensure for auditing that we never end up with an invalid tree.
     KScopedMemoryBlockManagerAuditor auditor(this);
-    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(address), PageSize));
 
-    VAddr cur_address = address;
+    KProcessAddress cur_address = address;
     size_t remaining_pages = num_pages;
     iterator it = this->FindIterator(address);
 
-    const VAddr end_address = address + (num_pages * PageSize);
+    const KProcessAddress end_address = address + (num_pages * PageSize);
 
     while (remaining_pages > 0) {
         const size_t remaining_size = remaining_pages * PageSize;

@@ -26,7 +26,7 @@ constexpr bool IsValidSharedMemoryPermission(MemoryPermission perm) {
 
 } // namespace
 
-Result MapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address, u64 size,
+Result MapSharedMemory(Core::System& system, Handle shmem_handle, u64 address, u64 size,
                        Svc::MemoryPermission map_perm) {
     LOG_TRACE(Kernel_SVC,
               "called, shared_memory_handle=0x{:X}, addr=0x{:X}, size=0x{:X}, permissions=0x{:08X}",
@@ -64,7 +64,7 @@ Result MapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address,
     R_RETURN(shmem->Map(process, address, size, map_perm));
 }
 
-Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, VAddr address, u64 size) {
+Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, u64 address, u64 size) {
     // Validate the address/size.
     R_UNLESS(Common::IsAligned(address, PageSize), ResultInvalidAddress);
     R_UNLESS(Common::IsAligned(size, PageSize), ResultInvalidSize);

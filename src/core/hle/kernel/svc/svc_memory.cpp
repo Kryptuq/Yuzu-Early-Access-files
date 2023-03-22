@@ -22,15 +22,14 @@ constexpr bool IsValidSetMemoryPermission(MemoryPermission perm) {
 // Checks if address + size is greater than the given address
 // This can return false if the size causes an overflow of a 64-bit type
 // or if the given size is zero.
-constexpr bool IsValidAddressRange(VAddr address, u64 size) {
+constexpr bool IsValidAddressRange(u64 address, u64 size) {
     return address + size > address;
 }
 
 // Helper function that performs the common sanity checks for svcMapMemory
 // and svcUnmapMemory. This is doable, as both functions perform their sanitizing
 // in the same order.
-Result MapUnmapMemorySanityChecks(const KPageTable& manager, VAddr dst_addr, VAddr src_addr,
-                                  u64 size) {
+Result MapUnmapMemorySanityChecks(const KPageTable& manager, u64 dst_addr, u64 src_addr, u64 size) {
     if (!Common::Is4KBAligned(dst_addr)) {
         LOG_ERROR(Kernel_SVC, "Destination address is not aligned to 4KB, 0x{:016X}", dst_addr);
         R_THROW(ResultInvalidAddress);
@@ -99,7 +98,7 @@ Result MapUnmapMemorySanityChecks(const KPageTable& manager, VAddr dst_addr, VAd
 
 } // namespace
 
-Result SetMemoryPermission(Core::System& system, VAddr address, u64 size, MemoryPermission perm) {
+Result SetMemoryPermission(Core::System& system, u64 address, u64 size, MemoryPermission perm) {
     LOG_DEBUG(Kernel_SVC, "called, address=0x{:016X}, size=0x{:X}, perm=0x{:08X", address, size,
               perm);
 
@@ -120,7 +119,7 @@ Result SetMemoryPermission(Core::System& system, VAddr address, u64 size, Memory
     R_RETURN(page_table.SetMemoryPermission(address, size, perm));
 }
 
-Result SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mask, u32 attr) {
+Result SetMemoryAttribute(Core::System& system, u64 address, u64 size, u32 mask, u32 attr) {
     LOG_DEBUG(Kernel_SVC,
               "called, address=0x{:016X}, size=0x{:X}, mask=0x{:08X}, attribute=0x{:08X}", address,
               size, mask, attr);
@@ -145,7 +144,7 @@ Result SetMemoryAttribute(Core::System& system, VAddr address, u64 size, u32 mas
 }
 
 /// Maps a memory range into a different range.
-Result MapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size) {
+Result MapMemory(Core::System& system, u64 dst_addr, u64 src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
               src_addr, size);
 
@@ -160,7 +159,7 @@ Result MapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size)
 }
 
 /// Unmaps a region that was previously mapped with svcMapMemory
-Result UnmapMemory(Core::System& system, VAddr dst_addr, VAddr src_addr, u64 size) {
+Result UnmapMemory(Core::System& system, u64 dst_addr, u64 src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
               src_addr, size);
 

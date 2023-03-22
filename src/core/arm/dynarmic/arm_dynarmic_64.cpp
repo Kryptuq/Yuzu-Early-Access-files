@@ -117,7 +117,7 @@ public:
     }
 
     void InstructionCacheOperationRaised(Dynarmic::A64::InstructionCacheOperation op,
-                                         VAddr value) override {
+                                         u64 value) override {
         switch (op) {
         case Dynarmic::A64::InstructionCacheOperation::InvalidateByVAToPoU: {
             static constexpr u64 ICACHE_LINE_SIZE = 64;
@@ -199,7 +199,7 @@ public:
         return parent.system.CoreTiming().GetClockTicks();
     }
 
-    bool CheckMemoryAccess(VAddr addr, u64 size, Kernel::DebugWatchpointType type) {
+    bool CheckMemoryAccess(u64 addr, u64 size, Kernel::DebugWatchpointType type) {
         if (!check_memory_access) {
             return true;
         }
@@ -452,7 +452,7 @@ u64 ARM_Dynarmic_64::GetTlsAddress() const {
     return cb->tpidrro_el0;
 }
 
-void ARM_Dynarmic_64::SetTlsAddress(VAddr address) {
+void ARM_Dynarmic_64::SetTlsAddress(u64 address) {
     cb->tpidrro_el0 = address;
 }
 
@@ -500,7 +500,7 @@ void ARM_Dynarmic_64::ClearInstructionCache() {
     jit.load()->ClearCache();
 }
 
-void ARM_Dynarmic_64::InvalidateCacheRange(VAddr addr, std::size_t size) {
+void ARM_Dynarmic_64::InvalidateCacheRange(u64 addr, std::size_t size) {
     jit.load()->InvalidateCacheRange(addr, size);
 }
 

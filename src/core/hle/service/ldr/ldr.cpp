@@ -337,7 +337,7 @@ public:
 
         bool succeeded = false;
         const auto map_region_end =
-            page_table.GetAliasCodeRegionStart() + page_table.GetAliasCodeRegionSize();
+            GetInteger(page_table.GetAliasCodeRegionStart()) + page_table.GetAliasCodeRegionSize();
         while (current_map_addr < map_region_end) {
             if (is_region_available(current_map_addr)) {
                 succeeded = true;
@@ -642,7 +642,8 @@ public:
         LOG_WARNING(Service_LDR, "(STUBBED) called");
 
         initialized = true;
-        current_map_addr = system.ApplicationProcess()->PageTable().GetAliasCodeRegionStart();
+        current_map_addr =
+            GetInteger(system.ApplicationProcess()->PageTable().GetAliasCodeRegionStart());
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);

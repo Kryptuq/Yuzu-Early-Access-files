@@ -19,7 +19,8 @@ namespace Kernel {
 KCodeMemory::KCodeMemory(KernelCore& kernel)
     : KAutoObjectWithSlabHeapAndContainer{kernel}, m_lock(kernel) {}
 
-Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, VAddr addr, size_t size) {
+Result KCodeMemory::Initialize(Core::DeviceMemory& device_memory, KProcessAddress addr,
+                               size_t size) {
     // Set members.
     m_owner = GetCurrentProcessPointer(m_kernel);
 
@@ -63,7 +64,7 @@ void KCodeMemory::Finalize() {
     m_owner->Close();
 }
 
-Result KCodeMemory::Map(VAddr address, size_t size) {
+Result KCodeMemory::Map(KProcessAddress address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -83,7 +84,7 @@ Result KCodeMemory::Map(VAddr address, size_t size) {
     R_SUCCEED();
 }
 
-Result KCodeMemory::Unmap(VAddr address, size_t size) {
+Result KCodeMemory::Unmap(KProcessAddress address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -100,7 +101,7 @@ Result KCodeMemory::Unmap(VAddr address, size_t size) {
     R_SUCCEED();
 }
 
-Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm) {
+Result KCodeMemory::MapToOwner(KProcessAddress address, size_t size, Svc::MemoryPermission perm) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -134,7 +135,7 @@ Result KCodeMemory::MapToOwner(VAddr address, size_t size, Svc::MemoryPermission
     R_SUCCEED();
 }
 
-Result KCodeMemory::UnmapFromOwner(VAddr address, size_t size) {
+Result KCodeMemory::UnmapFromOwner(KProcessAddress address, size_t size) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 

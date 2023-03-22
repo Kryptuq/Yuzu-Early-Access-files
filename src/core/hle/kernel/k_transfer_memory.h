@@ -26,7 +26,7 @@ public:
     explicit KTransferMemory(KernelCore& kernel);
     ~KTransferMemory() override;
 
-    Result Initialize(VAddr address, std::size_t size, Svc::MemoryPermission owner_perm);
+    Result Initialize(KProcessAddress address, std::size_t size, Svc::MemoryPermission owner_perm);
 
     void Finalize() override;
 
@@ -44,7 +44,7 @@ public:
         return m_owner;
     }
 
-    VAddr GetSourceAddress() const {
+    KProcessAddress GetSourceAddress() const {
         return m_address;
     }
 
@@ -54,7 +54,7 @@ public:
 
 private:
     KProcess* m_owner{};
-    VAddr m_address{};
+    KProcessAddress m_address{};
     Svc::MemoryPermission m_owner_perm{};
     size_t m_size{};
     bool m_is_initialized{};

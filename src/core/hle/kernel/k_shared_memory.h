@@ -6,11 +6,11 @@
 #include <optional>
 #include <string>
 
-#include "common/common_types.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_memory_block.h"
 #include "core/hle/kernel/k_page_group.h"
 #include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/result.h"
 
@@ -37,7 +37,7 @@ public:
      * @param map_size Size of the shared memory block to map
      * @param permissions Memory block map permissions (specified by SVC field)
      */
-    Result Map(KProcess& target_process, VAddr address, std::size_t map_size,
+    Result Map(KProcess& target_process, KProcessAddress address, std::size_t map_size,
                Svc::MemoryPermission permissions);
 
     /**
@@ -46,7 +46,7 @@ public:
      * @param address Address in system memory to unmap shared memory block
      * @param unmap_size Size of the shared memory block to unmap
      */
-    Result Unmap(KProcess& target_process, VAddr address, std::size_t unmap_size);
+    Result Unmap(KProcess& target_process, KProcessAddress address, std::size_t unmap_size);
 
     /**
      * Gets a pointer to the shared memory block
@@ -79,7 +79,7 @@ private:
     std::optional<KPageGroup> m_page_group{};
     Svc::MemoryPermission m_owner_permission{};
     Svc::MemoryPermission m_user_permission{};
-    PAddr m_physical_address{};
+    KPhysicalAddress m_physical_address{};
     std::size_t m_size{};
     KResourceLimit* m_resource_limit{};
     bool m_is_initialized{};

@@ -153,7 +153,7 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
 
     // Load NSO modules
     modules.clear();
-    const VAddr base_address{process.PageTable().GetCodeRegionStart()};
+    const VAddr base_address{GetInteger(process.PageTable().GetCodeRegionStart())};
     VAddr next_load_addr{base_address};
     const FileSys::PatchManager pm{metadata.GetTitleID(), system.GetFileSystemController(),
                                    system.GetContentProvider()};

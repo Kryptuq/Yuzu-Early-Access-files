@@ -6,14 +6,14 @@
 
 namespace Kernel {
 
-void KPageHeap::Initialize(PAddr address, size_t size, VAddr management_address,
-                           size_t management_size, const size_t* block_shifts,
-                           size_t num_block_shifts) {
+void KPageHeap::Initialize(KPhysicalAddress address, size_t size,
+                           KVirtualAddress management_address, size_t management_size,
+                           const size_t* block_shifts, size_t num_block_shifts) {
     // Check our assumptions.
-    ASSERT(Common::IsAligned(address, PageSize));
+    ASSERT(Common::IsAligned(GetInteger(address), PageSize));
     ASSERT(Common::IsAligned(size, PageSize));
     ASSERT(0 < num_block_shifts && num_block_shifts <= NumMemoryBlockPageShifts);
-    const VAddr management_end = management_address + management_size;
+    const KVirtualAddress management_end = management_address + management_size;
 
     // Set our members.
     m_heap_address = address;
@@ -31,7 +31,7 @@ void KPageHeap::Initialize(PAddr address, size_t size, VAddr management_address,
     }
 
     // Ensure we didn't overextend our bounds.
-    ASSERT(VAddr(cur_bitmap_storage) <= management_end);
+    ASSERT(KVirtualAddress(cur_bitmap_storage) <= management_end);
 }
 
 size_t KPageHeap::GetNumFreePages() const {
@@ -44,11 +44,11 @@ size_t KPageHeap::GetNumFreePages() const {
     return num_free;
 }
 
-PAddr KPageHeap::AllocateByLinearSearch(s32 index) {
+KPhysicalAddress KPageHeap::AllocateByLinearSearch(s32 index) {
     const size_t needed_size = m_blocks[index].GetSize();
 
     for (s32 i = index; i < static_cast<s32>(m_num_blocks); i++) {
-        if (const PAddr addr = m_blocks[i].PopBlock(false); addr != 0) {
+        if (const KPhysicalAddress addr = m_blocks[i].PopBlock(false); addr != 0) {
             if (const size_t allocated_size = m_blocks[i].GetSize(); allocated_size > needed_size) {
                 this->Free(addr + needed_size, (allocated_size - needed_size) / PageSize);
             }
@@ -59,7 +59,7 @@ PAddr KPageHeap::AllocateByLinearSearch(s32 index) {
     return 0;
 }
 
-PAddr KPageHeap::AllocateByRandom(s32 index, size_t num_pages, size_t align_pages) {
+KPhysicalAddress KPageHeap::AllocateByRandom(s32 index, size_t num_pages, size_t align_pages) {
     // Get the size and required alignment.
     const size_t needed_size = num_pages * PageSize;
     const size_t align_size = align_pages * PageSize;
@@ -110,7 +110,7 @@ PAddr KPageHeap::AllocateByRandom(s32 index, size_t num_pages, size_t align_page
     }
 
     // Pop a block from the index we selected.
-    if (PAddr addr = m_blocks[index].PopBlock(true); addr != 0) {
+    if (KPhysicalAddress addr = m_blocks[index].PopBlock(true); addr != 0) {
         // Determine how much size we have left over.
         if (const size_t leftover_size = m_blocks[index].GetSize() - needed_size;
             leftover_size > 0) {
@@ -141,13 +141,13 @@ PAddr KPageHeap::AllocateByRandom(s32 index, size_t num_pages, size_t align_page
     return 0;
 }
 
-void KPageHeap::FreeBlock(PAddr block, s32 index) {
+void KPageHeap::FreeBlock(KPhysicalAddress block, s32 index) {
     do {
         block = m_blocks[index++].PushBlock(block);
     } while (block != 0);
 }
 
-void KPageHeap::Free(PAddr addr, size_t num_pages) {
+void KPageHeap::Free(KPhysicalAddress addr, size_t num_pages) {
     // Freeing no pages is a no-op.
     if (num_pages == 0) {
         return;
@@ -155,16 +155,16 @@ void KPageHeap::Free(PAddr addr, size_t num_pages) {
 
     // Find the largest block size that we can free, and free as many as possible.
     s32 big_index = static_cast<s32>(m_num_blocks) - 1;
-    const PAddr start = addr;
-    const PAddr end = addr + num_pages * PageSize;
-    PAddr before_start = start;
-    PAddr before_end = start;
-    PAddr after_start = end;
-    PAddr after_end = end;
+    const KPhysicalAddress start = addr;
+    const KPhysicalAddress end = addr + num_pages * PageSize;
+    KPhysicalAddress before_start = start;
+    KPhysicalAddress before_end = start;
+    KPhysicalAddress after_start = end;
+    KPhysicalAddress after_end = end;
     while (big_index >= 0) {
         const size_t block_size = m_blocks[big_index].GetSize();
-        const PAddr big_start = Common::AlignUp(start, block_size);
-        const PAddr big_end = Common::AlignDown(end, block_size);
+        const KPhysicalAddress big_start = Common::AlignUp(GetInteger(start), block_size);
+        const KPhysicalAddress big_end = Common::AlignDown(GetInteger(end), block_size);
         if (big_start < big_end) {
             // Free as many big blocks as we can.
             for (auto block = big_start; block < big_end; block += block_size) {

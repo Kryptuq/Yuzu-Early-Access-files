@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
-#include "common/common_types.h"
+#include "common/typed_address.h"
 #include "core/hle/result.h"
 
 namespace Common {
@@ -33,7 +33,7 @@ constexpr u64 YUZU_PAGESIZE = 1ULL << YUZU_PAGEBITS;
 constexpr u64 YUZU_PAGEMASK = YUZU_PAGESIZE - 1;
 
 /// Virtual user-space memory regions
-enum : VAddr {
+enum : u64 {
     /// TLS (Thread-Local Storage) related.
     TLS_ENTRY_SIZE = 0x200,
 
@@ -74,7 +74,8 @@ public:
      * @param target     Buffer with the memory backing the mapping. Must be of length at least
      *                   `size`.
      */
-    void MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target);
+    void MapMemoryRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size,
+                         Common::PhysicalAddress target);
 
     /**
      * Unmaps a region of the emulated process address space.
@@ -83,7 +84,7 @@ public:
      * @param base       The address to begin unmapping at.
      * @param size       The amount of bytes to unmap.
      */
-    void UnmapRegion(Common::PageTable& page_table, VAddr base, u64 size);
+    void UnmapRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size);
 
     /**
      * Checks whether or not the supplied address is a valid virtual
@@ -93,7 +94,7 @@ public:
      *
      * @returns True if the given virtual address is valid, false otherwise.
      */
-    [[nodiscard]] bool IsValidVirtualAddress(VAddr vaddr) const;
+    [[nodiscard]] bool IsValidVirtualAddress(Common::ProcessAddress vaddr) const;
 
     /**
      * Checks whether or not the supplied range of addresses are all valid
@@ -104,7 +105,7 @@ public:
      *
      * @returns True if all bytes in the given range are valid, false otherwise.
      */
-    [[nodiscard]] bool IsValidVirtualAddressRange(VAddr base, u64 size) const;
+    [[nodiscard]] bool IsValidVirtualAddressRange(Common::ProcessAddress base, u64 size) const;
 
     /**
      * Gets a pointer to the given address.
@@ -114,11 +115,11 @@ public:
      * @returns The pointer to the given address, if the address is valid.
      *          If the address is not valid, nullptr will be returned.
      */
-    u8* GetPointer(VAddr vaddr);
-    u8* GetPointerSilent(VAddr vaddr);
+    u8* GetPointer(Common::ProcessAddress vaddr);
+    u8* GetPointerSilent(Common::ProcessAddress vaddr);
 
     template <typename T>
-    T* GetPointer(VAddr vaddr) {
+    T* GetPointer(Common::ProcessAddress vaddr) {
         return reinterpret_cast<T*>(GetPointer(vaddr));
     }
 
@@ -130,10 +131,10 @@ public:
      * @returns The pointer to the given address, if the address is valid.
      *          If the address is not valid, nullptr will be returned.
      */
-    [[nodiscard]] const u8* GetPointer(VAddr vaddr) const;
+    [[nodiscard]] const u8* GetPointer(Common::ProcessAddress vaddr) const;
 
     template <typename T>
-    const T* GetPointer(VAddr vaddr) const {
+    const T* GetPointer(Common::ProcessAddress vaddr) const {
         return reinterpret_cast<T*>(GetPointer(vaddr));
     }
 
@@ -145,7 +146,7 @@ public:
      *
      * @returns the read 8-bit unsigned value.
      */
-    u8 Read8(VAddr addr);
+    u8 Read8(Common::ProcessAddress addr);
 
     /**
      * Reads a 16-bit unsigned value from the current process' address space
@@ -155,7 +156,7 @@ public:
      *
      * @returns the read 16-bit unsigned value.
      */
-    u16 Read16(VAddr addr);
+    u16 Read16(Common::ProcessAddress addr);
 
     /**
      * Reads a 32-bit unsigned value from the current process' address space
@@ -165,7 +166,7 @@ public:
      *
      * @returns the read 32-bit unsigned value.
      */
-    u32 Read32(VAddr addr);
+    u32 Read32(Common::ProcessAddress addr);
 
     /**
      * Reads a 64-bit unsigned value from the current process' address space
@@ -175,7 +176,7 @@ public:
      *
      * @returns the read 64-bit value.
      */
-    u64 Read64(VAddr addr);
+    u64 Read64(Common::ProcessAddress addr);
 
     /**
      * Writes an 8-bit unsigned integer to the given virtual address in
@@ -186,7 +187,7 @@ public:
      *
      * @post The memory at the given virtual address contains the specified data value.
      */
-    void Write8(VAddr addr, u8 data);
+    void Write8(Common::ProcessAddress addr, u8 data);
 
     /**
      * Writes a 16-bit unsigned integer to the given virtual address in
@@ -197,7 +198,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    void Write16(VAddr addr, u16 data);
+    void Write16(Common::ProcessAddress addr, u16 data);
 
     /**
      * Writes a 32-bit unsigned integer to the given virtual address in
@@ -208,7 +209,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    void Write32(VAddr addr, u32 data);
+    void Write32(Common::ProcessAddress addr, u32 data);
 
     /**
      * Writes a 64-bit unsigned integer to the given virtual address in
@@ -219,7 +220,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    void Write64(VAddr addr, u64 data);
+    void Write64(Common::ProcessAddress addr, u64 data);
 
     /**
      * Writes a 8-bit unsigned integer to the given virtual address in
@@ -232,7 +233,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    bool WriteExclusive8(VAddr addr, u8 data, u8 expected);
+    bool WriteExclusive8(Common::ProcessAddress addr, u8 data, u8 expected);
 
     /**
      * Writes a 16-bit unsigned integer to the given virtual address in
@@ -245,7 +246,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    bool WriteExclusive16(VAddr addr, u16 data, u16 expected);
+    bool WriteExclusive16(Common::ProcessAddress addr, u16 data, u16 expected);
 
     /**
      * Writes a 32-bit unsigned integer to the given virtual address in
@@ -258,7 +259,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    bool WriteExclusive32(VAddr addr, u32 data, u32 expected);
+    bool WriteExclusive32(Common::ProcessAddress addr, u32 data, u32 expected);
 
     /**
      * Writes a 64-bit unsigned integer to the given virtual address in
@@ -271,7 +272,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    bool WriteExclusive64(VAddr addr, u64 data, u64 expected);
+    bool WriteExclusive64(Common::ProcessAddress addr, u64 data, u64 expected);
 
     /**
      * Writes a 128-bit unsigned integer to the given virtual address in
@@ -284,7 +285,7 @@ public:
      *
      * @post The memory range [addr, sizeof(data)) contains the given data value.
      */
-    bool WriteExclusive128(VAddr addr, u128 data, u128 expected);
+    bool WriteExclusive128(Common::ProcessAddress addr, u128 data, u128 expected);
 
     /**
      * Reads a null-terminated string from the given virtual address.
@@ -301,7 +302,7 @@ public:
      *
      * @returns The read string.
      */
-    std::string ReadCString(VAddr vaddr, std::size_t max_length);
+    std::string ReadCString(Common::ProcessAddress vaddr, std::size_t max_length);
 
     /**
      * Reads a contiguous block of bytes from a specified process' address space.
@@ -320,8 +321,8 @@ public:
      * @post The range [dest_buffer, size) contains the read bytes from the
      *       process' address space.
      */
-    void ReadBlock(const Kernel::KProcess& process, VAddr src_addr, void* dest_buffer,
-                   std::size_t size);
+    void ReadBlock(const Kernel::KProcess& process, Common::ProcessAddress src_addr,
+                   void* dest_buffer, std::size_t size);
 
     /**
      * Reads a contiguous block of bytes from the current process' address space.
@@ -339,7 +340,7 @@ public:
      * @post The range [dest_buffer, size) contains the read bytes from the
      *       current process' address space.
      */
-    void ReadBlock(VAddr src_addr, void* dest_buffer, std::size_t size);
+    void ReadBlock(Common::ProcessAddress src_addr, void* dest_buffer, std::size_t size);
 
     /**
      * Reads a contiguous block of bytes from the current process' address space.
@@ -358,7 +359,7 @@ public:
      * @post The range [dest_buffer, size) contains the read bytes from the
      *       current process' address space.
      */
-    void ReadBlockUnsafe(VAddr src_addr, void* dest_buffer, std::size_t size);
+    void ReadBlockUnsafe(Common::ProcessAddress src_addr, void* dest_buffer, std::size_t size);
 
     /**
      * Writes a range of bytes into a given process' address space at the specified
@@ -380,8 +381,8 @@ public:
      *       and will mark that region as invalidated to caches that the active
      *       graphics backend may be maintaining over the course of execution.
      */
-    void WriteBlock(const Kernel::KProcess& process, VAddr dest_addr, const void* src_buffer,
-                    std::size_t size);
+    void WriteBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                    const void* src_buffer, std::size_t size);
 
     /**
      * Writes a range of bytes into the current process' address space at the specified
@@ -402,7 +403,7 @@ public:
      *       and will mark that region as invalidated to caches that the active
      *       graphics backend may be maintaining over the course of execution.
      */
-    void WriteBlock(VAddr dest_addr, const void* src_buffer, std::size_t size);
+    void WriteBlock(Common::ProcessAddress dest_addr, const void* src_buffer, std::size_t size);
 
     /**
      * Writes a range of bytes into the current process' address space at the specified
@@ -420,7 +421,8 @@ public:
      *       will be ignored and an error will be logged.
      *
      */
-    void WriteBlockUnsafe(VAddr dest_addr, const void* src_buffer, std::size_t size);
+    void WriteBlockUnsafe(Common::ProcessAddress dest_addr, const void* src_buffer,
+                          std::size_t size);
 
     /**
      * Copies data within a process' address space to another location within the
@@ -434,8 +436,8 @@ public:
      * @post The range [dest_addr, size) within the process' address space contains the
      *       same data within the range [src_addr, size).
      */
-    void CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr src_addr,
-                   std::size_t size);
+    void CopyBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                   Common::ProcessAddress src_addr, std::size_t size);
 
     /**
      * Zeros a range of bytes within the current process' address space at the specified
@@ -448,7 +450,8 @@ public:
      * @post The range [dest_addr, size) within the process' address space contains the
      *       value 0.
      */
-    void ZeroBlock(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+    void ZeroBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                   std::size_t size);
 
     /**
      * Invalidates a range of bytes within the current process' address space at the specified
@@ -459,7 +462,8 @@ public:
      * @param size      The size of the range to invalidate, in bytes.
      *
      */
-    Result InvalidateDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+    Result InvalidateDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                               std::size_t size);
 
     /**
      * Stores a range of bytes within the current process' address space at the specified
@@ -470,7 +474,8 @@ public:
      * @param size      The size of the range to store, in bytes.
      *
      */
-    Result StoreDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+    Result StoreDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                          std::size_t size);
 
     /**
      * Flushes a range of bytes within the current process' address space at the specified
@@ -481,7 +486,8 @@ public:
      * @param size      The size of the range to flush, in bytes.
      *
      */
-    Result FlushDataCache(const Kernel::KProcess& process, VAddr dest_addr, std::size_t size);
+    Result FlushDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+                          std::size_t size);
 
     /**
      * Marks each page within the specified address range as cached or uncached.
@@ -491,7 +497,7 @@ public:
      * @param cached Whether or not any pages within the address range should be
      *               marked as cached or uncached.
      */
-    void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached);
+    void RasterizerMarkRegionCached(Common::ProcessAddress vaddr, u64 size, bool cached);
 
     /**
      * Marks each page within the specified address range as debug or non-debug.
@@ -502,7 +508,7 @@ public:
      * @param debug Whether or not any pages within the address range should be
      *              marked as debug or non-debug.
      */
-    void MarkRegionDebug(VAddr vaddr, u64 size, bool debug);
+    void MarkRegionDebug(Common::ProcessAddress vaddr, u64 size, bool debug);
 
 private:
     Core::System& system;

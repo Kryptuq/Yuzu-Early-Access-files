@@ -25,7 +25,7 @@ public:
     explicit KAddressArbiter(Core::System& system);
     ~KAddressArbiter();
 
-    Result SignalToAddress(VAddr addr, Svc::SignalType type, s32 value, s32 count) {
+    Result SignalToAddress(uint64_t addr, Svc::SignalType type, s32 value, s32 count) {
         switch (type) {
         case Svc::SignalType::Signal:
             R_RETURN(this->Signal(addr, count));
@@ -38,7 +38,7 @@ public:
         }
     }
 
-    Result WaitForAddress(VAddr addr, Svc::ArbitrationType type, s32 value, s64 timeout) {
+    Result WaitForAddress(uint64_t addr, Svc::ArbitrationType type, s32 value, s64 timeout) {
         switch (type) {
         case Svc::ArbitrationType::WaitIfLessThan:
             R_RETURN(WaitIfLessThan(addr, value, false, timeout));
@@ -52,11 +52,11 @@ public:
     }
 
 private:
-    Result Signal(VAddr addr, s32 count);
-    Result SignalAndIncrementIfEqual(VAddr addr, s32 value, s32 count);
-    Result SignalAndModifyByWaitingCountIfEqual(VAddr addr, s32 value, s32 count);
-    Result WaitIfLessThan(VAddr addr, s32 value, bool decrement, s64 timeout);
-    Result WaitIfEqual(VAddr addr, s32 value, s64 timeout);
+    Result Signal(uint64_t addr, s32 count);
+    Result SignalAndIncrementIfEqual(uint64_t addr, s32 value, s32 count);
+    Result SignalAndModifyByWaitingCountIfEqual(uint64_t addr, s32 value, s32 count);
+    Result WaitIfLessThan(uint64_t addr, s32 value, bool decrement, s64 timeout);
+    Result WaitIfEqual(uint64_t addr, s32 value, s64 timeout);
 
 private:
     ThreadTree m_tree;

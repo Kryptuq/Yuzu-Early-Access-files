@@ -8,7 +8,7 @@
 namespace Kernel::Svc {
 
 Result QueryMemory(Core::System& system, uint64_t out_memory_info, PageInfo* out_page_info,
-                   VAddr query_address) {
+                   u64 query_address) {
     LOG_TRACE(Kernel_SVC,
               "called, out_memory_info=0x{:016X}, "
               "query_address=0x{:016X}",

@@ -54,8 +54,8 @@ Result KDeviceAddressSpace::Detach(Svc::DeviceName device_name) {
     R_SUCCEED();
 }
 
-Result KDeviceAddressSpace::Map(KPageTable* page_table, VAddr process_address, size_t size,
-                                u64 device_address, u32 option, bool is_aligned) {
+Result KDeviceAddressSpace::Map(KPageTable* page_table, KProcessAddress process_address,
+                                size_t size, u64 device_address, u32 option, bool is_aligned) {
     // Check that the address falls within the space.
     R_UNLESS((m_space_address <= device_address &&
               device_address + size - 1 <= m_space_address + m_space_size - 1),
@@ -113,8 +113,8 @@ Result KDeviceAddressSpace::Map(KPageTable* page_table, VAddr process_address, s
     R_SUCCEED();
 }
 
-Result KDeviceAddressSpace::Unmap(KPageTable* page_table, VAddr process_address, size_t size,
-                                  u64 device_address) {
+Result KDeviceAddressSpace::Unmap(KPageTable* page_table, KProcessAddress process_address,
+                                  size_t size, u64 device_address) {
     // Check that the address falls within the space.
     R_UNLESS((m_space_address <= device_address &&
               device_address + size - 1 <= m_space_address + m_space_size - 1),

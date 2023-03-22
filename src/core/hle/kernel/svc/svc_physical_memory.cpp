@@ -8,7 +8,7 @@
 namespace Kernel::Svc {
 
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
-Result SetHeapSize(Core::System& system, VAddr* out_address, u64 size) {
+Result SetHeapSize(Core::System& system, u64* out_address, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", size);
 
     // Validate size.
@@ -20,7 +20,7 @@ Result SetHeapSize(Core::System& system, VAddr* out_address, u64 size) {
 }
 
 /// Maps memory at a desired address
-Result MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
+Result MapPhysicalMemory(Core::System& system, u64 addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:016X}, size=0x{:X}", addr, size);
 
     if (!Common::Is4KBAligned(addr)) {
@@ -69,7 +69,7 @@ Result MapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
 }
 
 /// Unmaps memory previously mapped via MapPhysicalMemory
-Result UnmapPhysicalMemory(Core::System& system, VAddr addr, u64 size) {
+Result UnmapPhysicalMemory(Core::System& system, u64 addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:016X}, size=0x{:X}", addr, size);
 
     if (!Common::Is4KBAligned(addr)) {

@@ -6,8 +6,8 @@
 #include <array>
 #include <vector>
 
-#include "common/common_types.h"
 #include "core/hle/kernel/k_dynamic_slab_heap.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/slab_helpers.h"
 
 namespace Kernel {
@@ -45,12 +45,12 @@ public:
         this->Initialize(rc);
     }
 
-    RefCount GetRefCount(VAddr addr) {
+    RefCount GetRefCount(KVirtualAddress addr) {
         ASSERT(this->IsInRange(addr));
         return *this->GetRefCountPointer(addr);
     }
 
-    void Open(VAddr addr, int count) {
+    void Open(KVirtualAddress addr, int count) {
         ASSERT(this->IsInRange(addr));
 
         *this->GetRefCountPointer(addr) += static_cast<RefCount>(count);
@@ -58,7 +58,7 @@ public:
         ASSERT(this->GetRefCount(addr) > 0);
     }
 
-    bool Close(VAddr addr, int count) {
+    bool Close(KVirtualAddress addr, int count) {
         ASSERT(this->IsInRange(addr));
         ASSERT(this->GetRefCount(addr) >= count);
 
@@ -66,7 +66,7 @@ public:
         return this->GetRefCount(addr) == 0;
     }
 
-    bool IsInPageTableHeap(VAddr addr) const {
+    bool IsInPageTableHeap(KVirtualAddress addr) const {
         return this->IsInRange(addr);
     }
 
@@ -81,7 +81,7 @@ private:
         }
     }
 
-    RefCount* GetRefCountPointer(VAddr addr) {
+    RefCount* GetRefCountPointer(KVirtualAddress addr) {
         return m_ref_counts.data() + ((addr - this->GetAddress()) / PageSize);
     }
 

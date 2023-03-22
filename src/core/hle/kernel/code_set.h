@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-#include "common/common_types.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/physical_memory.h"
 
 namespace Kernel {
@@ -36,7 +36,7 @@ struct CodeSet final {
         std::size_t offset = 0;
 
         /// The address to map this segment to.
-        VAddr addr = 0;
+        KProcessAddress addr = 0;
 
         /// The size of this segment in bytes.
         u32 size = 0;
@@ -82,7 +82,7 @@ struct CodeSet final {
     std::array<Segment, 3> segments;
 
     /// The entry point address for this code set.
-    VAddr entrypoint = 0;
+    KProcessAddress entrypoint = 0;
 };
 
 } // namespace Kernel

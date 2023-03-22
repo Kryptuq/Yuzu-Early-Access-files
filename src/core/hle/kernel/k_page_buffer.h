@@ -26,7 +26,7 @@ public:
     explicit KPageBuffer(KernelCore&) {}
     KPageBuffer() = default;
 
-    static KPageBuffer* FromPhysicalAddress(Core::System& system, PAddr phys_addr);
+    static KPageBuffer* FromPhysicalAddress(Core::System& system, KPhysicalAddress phys_addr);
 
 private:
     alignas(PageSize) std::array<u8, PageSize> m_buffer{};

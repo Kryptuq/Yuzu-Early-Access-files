@@ -8,7 +8,6 @@
 #include <list>
 #include <map>
 #include <string>
-#include "common/common_types.h"
 #include "core/hle/kernel/k_address_arbiter.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_condition_variable.h"
@@ -16,6 +15,7 @@
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread_local_page.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/k_worker_task.h"
 #include "core/hle/kernel/process_capability.h"
 #include "core/hle/kernel/slab_helpers.h"
@@ -59,8 +59,8 @@ enum class DebugWatchpointType : u8 {
 DECLARE_ENUM_FLAG_OPERATORS(DebugWatchpointType);
 
 struct DebugWatchpoint {
-    VAddr start_address;
-    VAddr end_address;
+    KProcessAddress start_address;
+    KProcessAddress end_address;
     DebugWatchpointType type;
 };
 
@@ -135,11 +135,11 @@ public:
         return m_handle_table;
     }
 
-    Result SignalToAddress(VAddr address) {
+    Result SignalToAddress(KProcessAddress address) {
         return m_condition_var.SignalToAddress(address);
     }
 
-    Result WaitForAddress(Handle handle, VAddr address, u32 tag) {
+    Result WaitForAddress(Handle handle, KProcessAddress address, u32 tag) {
         return m_condition_var.WaitForAddress(handle, address, tag);
     }
 
@@ -147,20 +147,21 @@ public:
         return m_condition_var.Signal(cv_key, count);
     }
 
-    Result WaitConditionVariable(VAddr address, u64 cv_key, u32 tag, s64 ns) {
+    Result WaitConditionVariable(KProcessAddress address, u64 cv_key, u32 tag, s64 ns) {
         R_RETURN(m_condition_var.Wait(address, cv_key, tag, ns));
     }
 
-    Result SignalAddressArbiter(VAddr address, Svc::SignalType signal_type, s32 value, s32 count) {
+    Result SignalAddressArbiter(uint64_t address, Svc::SignalType signal_type, s32 value,
+                                s32 count) {
         R_RETURN(m_address_arbiter.SignalToAddress(address, signal_type, value, count));
     }
 
-    Result WaitAddressArbiter(VAddr address, Svc::ArbitrationType arb_type, s32 value,
+    Result WaitAddressArbiter(uint64_t address, Svc::ArbitrationType arb_type, s32 value,
                               s64 timeout) {
         R_RETURN(m_address_arbiter.WaitForAddress(address, arb_type, value, timeout));
     }
 
-    VAddr GetProcessLocalRegionAddress() const {
+    KProcessAddress GetProcessLocalRegionAddress() const {
         return m_plr_address;
     }
 
@@ -352,7 +353,7 @@ public:
      */
     void PrepareForTermination();
 
-    void LoadModule(CodeSet code_set, VAddr base_addr);
+    void LoadModule(CodeSet code_set, KProcessAddress base_addr);
 
     bool IsInitialized() const override {
         return m_is_initialized;
@@ -380,26 +381,28 @@ public:
         return m_state_lock;
     }
 
-    Result AddSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
-    void RemoveSharedMemory(KSharedMemory* shmem, VAddr address, size_t size);
+    Result AddSharedMemory(KSharedMemory* shmem, KProcessAddress address, size_t size);
+    void RemoveSharedMemory(KSharedMemory* shmem, KProcessAddress address, size_t size);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Thread-local storage management
 
     // Marks the next available region as used and returns the address of the slot.
-    [[nodiscard]] Result CreateThreadLocalRegion(VAddr* out);
+    [[nodiscard]] Result CreateThreadLocalRegion(KProcessAddress* out);
 
     // Frees a used TLS slot identified by the given address
-    Result DeleteThreadLocalRegion(VAddr addr);
+    Result DeleteThreadLocalRegion(KProcessAddress addr);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Debug watchpoint management
 
     // Attempts to insert a watchpoint into a free slot. Returns false if none are available.
-    bool InsertWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+    bool InsertWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
+                          DebugWatchpointType type);
 
     // Attempts to remove the watchpoint specified by the given parameters.
-    bool RemoveWatchpoint(Core::System& system, VAddr addr, u64 size, DebugWatchpointType type);
+    bool RemoveWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
+                          DebugWatchpointType type);
 
     const std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>& GetWatchpoints() const {
         return m_watchpoints;
@@ -457,7 +460,7 @@ private:
     /// Resource limit descriptor for this process
     KResourceLimit* m_resource_limit{};
 
-    VAddr m_system_resource_address{};
+    KVirtualAddress m_system_resource_address{};
 
     /// The ideal CPU core for this process, threads are scheduled on this core by default.
     u8 m_ideal_core = 0;
@@ -485,7 +488,7 @@ private:
     KConditionVariable m_condition_var;
 
     /// Address indicating the location of the process' dedicated TLS region.
-    VAddr m_plr_address = 0;
+    KProcessAddress m_plr_address = 0;
 
     /// Random values for svcGetInfo RandomEntropy
     std::array<u64, RANDOM_ENTROPY_SIZE> m_random_entropy{};
@@ -497,7 +500,7 @@ private:
     std::list<KSharedMemoryInfo*> m_shared_memory_list;
 
     /// Address of the top of the main thread's stack
-    VAddr m_main_thread_stack_top{};
+    KProcessAddress m_main_thread_stack_top{};
 
     /// Size of the main thread's stack
     std::size_t m_main_thread_stack_size{};
@@ -527,7 +530,7 @@ private:
     std::array<u64, Core::Hardware::NUM_CPU_CORES> m_running_thread_idle_counts{};
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> m_pinned_threads{};
     std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS> m_watchpoints{};
-    std::map<VAddr, u64> m_debug_page_refcounts;
+    std::map<KProcessAddress, u64> m_debug_page_refcounts;
 
     KThread* m_exception_thread{};
 

@@ -22,7 +22,7 @@ public:
     constexpr explicit KBlockInfo() : m_next(nullptr) {}
 
     constexpr void Initialize(KPhysicalAddress addr, size_t np) {
-        ASSERT(Common::IsAligned(addr, PageSize));
+        ASSERT(Common::IsAligned(GetInteger(addr), PageSize));
         ASSERT(static_cast<u32>(np) == np);
 
         m_page_index = static_cast<u32>(addr / PageSize);

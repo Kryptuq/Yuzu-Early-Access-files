@@ -12,7 +12,7 @@
 
 namespace Kernel::Svc {
 
-Result ConnectToNamedPort(Core::System& system, Handle* out, VAddr user_name) {
+Result ConnectToNamedPort(Core::System& system, Handle* out, u64 user_name) {
     // Copy the provided name from user memory to kernel memory.
     auto string_name = system.Memory().ReadCString(user_name, KObjectName::NameLengthMax);
 

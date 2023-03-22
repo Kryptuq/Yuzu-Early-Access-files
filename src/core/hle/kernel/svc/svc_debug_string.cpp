@@ -8,7 +8,7 @@
 namespace Kernel::Svc {
 
 /// Used to output a message on a debug hardware unit - does nothing on a retail unit
-Result OutputDebugString(Core::System& system, VAddr address, u64 len) {
+Result OutputDebugString(Core::System& system, u64 address, u64 len) {
     R_SUCCEED_IF(len == 0);
 
     std::string str(len, '\0');

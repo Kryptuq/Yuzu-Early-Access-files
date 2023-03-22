@@ -11,7 +11,7 @@
 namespace Kernel::Svc {
 
 /// Wait process wide key atomic
-Result WaitProcessWideKeyAtomic(Core::System& system, VAddr address, VAddr cv_key, u32 tag,
+Result WaitProcessWideKeyAtomic(Core::System& system, u64 address, u64 cv_key, u32 tag,
                                 s64 timeout_ns) {
     LOG_TRACE(Kernel_SVC, "called address={:X}, cv_key={:X}, tag=0x{:08X}, timeout_ns={}", address,
               cv_key, tag, timeout_ns);
@@ -43,7 +43,7 @@ Result WaitProcessWideKeyAtomic(Core::System& system, VAddr address, VAddr cv_ke
 }
 
 /// Signal process wide key
-void SignalProcessWideKey(Core::System& system, VAddr cv_key, s32 count) {
+void SignalProcessWideKey(Core::System& system, u64 cv_key, s32 count) {
     LOG_TRACE(Kernel_SVC, "called, cv_key=0x{:X}, count=0x{:08X}", cv_key, count);
 
     // Signal the condition variable.

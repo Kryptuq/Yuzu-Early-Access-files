@@ -130,7 +130,7 @@ private:
     KBlockInfoSlabHeap m_block_info_heap;
     KPageTableSlabHeap m_page_table_heap;
     KResourceLimit* m_resource_limit{};
-    VAddr m_resource_address{};
+    KVirtualAddress m_resource_address{};
     size_t m_resource_size{};
 };
 

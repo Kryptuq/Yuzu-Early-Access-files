@@ -48,8 +48,8 @@ static void ResetThreadContext32(Kernel::KThread::ThreadContext32& context, u32 
     context.fpscr = 0;
 }
 
-static void ResetThreadContext64(Kernel::KThread::ThreadContext64& context, VAddr stack_top,
-                                 VAddr entry_point, u64 arg) {
+static void ResetThreadContext64(Kernel::KThread::ThreadContext64& context, u64 stack_top,
+                                 u64 entry_point, u64 arg) {
     context = {};
     context.cpu_registers[0] = arg;
     context.cpu_registers[18] = Kernel::KSystemControl::GenerateRandomU64() | 1;
@@ -100,8 +100,8 @@ KThread::KThread(KernelCore& kernel)
     : KAutoObjectWithSlabHeapAndContainer{kernel}, m_activity_pause_lock{kernel} {}
 KThread::~KThread() = default;
 
-Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top, s32 prio,
-                           s32 virt_core, KProcess* owner, ThreadType type) {
+Result KThread::Initialize(KThreadFunction func, uintptr_t arg, KProcessAddress user_stack_top,
+                           s32 prio, s32 virt_core, KProcess* owner, ThreadType type) {
     // Assert parameters are valid.
     ASSERT((type == ThreadType::Main) || (type == ThreadType::Dummy) ||
            (Svc::HighestThreadPriority <= prio && prio <= Svc::LowestThreadPriority));
@@ -221,9 +221,9 @@ Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack
     }
 
     // Initialize thread context.
-    ResetThreadContext64(m_thread_context_64, user_stack_top, func, arg);
-    ResetThreadContext32(m_thread_context_32, static_cast<u32>(user_stack_top),
-                         static_cast<u32>(func), static_cast<u32>(arg));
+    ResetThreadContext64(m_thread_context_64, GetInteger(user_stack_top), GetInteger(func), arg);
+    ResetThreadContext32(m_thread_context_32, static_cast<u32>(GetInteger(user_stack_top)),
+                         static_cast<u32>(GetInteger(func)), static_cast<u32>(arg));
 
     // Setup the stack parameters.
     StackParameters& sp = this->GetStackParameters();
@@ -249,8 +249,9 @@ Result KThread::Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack
 }
 
 Result KThread::InitializeThread(KThread* thread, KThreadFunction func, uintptr_t arg,
-                                 VAddr user_stack_top, s32 prio, s32 core, KProcess* owner,
-                                 ThreadType type, std::function<void()>&& init_func) {
+                                 KProcessAddress user_stack_top, s32 prio, s32 core,
+                                 KProcess* owner, ThreadType type,
+                                 std::function<void()>&& init_func) {
     // Initialize the thread.
     R_TRY(thread->Initialize(func, arg, user_stack_top, prio, core, owner, type));
 
@@ -288,8 +289,8 @@ Result KThread::InitializeHighPriorityThread(Core::System& system, KThread* thre
 }
 
 Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThreadFunction func,
-                                     uintptr_t arg, VAddr user_stack_top, s32 prio, s32 virt_core,
-                                     KProcess* owner) {
+                                     uintptr_t arg, KProcessAddress user_stack_top, s32 prio,
+                                     s32 virt_core, KProcess* owner) {
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     R_RETURN(InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
                               ThreadType::User, system.GetCpuManager().GetGuestThreadFunc()));
@@ -951,7 +952,7 @@ void KThread::AddHeldLock(LockWithPriorityInheritanceInfo* lock_info) {
     m_held_lock_info_list.push_front(*lock_info);
 }
 
-KThread::LockWithPriorityInheritanceInfo* KThread::FindHeldLock(VAddr address_key,
+KThread::LockWithPriorityInheritanceInfo* KThread::FindHeldLock(KProcessAddress address_key,
                                                                 bool is_kernel_address_key) {
     ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(m_kernel));
 
@@ -1087,7 +1088,8 @@ void KThread::RemoveWaiter(KThread* thread) {
     }
 }
 
-KThread* KThread::RemoveWaiterByKey(bool* out_has_waiters, VAddr key, bool is_kernel_address_key_) {
+KThread* KThread::RemoveWaiterByKey(bool* out_has_waiters, KProcessAddress key,
+                                    bool is_kernel_address_key_) {
     ASSERT(KScheduler::IsSchedulerLockedByCurrentThread(m_kernel));
 
     // Get the relevant lock info.

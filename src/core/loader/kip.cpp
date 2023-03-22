@@ -96,7 +96,7 @@ AppLoader::LoadResult AppLoader_KIP::Load(Kernel::KProcess& process,
     }
 
     codeset.memory = std::move(program_image);
-    const VAddr base_address = process.PageTable().GetCodeRegionStart();
+    const VAddr base_address = GetInteger(process.PageTable().GetCodeRegionStart());
     process.LoadModule(std::move(codeset), base_address);
 
     LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", kip->GetName(), base_address);

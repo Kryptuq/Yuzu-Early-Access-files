@@ -167,7 +167,7 @@ AppLoader_NSO::LoadResult AppLoader_NSO::Load(Kernel::KProcess& process, Core::S
     modules.clear();
 
     // Load module
-    const VAddr base_address = process.PageTable().GetCodeRegionStart();
+    const VAddr base_address = GetInteger(process.PageTable().GetCodeRegionStart());
     if (!LoadModule(process, system, *file, base_address, true, true)) {
         return {ResultStatus::ErrorLoadingNSO, {}};
     }

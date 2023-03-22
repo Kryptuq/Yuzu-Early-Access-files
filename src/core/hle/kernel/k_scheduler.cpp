@@ -511,7 +511,7 @@ void KScheduler::Reload(KThread* thread) {
     auto& cpu_core = m_kernel.System().ArmInterface(m_core_id);
     cpu_core.LoadContext(thread->GetContext32());
     cpu_core.LoadContext(thread->GetContext64());
-    cpu_core.SetTlsAddress(thread->GetTlsAddress());
+    cpu_core.SetTlsAddress(GetInteger(thread->GetTlsAddress()));
     cpu_core.SetTPIDR_EL0(thread->GetTpidrEl0());
     cpu_core.LoadWatchpointArray(thread->GetOwnerProcess()->GetWatchpoints());
     cpu_core.ClearExclusiveState();

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "common/common_types.h"
 #include "common/host_memory.h"
+#include "common/typed_address.h"
 
 namespace Core {
 
@@ -25,20 +25,22 @@ public:
     DeviceMemory(const DeviceMemory&) = delete;
 
     template <typename T>
-    PAddr GetPhysicalAddr(const T* ptr) const {
+    Common::PhysicalAddress GetPhysicalAddr(const T* ptr) const {
         return (reinterpret_cast<uintptr_t>(ptr) -
                 reinterpret_cast<uintptr_t>(buffer.BackingBasePointer())) +
                DramMemoryMap::Base;
     }
 
     template <typename T>
-    T* GetPointer(PAddr addr) {
-        return reinterpret_cast<T*>(buffer.BackingBasePointer() + (addr - DramMemoryMap::Base));
+    T* GetPointer(Common::PhysicalAddress addr) {
+        return reinterpret_cast<T*>(buffer.BackingBasePointer() +
+                                    (GetInteger(addr) - DramMemoryMap::Base));
     }
 
     template <typename T>
-    const T* GetPointer(PAddr addr) const {
-        return reinterpret_cast<T*>(buffer.BackingBasePointer() + (addr - DramMemoryMap::Base));
+    const T* GetPointer(Common::PhysicalAddress addr) const {
+        return reinterpret_cast<T*>(buffer.BackingBasePointer() +
+                                    (GetInteger(addr) - DramMemoryMap::Base));
     }
 
     Common::HostMemory buffer;

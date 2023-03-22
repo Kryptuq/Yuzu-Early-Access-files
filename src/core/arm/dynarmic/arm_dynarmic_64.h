@@ -38,8 +38,8 @@ public:
     void SetVectorReg(int index, u128 value) override;
     u32 GetPSTATE() const override;
     void SetPSTATE(u32 pstate) override;
-    VAddr GetTlsAddress() const override;
-    void SetTlsAddress(VAddr address) override;
+    u64 GetTlsAddress() const override;
+    void SetTlsAddress(u64 address) override;
     void SetTPIDR_EL0(u64 value) override;
     u64 GetTPIDR_EL0() const override;
 
@@ -53,7 +53,7 @@ public:
     void ClearExclusiveState() override;
 
     void ClearInstructionCache() override;
-    void InvalidateCacheRange(VAddr addr, std::size_t size) override;
+    void InvalidateCacheRange(u64 addr, std::size_t size) override;
     void PageTableChanged(Common::PageTable& new_page_table,
                           std::size_t new_address_space_size_in_bits) override;
 

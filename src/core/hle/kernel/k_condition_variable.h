@@ -4,10 +4,10 @@
 #pragma once
 
 #include "common/assert.h"
-#include "common/common_types.h"
 
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/result.h"
 
@@ -25,12 +25,12 @@ public:
     ~KConditionVariable();
 
     // Arbitration
-    Result SignalToAddress(VAddr addr);
-    Result WaitForAddress(Handle handle, VAddr addr, u32 value);
+    Result SignalToAddress(KProcessAddress addr);
+    Result WaitForAddress(Handle handle, KProcessAddress addr, u32 value);
 
     // Condition variable
     void Signal(u64 cv_key, s32 count);
-    Result Wait(VAddr addr, u64 key, u32 value, s64 timeout);
+    Result Wait(KProcessAddress addr, u64 key, u32 value, s64 timeout);
 
 private:
     void SignalImpl(KThread* thread);

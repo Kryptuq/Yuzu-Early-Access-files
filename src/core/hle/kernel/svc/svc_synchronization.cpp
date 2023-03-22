@@ -80,7 +80,7 @@ static Result WaitSynchronization(Core::System& system, int32_t* out_index, cons
 }
 
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
-Result WaitSynchronization(Core::System& system, int32_t* out_index, VAddr user_handles,
+Result WaitSynchronization(Core::System& system, int32_t* out_index, u64 user_handles,
                            int32_t num_handles, int64_t timeout_ns) {
     LOG_TRACE(Kernel_SVC, "called user_handles={:#x}, num_handles={}, timeout_ns={}", user_handles,
               num_handles, timeout_ns);

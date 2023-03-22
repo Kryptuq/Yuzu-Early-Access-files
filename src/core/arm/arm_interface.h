@@ -78,7 +78,7 @@ public:
      * @param addr Start address of the cache range to clear
      * @param size Size of the cache range to clear, starting at addr
      */
-    virtual void InvalidateCacheRange(VAddr addr, std::size_t size) = 0;
+    virtual void InvalidateCacheRange(u64 addr, std::size_t size) = 0;
 
     /**
      * Notifies CPU emulation that the current page table has changed.
@@ -149,9 +149,9 @@ public:
      */
     virtual void SetPSTATE(u32 pstate) = 0;
 
-    virtual VAddr GetTlsAddress() const = 0;
+    virtual u64 GetTlsAddress() const = 0;
 
-    virtual void SetTlsAddress(VAddr address) = 0;
+    virtual void SetTlsAddress(u64 address) = 0;
 
     /**
      * Gets the value within the TPIDR_EL0 (read/write software thread ID) register.
@@ -214,7 +214,7 @@ protected:
 
     static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
     const Kernel::DebugWatchpoint* MatchingWatchpoint(
-        VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const;
+        u64 addr, u64 size, Kernel::DebugWatchpointType access_type) const;
 
     virtual Dynarmic::HaltReason RunJit() = 0;
     virtual Dynarmic::HaltReason StepJit() = 0;

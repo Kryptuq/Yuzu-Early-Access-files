@@ -19,8 +19,8 @@ constexpr bool IsValidVirtualCoreId(int32_t core_id) {
 } // Anonymous namespace
 
 /// Creates a new thread
-Result CreateThread(Core::System& system, Handle* out_handle, VAddr entry_point, u64 arg,
-                    VAddr stack_bottom, s32 priority, s32 core_id) {
+Result CreateThread(Core::System& system, Handle* out_handle, u64 entry_point, u64 arg,
+                    u64 stack_bottom, s32 priority, s32 core_id) {
     LOG_DEBUG(Kernel_SVC,
               "called entry_point=0x{:08X}, arg=0x{:08X}, stack_bottom=0x{:08X}, "
               "priority=0x{:08X}, core_id=0x{:08X}",
@@ -129,7 +129,7 @@ void SleepThread(Core::System& system, s64 nanoseconds) {
 }
 
 /// Gets the thread context
-Result GetThreadContext3(Core::System& system, VAddr out_context, Handle thread_handle) {
+Result GetThreadContext3(Core::System& system, u64 out_context, Handle thread_handle) {
     LOG_DEBUG(Kernel_SVC, "called, out_context=0x{:08X}, thread_handle=0x{:X}", out_context,
               thread_handle);
 
@@ -217,7 +217,7 @@ Result SetThreadPriority(Core::System& system, Handle thread_handle, s32 priorit
     R_SUCCEED();
 }
 
-Result GetThreadList(Core::System& system, s32* out_num_threads, VAddr out_thread_ids,
+Result GetThreadList(Core::System& system, s32* out_num_threads, u64 out_thread_ids,
                      s32 out_thread_ids_size, Handle debug_handle) {
     // TODO: Handle this case when debug events are supported.
     UNIMPLEMENTED_IF(debug_handle != InvalidHandle);

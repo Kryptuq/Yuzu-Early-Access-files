@@ -155,7 +155,7 @@ public:
         return std::max<s64>(parent.system.CoreTiming().GetDowncount(), 0);
     }
 
-    bool CheckMemoryAccess(VAddr addr, u64 size, Kernel::DebugWatchpointType type) {
+    bool CheckMemoryAccess(u64 addr, u64 size, Kernel::DebugWatchpointType type) {
         if (!check_memory_access) {
             return true;
         }
@@ -397,7 +397,7 @@ u64 ARM_Dynarmic_32::GetTlsAddress() const {
     return cp15->uro;
 }
 
-void ARM_Dynarmic_32::SetTlsAddress(VAddr address) {
+void ARM_Dynarmic_32::SetTlsAddress(u64 address) {
     cp15->uro = static_cast<u32>(address);
 }
 
@@ -439,7 +439,7 @@ void ARM_Dynarmic_32::ClearInstructionCache() {
     jit.load()->ClearCache();
 }
 
-void ARM_Dynarmic_32::InvalidateCacheRange(VAddr addr, std::size_t size) {
+void ARM_Dynarmic_32::InvalidateCacheRange(u64 addr, std::size_t size) {
     jit.load()->InvalidateCacheRange(static_cast<u32>(addr), size);
 }
 

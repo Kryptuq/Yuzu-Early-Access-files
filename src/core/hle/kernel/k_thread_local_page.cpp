@@ -37,7 +37,7 @@ Result KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
 
 Result KThreadLocalPage::Finalize() {
     // Get the physical address of the page.
-    const PAddr phys_addr = m_owner->PageTable().GetPhysicalAddr(m_virt_addr);
+    const KPhysicalAddress phys_addr = m_owner->PageTable().GetPhysicalAddr(m_virt_addr);
     ASSERT(phys_addr);
 
     // Unmap the page.
@@ -49,7 +49,7 @@ Result KThreadLocalPage::Finalize() {
     return ResultSuccess;
 }
 
-VAddr KThreadLocalPage::Reserve() {
+KProcessAddress KThreadLocalPage::Reserve() {
     for (size_t i = 0; i < m_is_region_free.size(); i++) {
         if (m_is_region_free[i]) {
             m_is_region_free[i] = false;
@@ -60,7 +60,7 @@ VAddr KThreadLocalPage::Reserve() {
     return 0;
 }
 
-void KThreadLocalPage::Release(VAddr addr) {
+void KThreadLocalPage::Release(KProcessAddress addr) {
     m_is_region_free[this->GetRegionIndex(addr)] = true;
 }
 

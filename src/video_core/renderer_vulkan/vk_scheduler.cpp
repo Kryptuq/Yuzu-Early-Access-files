@@ -65,12 +65,13 @@ void Scheduler::WaitWorker() {
     DispatchWork();
 
     // Ensure the queue is drained.
-    std::unique_lock ql{queue_mutex};
-    event_cv.wait(ql, [this] { return work_queue.empty(); });
+    {
+        std::unique_lock ql{queue_mutex};
+        event_cv.wait(ql, [this] { return work_queue.empty(); });
+    }
 
     // Now wait for execution to finish.
-    // This needs to be done in the same order as WorkerThread.
-    std::unique_lock el{execution_mutex};
+    std::scoped_lock el{execution_mutex};
 }
 
 void Scheduler::DispatchWork() {

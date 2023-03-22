@@ -5,9 +5,9 @@
 
 #include "common/assert.h"
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "common/intrusive_red_black_tree.h"
 #include "core/hle/kernel/k_memory_region_type.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel {
 
@@ -243,10 +243,10 @@ public:
     void InsertDirectly(u64 address, u64 last_address, u32 attr = 0, u32 type_id = 0);
     bool Insert(u64 address, size_t size, u32 type_id, u32 new_attr = 0, u32 old_attr = 0);
 
-    VAddr GetRandomAlignedRegion(size_t size, size_t alignment, u32 type_id);
+    KVirtualAddress GetRandomAlignedRegion(size_t size, size_t alignment, u32 type_id);
 
-    VAddr GetRandomAlignedRegionWithGuard(size_t size, size_t alignment, u32 type_id,
-                                          size_t guard_size) {
+    KVirtualAddress GetRandomAlignedRegionWithGuard(size_t size, size_t alignment, u32 type_id,
+                                                    size_t guard_size) {
         return this->GetRandomAlignedRegion(size + 2 * guard_size, alignment, type_id) + guard_size;
     }
 

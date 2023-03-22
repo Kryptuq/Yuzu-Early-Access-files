@@ -59,7 +59,7 @@ void HidbusBase::DisablePollingMode() {
     polling_mode_enabled = false;
 }
 
-void HidbusBase::SetTransferMemoryAddress(VAddr t_mem) {
+void HidbusBase::SetTransferMemoryAddress(Common::ProcessAddress t_mem) {
     transfer_memory = t_mem;
 }
 

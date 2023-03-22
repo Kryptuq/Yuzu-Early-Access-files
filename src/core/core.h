@@ -172,7 +172,7 @@ public:
      */
     void InvalidateCpuInstructionCaches();
 
-    void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
+    void InvalidateCpuInstructionCacheRange(u64 addr, std::size_t size);
 
     /// Shutdown the main emulated process.
     void ShutdownMainProcess();
@@ -353,7 +353,7 @@ public:
     [[nodiscard]] FileSys::VirtualFilesystem GetFilesystem() const;
 
     void RegisterCheatList(const std::vector<Memory::CheatEntry>& list,
-                           const std::array<u8, 0x20>& build_id, VAddr main_region_begin,
+                           const std::array<u8, 0x20>& build_id, u64 main_region_begin,
                            u64 main_region_size);
 
     void SetAppletFrontendSet(Service::AM::Applets::AppletFrontendSet&& set);

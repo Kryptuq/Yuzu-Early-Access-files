@@ -26,17 +26,17 @@ public:
 
         class Mapping {
         public:
-            constexpr void Set(VAddr c, VAddr s, size_t sz, KMemoryState st) {
+            constexpr void Set(KProcessAddress c, KProcessAddress s, size_t sz, KMemoryState st) {
                 m_client_address = c;
                 m_server_address = s;
                 m_size = sz;
                 m_state = st;
             }
 
-            constexpr VAddr GetClientAddress() const {
+            constexpr KProcessAddress GetClientAddress() const {
                 return m_client_address;
             }
-            constexpr VAddr GetServerAddress() const {
+            constexpr KProcessAddress GetServerAddress() const {
                 return m_server_address;
             }
             constexpr size_t GetSize() const {
@@ -47,8 +47,8 @@ public:
             }
 
         private:
-            VAddr m_client_address{};
-            VAddr m_server_address{};
+            KProcessAddress m_client_address{};
+            KProcessAddress m_server_address{};
             size_t m_size{};
             KMemoryState m_state{};
         };
@@ -69,14 +69,17 @@ public:
             return m_num_exch;
         }
 
-        Result PushSend(VAddr client, VAddr server, size_t size, KMemoryState state);
-        Result PushReceive(VAddr client, VAddr server, size_t size, KMemoryState state);
-        Result PushExchange(VAddr client, VAddr server, size_t size, KMemoryState state);
+        Result PushSend(KProcessAddress client, KProcessAddress server, size_t size,
+                        KMemoryState state);
+        Result PushReceive(KProcessAddress client, KProcessAddress server, size_t size,
+                           KMemoryState state);
+        Result PushExchange(KProcessAddress client, KProcessAddress server, size_t size,
+                            KMemoryState state);
 
-        VAddr GetSendClientAddress(size_t i) const {
+        KProcessAddress GetSendClientAddress(size_t i) const {
             return GetSendMapping(i).GetClientAddress();
         }
-        VAddr GetSendServerAddress(size_t i) const {
+        KProcessAddress GetSendServerAddress(size_t i) const {
             return GetSendMapping(i).GetServerAddress();
         }
         size_t GetSendSize(size_t i) const {
@@ -86,10 +89,10 @@ public:
             return GetSendMapping(i).GetMemoryState();
         }
 
-        VAddr GetReceiveClientAddress(size_t i) const {
+        KProcessAddress GetReceiveClientAddress(size_t i) const {
             return GetReceiveMapping(i).GetClientAddress();
         }
-        VAddr GetReceiveServerAddress(size_t i) const {
+        KProcessAddress GetReceiveServerAddress(size_t i) const {
             return GetReceiveMapping(i).GetServerAddress();
         }
         size_t GetReceiveSize(size_t i) const {
@@ -99,10 +102,10 @@ public:
             return GetReceiveMapping(i).GetMemoryState();
         }
 
-        VAddr GetExchangeClientAddress(size_t i) const {
+        KProcessAddress GetExchangeClientAddress(size_t i) const {
             return GetExchangeMapping(i).GetClientAddress();
         }
-        VAddr GetExchangeServerAddress(size_t i) const {
+        KProcessAddress GetExchangeServerAddress(size_t i) const {
             return GetExchangeMapping(i).GetServerAddress();
         }
         size_t GetExchangeSize(size_t i) const {
@@ -113,7 +116,8 @@ public:
         }
 
     private:
-        Result PushMap(VAddr client, VAddr server, size_t size, KMemoryState state, size_t index);
+        Result PushMap(KProcessAddress client, KProcessAddress server, size_t size,
+                       KMemoryState state, size_t index);
 
         const Mapping& GetSendMapping(size_t i) const {
             ASSERT(i < m_num_send);
@@ -227,22 +231,25 @@ public:
         return m_mappings.GetExchangeCount();
     }
 
-    Result PushSend(VAddr client, VAddr server, size_t size, KMemoryState state) {
+    Result PushSend(KProcessAddress client, KProcessAddress server, size_t size,
+                    KMemoryState state) {
         return m_mappings.PushSend(client, server, size, state);
     }
 
-    Result PushReceive(VAddr client, VAddr server, size_t size, KMemoryState state) {
+    Result PushReceive(KProcessAddress client, KProcessAddress server, size_t size,
+                       KMemoryState state) {
         return m_mappings.PushReceive(client, server, size, state);
     }
 
-    Result PushExchange(VAddr client, VAddr server, size_t size, KMemoryState state) {
+    Result PushExchange(KProcessAddress client, KProcessAddress server, size_t size,
+                        KMemoryState state) {
         return m_mappings.PushExchange(client, server, size, state);
     }
 
-    VAddr GetSendClientAddress(size_t i) const {
+    KProcessAddress GetSendClientAddress(size_t i) const {
         return m_mappings.GetSendClientAddress(i);
     }
-    VAddr GetSendServerAddress(size_t i) const {
+    KProcessAddress GetSendServerAddress(size_t i) const {
         return m_mappings.GetSendServerAddress(i);
     }
     size_t GetSendSize(size_t i) const {
@@ -252,10 +259,10 @@ public:
         return m_mappings.GetSendMemoryState(i);
     }
 
-    VAddr GetReceiveClientAddress(size_t i) const {
+    KProcessAddress GetReceiveClientAddress(size_t i) const {
         return m_mappings.GetReceiveClientAddress(i);
     }
-    VAddr GetReceiveServerAddress(size_t i) const {
+    KProcessAddress GetReceiveServerAddress(size_t i) const {
         return m_mappings.GetReceiveServerAddress(i);
     }
     size_t GetReceiveSize(size_t i) const {
@@ -265,10 +272,10 @@ public:
         return m_mappings.GetReceiveMemoryState(i);
     }
 
-    VAddr GetExchangeClientAddress(size_t i) const {
+    KProcessAddress GetExchangeClientAddress(size_t i) const {
         return m_mappings.GetExchangeClientAddress(i);
     }
-    VAddr GetExchangeServerAddress(size_t i) const {
+    KProcessAddress GetExchangeServerAddress(size_t i) const {
         return m_mappings.GetExchangeServerAddress(i);
     }
     size_t GetExchangeSize(size_t i) const {

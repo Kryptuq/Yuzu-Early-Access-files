@@ -140,7 +140,7 @@ void ImageTransferProcessor::SetConfig(
     npad_device->SetCameraFormat(current_config.origin_format);
 }
 
-void ImageTransferProcessor::SetTransferMemoryAddress(VAddr t_mem) {
+void ImageTransferProcessor::SetTransferMemoryAddress(Common::ProcessAddress t_mem) {
     transfer_memory = t_mem;
 }
 

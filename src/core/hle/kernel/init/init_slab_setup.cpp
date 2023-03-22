@@ -4,7 +4,6 @@
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/common_funcs.h"
-#include "common/common_types.h"
 #include "core/core.h"
 #include "core/device_memory.h"
 #include "core/hardware_properties.h"
@@ -30,6 +29,7 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/k_thread_local_page.h"
 #include "core/hle/kernel/k_transfer_memory.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel::Init {
 
@@ -104,17 +104,18 @@ static_assert(KernelPageBufferAdditionalSize ==
 
 /// Helper function to translate from the slab virtual address to the reserved location in physical
 /// memory.
-static PAddr TranslateSlabAddrToPhysical(KMemoryLayout& memory_layout, VAddr slab_addr) {
-    slab_addr -= memory_layout.GetSlabRegionAddress();
-    return slab_addr + Core::DramMemoryMap::SlabHeapBase;
+static KPhysicalAddress TranslateSlabAddrToPhysical(KMemoryLayout& memory_layout,
+                                                    KVirtualAddress slab_addr) {
+    slab_addr -= GetInteger(memory_layout.GetSlabRegionAddress());
+    return GetInteger(slab_addr) + Core::DramMemoryMap::SlabHeapBase;
 }
 
 template <typename T>
-VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAddr address,
-                         size_t num_objects) {
+KVirtualAddress InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout,
+                                   KVirtualAddress address, size_t num_objects) {
 
     const size_t size = Common::AlignUp(sizeof(T) * num_objects, alignof(void*));
-    VAddr start = Common::AlignUp(address, alignof(T));
+    KVirtualAddress start = Common::AlignUp(GetInteger(address), alignof(T));
 
     // This should use the virtual memory address passed in, but currently, we do not setup the
     // kernel virtual memory layout. Instead, we simply map these at a region of physical memory
@@ -195,7 +196,7 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
     auto& kernel = system.Kernel();
 
     // Get the start of the slab region, since that's where we'll be working.
-    VAddr address = memory_layout.GetSlabRegionAddress();
+    KVirtualAddress address = memory_layout.GetSlabRegionAddress();
 
     // Initialize slab type array to be in sorted order.
     std::array<KSlabType, KSlabType_Count> slab_types;
@@ -228,7 +229,7 @@ void InitializeSlabHeaps(Core::System& system, KMemoryLayout& memory_layout) {
     }
 
     // Track the gaps, so that we can free them to the unused slab tree.
-    VAddr gap_start = address;
+    KVirtualAddress gap_start = address;
     size_t gap_size = 0;
 
     for (size_t i = 0; i < slab_gaps.size(); i++) {
@@ -280,7 +281,7 @@ void KPageBufferSlabHeap::Initialize(Core::System& system) {
     // Allocate memory for the slab.
     constexpr auto AllocateOption = KMemoryManager::EncodeOption(
         KMemoryManager::Pool::System, KMemoryManager::Direction::FromFront);
-    const PAddr slab_address =
+    const KPhysicalAddress slab_address =
         kernel.MemoryManager().AllocateAndOpenContinuous(num_pages, 1, AllocateOption);
     ASSERT(slab_address != 0);
 

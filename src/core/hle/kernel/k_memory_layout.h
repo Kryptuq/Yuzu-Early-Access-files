@@ -10,6 +10,7 @@
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_memory_region.h"
 #include "core/hle/kernel/k_memory_region_type.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/memory_types.h"
 
 namespace Kernel {
@@ -69,10 +70,11 @@ constexpr std::size_t KernelResourceSize = KernelPageTableHeapSize + KernelIniti
 
 //! NB: Use KThread::GetAddressKeyIsKernel().
 //! See explanation for deviation of GetAddressKey.
-bool IsKernelAddressKey(VAddr key) = delete;
+bool IsKernelAddressKey(KProcessAddress key) = delete;
 
-constexpr bool IsKernelAddress(VAddr address) {
-    return KernelVirtualAddressSpaceBase <= address && address < KernelVirtualAddressSpaceEnd;
+constexpr bool IsKernelAddress(KProcessAddress address) {
+    return KernelVirtualAddressSpaceBase <= GetInteger(address) &&
+           address < KernelVirtualAddressSpaceEnd;
 }
 
 class KMemoryLayout final {
@@ -104,38 +106,38 @@ public:
         return m_physical_linear_tree;
     }
 
-    VAddr GetLinearVirtualAddress(PAddr address) const {
-        return address + m_linear_phys_to_virt_diff;
+    KVirtualAddress GetLinearVirtualAddress(KPhysicalAddress address) const {
+        return GetInteger(address) + m_linear_phys_to_virt_diff;
     }
-    PAddr GetLinearPhysicalAddress(VAddr address) const {
-        return address + m_linear_virt_to_phys_diff;
+    KPhysicalAddress GetLinearPhysicalAddress(KVirtualAddress address) const {
+        return GetInteger(address) + m_linear_virt_to_phys_diff;
     }
 
-    const KMemoryRegion* FindVirtual(VAddr address) const {
+    const KMemoryRegion* FindVirtual(KVirtualAddress address) const {
         return Find(address, GetVirtualMemoryRegionTree());
     }
-    const KMemoryRegion* FindPhysical(PAddr address) const {
+    const KMemoryRegion* FindPhysical(KPhysicalAddress address) const {
         return Find(address, GetPhysicalMemoryRegionTree());
     }
 
-    const KMemoryRegion* FindVirtualLinear(VAddr address) const {
+    const KMemoryRegion* FindVirtualLinear(KVirtualAddress address) const {
         return Find(address, GetVirtualLinearMemoryRegionTree());
     }
-    const KMemoryRegion* FindPhysicalLinear(PAddr address) const {
+    const KMemoryRegion* FindPhysicalLinear(KPhysicalAddress address) const {
         return Find(address, GetPhysicalLinearMemoryRegionTree());
     }
 
-    VAddr GetMainStackTopAddress(s32 core_id) const {
+    KVirtualAddress GetMainStackTopAddress(s32 core_id) const {
         return GetStackTopAddress(core_id, KMemoryRegionType_KernelMiscMainStack);
     }
-    VAddr GetIdleStackTopAddress(s32 core_id) const {
+    KVirtualAddress GetIdleStackTopAddress(s32 core_id) const {
         return GetStackTopAddress(core_id, KMemoryRegionType_KernelMiscIdleStack);
     }
-    VAddr GetExceptionStackTopAddress(s32 core_id) const {
+    KVirtualAddress GetExceptionStackTopAddress(s32 core_id) const {
         return GetStackTopAddress(core_id, KMemoryRegionType_KernelMiscExceptionStack);
     }
 
-    VAddr GetSlabRegionAddress() const {
+    KVirtualAddress GetSlabRegionAddress() const {
         return Dereference(GetVirtualMemoryRegionTree().FindByType(KMemoryRegionType_KernelSlab))
             .GetAddress();
     }
@@ -143,10 +145,10 @@ public:
     const KMemoryRegion& GetDeviceRegion(KMemoryRegionType type) const {
         return Dereference(GetPhysicalMemoryRegionTree().FindFirstDerived(type));
     }
-    PAddr GetDevicePhysicalAddress(KMemoryRegionType type) const {
+    KPhysicalAddress GetDevicePhysicalAddress(KMemoryRegionType type) const {
         return GetDeviceRegion(type).GetAddress();
     }
-    VAddr GetDeviceVirtualAddress(KMemoryRegionType type) const {
+    KVirtualAddress GetDeviceVirtualAddress(KMemoryRegionType type) const {
         return GetDeviceRegion(type).GetPairAddress();
     }
 
@@ -175,11 +177,11 @@ public:
             KMemoryRegionType_VirtualDramKernelSecureAppletMemory));
     }
 
-    const KMemoryRegion& GetVirtualLinearRegion(VAddr address) const {
+    const KMemoryRegion& GetVirtualLinearRegion(KVirtualAddress address) const {
         return Dereference(FindVirtualLinear(address));
     }
 
-    const KMemoryRegion& GetPhysicalLinearRegion(PAddr address) const {
+    const KMemoryRegion& GetPhysicalLinearRegion(KPhysicalAddress address) const {
         return Dereference(FindPhysicalLinear(address));
     }
 
@@ -193,29 +195,32 @@ public:
         return GetPhysicalMemoryRegionTree().FindFirstDerived(KMemoryRegionType_DTB);
     }
 
-    bool IsHeapPhysicalAddress(const KMemoryRegion*& region, PAddr address) const {
+    bool IsHeapPhysicalAddress(const KMemoryRegion*& region, KPhysicalAddress address) const {
         return IsTypedAddress(region, address, GetPhysicalLinearMemoryRegionTree(),
                               KMemoryRegionType_DramUserPool);
     }
-    bool IsHeapVirtualAddress(const KMemoryRegion*& region, VAddr address) const {
+    bool IsHeapVirtualAddress(const KMemoryRegion*& region, KVirtualAddress address) const {
         return IsTypedAddress(region, address, GetVirtualLinearMemoryRegionTree(),
                               KMemoryRegionType_VirtualDramUserPool);
     }
 
-    bool IsHeapPhysicalAddress(const KMemoryRegion*& region, PAddr address, size_t size) const {
+    bool IsHeapPhysicalAddress(const KMemoryRegion*& region, KPhysicalAddress address,
+                               size_t size) const {
         return IsTypedAddress(region, address, size, GetPhysicalLinearMemoryRegionTree(),
                               KMemoryRegionType_DramUserPool);
     }
-    bool IsHeapVirtualAddress(const KMemoryRegion*& region, VAddr address, size_t size) const {
+    bool IsHeapVirtualAddress(const KMemoryRegion*& region, KVirtualAddress address,
+                              size_t size) const {
         return IsTypedAddress(region, address, size, GetVirtualLinearMemoryRegionTree(),
                               KMemoryRegionType_VirtualDramUserPool);
     }
 
-    bool IsLinearMappedPhysicalAddress(const KMemoryRegion*& region, PAddr address) const {
+    bool IsLinearMappedPhysicalAddress(const KMemoryRegion*& region,
+                                       KPhysicalAddress address) const {
         return IsTypedAddress(region, address, GetPhysicalLinearMemoryRegionTree(),
                               static_cast<KMemoryRegionType>(KMemoryRegionAttr_LinearMapped));
     }
-    bool IsLinearMappedPhysicalAddress(const KMemoryRegion*& region, PAddr address,
+    bool IsLinearMappedPhysicalAddress(const KMemoryRegion*& region, KPhysicalAddress address,
                                        size_t size) const {
         return IsTypedAddress(region, address, size, GetPhysicalLinearMemoryRegionTree(),
                               static_cast<KMemoryRegionType>(KMemoryRegionAttr_LinearMapped));
@@ -234,8 +239,8 @@ public:
         return std::make_pair(total_size, kernel_size);
     }
 
-    void InitializeLinearMemoryRegionTrees(PAddr aligned_linear_phys_start,
-                                           VAddr linear_virtual_start);
+    void InitializeLinearMemoryRegionTrees(KPhysicalAddress aligned_linear_phys_start,
+                                           KVirtualAddress linear_virtual_start);
     static size_t GetResourceRegionSizeForInit(bool use_extra_resource);
 
     auto GetKernelRegionExtents() const {
@@ -261,8 +266,8 @@ public:
 
     auto GetLinearRegionVirtualExtents() const {
         const auto physical = GetLinearRegionPhysicalExtents();
-        return KMemoryRegion(GetLinearVirtualAddress(physical.GetAddress()),
-                             GetLinearVirtualAddress(physical.GetLastAddress()), 0,
+        return KMemoryRegion(GetInteger(GetLinearVirtualAddress(physical.GetAddress())),
+                             GetInteger(GetLinearVirtualAddress(physical.GetLastAddress())), 0,
                              KMemoryRegionType_None);
     }
 
@@ -334,12 +339,12 @@ private:
     static bool IsTypedAddress(const KMemoryRegion*& region, AddressType address,
                                const KMemoryRegionTree& tree, KMemoryRegionType type) {
         // Check if the cached region already contains the address.
-        if (region != nullptr && region->Contains(address)) {
+        if (region != nullptr && region->Contains(GetInteger(address))) {
             return true;
         }
 
         // Find the containing region, and update the cache.
-        if (const KMemoryRegion* found = tree.Find(address);
+        if (const KMemoryRegion* found = tree.Find(GetInteger(address));
             found != nullptr && found->IsDerivedFrom(type)) {
             region = found;
             return true;
@@ -352,11 +357,12 @@ private:
     static bool IsTypedAddress(const KMemoryRegion*& region, AddressType address, size_t size,
                                const KMemoryRegionTree& tree, KMemoryRegionType type) {
         // Get the end of the checked region.
-        const u64 last_address = address + size - 1;
+        const u64 last_address = GetInteger(address) + size - 1;
 
         // Walk the tree to verify the region is correct.
-        const KMemoryRegion* cur =
-            (region != nullptr && region->Contains(address)) ? region : tree.Find(address);
+        const KMemoryRegion* cur = (region != nullptr && region->Contains(GetInteger(address)))
+                                       ? region
+                                       : tree.Find(GetInteger(address));
         while (cur != nullptr && cur->IsDerivedFrom(type)) {
             if (last_address <= cur->GetLastAddress()) {
                 region = cur;
@@ -370,7 +376,7 @@ private:
 
     template <typename AddressType>
     static const KMemoryRegion* Find(AddressType address, const KMemoryRegionTree& tree) {
-        return tree.Find(address);
+        return tree.Find(GetInteger(address));
     }
 
     static KMemoryRegion& Dereference(KMemoryRegion* region) {
@@ -383,7 +389,7 @@ private:
         return *region;
     }
 
-    VAddr GetStackTopAddress(s32 core_id, KMemoryRegionType type) const {
+    KVirtualAddress GetStackTopAddress(s32 core_id, KMemoryRegionType type) const {
         const auto& region = Dereference(
             GetVirtualMemoryRegionTree().FindByTypeAndAttribute(type, static_cast<u32>(core_id)));
         ASSERT(region.GetEndAddress() != 0);

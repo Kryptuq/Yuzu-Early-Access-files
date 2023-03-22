@@ -5,8 +5,8 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
-#include "common/common_types.h"
 #include "common/intrusive_red_black_tree.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/memory_types.h"
 #include "core/hle/kernel/svc_types.h"
 
@@ -282,7 +282,7 @@ class KMemoryBlock : public Common::IntrusiveRedBlackTreeBaseNode<KMemoryBlock> 
 private:
     u16 m_device_disable_merge_left_count{};
     u16 m_device_disable_merge_right_count{};
-    VAddr m_address{};
+    KProcessAddress m_address{};
     size_t m_num_pages{};
     KMemoryState m_memory_state{KMemoryState::None};
     u16 m_ipc_lock_count{};
@@ -306,7 +306,7 @@ public:
     }
 
 public:
-    constexpr VAddr GetAddress() const {
+    constexpr KProcessAddress GetAddress() const {
         return m_address;
     }
 
@@ -318,11 +318,11 @@ public:
         return this->GetNumPages() * PageSize;
     }
 
-    constexpr VAddr GetEndAddress() const {
+    constexpr KProcessAddress GetEndAddress() const {
         return this->GetAddress() + this->GetSize();
     }
 
-    constexpr VAddr GetLastAddress() const {
+    constexpr KProcessAddress GetLastAddress() const {
         return this->GetEndAddress() - 1;
     }
 
@@ -348,7 +348,7 @@ public:
 
     constexpr KMemoryInfo GetMemoryInfo() const {
         return {
-            .m_address = this->GetAddress(),
+            .m_address = GetInteger(this->GetAddress()),
             .m_size = this->GetSize(),
             .m_state = m_memory_state,
             .m_device_disable_merge_left_count = m_device_disable_merge_left_count,
@@ -366,12 +366,12 @@ public:
 public:
     explicit KMemoryBlock() = default;
 
-    constexpr KMemoryBlock(VAddr addr, size_t np, KMemoryState ms, KMemoryPermission p,
+    constexpr KMemoryBlock(KProcessAddress addr, size_t np, KMemoryState ms, KMemoryPermission p,
                            KMemoryAttribute attr)
         : Common::IntrusiveRedBlackTreeBaseNode<KMemoryBlock>(), m_address(addr), m_num_pages(np),
           m_memory_state(ms), m_permission(p), m_attribute(attr) {}
 
-    constexpr void Initialize(VAddr addr, size_t np, KMemoryState ms, KMemoryPermission p,
+    constexpr void Initialize(KProcessAddress addr, size_t np, KMemoryState ms, KMemoryPermission p,
                               KMemoryAttribute attr) {
         m_device_disable_merge_left_count = 0;
         m_device_disable_merge_right_count = 0;
@@ -408,7 +408,7 @@ public:
                    KMemoryBlockDisableMergeAttribute::None;
     }
 
-    constexpr bool Contains(VAddr addr) const {
+    constexpr bool Contains(KProcessAddress addr) const {
         return this->GetAddress() <= addr && addr <= this->GetEndAddress();
     }
 
@@ -443,10 +443,10 @@ public:
         }
     }
 
-    constexpr void Split(KMemoryBlock* block, VAddr addr) {
+    constexpr void Split(KMemoryBlock* block, KProcessAddress addr) {
         ASSERT(this->GetAddress() < addr);
         ASSERT(this->Contains(addr));
-        ASSERT(Common::IsAligned(addr, PageSize));
+        ASSERT(Common::IsAligned(GetInteger(addr), PageSize));
 
         block->m_address = m_address;
         block->m_num_pages = (addr - this->GetAddress()) / PageSize;

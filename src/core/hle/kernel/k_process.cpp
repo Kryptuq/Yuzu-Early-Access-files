@@ -36,8 +36,9 @@ namespace {
  * @param owner_process The parent process for the main thread
  * @param priority The priority to give the main thread
  */
-void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority, VAddr stack_top) {
-    const VAddr entry_point = owner_process.PageTable().GetCodeRegionStart();
+void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority,
+                     KProcessAddress stack_top) {
+    const KProcessAddress entry_point = owner_process.PageTable().GetCodeRegionStart();
     ASSERT(owner_process.GetResourceLimit()->Reserve(LimitableResource::ThreadCountMax, 1));
 
     KThread* thread = KThread::Create(system.Kernel());
@@ -219,7 +220,7 @@ void KProcess::UnpinThread(KThread* thread) {
     KScheduler::SetSchedulerUpdateNeeded(m_kernel);
 }
 
-Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
+Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] KProcessAddress address,
                                  [[maybe_unused]] size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(m_state_lock);
@@ -248,7 +249,7 @@ Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr ad
     R_SUCCEED();
 }
 
-void KProcess::RemoveSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
+void KProcess::RemoveSharedMemory(KSharedMemory* shmem, [[maybe_unused]] KProcessAddress address,
                                   [[maybe_unused]] size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(m_state_lock);
@@ -399,8 +400,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
 
     case FileSys::ProgramAddressSpaceType::Is32BitNoMap:
         m_memory_usage_capacity =
-            m_page_table.GetHeapRegionEnd() - m_page_table.GetHeapRegionStart() +
-            m_page_table.GetAliasRegionEnd() - m_page_table.GetAliasRegionStart();
+            (m_page_table.GetHeapRegionEnd() - m_page_table.GetHeapRegionStart()) +
+            (m_page_table.GetAliasRegionEnd() - m_page_table.GetAliasRegionStart());
         break;
 
     default:
@@ -492,9 +493,9 @@ void KProcess::Finalize() {
     KSynchronizationObject::Finalize();
 }
 
-Result KProcess::CreateThreadLocalRegion(VAddr* out) {
+Result KProcess::CreateThreadLocalRegion(KProcessAddress* out) {
     KThreadLocalPage* tlp = nullptr;
-    VAddr tlr = 0;
+    KProcessAddress tlr = 0;
 
     // See if we can get a region from a partially used TLP.
     {
@@ -543,7 +544,7 @@ Result KProcess::CreateThreadLocalRegion(VAddr* out) {
     R_SUCCEED();
 }
 
-Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
+Result KProcess::DeleteThreadLocalRegion(KProcessAddress addr) {
     KThreadLocalPage* page_to_free = nullptr;
 
     // Release the region.
@@ -551,10 +552,10 @@ Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
         KScopedSchedulerLock sl{m_kernel};
 
         // Try to find the page in the partially used list.
-        auto it = m_partially_used_tlp_tree.find_key(Common::AlignDown(addr, PageSize));
+        auto it = m_partially_used_tlp_tree.find_key(Common::AlignDown(GetInteger(addr), PageSize));
         if (it == m_partially_used_tlp_tree.end()) {
             // If we don't find it, it has to be in the fully used list.
-            it = m_fully_used_tlp_tree.find_key(Common::AlignDown(addr, PageSize));
+            it = m_fully_used_tlp_tree.find_key(Common::AlignDown(GetInteger(addr), PageSize));
             R_UNLESS(it != m_fully_used_tlp_tree.end(), ResultInvalidAddress);
 
             // Release the region.
@@ -591,7 +592,7 @@ Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
     R_SUCCEED();
 }
 
-bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
+bool KProcess::InsertWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
                                 DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.type == DebugWatchpointType::None;
@@ -605,7 +606,8 @@ bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
     watch->end_address = addr + size;
     watch->type = type;
 
-    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+    for (KProcessAddress page = Common::AlignDown(GetInteger(addr), PageSize); page < addr + size;
+         page += PageSize) {
         m_debug_page_refcounts[page]++;
         system.Memory().MarkRegionDebug(page, PageSize, true);
     }
@@ -613,7 +615,7 @@ bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
     return true;
 }
 
-bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
+bool KProcess::RemoveWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
                                 DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
@@ -627,7 +629,8 @@ bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
     watch->end_address = 0;
     watch->type = DebugWatchpointType::None;
 
-    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+    for (KProcessAddress page = Common::AlignDown(GetInteger(addr), PageSize); page < addr + size;
+         page += PageSize) {
         m_debug_page_refcounts[page]--;
         if (!m_debug_page_refcounts[page]) {
             system.Memory().MarkRegionDebug(page, PageSize, false);
@@ -637,7 +640,7 @@ bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
     return true;
 }
 
-void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
+void KProcess::LoadModule(CodeSet code_set, KProcessAddress base_addr) {
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
                                       Svc::MemoryPermission permission) {
         m_page_table.SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);

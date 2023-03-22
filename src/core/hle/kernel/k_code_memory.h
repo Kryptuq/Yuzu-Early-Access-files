@@ -5,12 +5,12 @@
 
 #include <optional>
 
-#include "common/common_types.h"
 #include "core/device_memory.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_light_lock.h"
 #include "core/hle/kernel/k_page_group.h"
 #include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/slab_helpers.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/result.h"
@@ -31,13 +31,13 @@ class KCodeMemory final
 public:
     explicit KCodeMemory(KernelCore& kernel);
 
-    Result Initialize(Core::DeviceMemory& device_memory, VAddr address, size_t size);
+    Result Initialize(Core::DeviceMemory& device_memory, KProcessAddress address, size_t size);
     void Finalize() override;
 
-    Result Map(VAddr address, size_t size);
-    Result Unmap(VAddr address, size_t size);
-    Result MapToOwner(VAddr address, size_t size, Svc::MemoryPermission perm);
-    Result UnmapFromOwner(VAddr address, size_t size);
+    Result Map(KProcessAddress address, size_t size);
+    Result Unmap(KProcessAddress address, size_t size);
+    Result MapToOwner(KProcessAddress address, size_t size, Svc::MemoryPermission perm);
+    Result UnmapFromOwner(KProcessAddress address, size_t size);
 
     bool IsInitialized() const override {
         return m_is_initialized;
@@ -47,7 +47,7 @@ public:
     KProcess* GetOwner() const override {
         return m_owner;
     }
-    VAddr GetSourceAddress() const {
+    KProcessAddress GetSourceAddress() const {
         return m_address;
     }
     size_t GetSize() const {
@@ -57,7 +57,7 @@ public:
 private:
     std::optional<KPageGroup> m_page_group{};
     KProcess* m_owner{};
-    VAddr m_address{};
+    KProcessAddress m_address{};
     KLightLock m_lock;
     bool m_is_initialized{};
     bool m_is_owner_mapped{};

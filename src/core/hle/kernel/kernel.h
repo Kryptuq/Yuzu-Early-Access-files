@@ -14,6 +14,7 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_slab_heap.h"
+#include "core/hle/kernel/k_typed_address.h"
 #include "core/hle/kernel/svc_common.h"
 
 namespace Core {
@@ -185,7 +186,7 @@ public:
 
     void InvalidateAllInstructionCaches();
 
-    void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
+    void InvalidateCpuInstructionCacheRange(KProcessAddress addr, std::size_t size);
 
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.

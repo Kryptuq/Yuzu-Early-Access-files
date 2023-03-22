@@ -50,7 +50,7 @@ Result GetProcessId(Core::System& system, u64* out_process_id, Handle handle) {
     R_SUCCEED();
 }
 
-Result GetProcessList(Core::System& system, s32* out_num_processes, VAddr out_process_ids,
+Result GetProcessList(Core::System& system, s32* out_num_processes, u64 out_process_ids,
                       int32_t out_process_ids_size) {
     LOG_DEBUG(Kernel_SVC, "called. out_process_ids=0x{:016X}, out_process_ids_size={}",
               out_process_ids, out_process_ids_size);

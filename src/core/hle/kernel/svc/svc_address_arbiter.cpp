@@ -37,7 +37,7 @@ constexpr bool IsValidArbitrationType(Svc::ArbitrationType type) {
 } // namespace
 
 // Wait for an address (via Address Arbiter)
-Result WaitForAddress(Core::System& system, VAddr address, ArbitrationType arb_type, s32 value,
+Result WaitForAddress(Core::System& system, u64 address, ArbitrationType arb_type, s32 value,
                       s64 timeout_ns) {
     LOG_TRACE(Kernel_SVC, "called, address=0x{:X}, arb_type=0x{:X}, value=0x{:X}, timeout_ns={}",
               address, arb_type, value, timeout_ns);
@@ -68,7 +68,7 @@ Result WaitForAddress(Core::System& system, VAddr address, ArbitrationType arb_t
 }
 
 // Signals to an address (via Address Arbiter)
-Result SignalToAddress(Core::System& system, VAddr address, SignalType signal_type, s32 value,
+Result SignalToAddress(Core::System& system, u64 address, SignalType signal_type, s32 value,
                        s32 count) {
     LOG_TRACE(Kernel_SVC, "called, address=0x{:X}, signal_type=0x{:X}, value=0x{:X}, count=0x{:X}",
               address, signal_type, value, count);
@@ -82,12 +82,12 @@ Result SignalToAddress(Core::System& system, VAddr address, SignalType signal_ty
                  .SignalAddressArbiter(address, signal_type, value, count));
 }
 
-Result WaitForAddress64(Core::System& system, VAddr address, ArbitrationType arb_type, s32 value,
+Result WaitForAddress64(Core::System& system, u64 address, ArbitrationType arb_type, s32 value,
                         s64 timeout_ns) {
     R_RETURN(WaitForAddress(system, address, arb_type, value, timeout_ns));
 }
 
-Result SignalToAddress64(Core::System& system, VAddr address, SignalType signal_type, s32 value,
+Result SignalToAddress64(Core::System& system, u64 address, SignalType signal_type, s32 value,
                          s32 count) {
     R_RETURN(SignalToAddress(system, address, signal_type, value, count));
 }

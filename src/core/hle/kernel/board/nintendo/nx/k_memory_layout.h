@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "common/common_types.h"
+#include "core/hle/kernel/k_typed_address.h"
 
 namespace Kernel {
 
-constexpr inline PAddr MainMemoryAddress = 0x80000000;
+constexpr inline KPhysicalAddress MainMemoryAddress = 0x80000000;
 
 } // namespace Kernel
