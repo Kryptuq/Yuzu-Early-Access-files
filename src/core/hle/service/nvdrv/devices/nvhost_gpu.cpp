@@ -304,8 +304,8 @@ NvResult nvhost_gpu::SubmitGPFIFOBase(std::span<const u8> input, std::vector<u8>
     Tegra::CommandList entries(params.num_entries);
 
     if (kickoff) {
-        system.Memory().ReadBlock(params.address, entries.command_lists.data(),
-                                  params.num_entries * sizeof(Tegra::CommandListHeader));
+        system.ApplicationMemory().ReadBlock(params.address, entries.command_lists.data(),
+                                             params.num_entries * sizeof(Tegra::CommandListHeader));
     } else {
         std::memcpy(entries.command_lists.data(), &input[sizeof(IoctlSubmitGpfifo)],
                     params.num_entries * sizeof(Tegra::CommandListHeader));

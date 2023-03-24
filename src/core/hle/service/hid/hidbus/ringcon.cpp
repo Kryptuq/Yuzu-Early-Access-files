@@ -64,8 +64,8 @@ void RingController::OnUpdate() {
         curr_entry.polling_data.out_size = sizeof(ringcon_value);
         std::memcpy(curr_entry.polling_data.data.data(), &ringcon_value, sizeof(ringcon_value));
 
-        system.Memory().WriteBlock(transfer_memory, &enable_sixaxis_data,
-                                   sizeof(enable_sixaxis_data));
+        system.ApplicationMemory().WriteBlock(transfer_memory, &enable_sixaxis_data,
+                                              sizeof(enable_sixaxis_data));
         break;
     }
     default:

@@ -66,7 +66,8 @@ public:
     Result InitializeForProcess(FileSys::ProgramAddressSpaceType as_type, bool enable_aslr,
                                 bool enable_das_merge, bool from_back, KMemoryManager::Pool pool,
                                 KProcessAddress code_addr, size_t code_size,
-                                KSystemResource* system_resource, KResourceLimit* resource_limit);
+                                KSystemResource* system_resource, KResourceLimit* resource_limit,
+                                Core::Memory::Memory& memory);
 
     void Finalize();
 
@@ -546,6 +547,7 @@ private:
 
     Core::System& m_system;
     KernelCore& m_kernel;
+    Core::Memory::Memory* m_memory{};
 };
 
 } // namespace Kernel

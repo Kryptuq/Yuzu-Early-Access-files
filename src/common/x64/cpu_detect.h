@@ -67,6 +67,7 @@ struct CPUCaps {
     bool pclmulqdq : 1;
     bool popcnt : 1;
     bool sha : 1;
+    bool waitpkg : 1;
 };
 
 /**

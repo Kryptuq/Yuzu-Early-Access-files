@@ -90,7 +90,8 @@ Result WaitSynchronization(Core::System& system, int32_t* out_index, u64 user_ha
 
     std::vector<Handle> handles(num_handles);
     if (num_handles > 0) {
-        system.Memory().ReadBlock(user_handles, handles.data(), num_handles * sizeof(Handle));
+        GetCurrentMemory(system.Kernel())
+            .ReadBlock(user_handles, handles.data(), num_handles * sizeof(Handle));
     }
 
     R_RETURN(WaitSynchronization(system, out_index, handles.data(), num_handles, timeout_ns));

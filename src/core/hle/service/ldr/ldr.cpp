@@ -225,7 +225,7 @@ public:
 
         // Read NRR data from memory
         std::vector<u8> nrr_data(nrr_size);
-        system.Memory().ReadBlock(nrr_address, nrr_data.data(), nrr_size);
+        system.ApplicationMemory().ReadBlock(nrr_address, nrr_data.data(), nrr_size);
         NRRHeader header;
         std::memcpy(&header, nrr_data.data(), sizeof(NRRHeader));
 
@@ -314,7 +314,7 @@ public:
         const auto is_region_available = [&](VAddr addr) {
             const auto end_addr = addr + size;
             while (addr < end_addr) {
-                if (system.Memory().IsValidVirtualAddress(addr)) {
+                if (system.ApplicationMemory().IsValidVirtualAddress(addr)) {
                     return false;
                 }
 
@@ -427,8 +427,8 @@ public:
         const VAddr bss_end_addr{
             Common::AlignUp(bss_start + nro_header.bss_size, Kernel::PageSize)};
 
-        const auto CopyCode = [this, process](VAddr src_addr, VAddr dst_addr, u64 size) {
-            system.Memory().CopyBlock(*process, dst_addr, src_addr, size);
+        const auto CopyCode = [this](VAddr src_addr, VAddr dst_addr, u64 size) {
+            system.ApplicationMemory().CopyBlock(dst_addr, src_addr, size);
         };
         CopyCode(nro_addr + nro_header.segment_headers[TEXT_INDEX].memory_offset, text_start,
                  nro_header.segment_headers[TEXT_INDEX].memory_size);
@@ -506,7 +506,7 @@ public:
 
         // Read NRO data from memory
         std::vector<u8> nro_data(nro_size);
-        system.Memory().ReadBlock(nro_address, nro_data.data(), nro_size);
+        system.ApplicationMemory().ReadBlock(nro_address, nro_data.data(), nro_size);
 
         SHA256Hash hash{};
         mbedtls_sha256_ret(nro_data.data(), nro_data.size(), hash.data(), 0);

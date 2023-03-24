@@ -256,10 +256,10 @@ public:
     [[nodiscard]] const ExclusiveMonitor& Monitor() const;
 
     /// Gets a mutable reference to the system memory instance.
-    [[nodiscard]] Core::Memory::Memory& Memory();
+    [[nodiscard]] Core::Memory::Memory& ApplicationMemory();
 
     /// Gets a constant reference to the system memory instance.
-    [[nodiscard]] const Core::Memory::Memory& Memory() const;
+    [[nodiscard]] const Core::Memory::Memory& ApplicationMemory() const;
 
     /// Gets a mutable reference to the GPU interface
     [[nodiscard]] Tegra::GPU& GPU();

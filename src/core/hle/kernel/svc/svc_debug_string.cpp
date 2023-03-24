@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
+#include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
 
@@ -12,7 +13,7 @@ Result OutputDebugString(Core::System& system, u64 address, u64 len) {
     R_SUCCEED_IF(len == 0);
 
     std::string str(len, '\0');
-    system.Memory().ReadBlock(address, str.data(), str.size());
+    GetCurrentMemory(system.Kernel()).ReadBlock(address, str.data(), str.size());
     LOG_DEBUG(Debug_Emulated, "{}", str);
 
     R_SUCCEED();

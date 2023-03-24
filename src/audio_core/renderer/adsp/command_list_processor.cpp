@@ -17,7 +17,7 @@ namespace AudioCore::AudioRenderer::ADSP {
 void CommandListProcessor::Initialize(Core::System& system_, CpuAddr buffer, u64 size,
                                       Sink::SinkStream* stream_) {
     system = &system_;
-    memory = &system->Memory();
+    memory = &system->ApplicationMemory();
     stream = stream_;
     header = reinterpret_cast<CommandListHeader*>(buffer);
     commands = reinterpret_cast<u8*>(buffer + sizeof(CommandListHeader));

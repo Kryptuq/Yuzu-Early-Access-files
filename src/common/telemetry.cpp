@@ -97,6 +97,7 @@ void AppendCPUInfo(FieldCollection& fc) {
     add_field("CPU_Extension_x64_PCLMULQDQ", caps.pclmulqdq);
     add_field("CPU_Extension_x64_POPCNT", caps.popcnt);
     add_field("CPU_Extension_x64_SHA", caps.sha);
+    add_field("CPU_Extension_x64_WAITPKG", caps.waitpkg);
 #else
     fc.AddField(FieldType::UserSystem, "CPU_Model", "Other");
 #endif

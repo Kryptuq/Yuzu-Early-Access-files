@@ -367,8 +367,8 @@ Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std:
     // Initialize process address space
     if (const Result result{m_page_table.InitializeForProcess(
             metadata.GetAddressSpaceType(), false, false, false, KMemoryManager::Pool::Application,
-            0x8000000, code_size, std::addressof(m_kernel.GetAppSystemResource()),
-            m_resource_limit)};
+            0x8000000, code_size, std::addressof(m_kernel.GetAppSystemResource()), m_resource_limit,
+            m_kernel.System().ApplicationMemory())};
         result.IsError()) {
         R_RETURN(result);
     }
@@ -592,8 +592,7 @@ Result KProcess::DeleteThreadLocalRegion(KProcessAddress addr) {
     R_SUCCEED();
 }
 
-bool KProcess::InsertWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
-                                DebugWatchpointType type) {
+bool KProcess::InsertWatchpoint(KProcessAddress addr, u64 size, DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.type == DebugWatchpointType::None;
     })};
@@ -609,14 +608,13 @@ bool KProcess::InsertWatchpoint(Core::System& system, KProcessAddress addr, u64 
     for (KProcessAddress page = Common::AlignDown(GetInteger(addr), PageSize); page < addr + size;
          page += PageSize) {
         m_debug_page_refcounts[page]++;
-        system.Memory().MarkRegionDebug(page, PageSize, true);
+        this->GetMemory().MarkRegionDebug(page, PageSize, true);
     }
 
     return true;
 }
 
-bool KProcess::RemoveWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
-                                DebugWatchpointType type) {
+bool KProcess::RemoveWatchpoint(KProcessAddress addr, u64 size, DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
     })};
@@ -633,7 +631,7 @@ bool KProcess::RemoveWatchpoint(Core::System& system, KProcessAddress addr, u64 
          page += PageSize) {
         m_debug_page_refcounts[page]--;
         if (!m_debug_page_refcounts[page]) {
-            system.Memory().MarkRegionDebug(page, PageSize, false);
+            this->GetMemory().MarkRegionDebug(page, PageSize, false);
         }
     }
 
@@ -646,8 +644,7 @@ void KProcess::LoadModule(CodeSet code_set, KProcessAddress base_addr) {
         m_page_table.SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);
     };
 
-    m_kernel.System().Memory().WriteBlock(*this, base_addr, code_set.memory.data(),
-                                          code_set.memory.size());
+    this->GetMemory().WriteBlock(base_addr, code_set.memory.data(), code_set.memory.size());
 
     ReprotectSegment(code_set.CodeSegment(), Svc::MemoryPermission::ReadExecute);
     ReprotectSegment(code_set.RODataSegment(), Svc::MemoryPermission::Read);
@@ -704,6 +701,11 @@ Result KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     mem_reservation.Commit();
 
     R_SUCCEED();
+}
+
+Core::Memory::Memory& KProcess::GetMemory() const {
+    // TODO: per-process memory
+    return m_kernel.System().ApplicationMemory();
 }
 
 } // namespace Kernel

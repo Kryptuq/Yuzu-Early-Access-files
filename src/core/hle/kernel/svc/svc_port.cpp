@@ -14,7 +14,8 @@ namespace Kernel::Svc {
 
 Result ConnectToNamedPort(Core::System& system, Handle* out, u64 user_name) {
     // Copy the provided name from user memory to kernel memory.
-    auto string_name = system.Memory().ReadCString(user_name, KObjectName::NameLengthMax);
+    auto string_name =
+        GetCurrentMemory(system.Kernel()).ReadCString(user_name, KObjectName::NameLengthMax);
 
     std::array<char, KObjectName::NameLengthMax> name{};
     std::strncpy(name.data(), string_name.c_str(), KObjectName::NameLengthMax - 1);
@@ -62,7 +63,8 @@ Result ConnectToPort(Core::System& system, Handle* out_handle, Handle port) {
 Result ManageNamedPort(Core::System& system, Handle* out_server_handle, uint64_t user_name,
                        int32_t max_sessions) {
     // Copy the provided name from user memory to kernel memory.
-    auto string_name = system.Memory().ReadCString(user_name, KObjectName::NameLengthMax);
+    auto string_name =
+        GetCurrentMemory(system.Kernel()).ReadCString(user_name, KObjectName::NameLengthMax);
 
     // Copy the provided name from user memory to kernel memory.
     std::array<char, KObjectName::NameLengthMax> name{};

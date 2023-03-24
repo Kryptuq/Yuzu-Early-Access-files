@@ -34,6 +34,9 @@ class Fiber;
 }
 
 namespace Core {
+namespace Memory {
+class Memory;
+}
 class ARM_Interface;
 class System;
 } // namespace Core
@@ -113,6 +116,7 @@ KThread& GetCurrentThread(KernelCore& kernel);
 KProcess* GetCurrentProcessPointer(KernelCore& kernel);
 KProcess& GetCurrentProcess(KernelCore& kernel);
 s32 GetCurrentCoreId(KernelCore& kernel);
+Core::Memory::Memory& GetCurrentMemory(KernelCore& kernel);
 
 class KThread final : public KAutoObjectWithSlabHeapAndContainer<KThread, KWorkerTask>,
                       public boost::intrusive::list_base_hook<>,

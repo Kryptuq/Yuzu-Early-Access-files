@@ -28,8 +28,8 @@ using namespace Common::Literals;
 class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
 public:
     explicit DynarmicCallbacks32(ARM_Dynarmic_32& parent_)
-        : parent{parent_},
-          memory(parent.system.Memory()), debugger_enabled{parent.system.DebuggerEnabled()},
+        : parent{parent_}, memory(parent.system.ApplicationMemory()),
+          debugger_enabled{parent.system.DebuggerEnabled()},
           check_memory_access{debugger_enabled ||
                               !Settings::values.cpuopt_ignore_memory_aborts.GetValue()} {}
 
@@ -468,7 +468,7 @@ void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
 std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_32::GetBacktrace(Core::System& system,
                                                                          u64 fp, u64 lr, u64 pc) {
     std::vector<BacktraceEntry> out;
-    auto& memory = system.Memory();
+    auto& memory = system.ApplicationMemory();
 
     out.push_back({"", 0, pc, 0, ""});
 

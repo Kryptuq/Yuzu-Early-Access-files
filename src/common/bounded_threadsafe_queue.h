@@ -143,7 +143,7 @@ private:
         ++m_read_index;
 
         // Notify the producer that we have popped off the queue.
-        std::unique_lock lock{producer_cv_mutex};
+        std::scoped_lock lock{producer_cv_mutex};
         producer_cv.notify_one();
 
         return true;

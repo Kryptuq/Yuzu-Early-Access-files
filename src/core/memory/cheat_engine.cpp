@@ -39,11 +39,11 @@ StandardVmCallbacks::StandardVmCallbacks(System& system_, const CheatProcessMeta
 StandardVmCallbacks::~StandardVmCallbacks() = default;
 
 void StandardVmCallbacks::MemoryRead(VAddr address, void* data, u64 size) {
-    system.Memory().ReadBlock(SanitizeAddress(address), data, size);
+    system.ApplicationMemory().ReadBlock(SanitizeAddress(address), data, size);
 }
 
 void StandardVmCallbacks::MemoryWrite(VAddr address, const void* data, u64 size) {
-    system.Memory().WriteBlock(SanitizeAddress(address), data, size);
+    system.ApplicationMemory().WriteBlock(SanitizeAddress(address), data, size);
 }
 
 u64 StandardVmCallbacks::HidKeysDown() {

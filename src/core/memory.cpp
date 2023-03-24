@@ -832,11 +832,6 @@ std::string Memory::ReadCString(Common::ProcessAddress vaddr, std::size_t max_le
     return impl->ReadCString(vaddr, max_length);
 }
 
-void Memory::ReadBlock(const Kernel::KProcess& process, const Common::ProcessAddress src_addr,
-                       void* dest_buffer, const std::size_t size) {
-    impl->ReadBlockImpl<false>(process, src_addr, dest_buffer, size);
-}
-
 void Memory::ReadBlock(const Common::ProcessAddress src_addr, void* dest_buffer,
                        const std::size_t size) {
     impl->ReadBlock(src_addr, dest_buffer, size);
@@ -845,11 +840,6 @@ void Memory::ReadBlock(const Common::ProcessAddress src_addr, void* dest_buffer,
 void Memory::ReadBlockUnsafe(const Common::ProcessAddress src_addr, void* dest_buffer,
                              const std::size_t size) {
     impl->ReadBlockUnsafe(src_addr, dest_buffer, size);
-}
-
-void Memory::WriteBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                        const void* src_buffer, std::size_t size) {
-    impl->WriteBlockImpl<false>(process, dest_addr, src_buffer, size);
 }
 
 void Memory::WriteBlock(const Common::ProcessAddress dest_addr, const void* src_buffer,
@@ -862,29 +852,25 @@ void Memory::WriteBlockUnsafe(const Common::ProcessAddress dest_addr, const void
     impl->WriteBlockUnsafe(dest_addr, src_buffer, size);
 }
 
-void Memory::CopyBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                       Common::ProcessAddress src_addr, const std::size_t size) {
-    impl->CopyBlock(process, dest_addr, src_addr, size);
-}
-
-void Memory::ZeroBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
+void Memory::CopyBlock(Common::ProcessAddress dest_addr, Common::ProcessAddress src_addr,
                        const std::size_t size) {
-    impl->ZeroBlock(process, dest_addr, size);
+    impl->CopyBlock(*system.ApplicationProcess(), dest_addr, src_addr, size);
 }
 
-Result Memory::InvalidateDataCache(const Kernel::KProcess& process,
-                                   Common::ProcessAddress dest_addr, const std::size_t size) {
-    return impl->InvalidateDataCache(process, dest_addr, size);
+void Memory::ZeroBlock(Common::ProcessAddress dest_addr, const std::size_t size) {
+    impl->ZeroBlock(*system.ApplicationProcess(), dest_addr, size);
 }
 
-Result Memory::StoreDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                              const std::size_t size) {
-    return impl->StoreDataCache(process, dest_addr, size);
+Result Memory::InvalidateDataCache(Common::ProcessAddress dest_addr, const std::size_t size) {
+    return impl->InvalidateDataCache(*system.ApplicationProcess(), dest_addr, size);
 }
 
-Result Memory::FlushDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                              const std::size_t size) {
-    return impl->FlushDataCache(process, dest_addr, size);
+Result Memory::StoreDataCache(Common::ProcessAddress dest_addr, const std::size_t size) {
+    return impl->StoreDataCache(*system.ApplicationProcess(), dest_addr, size);
+}
+
+Result Memory::FlushDataCache(Common::ProcessAddress dest_addr, const std::size_t size) {
+    return impl->FlushDataCache(*system.ApplicationProcess(), dest_addr, size);
 }
 
 void Memory::RasterizerMarkRegionCached(Common::ProcessAddress vaddr, u64 size, bool cached) {

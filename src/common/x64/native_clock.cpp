@@ -27,16 +27,13 @@ __forceinline static u64 FencedRDTSC() {
 }
 #else
 static u64 FencedRDTSC() {
-    u64 result;
+    u64 eax;
+    u64 edx;
     asm volatile("lfence\n\t"
                  "rdtsc\n\t"
-                 "shl $32, %%rdx\n\t"
-                 "or %%rdx, %0\n\t"
-                 "lfence"
-                 : "=a"(result)
-                 :
-                 : "rdx", "memory", "cc");
-    return result;
+                 "lfence\n\t"
+                 : "=a"(eax), "=d"(edx));
+    return (edx << 32) | eax;
 }
 #endif
 

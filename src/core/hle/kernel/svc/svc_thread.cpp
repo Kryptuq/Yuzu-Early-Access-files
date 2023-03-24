@@ -178,7 +178,7 @@ Result GetThreadContext3(Core::System& system, u64 out_context, Handle thread_ha
         R_TRY(thread->GetThreadContext3(context));
 
         // Copy the thread context to user space.
-        system.Memory().WriteBlock(out_context, context.data(), context.size());
+        GetCurrentMemory(kernel).WriteBlock(out_context, context.data(), context.size());
 
         R_SUCCEED();
     }
@@ -242,7 +242,7 @@ Result GetThreadList(Core::System& system, s32* out_num_threads, u64 out_thread_
         R_THROW(ResultInvalidCurrentMemory);
     }
 
-    auto& memory = system.Memory();
+    auto& memory = GetCurrentMemory(system.Kernel());
     const auto& thread_list = current_process->GetThreadList();
     const auto num_threads = thread_list.size();
     const auto copy_amount = std::min(static_cast<std::size_t>(out_thread_ids_size), num_threads);

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <compare>
+#include <type_traits>
 #include <fmt/format.h>
 
 #include "common/common_types.h"
@@ -13,11 +15,12 @@ template <bool Virtual, typename T>
 class TypedAddress {
 public:
     // Constructors.
-    inline TypedAddress() : m_address(0) {}
+    constexpr inline TypedAddress() : m_address(0) {}
     constexpr inline TypedAddress(uint64_t a) : m_address(a) {}
 
     template <typename U>
-    constexpr inline explicit TypedAddress(U* ptr) : m_address(reinterpret_cast<uint64_t>(ptr)) {}
+    constexpr inline explicit TypedAddress(const U* ptr)
+        : m_address(reinterpret_cast<uint64_t>(ptr)) {}
 
     // Copy constructor.
     constexpr inline TypedAddress(const TypedAddress& rhs) = default;
@@ -105,36 +108,16 @@ public:
         return m_address / size;
     }
 
-    constexpr inline bool operator!() const {
-        return m_address == 0;
+    constexpr explicit operator bool() const {
+        return m_address != 0;
     }
 
     // constexpr inline uint64_t operator%(U align) const { return m_address % align; }
 
     // Comparison operators.
-    constexpr inline bool operator==(TypedAddress rhs) const {
-        return m_address == rhs.m_address;
-    }
-
-    constexpr inline bool operator!=(TypedAddress rhs) const {
-        return m_address != rhs.m_address;
-    }
-
-    constexpr inline bool operator<(TypedAddress rhs) const {
-        return m_address < rhs.m_address;
-    }
-
-    constexpr inline bool operator<=(TypedAddress rhs) const {
-        return m_address <= rhs.m_address;
-    }
-
-    constexpr inline bool operator>(TypedAddress rhs) const {
-        return m_address > rhs.m_address;
-    }
-
-    constexpr inline bool operator>=(TypedAddress rhs) const {
-        return m_address >= rhs.m_address;
-    }
+    constexpr bool operator==(const TypedAddress&) const = default;
+    constexpr bool operator!=(const TypedAddress&) const = default;
+    constexpr auto operator<=>(const TypedAddress&) const = default;
 
     // For convenience, also define comparison operators versus uint64_t.
     constexpr inline bool operator==(uint64_t rhs) const {

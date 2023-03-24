@@ -41,12 +41,12 @@ Result ReplyAndReceive(Core::System& system, s32* out_index, uint64_t handles_ad
     auto& handle_table = GetCurrentProcess(kernel).GetHandleTable();
 
     R_UNLESS(0 <= num_handles && num_handles <= ArgumentHandleCountMax, ResultOutOfRange);
-    R_UNLESS(system.Memory().IsValidVirtualAddressRange(
+    R_UNLESS(GetCurrentMemory(kernel).IsValidVirtualAddressRange(
                  handles_addr, static_cast<u64>(sizeof(Handle) * num_handles)),
              ResultInvalidPointer);
 
     std::vector<Handle> handles(num_handles);
-    system.Memory().ReadBlock(handles_addr, handles.data(), sizeof(Handle) * num_handles);
+    GetCurrentMemory(kernel).ReadBlock(handles_addr, handles.data(), sizeof(Handle) * num_handles);
 
     // Convert handle list to object table.
     std::vector<KSynchronizationObject*> objs(num_handles);

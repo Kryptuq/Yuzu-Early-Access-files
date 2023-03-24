@@ -73,7 +73,7 @@ Result GetProcessList(Core::System& system, s32* out_num_processes, u64 out_proc
         R_THROW(ResultInvalidCurrentMemory);
     }
 
-    auto& memory = system.Memory();
+    auto& memory = GetCurrentMemory(kernel);
     const auto& process_list = kernel.GetProcessList();
     const auto num_processes = process_list.size();
     const auto copy_amount =

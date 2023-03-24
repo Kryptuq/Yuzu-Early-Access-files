@@ -159,6 +159,8 @@ if(ARCHITECTURE_x86_64)
         PRIVATE
             x64/cpu_detect.cpp
             x64/cpu_detect.h
+            x64/cpu_wait.cpp
+            x64/cpu_wait.h
             x64/native_clock.cpp
             x64/native_clock.h
             x64/xbyak_abi.h

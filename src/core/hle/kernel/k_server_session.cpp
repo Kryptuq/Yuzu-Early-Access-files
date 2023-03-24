@@ -222,7 +222,7 @@ Result KServerSession::SendReply(bool is_hle) {
             // HLE servers write directly to a pointer to the thread command buffer. Therefore
             // the reply has already been written in this case.
         } else {
-            Core::Memory::Memory& memory{m_kernel.System().Memory()};
+            Core::Memory::Memory& memory{client_thread->GetOwnerProcess()->GetMemory()};
             KThread* server_thread{GetCurrentThreadPointer(m_kernel)};
             UNIMPLEMENTED_IF(server_thread->GetOwnerProcess() != client_thread->GetOwnerProcess());
 
@@ -319,7 +319,7 @@ Result KServerSession::ReceiveRequest(std::shared_ptr<Service::HLERequestContext
     // bool recv_list_broken = false;
 
     // Receive the message.
-    Core::Memory::Memory& memory{m_kernel.System().Memory()};
+    Core::Memory::Memory& memory{client_thread->GetOwnerProcess()->GetMemory()};
     if (out_context != nullptr) {
         // HLE request.
         u32* cmd_buf{reinterpret_cast<u32*>(memory.GetPointer(client_message))};

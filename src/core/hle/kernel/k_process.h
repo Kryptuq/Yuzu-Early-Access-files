@@ -22,8 +22,12 @@
 #include "core/hle/result.h"
 
 namespace Core {
+namespace Memory {
+class Memory;
+};
+
 class System;
-}
+} // namespace Core
 
 namespace FileSys {
 class ProgramMetadata;
@@ -134,6 +138,9 @@ public:
     const KHandleTable& GetHandleTable() const {
         return m_handle_table;
     }
+
+    /// Gets a reference to process's memory.
+    Core::Memory::Memory& GetMemory() const;
 
     Result SignalToAddress(KProcessAddress address) {
         return m_condition_var.SignalToAddress(address);
@@ -397,12 +404,10 @@ public:
     // Debug watchpoint management
 
     // Attempts to insert a watchpoint into a free slot. Returns false if none are available.
-    bool InsertWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
-                          DebugWatchpointType type);
+    bool InsertWatchpoint(KProcessAddress addr, u64 size, DebugWatchpointType type);
 
     // Attempts to remove the watchpoint specified by the given parameters.
-    bool RemoveWatchpoint(Core::System& system, KProcessAddress addr, u64 size,
-                          DebugWatchpointType type);
+    bool RemoveWatchpoint(KProcessAddress addr, u64 size, DebugWatchpointType type);
 
     const std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>& GetWatchpoints() const {
         return m_watchpoints;

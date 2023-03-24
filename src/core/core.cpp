@@ -293,6 +293,7 @@ struct System::Impl {
         ASSERT(Kernel::KProcess::Initialize(main_process, system, "main",
                                             Kernel::KProcess::ProcessType::Userland, resource_limit)
                    .IsSuccess());
+        kernel.MakeApplicationProcess(main_process);
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", load_result);
@@ -302,7 +303,6 @@ struct System::Impl {
                 static_cast<u32>(SystemResultStatus::ErrorLoader) + static_cast<u32>(load_result));
         }
         AddGlueRegistrationForProcess(*app_loader, *main_process);
-        kernel.MakeApplicationProcess(main_process);
         kernel.InitializeCores();
 
         // Initialize cheat engine
@@ -681,11 +681,11 @@ const ExclusiveMonitor& System::Monitor() const {
     return impl->kernel.GetExclusiveMonitor();
 }
 
-Memory::Memory& System::Memory() {
+Memory::Memory& System::ApplicationMemory() {
     return impl->memory;
 }
 
-const Core::Memory::Memory& System::Memory() const {
+const Core::Memory::Memory& System::ApplicationMemory() const {
     return impl->memory;
 }
 

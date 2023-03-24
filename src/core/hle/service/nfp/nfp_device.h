@@ -92,6 +92,7 @@ private:
     Kernel::KEvent* deactivate_event = nullptr;
     Kernel::KEvent* availability_change_event = nullptr;
 
+    bool is_initalized{};
     bool is_data_moddified{};
     bool is_app_area_open{};
     TagProtocol allowed_protocols{};

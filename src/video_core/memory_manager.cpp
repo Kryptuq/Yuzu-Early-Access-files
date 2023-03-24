@@ -22,7 +22,7 @@ std::atomic<size_t> MemoryManager::unique_identifier_generator{};
 
 MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, u64 big_page_bits_,
                              u64 page_bits_)
-    : system{system_}, memory{system.Memory()}, device_memory{system.DeviceMemory()},
+    : system{system_}, memory{system.ApplicationMemory()}, device_memory{system.DeviceMemory()},
       address_space_bits{address_space_bits_}, page_bits{page_bits_}, big_page_bits{big_page_bits_},
       entries{}, big_entries{}, page_table{address_space_bits, address_space_bits + page_bits - 38,
                                            page_bits != big_page_bits ? page_bits : 0},

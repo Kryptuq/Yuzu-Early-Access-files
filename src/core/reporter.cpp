@@ -264,7 +264,7 @@ void Reporter::SaveUnimplementedFunctionReport(Service::HLERequestContext& ctx, 
     const auto title_id = system.GetApplicationProcessProgramID();
     auto out = GetFullDataAuto(timestamp, title_id, system);
 
-    auto function_out = GetHLERequestContextData(ctx, system.Memory());
+    auto function_out = GetHLERequestContextData(ctx, system.ApplicationMemory());
     function_out["command_id"] = command_id;
     function_out["function_name"] = name;
     function_out["service_name"] = service_name;

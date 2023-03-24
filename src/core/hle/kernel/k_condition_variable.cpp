@@ -18,13 +18,13 @@ namespace Kernel {
 
 namespace {
 
-bool ReadFromUser(Core::System& system, u32* out, KProcessAddress address) {
-    *out = system.Memory().Read32(GetInteger(address));
+bool ReadFromUser(KernelCore& kernel, u32* out, KProcessAddress address) {
+    *out = GetCurrentMemory(kernel).Read32(GetInteger(address));
     return true;
 }
 
-bool WriteToUser(Core::System& system, KProcessAddress address, const u32* p) {
-    system.Memory().Write32(GetInteger(address), *p);
+bool WriteToUser(KernelCore& kernel, KProcessAddress address, const u32* p) {
+    GetCurrentMemory(kernel).Write32(GetInteger(address), *p);
     return true;
 }
 
@@ -128,7 +128,7 @@ Result KConditionVariable::SignalToAddress(KProcessAddress addr) {
 
         // Write the value to userspace.
         Result result{ResultSuccess};
-        if (WriteToUser(m_system, addr, std::addressof(next_value))) [[likely]] {
+        if (WriteToUser(m_kernel, addr, std::addressof(next_value))) [[likely]] {
             result = ResultSuccess;
         } else {
             result = ResultInvalidCurrentMemory;
@@ -157,7 +157,7 @@ Result KConditionVariable::WaitForAddress(Handle handle, KProcessAddress addr, u
 
         // Read the tag from userspace.
         u32 test_tag{};
-        R_UNLESS(ReadFromUser(m_system, std::addressof(test_tag), addr),
+        R_UNLESS(ReadFromUser(m_kernel, std::addressof(test_tag), addr),
                  ResultInvalidCurrentMemory);
 
         // If the tag isn't the handle (with wait mask), we're done.
@@ -257,7 +257,7 @@ void KConditionVariable::Signal(u64 cv_key, s32 count) {
         // If we have no waiters, clear the has waiter flag.
         if (it == m_tree.end() || it->GetConditionVariableKey() != cv_key) {
             const u32 has_waiter_flag{};
-            WriteToUser(m_system, cv_key, std::addressof(has_waiter_flag));
+            WriteToUser(m_kernel, cv_key, std::addressof(has_waiter_flag));
         }
     }
 }
@@ -301,12 +301,12 @@ Result KConditionVariable::Wait(KProcessAddress addr, u64 key, u32 value, s64 ti
             // Write to the cv key.
             {
                 const u32 has_waiter_flag = 1;
-                WriteToUser(m_system, key, std::addressof(has_waiter_flag));
+                WriteToUser(m_kernel, key, std::addressof(has_waiter_flag));
                 std::atomic_thread_fence(std::memory_order_seq_cst);
             }
 
             // Write the value to userspace.
-            if (!WriteToUser(m_system, addr, std::addressof(next_value))) {
+            if (!WriteToUser(m_kernel, addr, std::addressof(next_value))) {
                 slp.CancelSleep();
                 R_THROW(ResultInvalidCurrentMemory);
             }

@@ -60,7 +60,8 @@ void Controller_ConsoleSixAxis::OnUpdate(const Core::Timing::CoreTiming& core_ti
 
     // Update seven six axis transfer memory
     seven_sixaxis_lifo.WriteNextEntry(next_seven_sixaxis_state);
-    system.Memory().WriteBlock(transfer_memory, &seven_sixaxis_lifo, sizeof(seven_sixaxis_lifo));
+    system.ApplicationMemory().WriteBlock(transfer_memory, &seven_sixaxis_lifo,
+                                          sizeof(seven_sixaxis_lifo));
 }
 
 void Controller_ConsoleSixAxis::SetTransferMemoryAddress(Common::ProcessAddress t_mem) {

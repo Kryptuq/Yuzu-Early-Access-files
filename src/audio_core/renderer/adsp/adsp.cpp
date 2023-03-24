@@ -13,7 +13,7 @@
 namespace AudioCore::AudioRenderer::ADSP {
 
 ADSP::ADSP(Core::System& system_, Sink::Sink& sink_)
-    : system{system_}, memory{system.Memory()}, sink{sink_} {}
+    : system{system_}, memory{system.ApplicationMemory()}, sink{sink_} {}
 
 ADSP::~ADSP() {
     ClearCommandBuffers();

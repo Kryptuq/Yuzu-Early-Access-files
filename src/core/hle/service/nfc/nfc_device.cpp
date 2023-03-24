@@ -42,8 +42,18 @@ NfcDevice::~NfcDevice() {
 };
 
 void NfcDevice::NpadUpdate(Core::HID::ControllerTriggerType type) {
-    if (type == Core::HID::ControllerTriggerType::Connected ||
-        type == Core::HID::ControllerTriggerType::Disconnected) {
+    if (!is_initalized) {
+        return;
+    }
+
+    if (type == Core::HID::ControllerTriggerType::Connected) {
+        Initialize();
+        availability_change_event->Signal();
+        return;
+    }
+
+    if (type == Core::HID::ControllerTriggerType::Disconnected) {
+        device_state = NFP::DeviceState::Unavailable;
         availability_change_event->Signal();
         return;
     }
@@ -113,6 +123,7 @@ void NfcDevice::Initialize() {
     device_state =
         npad_device->HasNfc() ? NFP::DeviceState::Initialized : NFP::DeviceState::Unavailable;
     encrypted_tag_data = {};
+    is_initalized = true;
 }
 
 void NfcDevice::Finalize() {
@@ -121,6 +132,7 @@ void NfcDevice::Finalize() {
         StopDetection();
     }
     device_state = NFP::DeviceState::Unavailable;
+    is_initalized = false;
 }
 
 Result NfcDevice::StartDetection(NFP::TagProtocol allowed_protocol) {

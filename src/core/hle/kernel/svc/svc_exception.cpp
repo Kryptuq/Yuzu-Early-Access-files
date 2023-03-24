@@ -25,7 +25,7 @@ void Break(Core::System& system, BreakReason reason, u64 info1, u64 info2) {
             return;
         }
 
-        auto& memory = system.Memory();
+        auto& memory = GetCurrentMemory(system.Kernel());
 
         // This typically is an error code so we're going to assume this is the case
         if (sz == sizeof(u32)) {

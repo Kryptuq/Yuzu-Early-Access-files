@@ -18,7 +18,7 @@ std::unique_ptr<VideoCore::RendererBase> CreateRenderer(
     Core::System& system, Core::Frontend::EmuWindow& emu_window, Tegra::GPU& gpu,
     std::unique_ptr<Core::Frontend::GraphicsContext> context) {
     auto& telemetry_session = system.TelemetrySession();
-    auto& cpu_memory = system.Memory();
+    auto& cpu_memory = system.ApplicationMemory();
 
     switch (Settings::values.renderer_backend.GetValue()) {
     case Settings::RendererBackend::OpenGL:

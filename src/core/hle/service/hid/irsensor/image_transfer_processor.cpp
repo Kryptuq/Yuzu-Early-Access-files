@@ -58,16 +58,16 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
     if (camera_data.format != current_config.origin_format) {
         LOG_WARNING(Service_IRS, "Wrong Input format {} expected {}", camera_data.format,
                     current_config.origin_format);
-        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
-                                  GetDataSize(current_config.trimming_format));
+        system.ApplicationMemory().ZeroBlock(transfer_memory,
+                                             GetDataSize(current_config.trimming_format));
         return;
     }
 
     if (current_config.origin_format > current_config.trimming_format) {
         LOG_WARNING(Service_IRS, "Origin format {} is smaller than trimming format {}",
                     current_config.origin_format, current_config.trimming_format);
-        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
-                                  GetDataSize(current_config.trimming_format));
+        system.ApplicationMemory().ZeroBlock(transfer_memory,
+                                             GetDataSize(current_config.trimming_format));
         return;
     }
 
@@ -84,8 +84,8 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
                     "Trimming area ({}, {}, {}, {}) is outside of origin area ({}, {})",
                     current_config.trimming_start_x, current_config.trimming_start_y,
                     trimming_width, trimming_height, origin_width, origin_height);
-        system.Memory().ZeroBlock(*system.ApplicationProcess(), transfer_memory,
-                                  GetDataSize(current_config.trimming_format));
+        system.ApplicationMemory().ZeroBlock(transfer_memory,
+                                             GetDataSize(current_config.trimming_format));
         return;
     }
 
@@ -99,8 +99,8 @@ void ImageTransferProcessor::OnControllerUpdate(Core::HID::ControllerTriggerType
         }
     }
 
-    system.Memory().WriteBlock(transfer_memory, window_data.data(),
-                               GetDataSize(current_config.trimming_format));
+    system.ApplicationMemory().WriteBlock(transfer_memory, window_data.data(),
+                                          GetDataSize(current_config.trimming_format));
 
     if (!IsProcessorActive()) {
         StartProcessor();
@@ -148,7 +148,7 @@ Core::IrSensor::ImageTransferProcessorState ImageTransferProcessor::GetState(
     std::vector<u8>& data) const {
     const auto size = GetDataSize(current_config.trimming_format);
     data.resize(size);
-    system.Memory().ReadBlock(transfer_memory, data.data(), size);
+    system.ApplicationMemory().ReadBlock(transfer_memory, data.data(), size);
     return processor_state;
 }
 

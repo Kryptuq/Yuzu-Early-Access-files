@@ -1265,7 +1265,8 @@ void ILibraryAppletCreator::CreateTransferMemoryStorage(HLERequestContext& ctx) 
     }
 
     std::vector<u8> memory(transfer_mem->GetSize());
-    system.Memory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(), memory.size());
+    system.ApplicationMemory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(),
+                                         memory.size());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
@@ -1298,7 +1299,8 @@ void ILibraryAppletCreator::CreateHandleStorage(HLERequestContext& ctx) {
     }
 
     std::vector<u8> memory(transfer_mem->GetSize());
-    system.Memory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(), memory.size());
+    system.ApplicationMemory().ReadBlock(transfer_mem->GetSourceAddress(), memory.data(),
+                                         memory.size());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);

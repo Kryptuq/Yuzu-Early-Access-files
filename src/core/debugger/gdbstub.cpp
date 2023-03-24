@@ -261,9 +261,9 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
         const size_t addr{static_cast<size_t>(strtoll(command.data(), nullptr, 16))};
         const size_t size{static_cast<size_t>(strtoll(command.data() + sep, nullptr, 16))};
 
-        if (system.Memory().IsValidVirtualAddressRange(addr, size)) {
+        if (system.ApplicationMemory().IsValidVirtualAddressRange(addr, size)) {
             std::vector<u8> mem(size);
-            system.Memory().ReadBlock(addr, mem.data(), size);
+            system.ApplicationMemory().ReadBlock(addr, mem.data(), size);
 
             SendReply(Common::HexToString(mem));
         } else {
@@ -281,8 +281,8 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
         const auto mem_substr{std::string_view(command).substr(mem_sep)};
         const auto mem{Common::HexStringToVector(mem_substr, false)};
 
-        if (system.Memory().IsValidVirtualAddressRange(addr, size)) {
-            system.Memory().WriteBlock(addr, mem.data(), size);
+        if (system.ApplicationMemory().IsValidVirtualAddressRange(addr, size)) {
+            system.ApplicationMemory().WriteBlock(addr, mem.data(), size);
             system.InvalidateCpuInstructionCacheRange(addr, size);
             SendReply(GDB_STUB_REPLY_OK);
         } else {
@@ -325,7 +325,7 @@ void GDBStub::HandleBreakpointInsert(std::string_view command) {
     const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
     const size_t size{static_cast<size_t>(strtoll(command.data() + size_sep, nullptr, 16))};
 
-    if (!system.Memory().IsValidVirtualAddressRange(addr, size)) {
+    if (!system.ApplicationMemory().IsValidVirtualAddressRange(addr, size)) {
         SendReply(GDB_STUB_REPLY_ERR);
         return;
     }
@@ -334,22 +334,22 @@ void GDBStub::HandleBreakpointInsert(std::string_view command) {
 
     switch (type) {
     case BreakpointType::Software:
-        replaced_instructions[addr] = system.Memory().Read32(addr);
-        system.Memory().Write32(addr, arch->BreakpointInstruction());
+        replaced_instructions[addr] = system.ApplicationMemory().Read32(addr);
+        system.ApplicationMemory().Write32(addr, arch->BreakpointInstruction());
         system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
         success = true;
         break;
     case BreakpointType::WriteWatch:
-        success = system.ApplicationProcess()->InsertWatchpoint(system, addr, size,
+        success = system.ApplicationProcess()->InsertWatchpoint(addr, size,
                                                                 Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = system.ApplicationProcess()->InsertWatchpoint(system, addr, size,
+        success = system.ApplicationProcess()->InsertWatchpoint(addr, size,
                                                                 Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
         success = system.ApplicationProcess()->InsertWatchpoint(
-            system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+            addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
     default:
@@ -372,7 +372,7 @@ void GDBStub::HandleBreakpointRemove(std::string_view command) {
     const size_t addr{static_cast<size_t>(strtoll(command.data() + addr_sep, nullptr, 16))};
     const size_t size{static_cast<size_t>(strtoll(command.data() + size_sep, nullptr, 16))};
 
-    if (!system.Memory().IsValidVirtualAddressRange(addr, size)) {
+    if (!system.ApplicationMemory().IsValidVirtualAddressRange(addr, size)) {
         SendReply(GDB_STUB_REPLY_ERR);
         return;
     }
@@ -383,7 +383,7 @@ void GDBStub::HandleBreakpointRemove(std::string_view command) {
     case BreakpointType::Software: {
         const auto orig_insn{replaced_instructions.find(addr)};
         if (orig_insn != replaced_instructions.end()) {
-            system.Memory().Write32(addr, orig_insn->second);
+            system.ApplicationMemory().Write32(addr, orig_insn->second);
             system.InvalidateCpuInstructionCacheRange(addr, sizeof(u32));
             replaced_instructions.erase(addr);
             success = true;
@@ -391,16 +391,16 @@ void GDBStub::HandleBreakpointRemove(std::string_view command) {
         break;
     }
     case BreakpointType::WriteWatch:
-        success = system.ApplicationProcess()->RemoveWatchpoint(system, addr, size,
+        success = system.ApplicationProcess()->RemoveWatchpoint(addr, size,
                                                                 Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = system.ApplicationProcess()->RemoveWatchpoint(system, addr, size,
+        success = system.ApplicationProcess()->RemoveWatchpoint(addr, size,
                                                                 Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
         success = system.ApplicationProcess()->RemoveWatchpoint(
-            system, addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+            addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
     default:
@@ -483,9 +483,9 @@ static std::optional<std::string> GetNameFromThreadType64(Core::Memory::Memory& 
 static std::optional<std::string> GetThreadName(Core::System& system,
                                                 const Kernel::KThread* thread) {
     if (system.ApplicationProcess()->Is64BitProcess()) {
-        return GetNameFromThreadType64(system.Memory(), thread);
+        return GetNameFromThreadType64(system.ApplicationMemory(), thread);
     } else {
-        return GetNameFromThreadType32(system.Memory(), thread);
+        return GetNameFromThreadType32(system.ApplicationMemory(), thread);
     }
 }
 

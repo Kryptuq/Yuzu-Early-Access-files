@@ -105,8 +105,8 @@ NvResult nvhost_nvdec_common::Submit(DeviceFD fd, std::span<const u8> input,
         const auto object = nvmap.GetHandle(cmd_buffer.memory_id);
         ASSERT_OR_EXECUTE(object, return NvResult::InvalidState;);
         Tegra::ChCommandHeaderList cmdlist(cmd_buffer.word_count);
-        system.Memory().ReadBlock(object->address + cmd_buffer.offset, cmdlist.data(),
-                                  cmdlist.size() * sizeof(u32));
+        system.ApplicationMemory().ReadBlock(object->address + cmd_buffer.offset, cmdlist.data(),
+                                             cmdlist.size() * sizeof(u32));
         gpu.PushCommandBuffer(core.Host1xDeviceFile().fd_to_id[fd], cmdlist);
     }
     std::memcpy(output.data(), &params, sizeof(IoctlSubmit));

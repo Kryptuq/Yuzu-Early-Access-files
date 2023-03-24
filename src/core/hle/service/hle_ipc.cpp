@@ -303,8 +303,7 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer(Kernel::KThread& requesti
     }
 
     // Copy the translated command buffer back into the thread's command buffer area.
-    memory.WriteBlock(owner_process, requesting_thread.GetTlsAddress(), cmd_buf.data(),
-                      write_size * sizeof(u32));
+    memory.WriteBlock(requesting_thread.GetTlsAddress(), cmd_buf.data(), write_size * sizeof(u32));
 
     return ResultSuccess;
 }

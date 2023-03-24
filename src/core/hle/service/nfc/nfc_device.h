@@ -67,6 +67,7 @@ private:
     Kernel::KEvent* deactivate_event = nullptr;
     Kernel::KEvent* availability_change_event = nullptr;
 
+    bool is_initalized{};
     NFP::TagProtocol allowed_protocols{};
     NFP::DeviceState device_state{NFP::DeviceState::Unavailable};
 

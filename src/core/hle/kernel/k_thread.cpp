@@ -546,7 +546,7 @@ u16 KThread::GetUserDisableCount() const {
         return {};
     }
 
-    auto& memory = m_kernel.System().Memory();
+    auto& memory = this->GetOwnerProcess()->GetMemory();
     return memory.Read16(m_tls_address + offsetof(ThreadLocalRegion, disable_count));
 }
 
@@ -556,7 +556,7 @@ void KThread::SetInterruptFlag() {
         return;
     }
 
-    auto& memory = m_kernel.System().Memory();
+    auto& memory = this->GetOwnerProcess()->GetMemory();
     memory.Write16(m_tls_address + offsetof(ThreadLocalRegion, interrupt_flag), 1);
 }
 
@@ -566,7 +566,7 @@ void KThread::ClearInterruptFlag() {
         return;
     }
 
-    auto& memory = m_kernel.System().Memory();
+    auto& memory = this->GetOwnerProcess()->GetMemory();
     memory.Write16(m_tls_address + offsetof(ThreadLocalRegion, interrupt_flag), 0);
 }
 
@@ -1420,6 +1420,11 @@ KProcess& GetCurrentProcess(KernelCore& kernel) {
 
 s32 GetCurrentCoreId(KernelCore& kernel) {
     return GetCurrentThread(kernel).GetCurrentCore();
+}
+
+Core::Memory::Memory& GetCurrentMemory(KernelCore& kernel) {
+    // TODO: per-process memory
+    return kernel.System().ApplicationMemory();
 }
 
 KScopedDisableDispatch::~KScopedDisableDispatch() {

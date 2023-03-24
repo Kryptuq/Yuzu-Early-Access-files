@@ -24,8 +24,8 @@ class IJitEnvironment final : public ServiceFramework<IJitEnvironment> {
 public:
     explicit IJitEnvironment(Core::System& system_, Kernel::KProcess& process_, CodeRange user_rx,
                              CodeRange user_ro)
-        : ServiceFramework{system_, "IJitEnvironment"}, process{&process_}, context{
-                                                                                system_.Memory()} {
+        : ServiceFramework{system_, "IJitEnvironment"}, process{&process_},
+          context{system_.ApplicationMemory()} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IJitEnvironment::GenerateCode, "GenerateCode"},

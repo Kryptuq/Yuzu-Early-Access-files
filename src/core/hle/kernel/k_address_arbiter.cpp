@@ -21,8 +21,8 @@ KAddressArbiter::~KAddressArbiter() = default;
 
 namespace {
 
-bool ReadFromUser(Core::System& system, s32* out, KProcessAddress address) {
-    *out = system.Memory().Read32(GetInteger(address));
+bool ReadFromUser(KernelCore& kernel, s32* out, KProcessAddress address) {
+    *out = GetCurrentMemory(kernel).Read32(GetInteger(address));
     return true;
 }
 
@@ -209,7 +209,7 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(uint64_t addr, s32 
         if (value != new_value) {
             succeeded = UpdateIfEqual(m_system, std::addressof(user_value), addr, value, new_value);
         } else {
-            succeeded = ReadFromUser(m_system, std::addressof(user_value), addr);
+            succeeded = ReadFromUser(m_kernel, std::addressof(user_value), addr);
         }
 
         R_UNLESS(succeeded, ResultInvalidCurrentMemory);
@@ -252,7 +252,7 @@ Result KAddressArbiter::WaitIfLessThan(uint64_t addr, s32 value, bool decrement,
         if (decrement) {
             succeeded = DecrementIfLessThan(m_system, std::addressof(user_value), addr, value);
         } else {
-            succeeded = ReadFromUser(m_system, std::addressof(user_value), addr);
+            succeeded = ReadFromUser(m_kernel, std::addressof(user_value), addr);
         }
 
         if (!succeeded) {
@@ -303,7 +303,7 @@ Result KAddressArbiter::WaitIfEqual(uint64_t addr, s32 value, s64 timeout) {
 
         // Read the value from userspace.
         s32 user_value{};
-        if (!ReadFromUser(m_system, std::addressof(user_value), addr)) {
+        if (!ReadFromUser(m_kernel, std::addressof(user_value), addr)) {
             slp.CancelSleep();
             R_THROW(ResultInvalidCurrentMemory);
         }

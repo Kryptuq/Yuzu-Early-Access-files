@@ -144,6 +144,7 @@ static CPUCaps Detect() {
             caps.bmi2 = Common::Bit<8>(cpu_id[1]);
             caps.sha = Common::Bit<29>(cpu_id[1]);
 
+            caps.waitpkg = Common::Bit<5>(cpu_id[2]);
             caps.gfni = Common::Bit<8>(cpu_id[2]);
 
             __cpuidex(cpu_id, 0x00000007, 0x00000001);

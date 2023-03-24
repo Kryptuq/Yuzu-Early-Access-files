@@ -102,7 +102,7 @@ struct KernelCore::Impl {
     void InitializeCores() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
             cores[core_id]->Initialize((*application_process).Is64BitProcess());
-            system.Memory().SetCurrentPageTable(*application_process, core_id);
+            system.ApplicationMemory().SetCurrentPageTable(*application_process, core_id);
         }
     }
 
@@ -206,7 +206,7 @@ struct KernelCore::Impl {
 
     void InitializePhysicalCores() {
         exclusive_monitor =
-            Core::MakeExclusiveMonitor(system.Memory(), Core::Hardware::NUM_CPU_CORES);
+            Core::MakeExclusiveMonitor(system.ApplicationMemory(), Core::Hardware::NUM_CPU_CORES);
         for (u32 i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
             const s32 core{static_cast<s32>(i)};
 

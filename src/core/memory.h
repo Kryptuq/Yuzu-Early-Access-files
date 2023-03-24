@@ -305,26 +305,6 @@ public:
     std::string ReadCString(Common::ProcessAddress vaddr, std::size_t max_length);
 
     /**
-     * Reads a contiguous block of bytes from a specified process' address space.
-     *
-     * @param process     The process to read the data from.
-     * @param src_addr    The virtual address to begin reading from.
-     * @param dest_buffer The buffer to place the read bytes into.
-     * @param size        The amount of data to read, in bytes.
-     *
-     * @note If a size of 0 is specified, then this function reads nothing and
-     *       no attempts to access memory are made at all.
-     *
-     * @pre dest_buffer must be at least size bytes in length, otherwise a
-     *      buffer overrun will occur.
-     *
-     * @post The range [dest_buffer, size) contains the read bytes from the
-     *       process' address space.
-     */
-    void ReadBlock(const Kernel::KProcess& process, Common::ProcessAddress src_addr,
-                   void* dest_buffer, std::size_t size);
-
-    /**
      * Reads a contiguous block of bytes from the current process' address space.
      *
      * @param src_addr    The virtual address to begin reading from.
@@ -360,29 +340,6 @@ public:
      *       current process' address space.
      */
     void ReadBlockUnsafe(Common::ProcessAddress src_addr, void* dest_buffer, std::size_t size);
-
-    /**
-     * Writes a range of bytes into a given process' address space at the specified
-     * virtual address.
-     *
-     * @param process    The process to write data into the address space of.
-     * @param dest_addr  The destination virtual address to begin writing the data at.
-     * @param src_buffer The data to write into the process' address space.
-     * @param size       The size of the data to write, in bytes.
-     *
-     * @post The address range [dest_addr, size) in the process' address space
-     *       contains the data that was within src_buffer.
-     *
-     * @post If an attempt is made to write into an unmapped region of memory, the writes
-     *       will be ignored and an error will be logged.
-     *
-     * @post If a write is performed into a region of memory that is considered cached
-     *       rasterizer memory, will cause the currently active rasterizer to be notified
-     *       and will mark that region as invalidated to caches that the active
-     *       graphics backend may be maintaining over the course of execution.
-     */
-    void WriteBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                    const void* src_buffer, std::size_t size);
 
     /**
      * Writes a range of bytes into the current process' address space at the specified
@@ -428,7 +385,6 @@ public:
      * Copies data within a process' address space to another location within the
      * same address space.
      *
-     * @param process   The process that will have data copied within its address space.
      * @param dest_addr The destination virtual address to begin copying the data into.
      * @param src_addr  The source virtual address to begin copying the data from.
      * @param size      The size of the data to copy, in bytes.
@@ -436,58 +392,50 @@ public:
      * @post The range [dest_addr, size) within the process' address space contains the
      *       same data within the range [src_addr, size).
      */
-    void CopyBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                   Common::ProcessAddress src_addr, std::size_t size);
+    void CopyBlock(Common::ProcessAddress dest_addr, Common::ProcessAddress src_addr,
+                   std::size_t size);
 
     /**
      * Zeros a range of bytes within the current process' address space at the specified
      * virtual address.
      *
-     * @param process   The process that will have data zeroed within its address space.
      * @param dest_addr The destination virtual address to zero the data from.
      * @param size      The size of the range to zero out, in bytes.
      *
      * @post The range [dest_addr, size) within the process' address space contains the
      *       value 0.
      */
-    void ZeroBlock(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                   std::size_t size);
+    void ZeroBlock(Common::ProcessAddress dest_addr, std::size_t size);
 
     /**
      * Invalidates a range of bytes within the current process' address space at the specified
      * virtual address.
      *
-     * @param process   The process that will have data invalidated within its address space.
      * @param dest_addr The destination virtual address to invalidate the data from.
      * @param size      The size of the range to invalidate, in bytes.
      *
      */
-    Result InvalidateDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                               std::size_t size);
+    Result InvalidateDataCache(Common::ProcessAddress dest_addr, std::size_t size);
 
     /**
      * Stores a range of bytes within the current process' address space at the specified
      * virtual address.
      *
-     * @param process   The process that will have data stored within its address space.
      * @param dest_addr The destination virtual address to store the data from.
      * @param size      The size of the range to store, in bytes.
      *
      */
-    Result StoreDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                          std::size_t size);
+    Result StoreDataCache(Common::ProcessAddress dest_addr, std::size_t size);
 
     /**
      * Flushes a range of bytes within the current process' address space at the specified
      * virtual address.
      *
-     * @param process   The process that will have data flushed within its address space.
      * @param dest_addr The destination virtual address to flush the data from.
      * @param size      The size of the range to flush, in bytes.
      *
      */
-    Result FlushDataCache(const Kernel::KProcess& process, Common::ProcessAddress dest_addr,
-                          std::size_t size);
+    Result FlushDataCache(Common::ProcessAddress dest_addr, std::size_t size);
 
     /**
      * Marks each page within the specified address range as cached or uncached.

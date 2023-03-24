@@ -93,7 +93,7 @@ void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers) const {
             stream->AppendBuffer(new_buffer, samples);
         } else {
             std::vector<s16> samples(buffer.size / sizeof(s16));
-            system.Memory().ReadBlockUnsafe(buffer.samples, samples.data(), buffer.size);
+            system.ApplicationMemory().ReadBlockUnsafe(buffer.samples, samples.data(), buffer.size);
             stream->AppendBuffer(new_buffer, samples);
         }
     }
@@ -102,7 +102,7 @@ void DeviceSession::AppendBuffers(std::span<const AudioBuffer> buffers) const {
 void DeviceSession::ReleaseBuffer(const AudioBuffer& buffer) const {
     if (type == Sink::StreamType::In) {
         auto samples{stream->ReleaseBuffer(buffer.size / sizeof(s16))};
-        system.Memory().WriteBlockUnsafe(buffer.samples, samples.data(), buffer.size);
+        system.ApplicationMemory().WriteBlockUnsafe(buffer.samples, samples.data(), buffer.size);
     }
 }
 
