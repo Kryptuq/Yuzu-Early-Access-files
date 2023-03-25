@@ -1616,37 +1616,38 @@ void TextureCache<P>::ForEachImageInRegionGPU(size_t as_id, GPUVAddr gpu_addr, s
         return;
     }
     auto& gpu_page_table = gpu_page_table_storage[*storage_id];
-    ForEachGPUPage(gpu_addr, size, [this, gpu_page_table, &images, gpu_addr, size, func](u64 page) {
-        const auto it = gpu_page_table.find(page);
-        if (it == gpu_page_table.end()) {
-            if constexpr (BOOL_BREAK) {
-                return false;
-            } else {
-                return;
-            }
-        }
-        for (const ImageId image_id : it->second) {
-            Image& image = slot_images[image_id];
-            if (True(image.flags & ImageFlagBits::Picked)) {
-                continue;
-            }
-            if (!image.OverlapsGPU(gpu_addr, size)) {
-                continue;
-            }
-            image.flags |= ImageFlagBits::Picked;
-            images.push_back(image_id);
-            if constexpr (BOOL_BREAK) {
-                if (func(image_id, image)) {
-                    return true;
-                }
-            } else {
-                func(image_id, image);
-            }
-        }
-        if constexpr (BOOL_BREAK) {
-            return false;
-        }
-    });
+    ForEachGPUPage(gpu_addr, size,
+                   [this, &gpu_page_table, &images, gpu_addr, size, func](u64 page) {
+                       const auto it = gpu_page_table.find(page);
+                       if (it == gpu_page_table.end()) {
+                           if constexpr (BOOL_BREAK) {
+                               return false;
+                           } else {
+                               return;
+                           }
+                       }
+                       for (const ImageId image_id : it->second) {
+                           Image& image = slot_images[image_id];
+                           if (True(image.flags & ImageFlagBits::Picked)) {
+                               continue;
+                           }
+                           if (!image.OverlapsGPU(gpu_addr, size)) {
+                               continue;
+                           }
+                           image.flags |= ImageFlagBits::Picked;
+                           images.push_back(image_id);
+                           if constexpr (BOOL_BREAK) {
+                               if (func(image_id, image)) {
+                                   return true;
+                               }
+                           } else {
+                               func(image_id, image);
+                           }
+                       }
+                       if constexpr (BOOL_BREAK) {
+                           return false;
+                       }
+                   });
     for (const ImageId image_id : images) {
         slot_images[image_id].flags &= ~ImageFlagBits::Picked;
     }

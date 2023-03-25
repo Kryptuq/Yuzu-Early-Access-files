@@ -49,7 +49,10 @@ static void TPAUSE() {
     // At 2 GHz, 100K cycles is 50us
     // At 4 GHz, 100K cycles is 25us
     static constexpr auto PauseCycles = 100'000;
-    asm volatile("tpause %%ecx" : : "c"(0), "d"((FencedRDTSC() + PauseCycles) >> 32));
+    const auto tsc = FencedRDTSC() + PauseCycles;
+    const auto eax = static_cast<u32>(tsc & 0xFFFFFFFF);
+    const auto edx = static_cast<u32>(tsc >> 32);
+    asm volatile("tpause %0" : : "r"(0), "d"(edx), "a"(eax));
 }
 #endif
 
