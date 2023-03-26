@@ -6,7 +6,7 @@
 #include <optional>
 #include <span>
 
-#include <boost/container_hash/hash.hpp>
+#include "common/container_hash.h"
 
 #include <fstream>
 #include "common/assert.h"
@@ -89,7 +89,7 @@ void MacroEngine::Execute(u32 method, const std::vector<u32>& parameters) {
 
         if (!mid_method.has_value()) {
             cache_info.lle_program = Compile(macro_code->second);
-            cache_info.hash = boost::hash_value(macro_code->second);
+            cache_info.hash = Common::HashValue(macro_code->second);
             if (Settings::values.dump_macros) {
                 Dump(cache_info.hash, macro_code->second);
             }
@@ -100,7 +100,7 @@ void MacroEngine::Execute(u32 method, const std::vector<u32>& parameters) {
             code.resize(macro_cached.size() - rebased_method);
             std::memcpy(code.data(), macro_cached.data() + rebased_method,
                         code.size() * sizeof(u32));
-            cache_info.hash = boost::hash_value(code);
+            cache_info.hash = Common::HashValue(code);
             cache_info.lle_program = Compile(code);
             if (Settings::values.dump_macros) {
                 Dump(cache_info.hash, code);

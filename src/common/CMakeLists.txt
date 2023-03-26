@@ -38,6 +38,7 @@ add_library(common STATIC
     common_precompiled_headers.h
     common_types.h
     concepts.h
+    container_hash.h
     demangle.cpp
     demangle.h
     div_ceil.h
