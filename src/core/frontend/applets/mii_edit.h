@@ -5,9 +5,11 @@
 
 #include <functional>
 
+#include "core/frontend/applets/applet.h"
+
 namespace Core::Frontend {
 
-class MiiEditApplet {
+class MiiEditApplet : public Applet {
 public:
     using MiiEditCallback = std::function<void()>;
 
@@ -18,6 +20,7 @@ public:
 
 class DefaultMiiEditApplet final : public MiiEditApplet {
 public:
+    void Close() const override;
     void ShowMiiEdit(const MiiEditCallback& callback) const override;
 };
 

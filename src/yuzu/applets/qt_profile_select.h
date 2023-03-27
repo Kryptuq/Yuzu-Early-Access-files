@@ -65,10 +65,12 @@ public:
     explicit QtProfileSelector(GMainWindow& parent);
     ~QtProfileSelector() override;
 
+    void Close() const override;
     void SelectProfile(SelectProfileCallback callback_) const override;
 
 signals:
     void MainWindowSelectProfile() const;
+    void MainWindowRequestExit() const;
 
 private:
     void MainWindowFinishedSelection(std::optional<Common::UUID> uuid);

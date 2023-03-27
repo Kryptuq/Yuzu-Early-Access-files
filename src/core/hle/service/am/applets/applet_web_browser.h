@@ -35,6 +35,7 @@ public:
     Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
+    Result RequestExit() override;
 
     void ExtractOfflineRomFS();
 

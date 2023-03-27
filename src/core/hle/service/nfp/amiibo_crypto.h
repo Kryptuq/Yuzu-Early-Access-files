@@ -60,6 +60,9 @@ static_assert(sizeof(DerivedKeys) == 0x30, "DerivedKeys is an invalid size");
 /// Validates that the amiibo file is not corrupted
 bool IsAmiiboValid(const EncryptedNTAG215File& ntag_file);
 
+/// Validates that the amiibo file is not corrupted
+bool IsAmiiboValid(const NTAG215File& ntag_file);
+
 /// Converts from encrypted file format to encoded file format
 NTAG215File NfcDataToEncodedData(const EncryptedNTAG215File& nfc_data);
 

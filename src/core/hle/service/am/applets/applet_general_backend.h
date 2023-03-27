@@ -28,6 +28,7 @@ public:
     Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
+    Result RequestExit() override;
 
     void AuthFinished(bool is_successful = true);
 
@@ -59,6 +60,7 @@ public:
     Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
+    Result RequestExit() override;
 
     void ViewFinished();
 
@@ -80,6 +82,7 @@ public:
     Result GetStatus() const override;
     void ExecuteInteractive() override;
     void Execute() override;
+    Result RequestExit() override;
 
 private:
     AppletId id;

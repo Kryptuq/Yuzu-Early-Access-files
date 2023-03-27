@@ -7,9 +7,11 @@
 #include <optional>
 #include "common/uuid.h"
 
+#include "core/frontend/applets/applet.h"
+
 namespace Core::Frontend {
 
-class ProfileSelectApplet {
+class ProfileSelectApplet : public Applet {
 public:
     using SelectProfileCallback = std::function<void(std::optional<Common::UUID>)>;
 
@@ -20,6 +22,7 @@ public:
 
 class DefaultProfileSelectApplet final : public ProfileSelectApplet {
 public:
+    void Close() const override;
     void SelectProfile(SelectProfileCallback callback) const override;
 };
 

@@ -7,6 +7,7 @@
 
 #include "common/common_types.h"
 
+#include "core/frontend/applets/applet.h"
 #include "core/hle/service/am/applets/applet_software_keyboard_types.h"
 
 namespace Core::Frontend {
@@ -52,7 +53,7 @@ struct InlineTextParameters {
     s32 cursor_position;
 };
 
-class SoftwareKeyboardApplet {
+class SoftwareKeyboardApplet : public Applet {
 public:
     using SubmitInlineCallback =
         std::function<void(Service::AM::Applets::SwkbdReplyType, std::u16string, s32)>;
@@ -83,6 +84,8 @@ public:
 class DefaultSoftwareKeyboardApplet final : public SoftwareKeyboardApplet {
 public:
     ~DefaultSoftwareKeyboardApplet() override;
+
+    void Close() const override;
 
     void InitializeKeyboard(bool is_inline, KeyboardInitializeParameters initialize_parameters,
                             SubmitNormalCallback submit_normal_callback_,

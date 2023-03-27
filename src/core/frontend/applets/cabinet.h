@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include "core/frontend/applets/applet.h"
 #include "core/hle/service/nfp/nfp_types.h"
 
 namespace Service::NFP {
@@ -20,7 +21,7 @@ struct CabinetParameters {
 
 using CabinetCallback = std::function<void(bool, const std::string&)>;
 
-class CabinetApplet {
+class CabinetApplet : public Applet {
 public:
     virtual ~CabinetApplet();
     virtual void ShowCabinetApplet(const CabinetCallback& callback,
@@ -30,6 +31,7 @@ public:
 
 class DefaultCabinetApplet final : public CabinetApplet {
 public:
+    void Close() const override;
     void ShowCabinetApplet(const CabinetCallback& callback, const CabinetParameters& parameters,
                            std::shared_ptr<Service::NFP::NfpDevice> nfp_device) const override;
 };

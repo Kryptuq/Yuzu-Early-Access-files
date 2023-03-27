@@ -770,6 +770,11 @@ void SoftwareKeyboard::ExitKeyboard() {
     broker.SignalStateChanged();
 }
 
+Result SoftwareKeyboard::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 // Inline Software Keyboard Requests
 
 void SoftwareKeyboard::RequestFinalize(const std::vector<u8>& request_data) {

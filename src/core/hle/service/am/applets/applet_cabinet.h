@@ -89,6 +89,7 @@ public:
     void Execute() override;
     void DisplayCompleted(bool apply_changes, std::string_view amiibo_name);
     void Cancel();
+    Result RequestExit() override;
 
 private:
     const Core::Frontend::CabinetApplet& frontend;

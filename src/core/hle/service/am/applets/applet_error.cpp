@@ -209,4 +209,9 @@ void Error::DisplayCompleted() {
     broker.SignalStateChanged();
 }
 
+Result Error::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 } // namespace Service::AM::Applets

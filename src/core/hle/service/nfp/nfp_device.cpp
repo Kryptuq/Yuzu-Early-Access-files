@@ -121,7 +121,16 @@ bool NfpDevice::LoadAmiibo(std::span<const u8> data) {
 
     // TODO: Filter by allowed_protocols here
 
-    memcpy(&encrypted_tag_data, data.data(), sizeof(EncryptedNTAG215File));
+    memcpy(&tag_data, data.data(), sizeof(EncryptedNTAG215File));
+    is_plain_amiibo = AmiiboCrypto::IsAmiiboValid(tag_data);
+
+    if (is_plain_amiibo) {
+        encrypted_tag_data = AmiiboCrypto::EncodedDataToNfcData(tag_data);
+        LOG_INFO(Service_NFP, "Using plain amiibo");
+    } else {
+        tag_data = {};
+        memcpy(&encrypted_tag_data, data.data(), sizeof(EncryptedNTAG215File));
+    }
 
     device_state = DeviceState::TagFound;
     deactivate_event->GetReadableEvent().Clear();
@@ -232,13 +241,17 @@ Result NfpDevice::Flush() {
 
     tag_data.write_counter++;
 
-    if (!AmiiboCrypto::EncodeAmiibo(tag_data, encrypted_tag_data)) {
-        LOG_ERROR(Service_NFP, "Failed to encode data");
-        return WriteAmiiboFailed;
-    }
+    std::vector<u8> data(sizeof(EncryptedNTAG215File));
+    if (is_plain_amiibo) {
+        memcpy(data.data(), &tag_data, sizeof(tag_data));
+    } else {
+        if (!AmiiboCrypto::EncodeAmiibo(tag_data, encrypted_tag_data)) {
+            LOG_ERROR(Service_NFP, "Failed to encode data");
+            return WriteAmiiboFailed;
+        }
 
-    std::vector<u8> data(sizeof(encrypted_tag_data));
-    memcpy(data.data(), &encrypted_tag_data, sizeof(encrypted_tag_data));
+        memcpy(data.data(), &encrypted_tag_data, sizeof(encrypted_tag_data));
+    }
 
     if (!npad_device->WriteNfc(data)) {
         LOG_ERROR(Service_NFP, "Error writing to file");
@@ -254,6 +267,13 @@ Result NfpDevice::Mount(MountTarget mount_target_) {
     if (device_state != DeviceState::TagFound) {
         LOG_ERROR(Service_NFP, "Wrong device state {}", device_state);
         return WrongDeviceState;
+    }
+
+    // The loaded amiibo is not encrypted
+    if (is_plain_amiibo) {
+        device_state = DeviceState::TagMounted;
+        mount_target = mount_target_;
+        return ResultSuccess;
     }
 
     if (!AmiiboCrypto::IsAmiiboValid(encrypted_tag_data)) {

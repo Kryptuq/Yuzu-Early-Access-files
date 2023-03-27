@@ -10,6 +10,8 @@ ParentalControlsApplet::~ParentalControlsApplet() = default;
 
 DefaultParentalControlsApplet::~DefaultParentalControlsApplet() = default;
 
+void DefaultParentalControlsApplet::Close() const {}
+
 void DefaultParentalControlsApplet::VerifyPIN(std::function<void(bool)> finished,
                                               bool suspend_future_verification_temporarily) {
     LOG_INFO(Service_AM,
@@ -38,6 +40,8 @@ void DefaultParentalControlsApplet::ChangePIN(std::function<void()> finished) {
 PhotoViewerApplet::~PhotoViewerApplet() = default;
 
 DefaultPhotoViewerApplet::~DefaultPhotoViewerApplet() = default;
+
+void DefaultPhotoViewerApplet::Close() const {}
 
 void DefaultPhotoViewerApplet::ShowPhotosForApplication(u64 title_id,
                                                         std::function<void()> finished) const {

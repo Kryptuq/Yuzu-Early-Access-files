@@ -6,11 +6,12 @@
 #include <chrono>
 #include <functional>
 
+#include "core/frontend/applets/applet.h"
 #include "core/hle/result.h"
 
 namespace Core::Frontend {
 
-class ErrorApplet {
+class ErrorApplet : public Applet {
 public:
     using FinishedCallback = std::function<void()>;
 
@@ -28,6 +29,7 @@ public:
 
 class DefaultErrorApplet final : public ErrorApplet {
 public:
+    void Close() const override;
     void ShowError(Result error, FinishedCallback finished) const override;
     void ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
                                 FinishedCallback finished) const override;

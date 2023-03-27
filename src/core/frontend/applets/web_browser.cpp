@@ -10,6 +10,8 @@ WebBrowserApplet::~WebBrowserApplet() = default;
 
 DefaultWebBrowserApplet::~DefaultWebBrowserApplet() = default;
 
+void DefaultWebBrowserApplet::Close() const {}
+
 void DefaultWebBrowserApplet::OpenLocalWebPage(const std::string& local_url,
                                                ExtractROMFSCallback extract_romfs_callback,
                                                OpenWebPageCallback callback) const {

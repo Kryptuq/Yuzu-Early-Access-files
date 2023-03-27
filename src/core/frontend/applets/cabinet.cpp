@@ -10,6 +10,8 @@ namespace Core::Frontend {
 
 CabinetApplet::~CabinetApplet() = default;
 
+void DefaultCabinetApplet::Close() const {}
+
 void DefaultCabinetApplet::ShowCabinetApplet(
     const CabinetCallback& callback, const CabinetParameters& parameters,
     std::shared_ptr<Service::NFP::NfpDevice> nfp_device) const {

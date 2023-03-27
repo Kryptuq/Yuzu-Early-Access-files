@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "core/frontend/applets/applet.h"
 
 namespace Core::HID {
 class HIDCore;
@@ -34,7 +35,7 @@ struct ControllerParameters {
     bool allow_gamecube_controller{};
 };
 
-class ControllerApplet {
+class ControllerApplet : public Applet {
 public:
     using ReconfigureCallback = std::function<void()>;
 
@@ -49,6 +50,7 @@ public:
     explicit DefaultControllerApplet(HID::HIDCore& hid_core_);
     ~DefaultControllerApplet() override;
 
+    void Close() const override;
     void ReconfigureControllers(ReconfigureCallback callback,
                                 const ControllerParameters& parameters) const override;
 

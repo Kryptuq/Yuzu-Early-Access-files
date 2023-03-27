@@ -6,9 +6,11 @@
 #include <functional>
 #include "common/common_types.h"
 
+#include "core/frontend/applets/applet.h"
+
 namespace Core::Frontend {
 
-class ParentalControlsApplet {
+class ParentalControlsApplet : public Applet {
 public:
     virtual ~ParentalControlsApplet();
 
@@ -33,6 +35,7 @@ class DefaultParentalControlsApplet final : public ParentalControlsApplet {
 public:
     ~DefaultParentalControlsApplet() override;
 
+    void Close() const override;
     void VerifyPIN(std::function<void(bool)> finished,
                    bool suspend_future_verification_temporarily) override;
     void VerifyPINForSettings(std::function<void(bool)> finished) override;
@@ -40,7 +43,7 @@ public:
     void ChangePIN(std::function<void()> finished) override;
 };
 
-class PhotoViewerApplet {
+class PhotoViewerApplet : public Applet {
 public:
     virtual ~PhotoViewerApplet();
 
@@ -52,6 +55,7 @@ class DefaultPhotoViewerApplet final : public PhotoViewerApplet {
 public:
     ~DefaultPhotoViewerApplet() override;
 
+    void Close() const override;
     void ShowPhotosForApplication(u64 title_id, std::function<void()> finished) const override;
     void ShowAllPhotos(std::function<void()> finished) const override;
 };

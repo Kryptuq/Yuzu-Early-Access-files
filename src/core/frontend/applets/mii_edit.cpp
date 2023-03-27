@@ -8,6 +8,8 @@ namespace Core::Frontend {
 
 MiiEditApplet::~MiiEditApplet() = default;
 
+void DefaultMiiEditApplet::Close() const {}
+
 void DefaultMiiEditApplet::ShowMiiEdit(const MiiEditCallback& callback) const {
     LOG_WARNING(Service_AM, "(STUBBED) called");
 

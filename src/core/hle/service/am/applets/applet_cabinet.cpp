@@ -174,4 +174,9 @@ void Cabinet::Cancel() {
     broker.SignalStateChanged();
 }
 
+Result Cabinet::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 } // namespace Service::AM::Applets

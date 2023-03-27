@@ -150,6 +150,11 @@ void Auth::AuthFinished(bool is_successful) {
     broker.SignalStateChanged();
 }
 
+Result Auth::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 PhotoViewer::PhotoViewer(Core::System& system_, LibraryAppletMode applet_mode_,
                          const Core::Frontend::PhotoViewerApplet& frontend_)
     : Applet{system_, applet_mode_}, frontend{frontend_}, system{system_} {}
@@ -202,6 +207,11 @@ void PhotoViewer::ViewFinished() {
     broker.SignalStateChanged();
 }
 
+Result PhotoViewer::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 StubApplet::StubApplet(Core::System& system_, AppletId id_, LibraryAppletMode applet_mode_)
     : Applet{system_, applet_mode_}, id{id_}, system{system_} {}
 
@@ -248,6 +258,11 @@ void StubApplet::Execute() {
     broker.PushInteractiveDataFromApplet(
         std::make_shared<IStorage>(system, std::vector<u8>(0x1000)));
     broker.SignalStateChanged();
+}
+
+Result StubApplet::RequestExit() {
+    // Nothing to do.
+    R_SUCCEED();
 }
 
 } // namespace Service::AM::Applets

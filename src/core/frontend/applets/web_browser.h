@@ -5,11 +5,12 @@
 
 #include <functional>
 
+#include "core/frontend/applets/applet.h"
 #include "core/hle/service/am/applets/applet_web_browser_types.h"
 
 namespace Core::Frontend {
 
-class WebBrowserApplet {
+class WebBrowserApplet : public Applet {
 public:
     using ExtractROMFSCallback = std::function<void()>;
     using OpenWebPageCallback =
@@ -28,6 +29,8 @@ public:
 class DefaultWebBrowserApplet final : public WebBrowserApplet {
 public:
     ~DefaultWebBrowserApplet() override;
+
+    void Close() const override;
 
     void OpenLocalWebPage(const std::string& local_url, ExtractROMFSCallback extract_romfs_callback,
                           OpenWebPageCallback callback) const override;

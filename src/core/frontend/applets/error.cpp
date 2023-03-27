@@ -8,6 +8,8 @@ namespace Core::Frontend {
 
 ErrorApplet::~ErrorApplet() = default;
 
+void DefaultErrorApplet::Close() const {}
+
 void DefaultErrorApplet::ShowError(Result error, FinishedCallback finished) const {
     LOG_CRITICAL(Service_Fatal, "Application requested error display: {:04}-{:04} (raw={:08X})",
                  error.module.Value(), error.description.Value(), error.raw);

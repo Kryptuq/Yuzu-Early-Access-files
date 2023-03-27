@@ -156,6 +156,7 @@ public:
     explicit QtControllerSelector(GMainWindow& parent);
     ~QtControllerSelector() override;
 
+    void Close() const override;
     void ReconfigureControllers(
         ReconfigureCallback callback_,
         const Core::Frontend::ControllerParameters& parameters) const override;
@@ -163,6 +164,7 @@ public:
 signals:
     void MainWindowReconfigureControllers(
         const Core::Frontend::ControllerParameters& parameters) const;
+    void MainWindowRequestExit() const;
 
 private:
     void MainWindowReconfigureFinished();

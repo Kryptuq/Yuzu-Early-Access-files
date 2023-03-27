@@ -9,6 +9,8 @@ namespace Core::Frontend {
 
 ProfileSelectApplet::~ProfileSelectApplet() = default;
 
+void DefaultProfileSelectApplet::Close() const {}
+
 void DefaultProfileSelectApplet::SelectProfile(SelectProfileCallback callback) const {
     Service::Account::ProfileManager manager;
     callback(manager.GetUser(Settings::values.current_user.GetValue()).value_or(Common::UUID{}));

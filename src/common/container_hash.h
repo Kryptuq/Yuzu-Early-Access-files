@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <array>
+#include <climits>
 #include <cstdint>
 #include <limits>
 #include <type_traits>

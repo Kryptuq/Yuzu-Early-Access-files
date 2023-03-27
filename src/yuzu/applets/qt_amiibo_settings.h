@@ -68,6 +68,7 @@ public:
     explicit QtAmiiboSettings(GMainWindow& parent);
     ~QtAmiiboSettings() override;
 
+    void Close() const override;
     void ShowCabinetApplet(const Core::Frontend::CabinetCallback& callback_,
                            const Core::Frontend::CabinetParameters& parameters,
                            std::shared_ptr<Service::NFP::NfpDevice> nfp_device) const override;
@@ -75,6 +76,7 @@ public:
 signals:
     void MainWindowShowAmiiboSettings(const Core::Frontend::CabinetParameters& parameters,
                                       std::shared_ptr<Service::NFP::NfpDevice> nfp_device) const;
+    void MainWindowRequestExit() const;
 
 private:
     void MainWindowFinished(bool is_success, const std::string& name);

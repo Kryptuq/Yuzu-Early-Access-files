@@ -393,6 +393,8 @@ void QtNXWebEngineView::FocusFirstLinkElement() {
 QtWebBrowser::QtWebBrowser(GMainWindow& main_window) {
     connect(this, &QtWebBrowser::MainWindowOpenWebPage, &main_window,
             &GMainWindow::WebBrowserOpenWebPage, Qt::QueuedConnection);
+    connect(this, &QtWebBrowser::MainWindowRequestExit, &main_window,
+            &GMainWindow::WebBrowserRequestExit, Qt::QueuedConnection);
     connect(&main_window, &GMainWindow::WebBrowserExtractOfflineRomFS, this,
             &QtWebBrowser::MainWindowExtractOfflineRomFS, Qt::QueuedConnection);
     connect(&main_window, &GMainWindow::WebBrowserClosed, this,
@@ -400,6 +402,11 @@ QtWebBrowser::QtWebBrowser(GMainWindow& main_window) {
 }
 
 QtWebBrowser::~QtWebBrowser() = default;
+
+void QtWebBrowser::Close() const {
+    callback = {};
+    emit MainWindowRequestExit();
+}
 
 void QtWebBrowser::OpenLocalWebPage(const std::string& local_url,
                                     ExtractROMFSCallback extract_romfs_callback_,
@@ -436,5 +443,7 @@ void QtWebBrowser::MainWindowExtractOfflineRomFS() {
 
 void QtWebBrowser::MainWindowWebBrowserClosed(Service::AM::Applets::WebExitReason exit_reason,
                                               std::string last_url) {
-    callback(exit_reason, last_url);
+    if (callback) {
+        callback(exit_reason, last_url);
+    }
 }

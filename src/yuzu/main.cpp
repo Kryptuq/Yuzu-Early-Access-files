@@ -596,27 +596,45 @@ void GMainWindow::RegisterMetaTypes() {
 
 void GMainWindow::AmiiboSettingsShowDialog(const Core::Frontend::CabinetParameters& parameters,
                                            std::shared_ptr<Service::NFP::NfpDevice> nfp_device) {
-    QtAmiiboSettingsDialog dialog(this, parameters, input_subsystem.get(), nfp_device);
+    cabinet_applet =
+        new QtAmiiboSettingsDialog(this, parameters, input_subsystem.get(), nfp_device);
+    SCOPE_EXIT({
+        cabinet_applet->deleteLater();
+        cabinet_applet = nullptr;
+    });
 
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
-                          Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
-    dialog.setWindowModality(Qt::WindowModal);
-    if (dialog.exec() == QDialog::Rejected) {
+    cabinet_applet->setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
+                                   Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
+    cabinet_applet->setWindowModality(Qt::WindowModal);
+
+    if (cabinet_applet->exec() == QDialog::Rejected) {
         emit AmiiboSettingsFinished(false, {});
         return;
     }
 
-    emit AmiiboSettingsFinished(true, dialog.GetName());
+    emit AmiiboSettingsFinished(true, cabinet_applet->GetName());
+}
+
+void GMainWindow::AmiiboSettingsRequestExit() {
+    if (cabinet_applet) {
+        cabinet_applet->reject();
+    }
 }
 
 void GMainWindow::ControllerSelectorReconfigureControllers(
     const Core::Frontend::ControllerParameters& parameters) {
-    QtControllerSelectorDialog dialog(this, parameters, input_subsystem.get(), *system);
+    controller_applet =
+        new QtControllerSelectorDialog(this, parameters, input_subsystem.get(), *system);
+    SCOPE_EXIT({
+        controller_applet->deleteLater();
+        controller_applet = nullptr;
+    });
 
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
-                          Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
-    dialog.setWindowModality(Qt::WindowModal);
-    dialog.exec();
+    controller_applet->setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint |
+                                      Qt::WindowStaysOnTopHint | Qt::WindowTitleHint |
+                                      Qt::WindowSystemMenuHint);
+    controller_applet->setWindowModality(Qt::WindowModal);
+    controller_applet->exec();
 
     emit ControllerSelectorReconfigureFinished();
 
@@ -627,25 +645,42 @@ void GMainWindow::ControllerSelectorReconfigureControllers(
     UpdateStatusButtons();
 }
 
+void GMainWindow::ControllerSelectorRequestExit() {
+    if (controller_applet) {
+        controller_applet->reject();
+    }
+}
+
 void GMainWindow::ProfileSelectorSelectProfile() {
-    QtProfileSelectionDialog dialog(system->HIDCore(), this);
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
-                          Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
-                          Qt::WindowCloseButtonHint);
-    dialog.setWindowModality(Qt::WindowModal);
-    if (dialog.exec() == QDialog::Rejected) {
+    profile_select_applet = new QtProfileSelectionDialog(system->HIDCore(), this);
+    SCOPE_EXIT({
+        profile_select_applet->deleteLater();
+        profile_select_applet = nullptr;
+    });
+
+    profile_select_applet->setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint |
+                                          Qt::WindowStaysOnTopHint | Qt::WindowTitleHint |
+                                          Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+    profile_select_applet->setWindowModality(Qt::WindowModal);
+    if (profile_select_applet->exec() == QDialog::Rejected) {
         emit ProfileSelectorFinishedSelection(std::nullopt);
         return;
     }
 
     const Service::Account::ProfileManager manager;
-    const auto uuid = manager.GetUser(static_cast<std::size_t>(dialog.GetIndex()));
+    const auto uuid = manager.GetUser(static_cast<std::size_t>(profile_select_applet->GetIndex()));
     if (!uuid.has_value()) {
         emit ProfileSelectorFinishedSelection(std::nullopt);
         return;
     }
 
     emit ProfileSelectorFinishedSelection(uuid);
+}
+
+void GMainWindow::ProfileSelectorRequestExit() {
+    if (profile_select_applet) {
+        profile_select_applet->reject();
+    }
 }
 
 void GMainWindow::SoftwareKeyboardInitialize(
@@ -772,7 +807,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
         return;
     }
 
-    QtNXWebEngineView web_browser_view(this, *system, input_subsystem.get());
+    web_applet = new QtNXWebEngineView(this, *system, input_subsystem.get());
 
     ui->action_Pause->setEnabled(false);
     ui->action_Restart->setEnabled(false);
@@ -799,9 +834,9 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
         loading_progress.setValue(1);
 
         if (is_local) {
-            web_browser_view.LoadLocalWebPage(main_url, additional_args);
+            web_applet->LoadLocalWebPage(main_url, additional_args);
         } else {
-            web_browser_view.LoadExternalWebPage(main_url, additional_args);
+            web_applet->LoadExternalWebPage(main_url, additional_args);
         }
 
         if (render_window->IsLoadingComplete()) {
@@ -810,15 +845,15 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 
         const auto& layout = render_window->GetFramebufferLayout();
         const auto scale_ratio = devicePixelRatioF();
-        web_browser_view.resize(layout.screen.GetWidth() / scale_ratio,
-                                layout.screen.GetHeight() / scale_ratio);
-        web_browser_view.move(layout.screen.left / scale_ratio,
-                              (layout.screen.top / scale_ratio) + menuBar()->height());
-        web_browser_view.setZoomFactor(static_cast<qreal>(layout.screen.GetWidth() / scale_ratio) /
-                                       static_cast<qreal>(Layout::ScreenUndocked::Width));
+        web_applet->resize(layout.screen.GetWidth() / scale_ratio,
+                           layout.screen.GetHeight() / scale_ratio);
+        web_applet->move(layout.screen.left / scale_ratio,
+                         (layout.screen.top / scale_ratio) + menuBar()->height());
+        web_applet->setZoomFactor(static_cast<qreal>(layout.screen.GetWidth() / scale_ratio) /
+                                  static_cast<qreal>(Layout::ScreenUndocked::Width));
 
-        web_browser_view.setFocus();
-        web_browser_view.show();
+        web_applet->setFocus();
+        web_applet->show();
 
         loading_progress.setValue(2);
 
@@ -831,7 +866,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 
     // TODO (Morph): Remove this
     QAction* exit_action = new QAction(tr("Disable Web Applet"), this);
-    connect(exit_action, &QAction::triggered, this, [this, &web_browser_view] {
+    connect(exit_action, &QAction::triggered, this, [this] {
         const auto result = QMessageBox::warning(
             this, tr("Disable Web Applet"),
             tr("Disabling the web applet can lead to undefined behavior and should only be used "
@@ -840,21 +875,21 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
             QMessageBox::Yes | QMessageBox::No);
         if (result == QMessageBox::Yes) {
             UISettings::values.disable_web_applet = true;
-            web_browser_view.SetFinished(true);
+            web_applet->SetFinished(true);
         }
     });
     ui->menubar->addAction(exit_action);
 
-    while (!web_browser_view.IsFinished()) {
+    while (!web_applet->IsFinished()) {
         QCoreApplication::processEvents();
 
         if (!exit_check) {
-            web_browser_view.page()->runJavaScript(
+            web_applet->page()->runJavaScript(
                 QStringLiteral("end_applet;"), [&](const QVariant& variant) {
                     exit_check = false;
                     if (variant.toBool()) {
-                        web_browser_view.SetFinished(true);
-                        web_browser_view.SetExitReason(
+                        web_applet->SetFinished(true);
+                        web_applet->SetExitReason(
                             Service::AM::Applets::WebExitReason::EndButtonPressed);
                     }
                 });
@@ -862,22 +897,22 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
             exit_check = true;
         }
 
-        if (web_browser_view.GetCurrentURL().contains(QStringLiteral("localhost"))) {
-            if (!web_browser_view.IsFinished()) {
-                web_browser_view.SetFinished(true);
-                web_browser_view.SetExitReason(Service::AM::Applets::WebExitReason::CallbackURL);
+        if (web_applet->GetCurrentURL().contains(QStringLiteral("localhost"))) {
+            if (!web_applet->IsFinished()) {
+                web_applet->SetFinished(true);
+                web_applet->SetExitReason(Service::AM::Applets::WebExitReason::CallbackURL);
             }
 
-            web_browser_view.SetLastURL(web_browser_view.GetCurrentURL().toStdString());
+            web_applet->SetLastURL(web_applet->GetCurrentURL().toStdString());
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    const auto exit_reason = web_browser_view.GetExitReason();
-    const auto last_url = web_browser_view.GetLastURL();
+    const auto exit_reason = web_applet->GetExitReason();
+    const auto last_url = web_applet->GetLastURL();
 
-    web_browser_view.hide();
+    web_applet->hide();
 
     render_window->setFocus();
 
@@ -900,6 +935,15 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
     // Utilize the same fallback as the default web browser applet.
     emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed, "http://localhost/");
 
+#endif
+}
+
+void GMainWindow::WebBrowserRequestExit() {
+#ifdef YUZU_USE_QT_WEB_ENGINE
+    if (web_applet) {
+        web_applet->SetExitReason(Service::AM::Applets::WebExitReason::ExitRequested);
+        web_applet->SetFinished(true);
+    }
 #endif
 }
 
@@ -3089,11 +3133,21 @@ void GMainWindow::OnSaveConfig() {
 }
 
 void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_text) {
-    OverlayDialog dialog(render_window, *system, error_code, error_text, QString{}, tr("OK"),
-                         Qt::AlignLeft | Qt::AlignVCenter);
-    dialog.exec();
+    error_applet = new OverlayDialog(render_window, *system, error_code, error_text, QString{},
+                                     tr("OK"), Qt::AlignLeft | Qt::AlignVCenter);
+    SCOPE_EXIT({
+        error_applet->deleteLater();
+        error_applet = nullptr;
+    });
+    error_applet->exec();
 
     emit ErrorDisplayFinished();
+}
+
+void GMainWindow::ErrorDisplayRequestExit() {
+    if (error_applet) {
+        error_applet->reject();
+    }
 }
 
 void GMainWindow::OnMenuReportCompatibility() {

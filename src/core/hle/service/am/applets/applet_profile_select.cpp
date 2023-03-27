@@ -73,4 +73,9 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
     broker.SignalStateChanged();
 }
 
+Result ProfileSelect::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 } // namespace Service::AM::Applets

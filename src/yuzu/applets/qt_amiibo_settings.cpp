@@ -245,11 +245,18 @@ void QtAmiiboSettingsDialog::SetSettingsDescription() {
 QtAmiiboSettings::QtAmiiboSettings(GMainWindow& parent) {
     connect(this, &QtAmiiboSettings::MainWindowShowAmiiboSettings, &parent,
             &GMainWindow::AmiiboSettingsShowDialog, Qt::QueuedConnection);
+    connect(this, &QtAmiiboSettings::MainWindowRequestExit, &parent,
+            &GMainWindow::AmiiboSettingsRequestExit, Qt::QueuedConnection);
     connect(&parent, &GMainWindow::AmiiboSettingsFinished, this,
             &QtAmiiboSettings::MainWindowFinished, Qt::QueuedConnection);
 }
 
 QtAmiiboSettings::~QtAmiiboSettings() = default;
+
+void QtAmiiboSettings::Close() const {
+    callback = {};
+    emit MainWindowRequestExit();
+}
 
 void QtAmiiboSettings::ShowCabinetApplet(
     const Core::Frontend::CabinetCallback& callback_,
@@ -260,5 +267,7 @@ void QtAmiiboSettings::ShowCabinetApplet(
 }
 
 void QtAmiiboSettings::MainWindowFinished(bool is_success, const std::string& name) {
-    callback(is_success, name);
+    if (callback) {
+        callback(is_success, name);
+    }
 }

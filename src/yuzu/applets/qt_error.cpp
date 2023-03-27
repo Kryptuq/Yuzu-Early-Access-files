@@ -8,11 +8,18 @@
 QtErrorDisplay::QtErrorDisplay(GMainWindow& parent) {
     connect(this, &QtErrorDisplay::MainWindowDisplayError, &parent,
             &GMainWindow::ErrorDisplayDisplayError, Qt::QueuedConnection);
+    connect(this, &QtErrorDisplay::MainWindowRequestExit, &parent,
+            &GMainWindow::ErrorDisplayRequestExit, Qt::QueuedConnection);
     connect(&parent, &GMainWindow::ErrorDisplayFinished, this,
             &QtErrorDisplay::MainWindowFinishedError, Qt::DirectConnection);
 }
 
 QtErrorDisplay::~QtErrorDisplay() = default;
+
+void QtErrorDisplay::Close() const {
+    callback = {};
+    emit MainWindowRequestExit();
+}
 
 void QtErrorDisplay::ShowError(Result error, FinishedCallback finished) const {
     callback = std::move(finished);
@@ -55,5 +62,7 @@ void QtErrorDisplay::ShowCustomErrorText(Result error, std::string dialog_text,
 }
 
 void QtErrorDisplay::MainWindowFinishedError() {
-    callback();
+    if (callback) {
+        callback();
+    }
 }

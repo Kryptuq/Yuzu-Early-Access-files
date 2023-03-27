@@ -135,4 +135,9 @@ void MiiEdit::MiiEditOutputForCharInfoEditing(MiiEditResult result,
     broker.SignalStateChanged();
 }
 
+Result MiiEdit::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 } // namespace Service::AM::Applets

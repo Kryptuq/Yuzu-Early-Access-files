@@ -309,7 +309,8 @@ struct EncryptedNTAG215File {
     u32 CFG1;                        // Defines number of verification attempts
     NTAG215Password password;        // Password data
 };
-static_assert(sizeof(EncryptedNTAG215File) == 0x21C, "EncryptedNTAG215File is an invalid size");
+static_assert(sizeof(EncryptedNTAG215File) == sizeof(NTAG215File),
+              "EncryptedNTAG215File is an invalid size");
 static_assert(std::is_trivially_copyable_v<EncryptedNTAG215File>,
               "EncryptedNTAG215File must be trivially copyable.");
 

@@ -363,6 +363,11 @@ void WebBrowser::WebBrowserExit(WebExitReason exit_reason, std::string last_url)
     broker.SignalStateChanged();
 }
 
+Result WebBrowser::RequestExit() {
+    frontend.Close();
+    R_SUCCEED();
+}
+
 bool WebBrowser::InputTLVExistsInMap(WebArgInputTLVType input_tlv_type) const {
     return web_arg_input_tlv_map.find(input_tlv_type) != web_arg_input_tlv_map.end();
 }

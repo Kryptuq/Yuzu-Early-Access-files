@@ -196,6 +196,7 @@ public:
     explicit QtWebBrowser(GMainWindow& parent);
     ~QtWebBrowser() override;
 
+    void Close() const override;
     void OpenLocalWebPage(const std::string& local_url,
                           ExtractROMFSCallback extract_romfs_callback_,
                           OpenWebPageCallback callback_) const override;
@@ -206,6 +207,7 @@ public:
 signals:
     void MainWindowOpenWebPage(const std::string& main_url, const std::string& additional_args,
                                bool is_local) const;
+    void MainWindowRequestExit() const;
 
 private:
     void MainWindowExtractOfflineRomFS();

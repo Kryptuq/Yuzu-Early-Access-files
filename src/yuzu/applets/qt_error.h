@@ -16,6 +16,7 @@ public:
     explicit QtErrorDisplay(GMainWindow& parent);
     ~QtErrorDisplay() override;
 
+    void Close() const override;
     void ShowError(Result error, FinishedCallback finished) const override;
     void ShowErrorWithTimestamp(Result error, std::chrono::seconds time,
                                 FinishedCallback finished) const override;
@@ -24,6 +25,7 @@ public:
 
 signals:
     void MainWindowDisplayError(QString error_code, QString error_text) const;
+    void MainWindowRequestExit() const;
 
 private:
     void MainWindowFinishedError();

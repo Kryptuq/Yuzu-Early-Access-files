@@ -70,6 +70,10 @@ bool IsAmiiboValid(const EncryptedNTAG215File& ntag_file) {
     return true;
 }
 
+bool IsAmiiboValid(const NTAG215File& ntag_file) {
+    return IsAmiiboValid(EncodedDataToNfcData(ntag_file));
+}
+
 NTAG215File NfcDataToEncodedData(const EncryptedNTAG215File& nfc_data) {
     NTAG215File encoded_data{};
 

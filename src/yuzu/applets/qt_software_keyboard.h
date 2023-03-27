@@ -233,6 +233,10 @@ public:
     explicit QtSoftwareKeyboard(GMainWindow& parent);
     ~QtSoftwareKeyboard() override;
 
+    void Close() const override {
+        ExitKeyboard();
+    }
+
     void InitializeKeyboard(bool is_inline,
                             Core::Frontend::KeyboardInitializeParameters initialize_parameters,
                             SubmitNormalCallback submit_normal_callback_,

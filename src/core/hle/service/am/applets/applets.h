@@ -142,6 +142,7 @@ public:
     virtual Result GetStatus() const = 0;
     virtual void ExecuteInteractive() = 0;
     virtual void Execute() = 0;
+    virtual Result RequestExit() = 0;
 
     AppletDataBroker& GetBroker() {
         return broker;

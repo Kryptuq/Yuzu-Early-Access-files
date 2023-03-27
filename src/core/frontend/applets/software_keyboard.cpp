@@ -13,6 +13,8 @@ SoftwareKeyboardApplet::~SoftwareKeyboardApplet() = default;
 
 DefaultSoftwareKeyboardApplet::~DefaultSoftwareKeyboardApplet() = default;
 
+void DefaultSoftwareKeyboardApplet::Close() const {}
+
 void DefaultSoftwareKeyboardApplet::InitializeKeyboard(
     bool is_inline, KeyboardInitializeParameters initialize_parameters,
     SubmitNormalCallback submit_normal_callback_, SubmitInlineCallback submit_inline_callback_) {

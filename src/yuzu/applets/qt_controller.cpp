@@ -678,11 +678,18 @@ void QtControllerSelectorDialog::DisableUnsupportedPlayers() {
 QtControllerSelector::QtControllerSelector(GMainWindow& parent) {
     connect(this, &QtControllerSelector::MainWindowReconfigureControllers, &parent,
             &GMainWindow::ControllerSelectorReconfigureControllers, Qt::QueuedConnection);
+    connect(this, &QtControllerSelector::MainWindowRequestExit, &parent,
+            &GMainWindow::ControllerSelectorRequestExit, Qt::QueuedConnection);
     connect(&parent, &GMainWindow::ControllerSelectorReconfigureFinished, this,
             &QtControllerSelector::MainWindowReconfigureFinished, Qt::QueuedConnection);
 }
 
 QtControllerSelector::~QtControllerSelector() = default;
+
+void QtControllerSelector::Close() const {
+    callback = {};
+    emit MainWindowRequestExit();
+}
 
 void QtControllerSelector::ReconfigureControllers(
     ReconfigureCallback callback_, const Core::Frontend::ControllerParameters& parameters) const {
@@ -691,5 +698,7 @@ void QtControllerSelector::ReconfigureControllers(
 }
 
 void QtControllerSelector::MainWindowReconfigureFinished() {
-    callback();
+    if (callback) {
+        callback();
+    }
 }

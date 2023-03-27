@@ -95,6 +95,7 @@ private:
     bool is_initalized{};
     bool is_data_moddified{};
     bool is_app_area_open{};
+    bool is_plain_amiibo{};
     TagProtocol allowed_protocols{};
     s64 current_posix_time{};
     MountTarget mount_target{MountTarget::None};

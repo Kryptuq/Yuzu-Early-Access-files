@@ -945,7 +945,7 @@ public:
             {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
             {1, &ILibraryAppletAccessor::IsCompleted, "IsCompleted"},
             {10, &ILibraryAppletAccessor::Start, "Start"},
-            {20, nullptr, "RequestExit"},
+            {20, &ILibraryAppletAccessor::RequestExit, "RequestExit"},
             {25, nullptr, "Terminate"},
             {30, &ILibraryAppletAccessor::GetResult, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
@@ -1008,6 +1008,15 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
+    }
+
+    void RequestExit(HLERequestContext& ctx) {
+        LOG_DEBUG(Service_AM, "called");
+
+        ASSERT(applet != nullptr);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(applet->RequestExit());
     }
 
     void PushInData(HLERequestContext& ctx) {

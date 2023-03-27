@@ -157,11 +157,18 @@ void QtProfileSelectionDialog::SelectUser(const QModelIndex& index) {
 QtProfileSelector::QtProfileSelector(GMainWindow& parent) {
     connect(this, &QtProfileSelector::MainWindowSelectProfile, &parent,
             &GMainWindow::ProfileSelectorSelectProfile, Qt::QueuedConnection);
+    connect(this, &QtProfileSelector::MainWindowRequestExit, &parent,
+            &GMainWindow::ProfileSelectorRequestExit, Qt::QueuedConnection);
     connect(&parent, &GMainWindow::ProfileSelectorFinishedSelection, this,
             &QtProfileSelector::MainWindowFinishedSelection, Qt::DirectConnection);
 }
 
 QtProfileSelector::~QtProfileSelector() = default;
+
+void QtProfileSelector::Close() const {
+    callback = {};
+    emit MainWindowRequestExit();
+}
 
 void QtProfileSelector::SelectProfile(SelectProfileCallback callback_) const {
     callback = std::move(callback_);
@@ -169,5 +176,7 @@ void QtProfileSelector::SelectProfile(SelectProfileCallback callback_) const {
 }
 
 void QtProfileSelector::MainWindowFinishedSelection(std::optional<Common::UUID> uuid) {
-    callback(uuid);
+    if (callback) {
+        callback(uuid);
+    }
 }

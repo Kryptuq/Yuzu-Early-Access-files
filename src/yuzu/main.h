@@ -47,7 +47,11 @@ enum class DumpRomFSTarget;
 enum class InstalledEntryType;
 class GameListPlaceholder;
 
+class QtAmiiboSettingsDialog;
+class QtControllerSelectorDialog;
+class QtProfileSelectionDialog;
 class QtSoftwareKeyboardDialog;
+class QtNXWebEngineView;
 
 enum class StartGameType {
     Normal, // Can use custom configuration
@@ -184,8 +188,10 @@ public slots:
     void OnSaveConfig();
     void AmiiboSettingsShowDialog(const Core::Frontend::CabinetParameters& parameters,
                                   std::shared_ptr<Service::NFP::NfpDevice> nfp_device);
+    void AmiiboSettingsRequestExit();
     void ControllerSelectorReconfigureControllers(
         const Core::Frontend::ControllerParameters& parameters);
+    void ControllerSelectorRequestExit();
     void SoftwareKeyboardInitialize(
         bool is_inline, Core::Frontend::KeyboardInitializeParameters initialize_parameters);
     void SoftwareKeyboardShowNormal();
@@ -196,9 +202,12 @@ public slots:
     void SoftwareKeyboardInlineTextChanged(Core::Frontend::InlineTextParameters text_parameters);
     void SoftwareKeyboardExit();
     void ErrorDisplayDisplayError(QString error_code, QString error_text);
+    void ErrorDisplayRequestExit();
     void ProfileSelectorSelectProfile();
+    void ProfileSelectorRequestExit();
     void WebBrowserOpenWebPage(const std::string& main_url, const std::string& additional_args,
                                bool is_local);
+    void WebBrowserRequestExit();
     void OnAppFocusStateChanged(Qt::ApplicationState state);
     void OnTasStateChanged();
 
@@ -466,7 +475,12 @@ private:
     QString last_filename_booted;
 
     // Applets
+    QtAmiiboSettingsDialog* cabinet_applet = nullptr;
+    QtControllerSelectorDialog* controller_applet = nullptr;
+    QtProfileSelectionDialog* profile_select_applet = nullptr;
+    QDialog* error_applet = nullptr;
     QtSoftwareKeyboardDialog* software_keyboard = nullptr;
+    QtNXWebEngineView* web_applet = nullptr;
 
     // True if amiibo file select is visible
     bool is_amiibo_file_select_active{};
