@@ -307,6 +307,8 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
     system->Initialize();
 
     Common::Log::Initialize();
+    Common::Log::Start();
+
     LoadTranslation();
 
     setAcceptDrops(true);
@@ -448,8 +450,6 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
 #endif
 
     SetupPrepareForSleep();
-
-    Common::Log::Start();
 
     QStringList args = QApplication::arguments();
 

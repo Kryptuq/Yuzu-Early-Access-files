@@ -121,8 +121,7 @@ u64 DeviceSession::GetPlayedSampleCount() const {
 }
 
 std::optional<std::chrono::nanoseconds> DeviceSession::ThreadFunc() {
-    // Add 5ms of samples at a 48K sample rate.
-    played_sample_count += 48'000 * INCREMENT_TIME / 1s;
+    played_sample_count = stream->GetExpectedPlayedSampleCount();
     if (type == Sink::StreamType::Out) {
         system.AudioCore().GetAudioManager().SetEvent(Event::Type::AudioOutManager, true);
     } else {

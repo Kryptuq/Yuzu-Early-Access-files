@@ -14,6 +14,8 @@
 #include "common/fixed_point.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/core_timing.h"
+#include "core/core_timing_util.h"
 
 namespace AudioCore::Sink {
 
@@ -149,10 +151,6 @@ void SinkStream::ProcessAudioIn(std::span<const s16> input_buffer, std::size_t n
         return;
     }
 
-    if (queued_buffers > max_queue_size) {
-        Stall();
-    }
-
     while (frames_written < num_frames) {
         // If the playing buffer has been consumed or has no frames, we need a new one
         if (playing_buffer.consumed || playing_buffer.frames == 0) {
@@ -187,10 +185,6 @@ void SinkStream::ProcessAudioIn(std::span<const s16> input_buffer, std::size_t n
     }
 
     std::memcpy(&last_frame[0], &input_buffer[(frames_written - 1) * frame_size], frame_size_bytes);
-
-    if (queued_buffers <= max_queue_size) {
-        Unstall();
-    }
 }
 
 void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::size_t num_frames) {
@@ -198,29 +192,20 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     const std::size_t frame_size = num_channels;
     const std::size_t frame_size_bytes = frame_size * sizeof(s16);
     size_t frames_written{0};
+    size_t actual_frames_written{0};
 
     // If we're paused or going to shut down, we don't want to consume buffers as coretiming is
     // paused and we'll desync, so just play silence.
     if (system.IsPaused() || system.IsShuttingDown()) {
+        if (system.IsShuttingDown()) {
+            release_cv.notify_one();
+        }
+
         static constexpr std::array<s16, 6> silence{};
         for (size_t i = frames_written; i < num_frames; i++) {
             std::memcpy(&output_buffer[i * frame_size], &silence[0], frame_size_bytes);
         }
         return;
-    }
-
-    // Due to many frames being queued up with nvdec (5 frames or so?), a lot of buffers also get
-    // queued up (30+) but not all at once, which causes constant stalling here, so just let the
-    // video play out without attempting to stall.
-    // Can hopefully remove this later with a more complete NVDEC implementation.
-    const auto nvdec_active{system.AudioCore().IsNVDECActive()};
-
-    // Core timing cannot be paused in single-core mode, so Stall ends up being called over and over
-    // and never recovers to a normal state, so just skip attempting to sync things on single-core.
-    if (system.IsMulticore() && !nvdec_active && queued_buffers > max_queue_size) {
-        Stall();
-    } else if (system.IsMulticore() && queued_buffers <= max_queue_size) {
-        Unstall();
     }
 
     while (frames_written < num_frames) {
@@ -237,6 +222,10 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
             }
             // Successfully dequeued a new buffer.
             queued_buffers--;
+
+            { std::unique_lock lk{release_mutex}; }
+
+            release_cv.notify_one();
         }
 
         // Get the minimum frames available between the currently playing buffer, and the
@@ -248,6 +237,7 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
                            frames_available * frame_size);
 
         frames_written += frames_available;
+        actual_frames_written += frames_available;
         playing_buffer.frames_played += frames_available;
 
         // If that's all the frames in the current buffer, add its samples and mark it as
@@ -260,26 +250,29 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
     std::memcpy(&last_frame[0], &output_buffer[(frames_written - 1) * frame_size],
                 frame_size_bytes);
 
-    if (system.IsMulticore() && queued_buffers <= max_queue_size) {
-        Unstall();
+    {
+        std::scoped_lock lk{sample_count_lock};
+        last_sample_count_update_time =
+            Core::Timing::CyclesToUs(system.CoreTiming().GetClockTicks());
+        min_played_sample_count = max_played_sample_count;
+        max_played_sample_count += actual_frames_written;
     }
 }
 
-void SinkStream::Stall() {
-    std::scoped_lock lk{stall_guard};
-    if (stalled_lock) {
-        return;
-    }
-    stalled_lock = system.StallApplication();
+u64 SinkStream::GetExpectedPlayedSampleCount() {
+    std::scoped_lock lk{sample_count_lock};
+    auto cur_time{Core::Timing::CyclesToUs(system.CoreTiming().GetClockTicks())};
+    auto time_delta{cur_time - last_sample_count_update_time};
+    auto exp_played_sample_count{min_played_sample_count +
+                                 (TargetSampleRate * time_delta) / std::chrono::seconds{1}};
+
+    return std::min<u64>(exp_played_sample_count, max_played_sample_count);
 }
 
-void SinkStream::Unstall() {
-    std::scoped_lock lk{stall_guard};
-    if (!stalled_lock) {
-        return;
-    }
-    system.UnstallApplication();
-    stalled_lock.unlock();
+void SinkStream::WaitFreeSpace() {
+    std::unique_lock lk{release_mutex};
+    release_cv.wait(
+        lk, [this]() { return queued_buffers < max_queue_size || system.IsShuttingDown(); });
 }
 
 } // namespace AudioCore::Sink

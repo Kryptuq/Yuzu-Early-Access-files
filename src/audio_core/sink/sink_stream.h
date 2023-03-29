@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <span>
@@ -14,6 +15,7 @@
 #include "common/common_types.h"
 #include "common/reader_writer_queue.h"
 #include "common/ring_buffer.h"
+#include "common/thread.h"
 
 namespace Core {
 class System;
@@ -53,9 +55,7 @@ struct SinkBuffer {
 class SinkStream {
 public:
     explicit SinkStream(Core::System& system_, StreamType type_) : system{system_}, type{type_} {}
-    virtual ~SinkStream() {
-        Unstall();
-    }
+    virtual ~SinkStream() {}
 
     /**
      * Finalize the sink stream.
@@ -201,14 +201,16 @@ public:
     void ProcessAudioOutAndRender(std::span<s16> output_buffer, std::size_t num_frames);
 
     /**
-     * Stall core processes if the audio thread falls too far behind.
+     * Get the total number of samples expected to have been played by this stream.
+     *
+     * @return The number of samples.
      */
-    void Stall();
+    u64 GetExpectedPlayedSampleCount();
 
     /**
-     * Unstall core processes.
+     * Waits for free space in the sample ring buffer
      */
-    void Unstall();
+    void WaitFreeSpace();
 
 protected:
     /// Core system
@@ -237,12 +239,21 @@ private:
     std::atomic<u32> queued_buffers{};
     /// The ring size for audio out buffers (usually 4, rarely 2 or 8)
     u32 max_queue_size{};
+    /// Locks access to sample count tracking info
+    std::mutex sample_count_lock;
+    /// Minimum number of total samples that have been played since the last callback
+    u64 min_played_sample_count{};
+    /// Maximum number of total samples that can be played since the last callback
+    u64 max_played_sample_count{};
+    /// The time the two above tracking variables were last written to
+    std::chrono::microseconds last_sample_count_update_time{};
     /// Set by the audio render/in/out system which uses this stream
     f32 system_volume{1.0f};
     /// Set via IAudioDevice service calls
     f32 device_volume{1.0f};
-    std::mutex stall_guard;
-    std::unique_lock<std::mutex> stalled_lock;
+    /// Signalled when ring buffer entries are consumed
+    std::condition_variable release_cv;
+    std::mutex release_mutex;
 };
 
 using SinkStreamPtr = std::unique_ptr<SinkStream>;

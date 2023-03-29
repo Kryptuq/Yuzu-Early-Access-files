@@ -88,7 +88,6 @@ public:
      * Finalize the sink stream.
      */
     void Finalize() override {
-        Unstall();
         if (device == 0) {
             return;
         }
@@ -116,7 +115,6 @@ public:
      * Stop the sink stream.
      */
     void Stop() override {
-        Unstall();
         if (device == 0 || paused) {
             return;
         }

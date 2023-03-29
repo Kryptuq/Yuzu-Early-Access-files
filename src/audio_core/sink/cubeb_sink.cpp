@@ -101,8 +101,6 @@ public:
     ~CubebSinkStream() override {
         LOG_DEBUG(Service_Audio, "Destructing cubeb stream {}", name);
 
-        Unstall();
-
         if (!ctx) {
             return;
         }
@@ -143,8 +141,6 @@ public:
      * Stop the sink stream.
      */
     void Stop() override {
-        Unstall();
-
         if (!ctx || paused) {
             return;
         }

@@ -1388,7 +1388,8 @@ Result Controller_NPad::MergeSingleJoyAsDualJoy(Core::HID::NpadIdType npad_id_1,
         return NpadIsDualJoycon;
     }
 
-    // Disconnect the joycon at the second id and connect the dual joycon at the first index.
+    // Disconnect the joycons and connect them as dual joycon at the first index.
+    DisconnectNpad(npad_id_1);
     DisconnectNpad(npad_id_2);
     controller_1.is_dual_left_connected = true;
     controller_1.is_dual_right_connected = true;

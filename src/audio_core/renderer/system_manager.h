@@ -68,11 +68,6 @@ private:
      */
     void ThreadFunc();
 
-    /**
-     * Signalling core timing thread to run ThreadFunc.
-     */
-    std::optional<std::chrono::nanoseconds> ThreadFunc2(s64 time);
-
     enum class StreamState {
         Filling,
         Steady,
@@ -95,8 +90,6 @@ private:
     ADSP::ADSP& adsp;
     /// AudioRenderer mailbox for communication
     ADSP::AudioRenderer_Mailbox* mailbox{};
-    /// Core timing event to signal main thread
-    std::shared_ptr<Core::Timing::EventType> thread_event;
     /// Atomic for main thread to wait on
     std::atomic<bool> update{};
 };
