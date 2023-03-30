@@ -25,13 +25,29 @@ void ProfileSelect::Initialize() {
     final_data.clear();
 
     Applet::Initialize();
+    profile_select_version = ProfileSelectAppletVersion{common_args.library_version};
 
     const auto user_config_storage = broker.PopNormalDataToApplet();
     ASSERT(user_config_storage != nullptr);
     const auto& user_config = user_config_storage->GetData();
 
-    ASSERT(user_config.size() >= sizeof(UserSelectionConfig));
-    std::memcpy(&config, user_config.data(), sizeof(UserSelectionConfig));
+    LOG_INFO(Service_AM, "Initializing Profile Select Applet with version={}",
+             profile_select_version);
+
+    switch (profile_select_version) {
+    case ProfileSelectAppletVersion::Version1:
+        ASSERT(user_config.size() == sizeof(UiSettingsV1));
+        std::memcpy(&config_old, user_config.data(), sizeof(UiSettingsV1));
+        break;
+    case ProfileSelectAppletVersion::Version2:
+    case ProfileSelectAppletVersion::Version3:
+        ASSERT(user_config.size() == sizeof(UiSettings));
+        std::memcpy(&config, user_config.data(), sizeof(UiSettings));
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unknown profile_select_version = {}", profile_select_version);
+        break;
+    }
 }
 
 bool ProfileSelect::TransactionComplete() const {
@@ -52,11 +68,37 @@ void ProfileSelect::Execute() {
         return;
     }
 
-    frontend.SelectProfile([this](std::optional<Common::UUID> uuid) { SelectionComplete(uuid); });
+    Core::Frontend::ProfileSelectParameters parameters{};
+
+    switch (profile_select_version) {
+    case ProfileSelectAppletVersion::Version1:
+        parameters = {
+            .mode = config_old.mode,
+            .invalid_uid_list = config_old.invalid_uid_list,
+            .display_options = config_old.display_options,
+            .purpose = UserSelectionPurpose::General,
+        };
+        break;
+    case ProfileSelectAppletVersion::Version2:
+    case ProfileSelectAppletVersion::Version3:
+        parameters = {
+            .mode = config.mode,
+            .invalid_uid_list = config.invalid_uid_list,
+            .display_options = config.display_options,
+            .purpose = config.purpose,
+        };
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unknown profile_select_version = {}", profile_select_version);
+        break;
+    }
+
+    frontend.SelectProfile([this](std::optional<Common::UUID> uuid) { SelectionComplete(uuid); },
+                           parameters);
 }
 
 void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
-    UserSelectionOutput output{};
+    UiReturnArg output{};
 
     if (uuid.has_value() && uuid->IsValid()) {
         output.result = 0;
@@ -67,7 +109,7 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
         output.uuid_selected = Common::InvalidUUID;
     }
 
-    final_data = std::vector<u8>(sizeof(UserSelectionOutput));
+    final_data = std::vector<u8>(sizeof(UiReturnArg));
     std::memcpy(final_data.data(), &output, final_data.size());
     broker.PushNormalDataFromApplet(std::make_shared<IStorage>(system, std::move(final_data)));
     broker.SignalStateChanged();

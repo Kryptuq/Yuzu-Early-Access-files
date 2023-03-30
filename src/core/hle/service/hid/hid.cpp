@@ -302,7 +302,7 @@ Hid::Hid(Core::System& system_)
         {130, &Hid::SwapNpadAssignment, "SwapNpadAssignment"},
         {131, &Hid::IsUnintendedHomeButtonInputProtectionEnabled, "IsUnintendedHomeButtonInputProtectionEnabled"},
         {132, &Hid::EnableUnintendedHomeButtonInputProtection, "EnableUnintendedHomeButtonInputProtection"},
-        {133, nullptr, "SetNpadJoyAssignmentModeSingleWithDestination"},
+        {133, &Hid::SetNpadJoyAssignmentModeSingleWithDestination, "SetNpadJoyAssignmentModeSingleWithDestination"},
         {134, &Hid::SetNpadAnalogStickUseCenterClamp, "SetNpadAnalogStickUseCenterClamp"},
         {135, &Hid::SetNpadCaptureButtonAssignment, "SetNpadCaptureButtonAssignment"},
         {136, &Hid::ClearNpadCaptureButtonAssignment, "ClearNpadCaptureButtonAssignment"},
@@ -1180,8 +1180,10 @@ void Hid::SetNpadJoyAssignmentModeSingleByDefault(HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    Core::HID::NpadIdType new_npad_id{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    controller.SetNpadMode(parameters.npad_id, Controller_NPad::NpadJoyDeviceType::Left,
+    controller.SetNpadMode(new_npad_id, parameters.npad_id,
+                           Controller_NPad::NpadJoyDeviceType::Left,
                            Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
@@ -1203,8 +1205,9 @@ void Hid::SetNpadJoyAssignmentModeSingle(HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    Core::HID::NpadIdType new_npad_id{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    controller.SetNpadMode(parameters.npad_id, parameters.npad_joy_device_type,
+    controller.SetNpadMode(new_npad_id, parameters.npad_id, parameters.npad_joy_device_type,
                            Controller_NPad::NpadJoyAssignmentMode::Single);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}, npad_joy_device_type={}",
@@ -1226,8 +1229,10 @@ void Hid::SetNpadJoyAssignmentModeDual(HLERequestContext& ctx) {
 
     const auto parameters{rp.PopRaw<Parameters>()};
 
+    Core::HID::NpadIdType new_npad_id{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    controller.SetNpadMode(parameters.npad_id, {}, Controller_NPad::NpadJoyAssignmentMode::Dual);
+    controller.SetNpadMode(new_npad_id, parameters.npad_id, {},
+                           Controller_NPad::NpadJoyAssignmentMode::Dual);
 
     LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}", parameters.npad_id,
              parameters.applet_resource_user_id);
@@ -1367,6 +1372,34 @@ void Hid::EnableUnintendedHomeButtonInputProtection(HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(result);
+}
+
+void Hid::SetNpadJoyAssignmentModeSingleWithDestination(HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        Core::HID::NpadIdType npad_id;
+        INSERT_PADDING_WORDS_NOINIT(1);
+        u64 applet_resource_user_id;
+        Controller_NPad::NpadJoyDeviceType npad_joy_device_type;
+    };
+    static_assert(sizeof(Parameters) == 0x18, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    Core::HID::NpadIdType new_npad_id{};
+    auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
+    const auto is_reasigned =
+        controller.SetNpadMode(new_npad_id, parameters.npad_id, parameters.npad_joy_device_type,
+                               Controller_NPad::NpadJoyAssignmentMode::Single);
+
+    LOG_INFO(Service_HID, "called, npad_id={}, applet_resource_user_id={}, npad_joy_device_type={}",
+             parameters.npad_id, parameters.applet_resource_user_id,
+             parameters.npad_joy_device_type);
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(ResultSuccess);
+    rb.Push(is_reasigned);
+    rb.PushEnum(new_npad_id);
 }
 
 void Hid::SetNpadAnalogStickUseCenterClamp(HLERequestContext& ctx) {

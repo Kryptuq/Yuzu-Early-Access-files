@@ -151,6 +151,7 @@ private:
     void SwapNpadAssignment(HLERequestContext& ctx);
     void IsUnintendedHomeButtonInputProtectionEnabled(HLERequestContext& ctx);
     void EnableUnintendedHomeButtonInputProtection(HLERequestContext& ctx);
+    void SetNpadJoyAssignmentModeSingleWithDestination(HLERequestContext& ctx);
     void SetNpadAnalogStickUseCenterClamp(HLERequestContext& ctx);
     void SetNpadCaptureButtonAssignment(HLERequestContext& ctx);
     void ClearNpadCaptureButtonAssignment(HLERequestContext& ctx);

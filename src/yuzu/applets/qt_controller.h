@@ -167,7 +167,7 @@ signals:
     void MainWindowRequestExit() const;
 
 private:
-    void MainWindowReconfigureFinished();
+    void MainWindowReconfigureFinished(bool is_success);
 
     mutable ReconfigureCallback callback;
 };

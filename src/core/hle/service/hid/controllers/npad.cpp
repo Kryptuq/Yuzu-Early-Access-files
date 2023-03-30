@@ -819,12 +819,12 @@ Controller_NPad::NpadCommunicationMode Controller_NPad::GetNpadCommunicationMode
     return communication_mode;
 }
 
-Result Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
-                                    NpadJoyDeviceType npad_device_type,
-                                    NpadJoyAssignmentMode assignment_mode) {
+bool Controller_NPad::SetNpadMode(Core::HID::NpadIdType& new_npad_id, Core::HID::NpadIdType npad_id,
+                                  NpadJoyDeviceType npad_device_type,
+                                  NpadJoyAssignmentMode assignment_mode) {
     if (!IsNpadIdValid(npad_id)) {
         LOG_ERROR(Service_HID, "Invalid NpadIdType npad_id:{}", npad_id);
-        return InvalidNpadId;
+        return false;
     }
 
     auto& controller = GetControllerFromNpadIdType(npad_id);
@@ -833,7 +833,7 @@ Result Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
     }
 
     if (!controller.device->IsConnected()) {
-        return ResultSuccess;
+        return false;
     }
 
     if (assignment_mode == NpadJoyAssignmentMode::Dual) {
@@ -842,52 +842,52 @@ Result Controller_NPad::SetNpadMode(Core::HID::NpadIdType npad_id,
             controller.is_dual_left_connected = true;
             controller.is_dual_right_connected = false;
             UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id, true);
-            return ResultSuccess;
+            return false;
         }
         if (controller.device->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::JoyconRight) {
             DisconnectNpad(npad_id);
             controller.is_dual_left_connected = false;
             controller.is_dual_right_connected = true;
             UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id, true);
-            return ResultSuccess;
+            return false;
         }
-        return ResultSuccess;
+        return false;
     }
 
     // This is for NpadJoyAssignmentMode::Single
 
     // Only JoyconDual get affected by this function
     if (controller.device->GetNpadStyleIndex() != Core::HID::NpadStyleIndex::JoyconDual) {
-        return ResultSuccess;
+        return false;
     }
 
     if (controller.is_dual_left_connected && !controller.is_dual_right_connected) {
         DisconnectNpad(npad_id);
         UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconLeft, npad_id, true);
-        return ResultSuccess;
+        return false;
     }
     if (!controller.is_dual_left_connected && controller.is_dual_right_connected) {
         DisconnectNpad(npad_id);
         UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconRight, npad_id, true);
-        return ResultSuccess;
+        return false;
     }
 
     // We have two controllers connected to the same npad_id we need to split them
-    const auto npad_id_2 = hid_core.GetFirstDisconnectedNpadId();
-    auto& controller_2 = GetControllerFromNpadIdType(npad_id_2);
+    new_npad_id = hid_core.GetFirstDisconnectedNpadId();
+    auto& controller_2 = GetControllerFromNpadIdType(new_npad_id);
     DisconnectNpad(npad_id);
     if (npad_device_type == NpadJoyDeviceType::Left) {
         UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconLeft, npad_id, true);
         controller_2.is_dual_left_connected = false;
         controller_2.is_dual_right_connected = true;
-        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_2, true);
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, new_npad_id, true);
     } else {
         UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconRight, npad_id, true);
         controller_2.is_dual_left_connected = true;
         controller_2.is_dual_right_connected = false;
-        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, npad_id_2, true);
+        UpdateControllerAt(Core::HID::NpadStyleIndex::JoyconDual, new_npad_id, true);
     }
-    return ResultSuccess;
+    return true;
 }
 
 bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,

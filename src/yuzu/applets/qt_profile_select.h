@@ -28,7 +28,8 @@ class QtProfileSelectionDialog final : public QDialog {
     Q_OBJECT
 
 public:
-    explicit QtProfileSelectionDialog(Core::HID::HIDCore& hid_core, QWidget* parent);
+    explicit QtProfileSelectionDialog(Core::HID::HIDCore& hid_core, QWidget* parent,
+                                      const Core::Frontend::ProfileSelectParameters& parameters);
     ~QtProfileSelectionDialog() override;
 
     int exec() override;
@@ -39,6 +40,9 @@ public:
 
 private:
     void SelectUser(const QModelIndex& index);
+
+    void SetWindowTitle(const Core::Frontend::ProfileSelectParameters& parameters);
+    void SetDialogPurpose(const Core::Frontend::ProfileSelectParameters& parameters);
 
     int user_index = 0;
 
@@ -66,10 +70,11 @@ public:
     ~QtProfileSelector() override;
 
     void Close() const override;
-    void SelectProfile(SelectProfileCallback callback_) const override;
+    void SelectProfile(SelectProfileCallback callback_,
+                       const Core::Frontend::ProfileSelectParameters& parameters) const override;
 
 signals:
-    void MainWindowSelectProfile() const;
+    void MainWindowSelectProfile(const Core::Frontend::ProfileSelectParameters& parameters) const;
     void MainWindowRequestExit() const;
 
 private:

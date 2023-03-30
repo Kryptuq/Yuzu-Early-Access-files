@@ -46,11 +46,13 @@ QPixmap GetIcon(Common::UUID uuid) {
 }
 } // Anonymous namespace
 
-QtProfileSelectionDialog::QtProfileSelectionDialog(Core::HID::HIDCore& hid_core, QWidget* parent)
+QtProfileSelectionDialog::QtProfileSelectionDialog(
+    Core::HID::HIDCore& hid_core, QWidget* parent,
+    const Core::Frontend::ProfileSelectParameters& parameters)
     : QDialog(parent), profile_manager(std::make_unique<Service::Account::ProfileManager>()) {
     outer_layout = new QVBoxLayout;
 
-    instruction_label = new QLabel(tr("Select a user:"));
+    instruction_label = new QLabel();
 
     scroll_area = new QScrollArea;
 
@@ -120,7 +122,8 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(Core::HID::HIDCore& hid_core,
         item_model->appendRow(item);
 
     setLayout(outer_layout);
-    setWindowTitle(tr("Profile Selector"));
+    SetWindowTitle(parameters);
+    SetDialogPurpose(parameters);
     resize(550, 400);
 }
 
@@ -154,6 +157,76 @@ void QtProfileSelectionDialog::SelectUser(const QModelIndex& index) {
     user_index = index.row();
 }
 
+void QtProfileSelectionDialog::SetWindowTitle(
+    const Core::Frontend::ProfileSelectParameters& parameters) {
+    using Service::AM::Applets::UiMode;
+    switch (parameters.mode) {
+    case UiMode::UserCreator:
+    case UiMode::UserCreatorForStarter:
+        setWindowTitle(tr("Profile Creator"));
+        return;
+    case UiMode::EnsureNetworkServiceAccountAvailable:
+        setWindowTitle(tr("Profile Selector"));
+        return;
+    case UiMode::UserIconEditor:
+        setWindowTitle(tr("Profile Icon Editor"));
+        return;
+    case UiMode::UserNicknameEditor:
+        setWindowTitle(tr("Profile Nickname Editor"));
+        return;
+    case UiMode::NintendoAccountAuthorizationRequestContext:
+    case UiMode::IntroduceExternalNetworkServiceAccount:
+    case UiMode::IntroduceExternalNetworkServiceAccountForRegistration:
+    case UiMode::NintendoAccountNnidLinker:
+    case UiMode::LicenseRequirementsForNetworkService:
+    case UiMode::LicenseRequirementsForNetworkServiceWithUserContextImpl:
+    case UiMode::UserCreatorForImmediateNaLoginTest:
+    case UiMode::UserQualificationPromoter:
+    case UiMode::UserSelector:
+    default:
+        setWindowTitle(tr("Profile Selector"));
+    }
+}
+
+void QtProfileSelectionDialog::SetDialogPurpose(
+    const Core::Frontend::ProfileSelectParameters& parameters) {
+    using Service::AM::Applets::UserSelectionPurpose;
+
+    switch (parameters.purpose) {
+    case UserSelectionPurpose::GameCardRegistration:
+        instruction_label->setText(tr("Who will receive the points?"));
+        return;
+    case UserSelectionPurpose::EShopLaunch:
+        instruction_label->setText(tr("Who is using Nintendo eShop?"));
+        return;
+    case UserSelectionPurpose::EShopItemShow:
+        instruction_label->setText(tr("Who is making this purchase?"));
+        return;
+    case UserSelectionPurpose::PicturePost:
+        instruction_label->setText(tr("Who is posting?"));
+        return;
+    case UserSelectionPurpose::NintendoAccountLinkage:
+        instruction_label->setText(tr("Select a user to link to a Nintendo Account."));
+        return;
+    case UserSelectionPurpose::SettingsUpdate:
+        instruction_label->setText(tr("Change settings for which user?"));
+        return;
+    case UserSelectionPurpose::SaveDataDeletion:
+        instruction_label->setText(tr("Format data for which user?"));
+        return;
+    case UserSelectionPurpose::UserMigration:
+        instruction_label->setText(tr("Which user will be transferred to another console?"));
+        return;
+    case UserSelectionPurpose::SaveDataTransfer:
+        instruction_label->setText(tr("Send save data for which user?"));
+        return;
+    case UserSelectionPurpose::General:
+    default:
+        instruction_label->setText(tr("Select a user:"));
+        return;
+    }
+}
+
 QtProfileSelector::QtProfileSelector(GMainWindow& parent) {
     connect(this, &QtProfileSelector::MainWindowSelectProfile, &parent,
             &GMainWindow::ProfileSelectorSelectProfile, Qt::QueuedConnection);
@@ -170,9 +243,11 @@ void QtProfileSelector::Close() const {
     emit MainWindowRequestExit();
 }
 
-void QtProfileSelector::SelectProfile(SelectProfileCallback callback_) const {
+void QtProfileSelector::SelectProfile(
+    SelectProfileCallback callback_,
+    const Core::Frontend::ProfileSelectParameters& parameters) const {
     callback = std::move(callback_);
-    emit MainWindowSelectProfile();
+    emit MainWindowSelectProfile(parameters);
 }
 
 void QtProfileSelector::MainWindowFinishedSelection(std::optional<Common::UUID> uuid) {

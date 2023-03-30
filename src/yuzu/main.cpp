@@ -576,6 +576,10 @@ void GMainWindow::RegisterMetaTypes() {
     // Controller Applet
     qRegisterMetaType<Core::Frontend::ControllerParameters>("Core::Frontend::ControllerParameters");
 
+    // Profile Select Applet
+    qRegisterMetaType<Core::Frontend::ProfileSelectParameters>(
+        "Core::Frontend::ProfileSelectParameters");
+
     // Software Keyboard Applet
     qRegisterMetaType<Core::Frontend::KeyboardInitializeParameters>(
         "Core::Frontend::KeyboardInitializeParameters");
@@ -634,15 +638,16 @@ void GMainWindow::ControllerSelectorReconfigureControllers(
                                       Qt::WindowStaysOnTopHint | Qt::WindowTitleHint |
                                       Qt::WindowSystemMenuHint);
     controller_applet->setWindowModality(Qt::WindowModal);
-    controller_applet->exec();
-
-    emit ControllerSelectorReconfigureFinished();
+    bool is_success = controller_applet->exec() != QDialog::Rejected;
 
     // Don't forget to apply settings.
+    system->HIDCore().DisableAllControllerConfiguration();
     system->ApplySettings();
     config->Save();
 
     UpdateStatusButtons();
+
+    emit ControllerSelectorReconfigureFinished(is_success);
 }
 
 void GMainWindow::ControllerSelectorRequestExit() {
@@ -651,8 +656,9 @@ void GMainWindow::ControllerSelectorRequestExit() {
     }
 }
 
-void GMainWindow::ProfileSelectorSelectProfile() {
-    profile_select_applet = new QtProfileSelectionDialog(system->HIDCore(), this);
+void GMainWindow::ProfileSelectorSelectProfile(
+    const Core::Frontend::ProfileSelectParameters& parameters) {
+    profile_select_applet = new QtProfileSelectionDialog(system->HIDCore(), this, parameters);
     SCOPE_EXIT({
         profile_select_applet->deleteLater();
         profile_select_applet = nullptr;
@@ -1719,8 +1725,9 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     return true;
 }
 
-bool GMainWindow::SelectAndSetCurrentUser() {
-    QtProfileSelectionDialog dialog(system->HIDCore(), this);
+bool GMainWindow::SelectAndSetCurrentUser(
+    const Core::Frontend::ProfileSelectParameters& parameters) {
+    QtProfileSelectionDialog dialog(system->HIDCore(), this, parameters);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
     dialog.setWindowModality(Qt::WindowModal);
@@ -1766,7 +1773,13 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     Settings::LogSettings();
 
     if (UISettings::values.select_user_on_boot) {
-        if (SelectAndSetCurrentUser() == false) {
+        const Core::Frontend::ProfileSelectParameters parameters{
+            .mode = Service::AM::Applets::UiMode::UserSelector,
+            .invalid_uid_list = {},
+            .display_options = {},
+            .purpose = Service::AM::Applets::UserSelectionPurpose::General,
+        };
+        if (SelectAndSetCurrentUser(parameters) == false) {
             return;
         }
     }
@@ -2058,7 +2071,13 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
         if (has_user_save) {
             // User save data
             const auto select_profile = [this] {
-                QtProfileSelectionDialog dialog(system->HIDCore(), this);
+                const Core::Frontend::ProfileSelectParameters parameters{
+                    .mode = Service::AM::Applets::UiMode::UserSelector,
+                    .invalid_uid_list = {},
+                    .display_options = {},
+                    .purpose = Service::AM::Applets::UserSelectionPurpose::General,
+                };
+                QtProfileSelectionDialog dialog(system->HIDCore(), this, parameters);
                 dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                                       Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
                 dialog.setWindowModality(Qt::WindowModal);

@@ -102,8 +102,8 @@ public:
     void SetNpadCommunicationMode(NpadCommunicationMode communication_mode_);
     NpadCommunicationMode GetNpadCommunicationMode() const;
 
-    Result SetNpadMode(Core::HID::NpadIdType npad_id, NpadJoyDeviceType npad_device_type,
-                       NpadJoyAssignmentMode assignment_mode);
+    bool SetNpadMode(Core::HID::NpadIdType& new_npad_id, Core::HID::NpadIdType npad_id,
+                     NpadJoyDeviceType npad_device_type, NpadJoyAssignmentMode assignment_mode);
 
     bool VibrateControllerAtIndex(Core::HID::NpadIdType npad_id, std::size_t device_index,
                                   const Core::HID::VibrationValue& vibration_value);

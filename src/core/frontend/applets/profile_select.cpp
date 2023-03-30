@@ -11,7 +11,8 @@ ProfileSelectApplet::~ProfileSelectApplet() = default;
 
 void DefaultProfileSelectApplet::Close() const {}
 
-void DefaultProfileSelectApplet::SelectProfile(SelectProfileCallback callback) const {
+void DefaultProfileSelectApplet::SelectProfile(SelectProfileCallback callback,
+                                               const ProfileSelectParameters& parameters) const {
     Service::Account::ProfileManager manager;
     callback(manager.GetUser(Settings::values.current_user.GetValue()).value_or(Common::UUID{}));
     LOG_INFO(Service_ACC, "called, selecting current user instead of prompting...");

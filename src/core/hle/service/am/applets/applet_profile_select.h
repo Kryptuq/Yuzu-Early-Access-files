@@ -16,19 +16,100 @@ class System;
 
 namespace Service::AM::Applets {
 
-struct UserSelectionConfig {
-    // TODO(DarkLordZach): RE this structure
-    // It seems to be flags and the like that determine the UI of the applet on the switch... from
-    // my research this is safe to ignore for now.
-    INSERT_PADDING_BYTES(0xA0);
+enum class ProfileSelectAppletVersion : u32 {
+    Version1 = 0x1,     // 1.0.0+
+    Version2 = 0x10000, // 2.0.0+
+    Version3 = 0x20000, // 6.0.0+
 };
-static_assert(sizeof(UserSelectionConfig) == 0xA0, "UserSelectionConfig has incorrect size.");
 
-struct UserSelectionOutput {
+// This is nn::account::UiMode
+enum class UiMode {
+    UserSelector,
+    UserCreator,
+    EnsureNetworkServiceAccountAvailable,
+    UserIconEditor,
+    UserNicknameEditor,
+    UserCreatorForStarter,
+    NintendoAccountAuthorizationRequestContext,
+    IntroduceExternalNetworkServiceAccount,
+    IntroduceExternalNetworkServiceAccountForRegistration,
+    NintendoAccountNnidLinker,
+    LicenseRequirementsForNetworkService,
+    LicenseRequirementsForNetworkServiceWithUserContextImpl,
+    UserCreatorForImmediateNaLoginTest,
+    UserQualificationPromoter,
+};
+
+// This is nn::account::UserSelectionPurpose
+enum class UserSelectionPurpose {
+    General,
+    GameCardRegistration,
+    EShopLaunch,
+    EShopItemShow,
+    PicturePost,
+    NintendoAccountLinkage,
+    SettingsUpdate,
+    SaveDataDeletion,
+    UserMigration,
+    SaveDataTransfer,
+};
+
+// This is nn::account::NintendoAccountStartupDialogType
+enum class NintendoAccountStartupDialogType {
+    LoginAndCreate,
+    Login,
+    Create,
+};
+
+// This is nn::account::UserSelectionSettingsForSystemService
+struct UserSelectionSettingsForSystemService {
+    UserSelectionPurpose purpose;
+    bool enable_user_creation;
+    INSERT_PADDING_BYTES(0x3);
+};
+static_assert(sizeof(UserSelectionSettingsForSystemService) == 0x8,
+              "UserSelectionSettingsForSystemService has incorrect size.");
+
+struct UiSettingsDisplayOptions {
+    bool is_network_service_account_required;
+    bool is_skip_enabled;
+    bool is_system_or_launcher;
+    bool is_registration_permitted;
+    bool show_skip_button;
+    bool aditional_select;
+    bool show_user_selector;
+    bool is_unqualified_user_selectable;
+};
+static_assert(sizeof(UiSettingsDisplayOptions) == 0x8,
+              "UiSettingsDisplayOptions has incorrect size.");
+
+struct UiSettingsV1 {
+    UiMode mode;
+    INSERT_PADDING_BYTES(0x4);
+    std::array<Common::UUID, 8> invalid_uid_list;
+    u64 application_id;
+    UiSettingsDisplayOptions display_options;
+};
+static_assert(sizeof(UiSettingsV1) == 0x98, "UiSettings has incorrect size.");
+
+// This is nn::account::UiSettings
+struct UiSettings {
+    UiMode mode;
+    INSERT_PADDING_BYTES(0x4);
+    std::array<Common::UUID, 8> invalid_uid_list;
+    u64 application_id;
+    UiSettingsDisplayOptions display_options;
+    UserSelectionPurpose purpose;
+    INSERT_PADDING_BYTES(0x4);
+};
+static_assert(sizeof(UiSettings) == 0xA0, "UiSettings has incorrect size.");
+
+// This is nn::account::UiReturnArg
+struct UiReturnArg {
     u64 result;
     Common::UUID uuid_selected;
 };
-static_assert(sizeof(UserSelectionOutput) == 0x18, "UserSelectionOutput has incorrect size.");
+static_assert(sizeof(UiReturnArg) == 0x18, "UiReturnArg has incorrect size.");
 
 class ProfileSelect final : public Applet {
 public:
@@ -49,7 +130,10 @@ public:
 private:
     const Core::Frontend::ProfileSelectApplet& frontend;
 
-    UserSelectionConfig config;
+    UiSettings config;
+    UiSettingsV1 config_old;
+    ProfileSelectAppletVersion profile_select_version;
+
     bool complete = false;
     Result status = ResultSuccess;
     std::vector<u8> final_data;

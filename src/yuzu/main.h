@@ -69,6 +69,7 @@ struct ControllerParameters;
 struct InlineAppearParameters;
 struct InlineTextParameters;
 struct KeyboardInitializeParameters;
+struct ProfileSelectParameters;
 } // namespace Core::Frontend
 
 namespace DiscordRPC {
@@ -165,7 +166,7 @@ signals:
 
     void AmiiboSettingsFinished(bool is_success, const std::string& name);
 
-    void ControllerSelectorReconfigureFinished();
+    void ControllerSelectorReconfigureFinished(bool is_success);
 
     void ErrorDisplayFinished();
 
@@ -203,7 +204,7 @@ public slots:
     void SoftwareKeyboardExit();
     void ErrorDisplayDisplayError(QString error_code, QString error_text);
     void ErrorDisplayRequestExit();
-    void ProfileSelectorSelectProfile();
+    void ProfileSelectorSelectProfile(const Core::Frontend::ProfileSelectParameters& parameters);
     void ProfileSelectorRequestExit();
     void WebBrowserOpenWebPage(const std::string& main_url, const std::string& additional_args,
                                bool is_local);
@@ -242,7 +243,7 @@ private:
     void SetDiscordEnabled(bool state);
     void LoadAmiibo(const QString& filename);
 
-    bool SelectAndSetCurrentUser();
+    bool SelectAndSetCurrentUser(const Core::Frontend::ProfileSelectParameters& parameters);
 
     /**
      * Stores the filename in the recently loaded files list.

@@ -131,7 +131,7 @@ public:
     void Execute() override;
     Result RequestExit() override;
 
-    void ConfigurationComplete();
+    void ConfigurationComplete(bool is_success);
 
 private:
     const Core::Frontend::ControllerApplet& frontend;

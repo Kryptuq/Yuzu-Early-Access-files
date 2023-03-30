@@ -2629,7 +2629,7 @@
             <bool>true</bool>
            </property>
            <property name="standardButtons">
-            <set>QDialogButtonBox::Ok</set>
+            <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
            </property>
           </widget>
          </item>
@@ -2648,6 +2648,12 @@
    <signal>accepted()</signal>
    <receiver>QtControllerSelectorDialog</receiver>
    <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>QtControllerSelectorDialog</receiver>
+   <slot>reject()</slot>
   </connection>
  </connections>
 </ui>

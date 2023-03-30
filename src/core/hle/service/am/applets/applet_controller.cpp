@@ -224,7 +224,8 @@ void Controller::Execute() {
                   parameters.allow_dual_joycons, parameters.allow_left_joycon,
                   parameters.allow_right_joycon);
 
-        frontend.ReconfigureControllers([this] { ConfigurationComplete(); }, parameters);
+        frontend.ReconfigureControllers(
+            [this](bool is_success) { ConfigurationComplete(is_success); }, parameters);
         break;
     }
     case ControllerSupportMode::ShowControllerStrapGuide:
@@ -232,16 +233,16 @@ void Controller::Execute() {
     case ControllerSupportMode::ShowControllerKeyRemappingForSystem:
         UNIMPLEMENTED_MSG("ControllerSupportMode={} is not implemented",
                           controller_private_arg.mode);
-        ConfigurationComplete();
+        ConfigurationComplete(true);
         break;
     default: {
-        ConfigurationComplete();
+        ConfigurationComplete(true);
         break;
     }
     }
 }
 
-void Controller::ConfigurationComplete() {
+void Controller::ConfigurationComplete(bool is_success) {
     ControllerSupportResultInfo result_info{};
 
     // If enable_single_mode is enabled, player_count is 1 regardless of any other parameters.
@@ -250,7 +251,7 @@ void Controller::ConfigurationComplete() {
 
     result_info.selected_id = static_cast<u32>(system.HIDCore().GetFirstNpadId());
 
-    result_info.result = 0;
+    result_info.result = is_success ? 0 : 2;
 
     LOG_DEBUG(Service_HID, "Result Info: player_count={}, selected_id={}, result={}",
               result_info.player_count, result_info.selected_id, result_info.result);

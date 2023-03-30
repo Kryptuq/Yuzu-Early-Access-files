@@ -37,7 +37,7 @@ struct ControllerParameters {
 
 class ControllerApplet : public Applet {
 public:
-    using ReconfigureCallback = std::function<void()>;
+    using ReconfigureCallback = std::function<void(bool)>;
 
     virtual ~ControllerApplet();
 

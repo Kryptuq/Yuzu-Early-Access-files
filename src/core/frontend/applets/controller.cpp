@@ -71,7 +71,7 @@ void DefaultControllerApplet::ReconfigureControllers(ReconfigureCallback callbac
         }
     }
 
-    callback();
+    callback(true);
 }
 
 } // namespace Core::Frontend

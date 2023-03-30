@@ -33,21 +33,26 @@ bool UpdateLockAtomic(Core::System& system, u32* out, KProcessAddress address, u
     auto& monitor = system.Monitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
-    // Load the value from the address.
-    const auto expected = monitor.ExclusiveRead32(current_core, GetInteger(address));
+    u32 expected{};
 
-    // Orr in the new mask.
-    u32 value = expected | new_orr_mask;
+    while (true) {
+        // Load the value from the address.
+        expected = monitor.ExclusiveRead32(current_core, GetInteger(address));
 
-    // If the value is zero, use the if_zero value, otherwise use the newly orr'd value.
-    if (!expected) {
-        value = if_zero;
-    }
+        // Orr in the new mask.
+        u32 value = expected | new_orr_mask;
 
-    // Try to store.
-    if (!monitor.ExclusiveWrite32(current_core, GetInteger(address), value)) {
+        // If the value is zero, use the if_zero value, otherwise use the newly orr'd value.
+        if (!expected) {
+            value = if_zero;
+        }
+
+        // Try to store.
+        if (monitor.ExclusiveWrite32(current_core, GetInteger(address), value)) {
+            break;
+        }
+
         // If we failed to store, try again.
-        return UpdateLockAtomic(system, out, address, if_zero, new_orr_mask);
     }
 
     // We're done.

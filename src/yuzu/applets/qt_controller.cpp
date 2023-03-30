@@ -300,7 +300,7 @@ bool QtControllerSelectorDialog::CheckIfParametersMet() {
     if (num_connected_players < min_supported_players ||
         num_connected_players > max_supported_players) {
         parameters_met = false;
-        ui->buttonBox->setEnabled(parameters_met);
+        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(parameters_met);
         return parameters_met;
     }
 
@@ -327,7 +327,7 @@ bool QtControllerSelectorDialog::CheckIfParametersMet() {
     }();
 
     parameters_met = all_controllers_compatible;
-    ui->buttonBox->setEnabled(parameters_met);
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(parameters_met);
     return parameters_met;
 }
 
@@ -697,8 +697,8 @@ void QtControllerSelector::ReconfigureControllers(
     emit MainWindowReconfigureControllers(parameters);
 }
 
-void QtControllerSelector::MainWindowReconfigureFinished() {
+void QtControllerSelector::MainWindowReconfigureFinished(bool is_success) {
     if (callback) {
-        callback();
+        callback(is_success);
     }
 }

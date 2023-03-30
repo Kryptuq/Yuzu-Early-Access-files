@@ -35,24 +35,30 @@ bool DecrementIfLessThan(Core::System& system, s32* out, KProcessAddress address
 
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
-    // Load the value from the address.
-    const s32 current_value =
-        static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
+    s32 current_value{};
 
-    // Compare it to the desired one.
-    if (current_value < value) {
-        // If less than, we want to try to decrement.
-        const s32 decrement_value = current_value - 1;
+    while (true) {
+        // Load the value from the address.
+        current_value =
+            static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
 
-        // Decrement and try to store.
-        if (!monitor.ExclusiveWrite32(current_core, GetInteger(address),
-                                      static_cast<u32>(decrement_value))) {
+        // Compare it to the desired one.
+        if (current_value < value) {
+            // If less than, we want to try to decrement.
+            const s32 decrement_value = current_value - 1;
+
+            // Decrement and try to store.
+            if (monitor.ExclusiveWrite32(current_core, GetInteger(address),
+                                         static_cast<u32>(decrement_value))) {
+                break;
+            }
+
             // If we failed to store, try again.
-            DecrementIfLessThan(system, out, address, value);
+        } else {
+            // Otherwise, clear our exclusive hold and finish
+            monitor.ClearExclusive(current_core);
+            break;
         }
-    } else {
-        // Otherwise, clear our exclusive hold and finish
-        monitor.ClearExclusive(current_core);
     }
 
     // We're done.
@@ -70,23 +76,29 @@ bool UpdateIfEqual(Core::System& system, s32* out, KProcessAddress address, s32 
 
     // TODO(bunnei): We should call CanAccessAtomic(..) here.
 
+    s32 current_value{};
+
     // Load the value from the address.
-    const s32 current_value =
-        static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
+    while (true) {
+        current_value =
+            static_cast<s32>(monitor.ExclusiveRead32(current_core, GetInteger(address)));
 
-    // Compare it to the desired one.
-    if (current_value == value) {
-        // If equal, we want to try to write the new value.
+        // Compare it to the desired one.
+        if (current_value == value) {
+            // If equal, we want to try to write the new value.
 
-        // Try to store.
-        if (!monitor.ExclusiveWrite32(current_core, GetInteger(address),
-                                      static_cast<u32>(new_value))) {
+            // Try to store.
+            if (monitor.ExclusiveWrite32(current_core, GetInteger(address),
+                                         static_cast<u32>(new_value))) {
+                break;
+            }
+
             // If we failed to store, try again.
-            UpdateIfEqual(system, out, address, value, new_value);
+        } else {
+            // Otherwise, clear our exclusive hold and finish.
+            monitor.ClearExclusive(current_core);
+            break;
         }
-    } else {
-        // Otherwise, clear our exclusive hold and finish.
-        monitor.ClearExclusive(current_core);
     }
 
     // We're done.

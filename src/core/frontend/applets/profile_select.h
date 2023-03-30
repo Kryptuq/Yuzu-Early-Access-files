@@ -5,11 +5,19 @@
 
 #include <functional>
 #include <optional>
-#include "common/uuid.h"
 
+#include "common/uuid.h"
 #include "core/frontend/applets/applet.h"
+#include "core/hle/service/am/applets/applet_profile_select.h"
 
 namespace Core::Frontend {
+
+struct ProfileSelectParameters {
+    Service::AM::Applets::UiMode mode;
+    std::array<Common::UUID, 8> invalid_uid_list;
+    Service::AM::Applets::UiSettingsDisplayOptions display_options;
+    Service::AM::Applets::UserSelectionPurpose purpose;
+};
 
 class ProfileSelectApplet : public Applet {
 public:
@@ -17,13 +25,15 @@ public:
 
     virtual ~ProfileSelectApplet();
 
-    virtual void SelectProfile(SelectProfileCallback callback) const = 0;
+    virtual void SelectProfile(SelectProfileCallback callback,
+                               const ProfileSelectParameters& parameters) const = 0;
 };
 
 class DefaultProfileSelectApplet final : public ProfileSelectApplet {
 public:
     void Close() const override;
-    void SelectProfile(SelectProfileCallback callback) const override;
+    void SelectProfile(SelectProfileCallback callback,
+                       const ProfileSelectParameters& parameters) const override;
 };
 
 } // namespace Core::Frontend
