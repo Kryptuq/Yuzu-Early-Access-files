@@ -38,12 +38,12 @@ public:
         Map(address, address_end, null_value);
     }
 
-    [[nodiscard]] size_t GetContinousSizeFrom(KeyTBase address) const {
+    [[nodiscard]] size_t GetContinuousSizeFrom(KeyTBase address) const {
         const KeyT new_address = static_cast<KeyT>(address);
         if (new_address < 0) {
             return 0;
         }
-        return ContinousSizeInternal(new_address);
+        return ContinuousSizeInternal(new_address);
     }
 
     [[nodiscard]] ValueT GetValueAt(KeyT address) const {
@@ -59,7 +59,7 @@ private:
     using IteratorType = typename MapType::iterator;
     using ConstIteratorType = typename MapType::const_iterator;
 
-    size_t ContinousSizeInternal(KeyT address) const {
+    size_t ContinuousSizeInternal(KeyT address) const {
         const auto it = GetFirstElementBeforeOrOn(address);
         if (it == container.end() || it->second == null_value) {
             return 0;

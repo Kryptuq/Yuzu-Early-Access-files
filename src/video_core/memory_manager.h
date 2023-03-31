@@ -94,7 +94,7 @@ public:
     /**
      * Checks if a gpu region is mapped by a single range of cpu addresses.
      */
-    [[nodiscard]] bool IsContinousRange(GPUVAddr gpu_addr, std::size_t size) const;
+    [[nodiscard]] bool IsContinuousRange(GPUVAddr gpu_addr, std::size_t size) const;
 
     /**
      * Checks if a gpu region is mapped entirely.
@@ -123,7 +123,7 @@ public:
     bool IsMemoryDirty(GPUVAddr gpu_addr, size_t size,
                        VideoCommon::CacheType which = VideoCommon::CacheType::All) const;
 
-    size_t MaxContinousRange(GPUVAddr gpu_addr, size_t size) const;
+    size_t MaxContinuousRange(GPUVAddr gpu_addr, size_t size) const;
 
     bool IsWithinGPUAddressRange(GPUVAddr gpu_addr) const {
         return gpu_addr < address_space_size;
@@ -158,8 +158,8 @@ private:
         }
     }
 
-    inline bool IsBigPageContinous(size_t big_page_index) const;
-    inline void SetBigPageContinous(size_t big_page_index, bool value);
+    inline bool IsBigPageContinuous(size_t big_page_index) const;
+    inline void SetBigPageContinuous(size_t big_page_index, bool value);
 
     template <bool is_gpu_address>
     void GetSubmappedRangeImpl(
@@ -213,10 +213,10 @@ private:
     Common::RangeMap<GPUVAddr, PTEKind> kind_map;
     Common::VirtualBuffer<u32> big_page_table_cpu;
 
-    std::vector<u64> big_page_continous;
+    std::vector<u64> big_page_continuous;
     std::vector<std::pair<VAddr, std::size_t>> page_stash{};
 
-    static constexpr size_t continous_bits = 64;
+    static constexpr size_t continuous_bits = 64;
 
     const size_t unique_identifier;
     std::unique_ptr<VideoCommon::InvalidationAccumulator> accumulator;

@@ -1442,7 +1442,7 @@ void BufferCache<P>::UpdateVertexBuffer(u32 index) {
     }
     if (!gpu_memory->IsWithinGPUAddressRange(gpu_addr_end)) {
         address_size =
-            static_cast<u32>(gpu_memory->MaxContinousRange(gpu_addr_begin, address_size));
+            static_cast<u32>(gpu_memory->MaxContinuousRange(gpu_addr_begin, address_size));
     }
     const u32 size = address_size; // TODO: Analyze stride and number of vertices
     vertex_buffers[index] = Binding{

@@ -1269,7 +1269,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
     Image& new_image = slot_images[new_image_id];
 
-    if (!gpu_memory->IsContinousRange(new_image.gpu_addr, new_image.guest_size_bytes)) {
+    if (!gpu_memory->IsContinuousRange(new_image.gpu_addr, new_image.guest_size_bytes)) {
         new_image.flags |= ImageFlagBits::Sparse;
     }
 

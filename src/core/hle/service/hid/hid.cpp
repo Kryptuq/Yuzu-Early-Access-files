@@ -1388,7 +1388,7 @@ void Hid::SetNpadJoyAssignmentModeSingleWithDestination(HLERequestContext& ctx) 
 
     Core::HID::NpadIdType new_npad_id{};
     auto& controller = GetAppletResource()->GetController<Controller_NPad>(HidController::NPad);
-    const auto is_reasigned =
+    const auto is_reassigned =
         controller.SetNpadMode(new_npad_id, parameters.npad_id, parameters.npad_joy_device_type,
                                Controller_NPad::NpadJoyAssignmentMode::Single);
 
@@ -1398,7 +1398,7 @@ void Hid::SetNpadJoyAssignmentModeSingleWithDestination(HLERequestContext& ctx) 
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(ResultSuccess);
-    rb.Push(is_reasigned);
+    rb.Push(is_reassigned);
     rb.PushEnum(new_npad_id);
 }
 

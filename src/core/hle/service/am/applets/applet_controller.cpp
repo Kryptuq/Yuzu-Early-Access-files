@@ -251,7 +251,8 @@ void Controller::ConfigurationComplete(bool is_success) {
 
     result_info.selected_id = static_cast<u32>(system.HIDCore().GetFirstNpadId());
 
-    result_info.result = is_success ? 0 : 2;
+    result_info.result =
+        is_success ? ControllerSupportResult::Success : ControllerSupportResult::Cancel;
 
     LOG_DEBUG(Service_HID, "Result Info: player_count={}, selected_id={}, result={}",
               result_info.player_count, result_info.selected_id, result_info.result);

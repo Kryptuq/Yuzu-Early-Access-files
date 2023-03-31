@@ -48,6 +48,11 @@ enum class ControllerSupportCaller : u8 {
     MaxControllerSupportCaller,
 };
 
+enum class ControllerSupportResult : u32 {
+    Success = 0,
+    Cancel = 2,
+};
+
 struct ControllerSupportArgPrivate {
     u32 arg_private_size{};
     u32 arg_size{};
@@ -112,7 +117,7 @@ struct ControllerSupportResultInfo {
     s8 player_count{};
     INSERT_PADDING_BYTES(3);
     u32 selected_id{};
-    u32 result{};
+    ControllerSupportResult result{};
 };
 static_assert(sizeof(ControllerSupportResultInfo) == 0xC,
               "ControllerSupportResultInfo has incorrect size.");

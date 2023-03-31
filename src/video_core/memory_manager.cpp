@@ -43,7 +43,7 @@ MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, u64
 
     big_entries.resize(big_page_table_size / 32, 0);
     big_page_table_cpu.resize(big_page_table_size);
-    big_page_continous.resize(big_page_table_size / continous_bits, 0);
+    big_page_continuous.resize(big_page_table_size / continuous_bits, 0);
     entries.resize(page_table_size / 32, 0);
 }
 
@@ -85,17 +85,17 @@ PTEKind MemoryManager::GetPageKind(GPUVAddr gpu_addr) const {
     return kind_map.GetValueAt(gpu_addr);
 }
 
-inline bool MemoryManager::IsBigPageContinous(size_t big_page_index) const {
-    const u64 entry_mask = big_page_continous[big_page_index / continous_bits];
-    const size_t sub_index = big_page_index % continous_bits;
+inline bool MemoryManager::IsBigPageContinuous(size_t big_page_index) const {
+    const u64 entry_mask = big_page_continuous[big_page_index / continuous_bits];
+    const size_t sub_index = big_page_index % continuous_bits;
     return ((entry_mask >> sub_index) & 0x1ULL) != 0;
 }
 
-inline void MemoryManager::SetBigPageContinous(size_t big_page_index, bool value) {
-    const u64 continous_mask = big_page_continous[big_page_index / continous_bits];
-    const size_t sub_index = big_page_index % continous_bits;
-    big_page_continous[big_page_index / continous_bits] =
-        (~(1ULL << sub_index) & continous_mask) | (value ? 1ULL << sub_index : 0);
+inline void MemoryManager::SetBigPageContinuous(size_t big_page_index, bool value) {
+    const u64 continuous_mask = big_page_continuous[big_page_index / continuous_bits];
+    const size_t sub_index = big_page_index % continuous_bits;
+    big_page_continuous[big_page_index / continuous_bits] =
+        (~(1ULL << sub_index) & continuous_mask) | (value ? 1ULL << sub_index : 0);
 }
 
 template <MemoryManager::EntryType entry_type>
@@ -140,7 +140,7 @@ GPUVAddr MemoryManager::BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr
             const auto index = PageEntryIndex<true>(current_gpu_addr);
             const u32 sub_value = static_cast<u32>(current_cpu_addr >> cpu_page_bits);
             big_page_table_cpu[index] = sub_value;
-            const bool is_continous = ([&] {
+            const bool is_continuous = ([&] {
                 uintptr_t base_ptr{
                     reinterpret_cast<uintptr_t>(memory.GetPointerSilent(current_cpu_addr))};
                 if (base_ptr == 0) {
@@ -156,7 +156,7 @@ GPUVAddr MemoryManager::BigPageTableOp(GPUVAddr gpu_addr, [[maybe_unused]] VAddr
                 }
                 return true;
             })();
-            SetBigPageContinous(index, is_continous);
+            SetBigPageContinuous(index, is_continuous);
         }
         remaining_size -= big_page_size;
     }
@@ -378,7 +378,7 @@ void MemoryManager::ReadBlockImpl(GPUVAddr gpu_src_addr, void* dest_buffer, std:
         if constexpr (is_safe) {
             rasterizer->FlushRegion(cpu_addr_base, copy_amount, which);
         }
-        if (!IsBigPageContinous(page_index)) [[unlikely]] {
+        if (!IsBigPageContinuous(page_index)) [[unlikely]] {
             memory.ReadBlockUnsafe(cpu_addr_base, dest_buffer, copy_amount);
         } else {
             u8* physical = memory.GetPointer(cpu_addr_base);
@@ -427,7 +427,7 @@ void MemoryManager::WriteBlockImpl(GPUVAddr gpu_dest_addr, const void* src_buffe
         if constexpr (is_safe) {
             rasterizer->InvalidateRegion(cpu_addr_base, copy_amount, which);
         }
-        if (!IsBigPageContinous(page_index)) [[unlikely]] {
+        if (!IsBigPageContinuous(page_index)) [[unlikely]] {
             memory.WriteBlockUnsafe(cpu_addr_base, src_buffer, copy_amount);
         } else {
             u8* physical = memory.GetPointer(cpu_addr_base);
@@ -512,7 +512,7 @@ bool MemoryManager::IsMemoryDirty(GPUVAddr gpu_addr, size_t size,
     return result;
 }
 
-size_t MemoryManager::MaxContinousRange(GPUVAddr gpu_addr, size_t size) const {
+size_t MemoryManager::MaxContinuousRange(GPUVAddr gpu_addr, size_t size) const {
     std::optional<VAddr> old_page_addr{};
     size_t range_so_far = 0;
     bool result{false};
@@ -553,7 +553,7 @@ size_t MemoryManager::MaxContinousRange(GPUVAddr gpu_addr, size_t size) const {
 }
 
 size_t MemoryManager::GetMemoryLayoutSize(GPUVAddr gpu_addr, size_t max_size) const {
-    return kind_map.GetContinousSizeFrom(gpu_addr);
+    return kind_map.GetContinuousSizeFrom(gpu_addr);
 }
 
 void MemoryManager::InvalidateRegion(GPUVAddr gpu_addr, size_t size,
@@ -594,7 +594,7 @@ void MemoryManager::CopyBlock(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr, std
 bool MemoryManager::IsGranularRange(GPUVAddr gpu_addr, std::size_t size) const {
     if (GetEntry<true>(gpu_addr) == EntryType::Mapped) [[likely]] {
         size_t page_index = gpu_addr >> big_page_bits;
-        if (IsBigPageContinous(page_index)) [[likely]] {
+        if (IsBigPageContinuous(page_index)) [[likely]] {
             const std::size_t page{(page_index & big_page_mask) + size};
             return page <= big_page_size;
         }
@@ -608,7 +608,7 @@ bool MemoryManager::IsGranularRange(GPUVAddr gpu_addr, std::size_t size) const {
     return page <= Core::Memory::YUZU_PAGESIZE;
 }
 
-bool MemoryManager::IsContinousRange(GPUVAddr gpu_addr, std::size_t size) const {
+bool MemoryManager::IsContinuousRange(GPUVAddr gpu_addr, std::size_t size) const {
     std::optional<VAddr> old_page_addr{};
     bool result{true};
     auto fail = [&]([[maybe_unused]] std::size_t page_index, [[maybe_unused]] std::size_t offset,
