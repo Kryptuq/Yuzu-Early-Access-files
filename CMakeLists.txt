@@ -222,7 +222,7 @@ find_package(ZLIB 1.2 REQUIRED)
 find_package(zstd 1.5 REQUIRED)
 
 if (NOT YUZU_USE_EXTERNAL_VULKAN_HEADERS)
-    find_package(Vulkan 1.3.238 REQUIRED)
+    find_package(Vulkan 1.3.246 REQUIRED)
 endif()
 
 if (ENABLE_LIBUSB)

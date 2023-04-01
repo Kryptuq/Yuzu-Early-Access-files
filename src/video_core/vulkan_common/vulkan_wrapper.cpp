@@ -375,6 +375,8 @@ const char* ToString(VkResult result) noexcept {
         return "VK_RESULT_MAX_ENUM";
     case VkResult::VK_ERROR_COMPRESSION_EXHAUSTED_EXT:
         return "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+    case VkResult::VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT:
+        return "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
     }
     return "Unknown";
 }
