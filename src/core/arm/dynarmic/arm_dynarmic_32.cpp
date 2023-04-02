@@ -5,7 +5,6 @@
 #include <memory>
 #include <dynarmic/interface/A32/a32.h>
 #include <dynarmic/interface/A32/config.h>
-#include <dynarmic/interface/A32/context.h>
 #include "common/assert.h"
 #include "common/literals.h"
 #include "common/logging/log.h"
@@ -410,21 +409,19 @@ void ARM_Dynarmic_32::SetTPIDR_EL0(u64 value) {
 }
 
 void ARM_Dynarmic_32::SaveContext(ThreadContext32& ctx) {
-    Dynarmic::A32::Context context;
-    jit.load()->SaveContext(context);
-    ctx.cpu_registers = context.Regs();
-    ctx.extension_registers = context.ExtRegs();
-    ctx.cpsr = context.Cpsr();
-    ctx.fpscr = context.Fpscr();
+    Dynarmic::A32::Jit* j = jit.load();
+    ctx.cpu_registers = j->Regs();
+    ctx.extension_registers = j->ExtRegs();
+    ctx.cpsr = j->Cpsr();
+    ctx.fpscr = j->Fpscr();
 }
 
 void ARM_Dynarmic_32::LoadContext(const ThreadContext32& ctx) {
-    Dynarmic::A32::Context context;
-    context.Regs() = ctx.cpu_registers;
-    context.ExtRegs() = ctx.extension_registers;
-    context.SetCpsr(ctx.cpsr);
-    context.SetFpscr(ctx.fpscr);
-    jit.load()->LoadContext(context);
+    Dynarmic::A32::Jit* j = jit.load();
+    j->Regs() = ctx.cpu_registers;
+    j->ExtRegs() = ctx.extension_registers;
+    j->SetCpsr(ctx.cpsr);
+    j->SetFpscr(ctx.fpscr);
 }
 
 void ARM_Dynarmic_32::SignalInterrupt() {
