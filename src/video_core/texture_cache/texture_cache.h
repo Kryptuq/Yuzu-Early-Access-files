@@ -1503,7 +1503,7 @@ ImageViewId TextureCache<P>::FindColorBuffer(size_t index, bool is_clear) {
     if (rt.format == Tegra::RenderTargetFormat::NONE) {
         return ImageViewId{};
     }
-    const ImageInfo info(regs, index);
+    const ImageInfo info(regs.rt[index], regs.anti_alias_samples_mode);
     return FindRenderTargetView(info, gpu_addr, is_clear);
 }
 
@@ -1517,7 +1517,7 @@ ImageViewId TextureCache<P>::FindDepthBuffer(bool is_clear) {
     if (gpu_addr == 0) {
         return ImageViewId{};
     }
-    const ImageInfo info(regs);
+    const ImageInfo info(regs.zeta, regs.zeta_size, regs.anti_alias_samples_mode);
     return FindRenderTargetView(info, gpu_addr, is_clear);
 }
 

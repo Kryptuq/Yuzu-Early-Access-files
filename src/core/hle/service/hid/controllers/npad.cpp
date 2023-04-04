@@ -70,17 +70,12 @@ Result Controller_NPad::VerifyValidSixAxisSensorHandle(
     const Core::HID::SixAxisSensorHandle& device_handle) {
     const auto npad_id = IsNpadIdValid(static_cast<Core::HID::NpadIdType>(device_handle.npad_id));
     const bool device_index = device_handle.device_index < Core::HID::DeviceIndex::MaxDeviceIndex;
-    const bool npad_type = device_handle.npad_type < Core::HID::NpadStyleIndex::MaxNpadType;
 
     if (!npad_id) {
         return InvalidNpadId;
     }
     if (!device_index) {
         return NpadDeviceIndexOutOfRange;
-    }
-    // This doesn't get validated on nnsdk
-    if (!npad_type) {
-        return NpadInvalidHandle;
     }
 
     return ResultSuccess;
@@ -1131,6 +1126,7 @@ Result Controller_NPad::DisconnectNpad(Core::HID::NpadIdType npad_id) {
     WriteEmptyEntry(shared_memory);
     return ResultSuccess;
 }
+
 Result Controller_NPad::SetGyroscopeZeroDriftMode(
     const Core::HID::SixAxisSensorHandle& sixaxis_handle,
     Core::HID::GyroscopeZeroDriftMode drift_mode) {

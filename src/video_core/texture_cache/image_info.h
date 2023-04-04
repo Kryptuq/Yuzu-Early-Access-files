@@ -17,8 +17,11 @@ using VideoCore::Surface::PixelFormat;
 struct ImageInfo {
     ImageInfo() = default;
     explicit ImageInfo(const TICEntry& config) noexcept;
-    explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs, size_t index) noexcept;
-    explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs& regs) noexcept;
+    explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& ct,
+                       Tegra::Texture::MsaaMode msaa_mode) noexcept;
+    explicit ImageInfo(const Tegra::Engines::Maxwell3D::Regs::Zeta& zt,
+                       const Tegra::Engines::Maxwell3D::Regs::ZetaSize& zt_size,
+                       Tegra::Texture::MsaaMode msaa_mode) noexcept;
     explicit ImageInfo(const Tegra::Engines::Fermi2D::Surface& config) noexcept;
     explicit ImageInfo(const Tegra::DMA::ImageOperand& config) noexcept;
 

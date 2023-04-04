@@ -266,7 +266,8 @@ u64 SinkStream::GetExpectedPlayedSampleCount() {
     auto exp_played_sample_count{min_played_sample_count +
                                  (TargetSampleRate * time_delta) / std::chrono::seconds{1}};
 
-    return std::min<u64>(exp_played_sample_count, max_played_sample_count);
+    // Add 15ms of latency in sample reporting to allow for some leeway in scheduler timings
+    return std::min<u64>(exp_played_sample_count, max_played_sample_count) + TargetSampleCount * 3;
 }
 
 void SinkStream::WaitFreeSpace() {

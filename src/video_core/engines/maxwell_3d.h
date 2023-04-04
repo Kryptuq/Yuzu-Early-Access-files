@@ -856,8 +856,8 @@ public:
 
         struct ZetaSize {
             enum class DimensionControl : u32 {
-                DepthDefinesArray = 0,
-                ArraySizeOne = 1,
+                DefineArraySize = 0,
+                ArraySizeIsOne = 1,
             };
 
             u32 width;
@@ -1104,8 +1104,8 @@ public:
 
         struct TileMode {
             enum class DimensionControl : u32 {
-                DepthDefinesArray = 0,
-                DepthDefinesDepth = 1,
+                DefineArraySize = 0,
+                DefineDepthSize = 1,
             };
             union {
                 BitField<0, 4, u32> block_width;
