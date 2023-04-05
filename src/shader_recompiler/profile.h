@@ -52,6 +52,10 @@ struct Profile {
     bool need_declared_frag_colors{};
     /// Prevents fast math optimizations that may cause inaccuracies
     bool need_fastmath_off{};
+    /// Some GPU vendors use a lower fixed point format of 16.8 when calculating pixel coordinates
+    /// in the ImageGather instruction than the Maxwell architecture does. Applying an offset does
+    /// fix this mismatching rounding behaviour.
+    bool need_gather_subpixel_offset{};
 
     /// OpFClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};

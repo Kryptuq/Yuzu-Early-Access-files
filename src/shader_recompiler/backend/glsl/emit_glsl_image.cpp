@@ -143,6 +143,20 @@ IR::Inst* PrepareSparse(IR::Inst& inst) {
     }
     return sparse_inst;
 }
+
+std::string ImageGatherSubpixelOffset(const IR::TextureInstInfo& info, std::string_view texture,
+                                      std::string_view coords) {
+    switch (info.type) {
+    case TextureType::Color2D:
+    case TextureType::Color2DRect:
+        return fmt::format("{}+vec2(0.001953125)/vec2(textureSize({}, 0))", coords, texture);
+    case TextureType::ColorArray2D:
+    case TextureType::ColorCube:
+        return fmt::format("vec3({0}.xy+vec2(0.001953125)/vec2(textureSize({1}, 0)),{0}.z)", coords, texture);
+    default:
+        return std::string{coords};
+    }
+}
 } // Anonymous namespace
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
@@ -340,6 +354,13 @@ void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
         LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
+    std::string coords_with_subpixel_offset;
+    if (ctx.profile.need_gather_subpixel_offset) {
+        // Apply a subpixel offset of 1/512 the texel size of the texture to ensure same rounding on
+        // AMD hardware as on Maxwell or other Nvidia architectures.
+        coords_with_subpixel_offset = ImageGatherSubpixelOffset(info, texture, coords);
+        coords = coords_with_subpixel_offset;
+    }
     if (!sparse_inst || !supports_sparse) {
         if (offset.IsEmpty()) {
             ctx.Add("{}=textureGather({},{},int({}));", texel, texture, coords,
@@ -386,6 +407,13 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     if (sparse_inst && !supports_sparse) {
         LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    std::string coords_with_subpixel_offset;
+    if (ctx.profile.need_gather_subpixel_offset) {
+        // Apply a subpixel offset of 1/512 the texel size of the texture to ensure same rounding on
+        // AMD hardware as on Maxwell or other Nvidia architectures.
+        coords_with_subpixel_offset = ImageGatherSubpixelOffset(info, texture, coords);
+        coords = coords_with_subpixel_offset;
     }
     if (!sparse_inst || !supports_sparse) {
         if (offset.IsEmpty()) {

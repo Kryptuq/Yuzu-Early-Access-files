@@ -160,6 +160,10 @@ public:
         return need_fastmath_off;
     }
 
+    bool NeedsGatherSubpixelOffset() const {
+        return need_gather_subpixel_offset;
+    }
+
     bool HasCbufFtouBug() const {
         return has_cbuf_ftou_bug;
     }
@@ -225,6 +229,7 @@ private:
     bool has_draw_texture{};
     bool warp_size_potentially_larger_than_guest{};
     bool need_fastmath_off{};
+    bool need_gather_subpixel_offset{};
     bool has_cbuf_ftou_bug{};
     bool has_bool_ref_bug{};
     bool can_report_memory{};

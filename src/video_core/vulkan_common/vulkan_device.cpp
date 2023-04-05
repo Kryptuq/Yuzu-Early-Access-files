@@ -431,6 +431,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
                         "AMD GCN4 and earlier have broken VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT");
             has_broken_cube_compatibility = true;
         }
+        need_gather_subpixel_offset = true;
     }
     if (extensions.sampler_filter_minmax && is_amd) {
         // Disable ext_sampler_filter_minmax on AMD GCN4 and lower as it is broken.

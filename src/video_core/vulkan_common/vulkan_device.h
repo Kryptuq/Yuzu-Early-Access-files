@@ -554,6 +554,10 @@ public:
         return features.robustness2.nullDescriptor;
     }
 
+    bool NeedsGatherSubpixelOffset() const {
+        return need_gather_subpixel_offset;
+    }
+
     u32 GetMaxVertexInputAttributes() const {
         return properties.properties.limits.maxVertexInputAttributes;
     }
@@ -664,6 +668,7 @@ private:
     bool must_emulate_bgr565{};             ///< Emulates BGR565 by swizzling RGB565 format.
     bool dynamic_state3_blending{};         ///< Has all blending features of dynamic_state3.
     bool dynamic_state3_enables{};          ///< Has all enables features of dynamic_state3.
+    bool need_gather_subpixel_offset{};     ///< Needs offset at ImageGather for correct rounding.
     u64 device_access_memory{};             ///< Total size of device local memory in bytes.
     u32 sets_per_pool{};                    ///< Sets per Description Pool
 

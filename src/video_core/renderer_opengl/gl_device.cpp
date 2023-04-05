@@ -169,6 +169,7 @@ Device::Device(Core::Frontend::EmuWindow& emu_window) {
     has_draw_texture = GLAD_GL_NV_draw_texture;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
     need_fastmath_off = is_nvidia;
+    need_gather_subpixel_offset = is_amd;
     can_report_memory = GLAD_GL_NVX_gpu_memory_info;
 
     // At the moment of writing this, only Nvidia's driver optimizes BufferSubData on exclusive

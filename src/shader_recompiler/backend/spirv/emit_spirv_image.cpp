@@ -261,6 +261,39 @@ Id BitTest(EmitContext& ctx, Id mask, Id bit) {
     const Id bit_value{ctx.OpBitwiseAnd(ctx.U32[1], shifted, ctx.Const(1u))};
     return ctx.OpINotEqual(ctx.U1, bit_value, ctx.u32_zero_value);
 }
+
+Id ImageGatherSubpixelOffset(EmitContext& ctx, const IR::TextureInstInfo& info, Id texture,
+                             Id coords) {
+    // Apply a subpixel offset of 1/512 the texel size of the texture to ensure same rounding on
+    // AMD hardware as on Maxwell or other Nvidia architectures.
+    const auto calculate_offset{[&](size_t dim) -> std::array<Id, 2> {
+        const Id nudge{ctx.Const(0x1p-9f)};
+        const Id image_size{ctx.OpImageQuerySizeLod(ctx.U32[dim], texture, ctx.u32_zero_value)};
+        const Id offset_x{ctx.OpFDiv(
+            ctx.F32[1], nudge,
+            ctx.OpConvertUToF(ctx.F32[1], ctx.OpCompositeExtract(ctx.U32[1], image_size, 0)))};
+        const Id offset_y{ctx.OpFDiv(
+            ctx.F32[1], nudge,
+            ctx.OpConvertUToF(ctx.F32[1], ctx.OpCompositeExtract(ctx.U32[1], image_size, 1)))};
+        return {ctx.OpFAdd(ctx.F32[1], ctx.OpCompositeExtract(ctx.F32[1], coords, 0), offset_x),
+                ctx.OpFAdd(ctx.F32[1], ctx.OpCompositeExtract(ctx.F32[1], coords, 1), offset_y)};
+    }};
+    switch (info.type) {
+    case TextureType::Color2D:
+    case TextureType::Color2DRect: {
+        const auto offset{calculate_offset(2)};
+        return ctx.OpCompositeConstruct(ctx.F32[2], offset[0], offset[1]);
+    }
+    case TextureType::ColorArray2D:
+    case TextureType::ColorCube: {
+        const auto offset{calculate_offset(3)};
+        return ctx.OpCompositeConstruct(ctx.F32[3], offset[0], offset[1],
+                                        ctx.OpCompositeExtract(ctx.F32[1], coords, 2));
+    }
+    default:
+        return coords;
+    }
+}
 } // Anonymous namespace
 
 Id EmitBindlessImageSampleImplicitLod(EmitContext&) {
@@ -423,6 +456,9 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
                    const IR::Value& offset, const IR::Value& offset2) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
+    if (ctx.profile.need_gather_subpixel_offset) {
+        coords = ImageGatherSubpixelOffset(ctx, info, TextureImage(ctx, info, index), coords);
+    }
     return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, info, index), coords, ctx.Const(info.gather_component),
                 operands.MaskOptional(), operands.Span());
@@ -432,6 +468,9 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                        const IR::Value& offset, const IR::Value& offset2, Id dref) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
+    if (ctx.profile.need_gather_subpixel_offset) {
+        coords = ImageGatherSubpixelOffset(ctx, info, TextureImage(ctx, info, index), coords);
+    }
     return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, info, index), coords, dref, operands.MaskOptional(),
                 operands.Span());
