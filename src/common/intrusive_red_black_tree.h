@@ -96,10 +96,6 @@ public:
             return m_node == rhs.m_node;
         }
 
-        constexpr bool operator!=(const Iterator& rhs) const {
-            return !(*this == rhs);
-        }
-
         constexpr pointer operator->() const {
             return m_node;
         }
@@ -322,10 +318,6 @@ public:
     public:
         constexpr bool operator==(const Iterator& rhs) const {
             return m_impl == rhs.m_impl;
-        }
-
-        constexpr bool operator!=(const Iterator& rhs) const {
-            return !(*this == rhs);
         }
 
         constexpr pointer operator->() const {

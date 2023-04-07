@@ -152,7 +152,8 @@ std::string ImageGatherSubpixelOffset(const IR::TextureInstInfo& info, std::stri
         return fmt::format("{}+vec2(0.001953125)/vec2(textureSize({}, 0))", coords, texture);
     case TextureType::ColorArray2D:
     case TextureType::ColorCube:
-        return fmt::format("vec3({0}.xy+vec2(0.001953125)/vec2(textureSize({1}, 0)),{0}.z)", coords, texture);
+        return fmt::format("vec3({0}.xy+vec2(0.001953125)/vec2(textureSize({1}, 0)),{0}.z)", coords,
+                           texture);
     default:
         return std::string{coords};
     }

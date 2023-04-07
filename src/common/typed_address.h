@@ -116,16 +116,11 @@ public:
 
     // Comparison operators.
     constexpr bool operator==(const TypedAddress&) const = default;
-    constexpr bool operator!=(const TypedAddress&) const = default;
     constexpr auto operator<=>(const TypedAddress&) const = default;
 
     // For convenience, also define comparison operators versus uint64_t.
     constexpr inline bool operator==(uint64_t rhs) const {
         return m_address == rhs;
-    }
-
-    constexpr inline bool operator!=(uint64_t rhs) const {
-        return m_address != rhs;
     }
 
     // Allow getting the address explicitly, for use in accessors.

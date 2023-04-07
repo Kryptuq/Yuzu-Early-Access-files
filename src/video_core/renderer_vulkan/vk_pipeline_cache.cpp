@@ -329,7 +329,9 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
 
         .lower_left_origin_mode = false,
         .need_declared_frag_colors = false,
-        .need_gather_subpixel_offset = device.NeedsGatherSubpixelOffset(),
+        .need_gather_subpixel_offset = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
+                                       driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS ||
+                                       driver_id == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA,
 
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS,
         .has_broken_spirv_position_input = driver_id == VK_DRIVER_ID_QUALCOMM_PROPRIETARY,

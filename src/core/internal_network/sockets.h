@@ -36,13 +36,10 @@ public:
 
     SocketBase() = default;
     explicit SocketBase(SOCKET fd_) : fd{fd_} {}
-
     virtual ~SocketBase() = default;
 
-    virtual SocketBase& operator=(const SocketBase&) = delete;
-
-    // Avoid closing sockets implicitly
-    virtual SocketBase& operator=(SocketBase&&) noexcept = delete;
+    YUZU_NON_COPYABLE(SocketBase);
+    YUZU_NON_MOVEABLE(SocketBase);
 
     virtual Errno Initialize(Domain domain, Type type, Protocol protocol) = 0;
 
@@ -109,13 +106,7 @@ public:
 
     ~Socket() override;
 
-    Socket(const Socket&) = delete;
-    Socket& operator=(const Socket&) = delete;
-
     Socket(Socket&& rhs) noexcept;
-
-    // Avoid closing sockets implicitly
-    Socket& operator=(Socket&&) noexcept = delete;
 
     Errno Initialize(Domain domain, Type type, Protocol protocol) override;
 

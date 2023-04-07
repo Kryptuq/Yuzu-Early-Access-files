@@ -16,9 +16,6 @@ namespace Network {
 
 class ProxySocket : public SocketBase {
 public:
-    YUZU_NON_COPYABLE(ProxySocket);
-    YUZU_NON_MOVEABLE(ProxySocket);
-
     explicit ProxySocket(RoomNetwork& room_network_) noexcept;
     ~ProxySocket() override;
 
