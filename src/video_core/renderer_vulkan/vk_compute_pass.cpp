@@ -326,33 +326,32 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
     const VkImageAspectFlags aspect_mask = image.AspectMask();
     const VkImage vk_image = image.Handle();
     const bool is_initialized = image.ExchangeInitialization();
-    scheduler.Record(
-        [vk_pipeline, vk_image, aspect_mask, is_initialized](vk::CommandBuffer cmdbuf) {
-            const VkImageMemoryBarrier image_barrier{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                .pNext = nullptr,
-                .srcAccessMask = static_cast<VkAccessFlags>(
-                    is_initialized ? VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT
-                                   : VK_ACCESS_NONE),
-                .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                .oldLayout = is_initialized ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED,
-                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image = vk_image,
-                .subresourceRange{
-                    .aspectMask = aspect_mask,
-                    .baseMipLevel = 0,
-                    .levelCount = VK_REMAINING_MIP_LEVELS,
-                    .baseArrayLayer = 0,
-                    .layerCount = VK_REMAINING_ARRAY_LAYERS,
-                },
-            };
-            cmdbuf.PipelineBarrier(is_initialized ? VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-                                                  : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, image_barrier);
-            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, vk_pipeline);
-        });
+    scheduler.Record([vk_pipeline, vk_image, aspect_mask,
+                      is_initialized](vk::CommandBuffer cmdbuf) {
+        const VkImageMemoryBarrier image_barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = static_cast<VkAccessFlags>(is_initialized ? VK_ACCESS_SHADER_WRITE_BIT
+                                                                       : VK_ACCESS_NONE),
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+            .oldLayout = is_initialized ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = vk_image,
+            .subresourceRange{
+                .aspectMask = aspect_mask,
+                .baseMipLevel = 0,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS,
+            },
+        };
+        cmdbuf.PipelineBarrier(is_initialized ? VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+                                              : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, image_barrier);
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, vk_pipeline);
+    });
     for (const VideoCommon::SwizzleParameters& swizzle : swizzles) {
         const size_t input_offset = swizzle.buffer_offset + map.offset;
         const u32 num_dispatches_x = Common::DivCeil(swizzle.num_tiles.width, 8U);
