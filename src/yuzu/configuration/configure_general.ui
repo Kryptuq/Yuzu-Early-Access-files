@@ -64,7 +64,7 @@
           <item>
            <widget class="QCheckBox" name="use_extended_memory_layout">
             <property name="text">
-             <string>Extended memory layout (6GB DRAM)</string>
+             <string>Extended memory layout (8GB DRAM)</string>
             </property>
            </widget>
           </item>

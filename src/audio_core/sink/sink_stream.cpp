@@ -252,8 +252,7 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
 
     {
         std::scoped_lock lk{sample_count_lock};
-        last_sample_count_update_time =
-            Core::Timing::CyclesToUs(system.CoreTiming().GetClockTicks());
+        last_sample_count_update_time = system.CoreTiming().GetGlobalTimeNs();
         min_played_sample_count = max_played_sample_count;
         max_played_sample_count += actual_frames_written;
     }
@@ -261,7 +260,7 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
 
 u64 SinkStream::GetExpectedPlayedSampleCount() {
     std::scoped_lock lk{sample_count_lock};
-    auto cur_time{Core::Timing::CyclesToUs(system.CoreTiming().GetClockTicks())};
+    auto cur_time{system.CoreTiming().GetGlobalTimeNs()};
     auto time_delta{cur_time - last_sample_count_update_time};
     auto exp_played_sample_count{min_played_sample_count +
                                  (TargetSampleRate * time_delta) / std::chrono::seconds{1}};

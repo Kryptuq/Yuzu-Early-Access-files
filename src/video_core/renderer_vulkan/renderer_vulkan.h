@@ -9,6 +9,7 @@
 #include "common/dynamic_library.h"
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
+#include "video_core/renderer_vulkan/vk_present_manager.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
@@ -76,6 +77,7 @@ private:
     StateTracker state_tracker;
     Scheduler scheduler;
     Swapchain swapchain;
+    PresentManager present_manager;
     BlitScreen blit_screen;
     RasterizerVulkan rasterizer;
     std::optional<TurboMode> turbo_mode;

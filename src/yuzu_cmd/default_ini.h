@@ -163,7 +163,7 @@ keyboard_enabled =
 # 0: Disabled, 1 (default): Enabled
 use_multi_core =
 
-# Enable extended guest system memory layout (6GB DRAM)
+# Enable extended guest system memory layout (8GB DRAM)
 # 0 (default): Disabled, 1: Enabled
 use_extended_memory_layout =
 

@@ -46,10 +46,11 @@ Scheduler::Scheduler(const Device& device_, StateTracker& state_tracker_)
 
 Scheduler::~Scheduler() = default;
 
-void Scheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+u64 Scheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     // When flushing, we only send data to the worker thread; no waiting is necessary.
-    SubmitExecution(signal_semaphore, wait_semaphore);
+    const u64 signal_value = SubmitExecution(signal_semaphore, wait_semaphore);
     AllocateNewContext();
+    return signal_value;
 }
 
 void Scheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
@@ -205,7 +206,7 @@ void Scheduler::AllocateWorkerCommandBuffer() {
     });
 }
 
-void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+u64 Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
     EndPendingOperations();
     InvalidateState();
 
@@ -250,6 +251,7 @@ void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_s
             on_submit();
         }
 
+        std::scoped_lock lock{submit_mutex};
         switch (const VkResult result = device.GetGraphicsQueue().Submit(submit_info)) {
         case VK_SUCCESS:
             break;
@@ -263,6 +265,7 @@ void Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_s
     });
     chunk->MarkSubmit();
     DispatchWork();
+    return signal_value;
 }
 
 void Scheduler::AllocateNewContext() {

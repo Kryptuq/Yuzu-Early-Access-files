@@ -246,7 +246,7 @@ private:
     /// Maximum number of total samples that can be played since the last callback
     u64 max_played_sample_count{};
     /// The time the two above tracking variables were last written to
-    std::chrono::microseconds last_sample_count_update_time{};
+    std::chrono::nanoseconds last_sample_count_update_time{};
     /// Set by the audio render/in/out system which uses this stream
     f32 system_volume{1.0f};
     /// Set via IAudioDevice service calls

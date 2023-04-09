@@ -122,10 +122,12 @@ struct BlitScreen::BufferData {
 
 BlitScreen::BlitScreen(Core::Memory::Memory& cpu_memory_, Core::Frontend::EmuWindow& render_window_,
                        const Device& device_, MemoryAllocator& memory_allocator_,
-                       Swapchain& swapchain_, Scheduler& scheduler_, const ScreenInfo& screen_info_)
+                       Swapchain& swapchain_, PresentManager& present_manager_,
+                       Scheduler& scheduler_, const ScreenInfo& screen_info_)
     : cpu_memory{cpu_memory_}, render_window{render_window_}, device{device_},
-      memory_allocator{memory_allocator_}, swapchain{swapchain_}, scheduler{scheduler_},
-      image_count{swapchain.GetImageCount()}, screen_info{screen_info_} {
+      memory_allocator{memory_allocator_}, swapchain{swapchain_}, present_manager{present_manager_},
+      scheduler{scheduler_}, image_count{swapchain.GetImageCount()}, screen_info{screen_info_},
+      current_srgb{swapchain.IsSrgb()}, image_view_format{swapchain.GetImageViewFormat()} {
     resource_ticks.resize(image_count);
 
     CreateStaticResources();
@@ -135,24 +137,19 @@ BlitScreen::BlitScreen(Core::Memory::Memory& cpu_memory_, Core::Frontend::EmuWin
 BlitScreen::~BlitScreen() = default;
 
 void BlitScreen::Recreate() {
+    present_manager.WaitPresent();
+    scheduler.Finish();
+    device.GetLogical().WaitIdle();
     CreateDynamicResources();
 }
 
-VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
-                             const VkFramebuffer& host_framebuffer,
-                             const Layout::FramebufferLayout layout, VkExtent2D render_area,
-                             bool use_accelerated) {
+void BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
+                      const VkFramebuffer& host_framebuffer, const Layout::FramebufferLayout layout,
+                      VkExtent2D render_area, bool use_accelerated) {
     RefreshResources(framebuffer);
 
     // Finish any pending renderpass
     scheduler.RequestOutsideRenderPassOperationContext();
-
-    if (const auto swapchain_images = swapchain.GetImageCount(); swapchain_images != image_count) {
-        image_count = swapchain_images;
-        Recreate();
-    }
-
-    const std::size_t image_index = swapchain.GetImageIndex();
 
     scheduler.Wait(resource_ticks[image_index]);
     resource_ticks[image_index] = scheduler.CurrentTick();
@@ -169,7 +166,7 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     std::memcpy(mapped_span.data(), &data, sizeof(data));
 
     if (!use_accelerated) {
-        const u64 image_offset = GetRawImageOffset(framebuffer, image_index);
+        const u64 image_offset = GetRawImageOffset(framebuffer);
 
         const VAddr framebuffer_addr = framebuffer.address + framebuffer.offset;
         const u8* const host_ptr = cpu_memory.GetPointer(framebuffer_addr);
@@ -204,8 +201,8 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
                     .depth = 1,
                 },
         };
-        scheduler.Record([this, copy, image_index](vk::CommandBuffer cmdbuf) {
-            const VkImage image = *raw_images[image_index];
+        scheduler.Record([this, copy, index = image_index](vk::CommandBuffer cmdbuf) {
+            const VkImage image = *raw_images[index];
             const VkImageMemoryBarrier base_barrier{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                 .pNext = nullptr,
@@ -245,14 +242,15 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
 
     const auto anti_alias_pass = Settings::values.anti_aliasing.GetValue();
     if (use_accelerated && anti_alias_pass == Settings::AntiAliasing::Fxaa) {
-        UpdateAADescriptorSet(image_index, source_image_view, false);
+        UpdateAADescriptorSet(source_image_view, false);
         const u32 up_scale = Settings::values.resolution_info.up_scale;
         const u32 down_shift = Settings::values.resolution_info.down_shift;
         VkExtent2D size{
             .width = (up_scale * framebuffer.width) >> down_shift,
             .height = (up_scale * framebuffer.height) >> down_shift,
         };
-        scheduler.Record([this, image_index, size, anti_alias_pass](vk::CommandBuffer cmdbuf) {
+        scheduler.Record([this, index = image_index, size,
+                          anti_alias_pass](vk::CommandBuffer cmdbuf) {
             const VkImageMemoryBarrier base_barrier{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                 .pNext = nullptr,
@@ -326,7 +324,7 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
 
             cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
             cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *aa_pipeline_layout, 0,
-                                      aa_descriptor_sets[image_index], {});
+                                      aa_descriptor_sets[index], {});
             cmdbuf.Draw(4, 1, 0, 0);
             cmdbuf.EndRenderPass();
 
@@ -369,81 +367,99 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
         };
         VkImageView fsr_image_view =
             fsr->Draw(scheduler, image_index, source_image_view, fsr_input_size, crop_rect);
-        UpdateDescriptorSet(image_index, fsr_image_view, true);
+        UpdateDescriptorSet(fsr_image_view, true);
     } else {
         const bool is_nn =
             Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::NearestNeighbor;
-        UpdateDescriptorSet(image_index, source_image_view, is_nn);
+        UpdateDescriptorSet(source_image_view, is_nn);
     }
 
-    scheduler.Record(
-        [this, host_framebuffer, image_index, size = render_area](vk::CommandBuffer cmdbuf) {
-            const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
-            const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
-            const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
-            const VkClearValue clear_color{
-                .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
-            };
-            const VkRenderPassBeginInfo renderpass_bi{
-                .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                .pNext = nullptr,
-                .renderPass = *renderpass,
-                .framebuffer = host_framebuffer,
-                .renderArea =
-                    {
-                        .offset = {0, 0},
-                        .extent = size,
-                    },
-                .clearValueCount = 1,
-                .pClearValues = &clear_color,
-            };
-            const VkViewport viewport{
-                .x = 0.0f,
-                .y = 0.0f,
-                .width = static_cast<float>(size.width),
-                .height = static_cast<float>(size.height),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f,
-            };
-            const VkRect2D scissor{
-                .offset = {0, 0},
-                .extent = size,
-            };
-            cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
-            auto graphics_pipeline = [this]() {
-                switch (Settings::values.scaling_filter.GetValue()) {
-                case Settings::ScalingFilter::NearestNeighbor:
-                case Settings::ScalingFilter::Bilinear:
-                    return *bilinear_pipeline;
-                case Settings::ScalingFilter::Bicubic:
-                    return *bicubic_pipeline;
-                case Settings::ScalingFilter::Gaussian:
-                    return *gaussian_pipeline;
-                case Settings::ScalingFilter::ScaleForce:
-                    return *scaleforce_pipeline;
-                default:
-                    return *bilinear_pipeline;
-                }
-            }();
-            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
-            cmdbuf.SetViewport(0, viewport);
-            cmdbuf.SetScissor(0, scissor);
+    scheduler.Record([this, host_framebuffer, index = image_index,
+                      size = render_area](vk::CommandBuffer cmdbuf) {
+        const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
+        const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
+        const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
+        const VkClearValue clear_color{
+            .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
+        };
+        const VkRenderPassBeginInfo renderpass_bi{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .pNext = nullptr,
+            .renderPass = *renderpass,
+            .framebuffer = host_framebuffer,
+            .renderArea =
+                {
+                    .offset = {0, 0},
+                    .extent = size,
+                },
+            .clearValueCount = 1,
+            .pClearValues = &clear_color,
+        };
+        const VkViewport viewport{
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = static_cast<float>(size.width),
+            .height = static_cast<float>(size.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+        };
+        const VkRect2D scissor{
+            .offset = {0, 0},
+            .extent = size,
+        };
+        cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
+        auto graphics_pipeline = [this]() {
+            switch (Settings::values.scaling_filter.GetValue()) {
+            case Settings::ScalingFilter::NearestNeighbor:
+            case Settings::ScalingFilter::Bilinear:
+                return *bilinear_pipeline;
+            case Settings::ScalingFilter::Bicubic:
+                return *bicubic_pipeline;
+            case Settings::ScalingFilter::Gaussian:
+                return *gaussian_pipeline;
+            case Settings::ScalingFilter::ScaleForce:
+                return *scaleforce_pipeline;
+            default:
+                return *bilinear_pipeline;
+            }
+        }();
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+        cmdbuf.SetViewport(0, viewport);
+        cmdbuf.SetScissor(0, scissor);
 
-            cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
-            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
-                                      descriptor_sets[image_index], {});
-            cmdbuf.Draw(4, 1, 0, 0);
-            cmdbuf.EndRenderPass();
-        });
-    return *semaphores[image_index];
+        cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
+                                  descriptor_sets[index], {});
+        cmdbuf.Draw(4, 1, 0, 0);
+        cmdbuf.EndRenderPass();
+    });
 }
 
-VkSemaphore BlitScreen::DrawToSwapchain(const Tegra::FramebufferConfig& framebuffer,
-                                        bool use_accelerated) {
-    const std::size_t image_index = swapchain.GetImageIndex();
-    const VkExtent2D render_area = swapchain.GetSize();
+void BlitScreen::DrawToSwapchain(Frame* frame, const Tegra::FramebufferConfig& framebuffer,
+                                 bool use_accelerated, bool is_srgb) {
+    // Recreate dynamic resources if the the image count or colorspace changed
+    if (const std::size_t swapchain_images = swapchain.GetImageCount();
+        swapchain_images != image_count || current_srgb != is_srgb) {
+        current_srgb = is_srgb;
+        image_view_format = current_srgb ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_B8G8R8A8_UNORM;
+        image_count = swapchain_images;
+        Recreate();
+    }
+
+    // Recreate the presentation frame if the dimensions of the window changed
     const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
-    return Draw(framebuffer, *framebuffers[image_index], layout, render_area, use_accelerated);
+    if (layout.width != frame->width || layout.height != frame->height ||
+        is_srgb != frame->is_srgb) {
+        scheduler.Finish();
+        present_manager.RecreateFrame(frame, layout.width, layout.height, is_srgb,
+                                      image_view_format, *renderpass);
+    }
+
+    const VkExtent2D render_area{frame->width, frame->height};
+    Draw(framebuffer, *frame->framebuffer, layout, render_area, use_accelerated);
+    if (++image_index >= image_count) {
+        image_index = 0;
+    }
 }
 
 vk::Framebuffer BlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent) {
@@ -471,13 +487,11 @@ void BlitScreen::CreateStaticResources() {
 }
 
 void BlitScreen::CreateDynamicResources() {
-    CreateSemaphores();
     CreateDescriptorPool();
     CreateDescriptorSetLayout();
     CreateDescriptorSets();
     CreatePipelineLayout();
     CreateRenderPass();
-    CreateFramebuffers();
     CreateGraphicsPipeline();
     fsr.reset();
     smaa.reset();
@@ -525,11 +539,6 @@ void BlitScreen::CreateShaders() {
     }
 }
 
-void BlitScreen::CreateSemaphores() {
-    semaphores.resize(image_count);
-    std::ranges::generate(semaphores, [this] { return device.GetLogical().CreateSemaphore(); });
-}
-
 void BlitScreen::CreateDescriptorPool() {
     const std::array<VkDescriptorPoolSize, 2> pool_sizes{{
         {
@@ -571,10 +580,10 @@ void BlitScreen::CreateDescriptorPool() {
 }
 
 void BlitScreen::CreateRenderPass() {
-    renderpass = CreateRenderPassImpl(swapchain.GetImageViewFormat());
+    renderpass = CreateRenderPassImpl(image_view_format);
 }
 
-vk::RenderPass BlitScreen::CreateRenderPassImpl(VkFormat format, bool is_present) {
+vk::RenderPass BlitScreen::CreateRenderPassImpl(VkFormat format) {
     const VkAttachmentDescription color_attachment{
         .flags = 0,
         .format = format,
@@ -584,7 +593,7 @@ vk::RenderPass BlitScreen::CreateRenderPassImpl(VkFormat format, bool is_present
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = is_present ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_GENERAL,
+        .finalLayout = VK_IMAGE_LAYOUT_GENERAL,
     };
 
     const VkAttachmentReference color_attachment_ref{
@@ -1052,16 +1061,6 @@ void BlitScreen::CreateSampler() {
     nn_sampler = device.GetLogical().CreateSampler(ci_nn);
 }
 
-void BlitScreen::CreateFramebuffers() {
-    const VkExtent2D size{swapchain.GetSize()};
-    framebuffers.resize(image_count);
-
-    for (std::size_t i = 0; i < image_count; ++i) {
-        const VkImageView image_view{swapchain.GetImageViewIndex(i)};
-        framebuffers[i] = CreateFramebuffer(image_view, size, renderpass);
-    }
-}
-
 void BlitScreen::ReleaseRawImages() {
     for (const u64 tick : resource_ticks) {
         scheduler.Wait(tick);
@@ -1175,7 +1174,7 @@ void BlitScreen::CreateRawImages(const Tegra::FramebufferConfig& framebuffer) {
         aa_framebuffer = CreateFramebuffer(*aa_image_view, size, aa_renderpass);
         return;
     }
-    aa_renderpass = CreateRenderPassImpl(GetFormat(framebuffer), false);
+    aa_renderpass = CreateRenderPassImpl(GetFormat(framebuffer));
     aa_framebuffer = CreateFramebuffer(*aa_image_view, size, aa_renderpass);
 
     const std::array<VkPipelineShaderStageCreateInfo, 2> fxaa_shader_stages{{
@@ -1319,8 +1318,7 @@ void BlitScreen::CreateRawImages(const Tegra::FramebufferConfig& framebuffer) {
     aa_pipeline = device.GetLogical().CreateGraphicsPipeline(fxaa_pipeline_ci);
 }
 
-void BlitScreen::UpdateAADescriptorSet(std::size_t image_index, VkImageView image_view,
-                                       bool nn) const {
+void BlitScreen::UpdateAADescriptorSet(VkImageView image_view, bool nn) const {
     const VkDescriptorImageInfo image_info{
         .sampler = nn ? *nn_sampler : *sampler,
         .imageView = image_view,
@@ -1356,8 +1354,7 @@ void BlitScreen::UpdateAADescriptorSet(std::size_t image_index, VkImageView imag
     device.GetLogical().UpdateDescriptorSets(std::array{sampler_write, sampler_write_2}, {});
 }
 
-void BlitScreen::UpdateDescriptorSet(std::size_t image_index, VkImageView image_view,
-                                     bool nn) const {
+void BlitScreen::UpdateDescriptorSet(VkImageView image_view, bool nn) const {
     const VkDescriptorBufferInfo buffer_info{
         .buffer = *buffer,
         .offset = offsetof(BufferData, uniform),
@@ -1480,8 +1477,7 @@ u64 BlitScreen::CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer)
     return sizeof(BufferData) + GetSizeInBytes(framebuffer) * image_count;
 }
 
-u64 BlitScreen::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
-                                  std::size_t image_index) const {
+u64 BlitScreen::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer) const {
     constexpr auto first_image_offset = static_cast<u64>(sizeof(BufferData));
     return first_image_offset + GetSizeInBytes(framebuffer) * image_index;
 }

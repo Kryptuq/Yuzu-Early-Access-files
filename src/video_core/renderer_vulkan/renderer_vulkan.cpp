@@ -93,8 +93,9 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
       state_tracker(), scheduler(device, state_tracker),
       swapchain(*surface, device, scheduler, render_window.GetFramebufferLayout().width,
                 render_window.GetFramebufferLayout().height, false),
-      blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, scheduler,
-                  screen_info),
+      present_manager(render_window, device, memory_allocator, scheduler, swapchain),
+      blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, present_manager,
+                  scheduler, screen_info),
       rasterizer(render_window, gpu, cpu_memory, screen_info, device, memory_allocator,
                  state_tracker, scheduler) {
     if (Settings::values.renderer_force_max_clock.GetValue() && device.ShouldBoostClocks()) {
@@ -121,46 +122,19 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
         return;
     }
     // Update screen info if the framebuffer size has changed.
-    if (screen_info.width != framebuffer->width || screen_info.height != framebuffer->height) {
-        screen_info.width = framebuffer->width;
-        screen_info.height = framebuffer->height;
-    }
+    screen_info.width = framebuffer->width;
+    screen_info.height = framebuffer->height;
+
     const VAddr framebuffer_addr = framebuffer->address + framebuffer->offset;
     const bool use_accelerated =
         rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
     const bool is_srgb = use_accelerated && screen_info.is_srgb;
     RenderScreenshot(*framebuffer, use_accelerated);
 
-    bool has_been_recreated = false;
-    const auto recreate_swapchain = [&](u32 width, u32 height) {
-        if (!has_been_recreated) {
-            has_been_recreated = true;
-            scheduler.Finish();
-        }
-        swapchain.Create(width, height, is_srgb);
-    };
-
-    const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
-    if (swapchain.NeedsRecreation(is_srgb) || swapchain.GetWidth() != layout.width ||
-        swapchain.GetHeight() != layout.height) {
-        recreate_swapchain(layout.width, layout.height);
-    }
-    bool is_outdated;
-    do {
-        swapchain.AcquireNextImage();
-        is_outdated = swapchain.IsOutDated();
-        if (is_outdated) {
-            recreate_swapchain(layout.width, layout.height);
-        }
-    } while (is_outdated);
-    if (has_been_recreated) {
-        blit_screen.Recreate();
-    }
-    const VkSemaphore render_semaphore = blit_screen.DrawToSwapchain(*framebuffer, use_accelerated);
-    const VkSemaphore present_semaphore = swapchain.CurrentPresentSemaphore();
-    scheduler.Flush(render_semaphore, present_semaphore);
-    scheduler.WaitWorker();
-    swapchain.Present(render_semaphore);
+    Frame* frame = present_manager.GetRenderFrame();
+    blit_screen.DrawToSwapchain(frame, *framebuffer, use_accelerated, is_srgb);
+    scheduler.Flush(*frame->render_ready);
+    scheduler.Record([this, frame](vk::CommandBuffer) { present_manager.PushFrame(frame); });
 
     gpu.RendererFrameEndNotify();
     rasterizer.TickFrame();
@@ -246,8 +220,7 @@ void Vulkan::RendererVulkan::RenderScreenshot(const Tegra::FramebufferConfig& fr
     });
     const VkExtent2D render_area{.width = layout.width, .height = layout.height};
     const vk::Framebuffer screenshot_fb = blit_screen.CreateFramebuffer(*dst_view, render_area);
-    // Since we're not rendering to the screen, ignore the render semaphore.
-    void(blit_screen.Draw(framebuffer, *screenshot_fb, layout, render_area, use_accelerated));
+    blit_screen.Draw(framebuffer, *screenshot_fb, layout, render_area, use_accelerated);
 
     const auto buffer_size = static_cast<VkDeviceSize>(layout.width * layout.height * 4);
     const VkBufferCreateInfo dst_buffer_info{
@@ -270,7 +243,7 @@ void Vulkan::RendererVulkan::RenderScreenshot(const Tegra::FramebufferConfig& fr
             .pNext = nullptr,
             .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
             .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
