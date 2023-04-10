@@ -91,7 +91,8 @@ std::size_t KSystemControl::Init::GetApplicationPoolSize() {
         case Smc::MemoryArrangement_6GBForAppletDev:
             return 3285_MiB;
         case Smc::MemoryArrangement_8GB:
-            return 4916_MiB;
+            // Real kernel sets this to 4916_MiB. We are not debugging applets.
+            return 6547_MiB;
         }
     }();
 
@@ -115,7 +116,8 @@ size_t KSystemControl::Init::GetAppletPoolSize() {
         case Smc::MemoryArrangement_6GBForAppletDev:
             return 2193_MiB;
         case Smc::MemoryArrangement_8GB:
-            return 2193_MiB;
+            //! Real kernel sets this to 2193_MiB. We are not debugging applets.
+            return 562_MiB;
         }
     }();
 
