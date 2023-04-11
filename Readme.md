@@ -1,3 +1,5 @@
+### !!! DISCONTINUED !!! Lastest EA is 3507.
+
 yuzu (Nintendo Switch Emulator)
 =============
 ![Github Build Status](https://github.com/Kryptuq/Yuzu-Early-Access-files/actions/workflows/build.yml/badge.svg)
