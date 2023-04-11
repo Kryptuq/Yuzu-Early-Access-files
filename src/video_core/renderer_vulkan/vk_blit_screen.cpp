@@ -450,7 +450,7 @@ void BlitScreen::DrawToSwapchain(Frame* frame, const Tegra::FramebufferConfig& f
     const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
     if (layout.width != frame->width || layout.height != frame->height ||
         is_srgb != frame->is_srgb) {
-        scheduler.Finish();
+        Recreate();
         present_manager.RecreateFrame(frame, layout.width, layout.height, is_srgb,
                                       image_view_format, *renderpass);
     }
