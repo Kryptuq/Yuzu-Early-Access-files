@@ -24,4 +24,8 @@ __Credits__: Kryptuq for Source Codes and MostlyWhat for Build Script
 
 __Current Latest Early Access__: [Github Releases](https://github.com/Kryptuq/Yuzu-Early-Access-files/releases/)
 
-__Join Our Discord__: [Discord](https://discord.gg/87bsZWwF3X)
+__Join Our Discord__: [Discord](https://discord.gg/C4UeXdgbBB)
+
+### Get Ryujinx & Yuzu Games from here:
+
+[Krypt Lair](https://128bitbay.com/index.php)
